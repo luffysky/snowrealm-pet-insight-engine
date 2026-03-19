@@ -73,7 +73,7 @@ export default function SurveysAdminPage() {
 
       {/* Survey selector */}
       {surveys.length > 1 && (
-        <div className="flex gap-3">
+        <div className="flex flex-wrap gap-3">
           {surveys.map((s) => (
             <button
               key={s.id}
@@ -205,8 +205,8 @@ function SurveyEditor({
 
       {editing && (
         <div className="space-y-3">
-          <div className="flex items-center gap-3">
-            <label className="text-sm text-white/50 w-20">狀態</label>
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+            <label className="text-sm text-white/50 sm:w-20">狀態</label>
             <select
               value={form.status}
               onChange={(e) => setForm({ ...form, status: e.target.value })}
@@ -218,8 +218,8 @@ function SurveyEditor({
             </select>
           </div>
           {fields.map((f) => (
-            <div key={f.key} className="flex items-start gap-3">
-              <label className="text-sm text-white/50 w-20 pt-1.5 shrink-0">{f.label}</label>
+            <div key={f.key} className="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-3">
+              <label className="text-sm text-white/50 sm:w-20 sm:pt-1.5 shrink-0">{f.label}</label>
               {f.multiline ? (
                 <textarea
                   value={form[f.key] as string}
@@ -239,8 +239,8 @@ function SurveyEditor({
           ))}
 
           {/* A/B Variant Group */}
-          <div className="flex items-start gap-3">
-            <label className="text-sm text-white/50 w-20 pt-1.5 shrink-0">A/B 群組</label>
+          <div className="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-3">
+            <label className="text-sm text-white/50 sm:w-20 sm:pt-1.5 shrink-0">A/B 群組</label>
             <input
               type="text"
               value={form.variant_group ?? ''}
@@ -251,8 +251,8 @@ function SurveyEditor({
           </div>
 
           {/* 排程 */}
-          <div className="flex items-start gap-3">
-            <label className="text-sm text-white/50 w-20 pt-1.5 shrink-0">排程開始</label>
+          <div className="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-3">
+            <label className="text-sm text-white/50 sm:w-20 sm:pt-1.5 shrink-0">排程開始</label>
             <input
               type="datetime-local"
               value={form.scheduled_start?.slice(0, 16) ?? ''}
@@ -260,8 +260,8 @@ function SurveyEditor({
               className="flex-1 bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-sm text-white/80"
             />
           </div>
-          <div className="flex items-start gap-3">
-            <label className="text-sm text-white/50 w-20 pt-1.5 shrink-0">排程結束</label>
+          <div className="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-3">
+            <label className="text-sm text-white/50 sm:w-20 sm:pt-1.5 shrink-0">排程結束</label>
             <input
               type="datetime-local"
               value={form.scheduled_end?.slice(0, 16) ?? ''}
@@ -273,7 +273,7 @@ function SurveyEditor({
       )}
 
       {!editing && (
-        <div className="grid grid-cols-2 gap-3 text-sm">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
           {fields.map((f) => (
             <div key={f.key}>
               <span className="text-white/40">{f.label}：</span>
@@ -632,7 +632,7 @@ function QuestionFormFields({
 
   return (
     <div className="space-y-3">
-      <div className="grid grid-cols-[80px_1fr] gap-2 items-center">
+      <div className="grid grid-cols-1 sm:grid-cols-[80px_1fr] gap-2 sm:items-center">
         <label className="text-xs text-white/40">Key</label>
         <input
           type="text"

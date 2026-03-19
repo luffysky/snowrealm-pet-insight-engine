@@ -30,19 +30,19 @@ export function ResponseTable({
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-slate-700/50">
-              <th className="text-left px-6 py-3 text-slate-400 font-medium">
+              <th className="text-left px-4 sm:px-6 py-3 text-slate-400 font-medium whitespace-nowrap">
                 時間
               </th>
-              <th className="text-left px-6 py-3 text-slate-400 font-medium">
+              <th className="text-left px-4 sm:px-6 py-3 text-slate-400 font-medium whitespace-nowrap">
                 狀態
               </th>
-              <th className="text-left px-6 py-3 text-slate-400 font-medium">
+              <th className="text-left px-4 sm:px-6 py-3 text-slate-400 font-medium whitespace-nowrap">
                 來源
               </th>
-              <th className="text-left px-6 py-3 text-slate-400 font-medium">
+              <th className="text-left px-4 sm:px-6 py-3 text-slate-400 font-medium whitespace-nowrap">
                 標籤
               </th>
-              <th className="text-right px-6 py-3 text-slate-400 font-medium">
+              <th className="text-right px-4 sm:px-6 py-3 text-slate-400 font-medium whitespace-nowrap">
                 操作
               </th>
             </tr>
@@ -53,16 +53,16 @@ export function ResponseTable({
                 key={response.id}
                 className="border-b border-slate-700/30 hover:bg-slate-700/20"
               >
-                <td className="px-6 py-3 text-slate-300">
+                <td className="px-4 sm:px-6 py-3 text-slate-300 whitespace-nowrap">
                   {formatDateTime(response.submittedAt ?? response.createdAt)}
                 </td>
-                <td className="px-6 py-3">
+                <td className="px-4 sm:px-6 py-3">
                   <StatusBadge status={response.status} />
                 </td>
-                <td className="px-6 py-3 text-slate-400">
+                <td className="px-4 sm:px-6 py-3 text-slate-400">
                   {response.utmSource ?? response.source ?? '-'}
                 </td>
-                <td className="px-6 py-3">
+                <td className="px-4 sm:px-6 py-3">
                   <div className="flex flex-wrap gap-1">
                     {response.tags.slice(0, 3).map((tag) => (
                       <span
@@ -79,7 +79,7 @@ export function ResponseTable({
                     )}
                   </div>
                 </td>
-                <td className="px-6 py-3 text-right">
+                <td className="px-4 sm:px-6 py-3 text-right">
                   <Link
                     href={`/admin/responses/${response.id}`}
                     className="text-cyan-400 hover:text-cyan-300 text-sm"

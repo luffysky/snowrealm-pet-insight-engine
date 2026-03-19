@@ -42,7 +42,8 @@ function UtmSection({
       />
 
       <div className="bg-slate-800/50 border border-slate-700/50 rounded-2xl overflow-hidden">
-        <table className="w-full text-sm">
+        <div className="overflow-x-auto">
+        <table className="w-full text-sm min-w-[500px]">
           <thead>
             <tr className="border-b border-slate-700/50">
               <th className="text-left px-6 py-3 text-slate-400 font-medium">
@@ -79,6 +80,7 @@ function UtmSection({
             ))}
           </tbody>
         </table>
+        </div>
       </div>
     </div>
   )
