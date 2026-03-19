@@ -196,7 +196,8 @@ export default function SurveysAdminPage() {
 
       {selectedSurvey && (
         <>
-          <SurveyEditor survey={selectedSurvey} questions={questions} onUpdate={setSelectedSurvey} />
+          <SurveyEditor survey={selectedSurvey} questions={questions} onUpdate={setSelectedSurvey}
+            onReloadQuestions={() => loadQuestions(selectedSurvey.id)} />
           <QuestionList
             surveyId={selectedSurvey.id}
             questions={questions}
@@ -214,47 +215,19 @@ function SurveyEditor({
   survey,
   questions,
   onUpdate,
+  onReloadQuestions,
 }: {
   survey: SurveyRow
   questions: QuestionRow[]
   onUpdate: (s: SurveyRow) => void
+  onReloadQuestions: () => void
 }) {
   const [activeTab, setActiveTab] = useState<'basic' | 'branching'>('basic')
   const [editing, setEditing] = useState(false)
   const [form, setForm] = useState(survey)
   const [saving, setSaving] = useState(false)
-  const [branchSaving, setBranchSaving] = useState(false)
-  const [branchError, setBranchError] = useState('')
-  const [branchSuccess, setBranchSuccess] = useState('')
-  const [branchQuestionKey, setBranchQuestionKey] = useState('')
-  const [answerRoutes, setAnswerRoutes] = useState<Record<string, 'A' | 'B' | 'C'>>({})
-  const [branchDirty, setBranchDirty] = useState(false)
 
-  useEffect(() => {
-    setForm(survey)
-  }, [survey])
-
-  useEffect(() => {
-    const candidates = questions.filter((q) => q.type !== 'text' && q.options.length > 0)
-    const surveyConfig = normalizeBranchConfig(survey.branch_config)
-    const fallbackKey = candidates[0]?.key ?? ''
-    const nextBranchKey = surveyConfig?.branchKey ?? fallbackKey
-
-    const selectedQuestion = candidates.find((q) => q.key === nextBranchKey)
-    const optionValues = selectedQuestion?.options.map((opt) => opt.value) ?? []
-
-    const nextAnswerRoutes: Record<string, 'A' | 'B' | 'C'> = {}
-    for (const value of optionValues) {
-      const optionLabel = selectedQuestion?.options.find((opt) => opt.value === value)?.label ?? ''
-      const route = getRouteByAnswerValue(surveyConfig, value, optionLabel)
-      nextAnswerRoutes[value] = route
-    }
-
-    setBranchQuestionKey(nextBranchKey)
-    setAnswerRoutes(nextAnswerRoutes)
-    setBranchDirty(false)
-    setBranchSuccess('')
-  }, [survey.branch_config, questions])
+  useEffect(() => { setForm(survey) }, [survey])
 
   const handleSave = async () => {
     setSaving(true)
@@ -283,93 +256,6 @@ function SurveyEditor({
     setSaving(false)
   }
 
-  const branchableQuestions = questions.filter((q) => q.type !== 'text' && q.options.length > 0)
-  const selectedBranchQuestion = branchableQuestions.find((q) => q.key === branchQuestionKey) ?? null
-
-  const handleBranchQuestionChange = (nextKey: string) => {
-    setBranchQuestionKey(nextKey)
-    setBranchError('')
-    setBranchDirty(true)
-
-    const nextQuestion = branchableQuestions.find((q) => q.key === nextKey)
-    if (!nextQuestion) {
-      setAnswerRoutes({})
-      return
-    }
-
-    const currentConfig: BranchConfig | null = {
-      branchKey: branchQuestionKey,
-      routes: {
-        A: Object.entries(answerRoutes)
-          .filter(([, route]) => route === 'A')
-          .map(([value]) => value),
-        B: Object.entries(answerRoutes)
-          .filter(([, route]) => route === 'B')
-          .map(([value]) => value),
-        C: Object.entries(answerRoutes)
-          .filter(([, route]) => route === 'C')
-          .map(([value]) => value),
-      },
-    }
-
-    const nextMap: Record<string, 'A' | 'B' | 'C'> = {}
-    for (const option of nextQuestion.options) {
-      nextMap[option.value] = getRouteByAnswerValue(currentConfig, option.value, option.label)
-    }
-    setAnswerRoutes(nextMap)
-  }
-
-  const handleSaveBranching = async () => {
-    if (!branchQuestionKey) {
-      setBranchError('請先選擇分流題目')
-      return
-    }
-    if (!selectedBranchQuestion || selectedBranchQuestion.options.length === 0) {
-      setBranchError('分流題目必須有選項')
-      return
-    }
-    if (!confirm(`確定要將分流設定儲存為「${branchQuestionKey}」嗎？\n這會影響前台問卷的分流邏輯。`)) {
-      return
-    }
-
-    const routes: Record<string, string[]> = { A: [], B: [], C: [] }
-    for (const option of selectedBranchQuestion.options) {
-      const route = answerRoutes[option.value] ?? 'A'
-      routes[route].push(option.value)
-    }
-
-    setBranchSaving(true)
-    setBranchError('')
-
-    try {
-      const res = await fetch(`/api/admin/surveys/${survey.id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          branch_config: {
-            branchKey: branchQuestionKey,
-            routes,
-          },
-        }),
-      })
-
-      if (!res.ok) {
-        setBranchError('儲存分流設定失敗')
-        return
-      }
-
-      const updated = (await res.json()) as SurveyRow
-      onUpdate(updated)
-      setBranchDirty(false)
-      setBranchSuccess('分流設定已儲存')
-      setTimeout(() => setBranchSuccess(''), 3000)
-    } catch {
-      setBranchError('儲存分流設定失敗')
-    } finally {
-      setBranchSaving(false)
-    }
-  }
-
   const fields: { key: keyof SurveyRow; label: string; multiline?: boolean }[] = [
     { key: 'title', label: '問卷標題' },
     { key: 'subtitle', label: '副標題' },
@@ -396,29 +282,16 @@ function SurveyEditor({
           >
             {survey.status}
           </span>
-          {!editing ? (
-            <button
-              type="button"
-              onClick={() => setEditing(true)}
-              className="text-sm text-cyan-400 hover:text-cyan-300 cursor-pointer"
-            >
-              編輯
-            </button>
-          ) : (
+          {activeTab === 'basic' && !editing && (
+            <button type="button" onClick={() => setEditing(true)}
+              className="text-sm text-cyan-400 hover:text-cyan-300 cursor-pointer">編輯</button>
+          )}
+          {activeTab === 'basic' && editing && (
             <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={() => { setEditing(false); setForm(survey) }}
-                className="text-sm text-slate-400 hover:text-white cursor-pointer"
-              >
-                取消
-              </button>
-              <button
-                type="button"
-                onClick={handleSave}
-                disabled={saving}
-                className="text-sm text-cyan-400 hover:text-cyan-300 disabled:opacity-40 cursor-pointer"
-              >
+              <button type="button" onClick={() => { setEditing(false); setForm(survey) }}
+                className="text-sm text-slate-400 hover:text-white cursor-pointer">取消</button>
+              <button type="button" onClick={handleSave} disabled={saving}
+                className="text-sm text-cyan-400 hover:text-cyan-300 disabled:opacity-40 cursor-pointer">
                 {saving ? '儲存中...' : '儲存'}
               </button>
             </div>
@@ -426,40 +299,29 @@ function SurveyEditor({
         </div>
       </div>
 
+      {/* Top-level tabs */}
       <div className="flex gap-2 border-b border-slate-800 pb-3">
-        <button
-          type="button"
-          onClick={() => setActiveTab('basic')}
+        <button type="button" onClick={() => setActiveTab('basic')}
           className={`px-3 py-1.5 rounded-lg text-sm transition-colors cursor-pointer ${
             activeTab === 'basic'
               ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-400/30'
               : 'bg-slate-800 text-slate-400 border border-slate-700 hover:text-white'
-          }`}
-        >
-          基本設定
-        </button>
-        <button
-          type="button"
-          onClick={() => setActiveTab('branching')}
+          }`}>基本設定</button>
+        <button type="button" onClick={() => setActiveTab('branching')}
           className={`px-3 py-1.5 rounded-lg text-sm transition-colors cursor-pointer ${
             activeTab === 'branching'
               ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-400/30'
               : 'bg-slate-800 text-slate-400 border border-slate-700 hover:text-white'
-          }`}
-        >
-          分流設定
-        </button>
+          }`}>分流設定</button>
       </div>
 
+      {/* Basic settings - editing */}
       {activeTab === 'basic' && editing && (
         <div className="space-y-3">
           <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
             <label className="text-sm text-white/50 sm:w-20">狀態</label>
-            <select
-              value={form.status}
-              onChange={(e) => setForm({ ...form, status: e.target.value })}
-              className="bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-sm text-white/80"
-            >
+            <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })}
+              className="bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-sm text-white/80">
               <option value="draft">draft</option>
               <option value="published">published</option>
               <option value="archived">archived</option>
@@ -469,57 +331,35 @@ function SurveyEditor({
             <div key={f.key} className="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-3">
               <label className="text-sm text-white/50 sm:w-20 sm:pt-1.5 shrink-0">{f.label}</label>
               {f.multiline ? (
-                <textarea
-                  value={form[f.key] as string}
-                  onChange={(e) => setForm({ ...form, [f.key]: e.target.value })}
-                  rows={3}
-                  className="flex-1 bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-sm text-white/80 resize-none"
-                />
+                <textarea value={form[f.key] as string} onChange={(e) => setForm({ ...form, [f.key]: e.target.value })}
+                  rows={3} className="flex-1 bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-sm text-white/80 resize-none" />
               ) : (
-                <input
-                  type="text"
-                  value={form[f.key] as string}
-                  onChange={(e) => setForm({ ...form, [f.key]: e.target.value })}
-                  className="flex-1 bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-sm text-white/80"
-                />
+                <input type="text" value={form[f.key] as string} onChange={(e) => setForm({ ...form, [f.key]: e.target.value })}
+                  className="flex-1 bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-sm text-white/80" />
               )}
             </div>
           ))}
-
-          {/* A/B Variant Group */}
           <div className="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-3">
             <label className="text-sm text-white/50 sm:w-20 sm:pt-1.5 shrink-0">A/B 群組</label>
-            <input
-              type="text"
-              value={form.variant_group ?? ''}
-              onChange={(e) => setForm({ ...form, variant_group: e.target.value })}
-              placeholder="留空表示不參與 A/B"
-              className="flex-1 bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-sm text-white/80"
-            />
+            <input type="text" value={form.variant_group ?? ''} onChange={(e) => setForm({ ...form, variant_group: e.target.value })}
+              placeholder="留空表示不參與 A/B" className="flex-1 bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-sm text-white/80" />
           </div>
-
-          {/* 排程 */}
           <div className="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-3">
             <label className="text-sm text-white/50 sm:w-20 sm:pt-1.5 shrink-0">排程開始</label>
-            <input
-              type="datetime-local"
-              value={form.scheduled_start?.slice(0, 16) ?? ''}
+            <input type="datetime-local" value={form.scheduled_start?.slice(0, 16) ?? ''}
               onChange={(e) => setForm({ ...form, scheduled_start: e.target.value ? new Date(e.target.value).toISOString() : null })}
-              className="flex-1 bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-sm text-white/80"
-            />
+              className="flex-1 bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-sm text-white/80" />
           </div>
           <div className="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-3">
             <label className="text-sm text-white/50 sm:w-20 sm:pt-1.5 shrink-0">排程結束</label>
-            <input
-              type="datetime-local"
-              value={form.scheduled_end?.slice(0, 16) ?? ''}
+            <input type="datetime-local" value={form.scheduled_end?.slice(0, 16) ?? ''}
               onChange={(e) => setForm({ ...form, scheduled_end: e.target.value ? new Date(e.target.value).toISOString() : null })}
-              className="flex-1 bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-sm text-white/80"
-            />
+              className="flex-1 bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-sm text-white/80" />
           </div>
         </div>
       )}
 
+      {/* Basic settings - read-only */}
       {activeTab === 'basic' && !editing && (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
           {fields.map((f) => (
@@ -528,114 +368,294 @@ function SurveyEditor({
               <span className="text-white/70">{String(survey[f.key]).slice(0, 60)}{String(survey[f.key]).length > 60 ? '...' : ''}</span>
             </div>
           ))}
-          <div>
-            <span className="text-white/40">A/B 群組：</span>
-            <span className="text-white/70">{survey.variant_group ?? '—'}</span>
-          </div>
-          <div>
-            <span className="text-white/40">排程開始：</span>
-            <span className="text-white/70">{survey.scheduled_start ? new Date(survey.scheduled_start).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' }) : '—'}</span>
-          </div>
-          <div>
-            <span className="text-white/40">排程結束：</span>
-            <span className="text-white/70">{survey.scheduled_end ? new Date(survey.scheduled_end).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' }) : '—'}</span>
-          </div>
+          <div><span className="text-white/40">A/B 群組：</span><span className="text-white/70">{survey.variant_group ?? '—'}</span></div>
+          <div><span className="text-white/40">排程開始：</span><span className="text-white/70">{survey.scheduled_start ? new Date(survey.scheduled_start).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' }) : '—'}</span></div>
+          <div><span className="text-white/40">排程結束：</span><span className="text-white/70">{survey.scheduled_end ? new Date(survey.scheduled_end).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' }) : '—'}</span></div>
         </div>
       )}
 
+      {/* Branching tab */}
       {activeTab === 'branching' && (
+        <BranchingPanel survey={survey} questions={questions} onUpdate={onUpdate} onReloadQuestions={onReloadQuestions} />
+      )}
+    </div>
+  )
+}
+
+// ===== Branching Panel (sub-tabs: 主題目 / 分流B / 分流C / ...) =====
+
+const ROUTE_COLORS: Record<string, { bg: string; text: string; border: string }> = {
+  main: { bg: 'bg-cyan-500/20', text: 'text-cyan-300', border: 'border-cyan-400/30' },
+  B: { bg: 'bg-yellow-500/20', text: 'text-yellow-400', border: 'border-yellow-500/30' },
+  C: { bg: 'bg-orange-500/20', text: 'text-orange-400', border: 'border-orange-500/30' },
+  D: { bg: 'bg-pink-500/20', text: 'text-pink-400', border: 'border-pink-500/30' },
+  E: { bg: 'bg-violet-500/20', text: 'text-violet-400', border: 'border-violet-500/30' },
+}
+
+function BranchingPanel({
+  survey,
+  questions,
+  onUpdate,
+  onReloadQuestions,
+}: {
+  survey: SurveyRow
+  questions: QuestionRow[]
+  onUpdate: (s: SurveyRow) => void
+  onReloadQuestions: () => void
+}) {
+  // Derive existing branch routes from questions
+  const existingBranchRoutes = Array.from(
+    new Set(questions.filter((q) => q.route && q.route !== 'all' && q.route !== 'A').map((q) => q.route!))
+  ).sort()
+
+  const [branchNames, setBranchNames] = useState<Record<string, string>>(() => {
+    const names: Record<string, string> = {}
+    for (const r of existingBranchRoutes) names[r] = `分流 ${r}`
+    return names
+  })
+  const [activeSubTab, setActiveSubTab] = useState<'main' | string>('main')
+  const [branchSaving, setBranchSaving] = useState(false)
+  const [branchError, setBranchError] = useState('')
+  const [branchSuccess, setBranchSuccess] = useState('')
+  const [routeChanges, setRouteChanges] = useState<Record<string, string>>({})
+
+  // Branch config state
+  const savedConfig = normalizeBranchConfig(survey.branch_config)
+  const [branchQuestionKey, setBranchQuestionKey] = useState(savedConfig?.branchKey ?? '')
+  const [answerRoutes, setAnswerRoutes] = useState<Record<string, string>>(() => {
+    if (!savedConfig) return {}
+    const map: Record<string, string> = {}
+    for (const [route, values] of Object.entries(savedConfig.routes)) {
+      for (const v of values) map[v] = route
+    }
+    return map
+  })
+  const [branchDirty, setBranchDirty] = useState(false)
+  const [editingName, setEditingName] = useState<string | null>(null)
+
+  // Questions grouped by route
+  const mainQuestions = questions.filter((q) => q.route === 'all' || q.route === 'A' || !q.route)
+  const branchQuestions = (route: string) => questions.filter((q) => q.route === route)
+  const branchableQuestions = questions.filter((q) => q.type !== 'text' && (q.route === 'all' || !q.route) && q.options.length > 0)
+  const selectedBranchQuestion = branchableQuestions.find((q) => q.key === branchQuestionKey) ?? null
+
+  // All route keys used in the system
+  const allRoutes = existingBranchRoutes.length > 0 ? existingBranchRoutes : []
+
+  const handleQuestionRouteChange = async (questionId: string, newRoute: string) => {
+    setRouteChanges((prev) => ({ ...prev, [questionId]: newRoute }))
+    await fetch(`/api/admin/questions/${questionId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ route: newRoute }),
+    })
+    onReloadQuestions()
+  }
+
+  const handleSaveBranchConfig = async () => {
+    if (!branchQuestionKey) { setBranchError('請先選擇分流題目'); return }
+    if (!selectedBranchQuestion) { setBranchError('找不到分流題目'); return }
+    if (!confirm(`確定要儲存分流設定嗎？\n分流題：${branchQuestionKey}\n這會影響前台問卷的分流邏輯。`)) return
+
+    const routes: Record<string, string[]> = { A: [] }
+    for (const r of allRoutes) routes[r] = []
+
+    for (const option of selectedBranchQuestion.options) {
+      const route = answerRoutes[option.value] ?? 'A'
+      if (!routes[route]) routes[route] = []
+      routes[route].push(option.value)
+    }
+
+    setBranchSaving(true); setBranchError('')
+    try {
+      const res = await fetch(`/api/admin/surveys/${survey.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ branch_config: { branchKey: branchQuestionKey, routes } }),
+      })
+      if (!res.ok) { setBranchError('儲存失敗'); return }
+      const updated = (await res.json()) as SurveyRow
+      onUpdate(updated)
+      setBranchDirty(false)
+      setBranchSuccess('分流設定已儲存')
+      setTimeout(() => setBranchSuccess(''), 3000)
+    } catch { setBranchError('儲存失敗') }
+    finally { setBranchSaving(false) }
+  }
+
+  const getColor = (route: string) => ROUTE_COLORS[route] ?? ROUTE_COLORS.main
+
+  return (
+    <div className="space-y-4">
+      {/* Sub-tabs: 主題目, 分流B, 分流C, ... */}
+      <div className="flex flex-wrap items-center gap-2">
+        <button type="button" onClick={() => setActiveSubTab('main')}
+          className={`px-3 py-1.5 rounded-lg text-sm transition-colors cursor-pointer ${
+            activeSubTab === 'main'
+              ? `${ROUTE_COLORS.main.bg} ${ROUTE_COLORS.main.text} border ${ROUTE_COLORS.main.border}`
+              : 'bg-slate-800 text-slate-400 border border-slate-700 hover:text-white'
+          }`}>
+          主題目（{mainQuestions.length} 題）
+        </button>
+        {allRoutes.map((route) => {
+          const color = getColor(route)
+          const count = branchQuestions(route).length
+          const isActive = activeSubTab === route
+          return (
+            <div key={route} className="flex items-center gap-0">
+              {editingName === route ? (
+                <input type="text" autoFocus
+                  value={branchNames[route] ?? `分流 ${route}`}
+                  onChange={(e) => setBranchNames((prev) => ({ ...prev, [route]: e.target.value }))}
+                  onBlur={() => setEditingName(null)}
+                  onKeyDown={(e) => { if (e.key === 'Enter') setEditingName(null) }}
+                  className="bg-slate-800 border border-slate-600 rounded-lg px-2 py-1 text-sm text-white/80 w-28" />
+              ) : (
+                <button type="button" onClick={() => setActiveSubTab(route)}
+                  onDoubleClick={() => setEditingName(route)}
+                  className={`px-3 py-1.5 rounded-lg text-sm transition-colors cursor-pointer ${
+                    isActive ? `${color.bg} ${color.text} border ${color.border}` : 'bg-slate-800 text-slate-400 border border-slate-700 hover:text-white'
+                  }`}
+                  title="雙擊可改名">
+                  {branchNames[route] ?? `分流 ${route}`}（{count} 題）
+                </button>
+              )}
+            </div>
+          )
+        })}
+      </div>
+
+      {/* ===== 主題目 sub-tab ===== */}
+      {activeSubTab === 'main' && (
         <div className="space-y-4">
-          {(() => {
-            const saved = normalizeBranchConfig(survey.branch_config)
-            if (saved) {
-              const bCount = saved.routes?.B?.length ?? 0
-              const cCount = saved.routes?.C?.length ?? 0
-              return (
-                <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-3 text-sm">
-                  <p className="text-white/60 mb-1">目前已儲存的分流設定：</p>
-                  <p className="text-white/80">
-                    分流題：<span className="text-cyan-300 font-mono">{saved.branchKey}</span>
-                    {' · '}
-                    原始問卷 (A)：{saved.routes?.A?.length ?? 0} 個選項
-                    {bCount > 0 && <>{' · '}<span className="text-yellow-400">分流 B：{bCount} 個選項</span></>}
-                    {cCount > 0 && <>{' · '}<span className="text-orange-400">分流 C：{cCount} 個選項</span></>}
-                  </p>
-                </div>
-              )
-            }
-            return <p className="text-sm text-yellow-400/80">⚠️ 尚未設定分流規則</p>
-          })()}
+          {/* Branch question selector + answer mapping */}
+          <div className="bg-slate-800/40 border border-slate-700 rounded-xl p-4 space-y-3">
+            <h3 className="text-sm font-medium text-white/70">分流規則設定</h3>
 
-          <p className="text-sm text-white/60">
-            設定同一套問卷中，分流題目各答案要走哪個分流。
-          </p>
+            <div className="grid grid-cols-1 sm:grid-cols-[100px_1fr] gap-2 sm:items-center">
+              <label className="text-xs text-white/50">分流題</label>
+              <select value={branchQuestionKey}
+                onChange={(e) => { setBranchQuestionKey(e.target.value); setBranchDirty(true); setBranchError('') }}
+                className="bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white/80">
+                <option value="">—— 請選擇 ——</option>
+                {branchableQuestions.map((q) => (
+                  <option key={q.id} value={q.key}>{q.key} — {q.content.slice(0, 50)}</option>
+                ))}
+              </select>
+            </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-[120px_1fr] gap-2 sm:items-center">
-            <label className="text-sm text-white/50">分流題目</label>
-            <select
-              value={branchQuestionKey}
-              onChange={(e) => handleBranchQuestionChange(e.target.value)}
-              className="bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white/80"
-            >
-              {branchableQuestions.length === 0 && <option value="">無可用題目</option>}
-              {branchableQuestions.map((q) => (
-                <option key={q.id} value={q.key}>
-                  {q.key} - {q.content.slice(0, 50)}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {selectedBranchQuestion && (
-            <div className="space-y-2">
-              <p className="text-sm text-white/70">答案分流對應</p>
+            {selectedBranchQuestion && (
               <div className="space-y-2">
+                <p className="text-xs text-white/50">各答案對應分流：</p>
                 {selectedBranchQuestion.options.map((option) => (
-                  <div
-                    key={option.value}
-                    className="grid grid-cols-1 sm:grid-cols-[1fr_180px] gap-2 sm:items-center bg-slate-800/50 border border-slate-700 rounded-lg p-3"
-                  >
-                    <div className="text-sm text-white/80">{option.label}</div>
-                    <select
-                      value={answerRoutes[option.value] ?? 'A'}
+                  <div key={option.value}
+                    className="grid grid-cols-1 sm:grid-cols-[1fr_160px] gap-2 sm:items-center bg-slate-900/40 border border-slate-700 rounded-lg p-2.5">
+                    <span className="text-sm text-white/80">{option.label}</span>
+                    <select value={answerRoutes[option.value] ?? 'A'}
                       onChange={(e) => {
-                        const route = e.target.value as 'A' | 'B' | 'C'
-                        setAnswerRoutes((prev) => ({ ...prev, [option.value]: route }))
+                        setAnswerRoutes((prev) => ({ ...prev, [option.value]: e.target.value }))
                         setBranchDirty(true)
                       }}
-                      className="bg-slate-900 border border-slate-600 rounded px-2 py-1.5 text-sm text-white/80"
-                    >
-                      <option value="A">原始問卷 (A)</option>
-                      <option value="B">分流 B</option>
-                      <option value="C">分流 C</option>
+                      className="bg-slate-800 border border-slate-600 rounded px-2 py-1.5 text-sm text-white/80">
+                      <option value="A">原始問卷</option>
+                      {allRoutes.map((r) => (
+                        <option key={r} value={r}>{branchNames[r] ?? `分流 ${r}`}</option>
+                      ))}
                     </select>
                   </div>
                 ))}
               </div>
+            )}
+
+            {branchError && <p className="text-sm text-red-400">{branchError}</p>}
+            {branchSuccess && <p className="text-sm text-emerald-400">{branchSuccess}</p>}
+
+            <div className="flex items-center gap-3">
+              <button type="button" onClick={handleSaveBranchConfig}
+                disabled={branchSaving || !branchDirty}
+                className="px-4 py-2 bg-cyan-600 hover:bg-cyan-500 disabled:opacity-50 text-white rounded-lg text-sm transition-colors cursor-pointer">
+                {branchSaving ? '儲存中...' : '儲存分流規則'}
+              </button>
+              {branchDirty ? <span className="text-xs text-yellow-400">有未儲存的變更</span>
+                : <span className="text-xs text-white/30">尚未修改</span>}
             </div>
-          )}
+          </div>
 
-          {branchError && (
-            <p className="text-sm text-red-400">{branchError}</p>
-          )}
-          {branchSuccess && (
-            <p className="text-sm text-emerald-400">{branchSuccess}</p>
-          )}
-
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={handleSaveBranching}
-              disabled={branchSaving || branchableQuestions.length === 0 || !branchDirty}
-              className="px-4 py-2 bg-cyan-600 hover:bg-cyan-500 disabled:opacity-50 text-white rounded-lg text-sm transition-colors cursor-pointer"
-            >
-              {branchSaving ? '儲存中...' : '儲存分流設定'}
-            </button>
-            {!branchDirty && <span className="text-xs text-white/30">尚未修改</span>}
-            {branchDirty && <span className="text-xs text-yellow-400">有未儲存的變更</span>}
+          {/* Main questions list */}
+          <div className="space-y-2">
+            <h3 className="text-sm font-medium text-white/60">主題目 + 共用題（route: all / A）</h3>
+            {mainQuestions.map((q) => (
+              <BranchQuestionCard key={q.id} question={q} allRoutes={allRoutes} branchNames={branchNames}
+                pendingRoute={routeChanges[q.id]} onRouteChange={handleQuestionRouteChange} />
+            ))}
           </div>
         </div>
       )}
+
+      {/* ===== Branch sub-tabs ===== */}
+      {allRoutes.includes(activeSubTab) && (
+        <div className="space-y-2">
+          <h3 className="text-sm font-medium" style={{ color: getColor(activeSubTab).text.replace('text-', '') }}>
+            <span className={getColor(activeSubTab).text}>
+              {branchNames[activeSubTab] ?? `分流 ${activeSubTab}`}
+            </span>
+            <span className="text-white/40 ml-2">（{branchQuestions(activeSubTab).length} 題）</span>
+          </h3>
+          <p className="text-xs text-white/40">這些題目只會出現在此分流。可透過下拉將題目移到其他分流或主題目。</p>
+          {branchQuestions(activeSubTab).length === 0 ? (
+            <p className="text-sm text-white/30 py-4 text-center">此分流尚無題目</p>
+          ) : (
+            branchQuestions(activeSubTab).map((q) => (
+              <BranchQuestionCard key={q.id} question={q} allRoutes={allRoutes} branchNames={branchNames}
+                pendingRoute={routeChanges[q.id]} onRouteChange={handleQuestionRouteChange} />
+            ))
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function BranchQuestionCard({
+  question,
+  allRoutes,
+  branchNames,
+  pendingRoute,
+  onRouteChange,
+}: {
+  question: QuestionRow
+  allRoutes: string[]
+  branchNames: Record<string, string>
+  pendingRoute?: string
+  onRouteChange: (id: string, route: string) => void
+}) {
+  const currentRoute = pendingRoute ?? question.route ?? 'all'
+  return (
+    <div className="bg-slate-900/60 border border-slate-800 rounded-xl p-3 flex items-start justify-between gap-3">
+      <div className="flex-1 space-y-0.5">
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-white/30 font-mono">{question.key}</span>
+          <span className={`text-xs px-1.5 py-0.5 rounded ${
+            question.type === 'single' ? 'bg-blue-500/20 text-blue-400'
+            : question.type === 'multiple' ? 'bg-purple-500/20 text-purple-400'
+            : 'bg-emerald-500/20 text-emerald-400'
+          }`}>{question.type}</span>
+          {question.is_required && <span className="text-xs text-red-400/60">必填</span>}
+        </div>
+        <p className="text-sm text-white/80">{question.content}</p>
+        {question.options.length > 0 && (
+          <p className="text-xs text-white/40">選項：{question.options.map((o) => o.label).join('、')}</p>
+        )}
+      </div>
+      <select value={currentRoute}
+        onChange={(e) => onRouteChange(question.id, e.target.value)}
+        className="bg-slate-800 border border-slate-600 rounded px-2 py-1 text-xs text-white/70 shrink-0 w-28">
+        <option value="all">共用</option>
+        <option value="A">原始 (A)</option>
+        {allRoutes.map((r) => (
+          <option key={r} value={r}>{branchNames[r] ?? `分流 ${r}`}</option>
+        ))}
+      </select>
     </div>
   )
 }
@@ -647,25 +667,10 @@ function normalizeBranchConfig(raw: BranchConfig | string | null | undefined): B
       const parsed = JSON.parse(raw) as BranchConfig
       if (parsed?.branchKey && parsed?.routes) return parsed
       return null
-    } catch {
-      return null
-    }
+    } catch { return null }
   }
   if (raw.branchKey && raw.routes) return raw
   return null
-}
-
-function getRouteByAnswerValue(
-  config: BranchConfig | null | undefined,
-  answerValue: string,
-  answerLabel?: string
-): 'A' | 'B' | 'C' {
-  const inB = config?.routes?.B?.includes(answerValue) || (answerLabel ? config?.routes?.B?.includes(answerLabel) : false)
-  const inC = config?.routes?.C?.includes(answerValue) || (answerLabel ? config?.routes?.C?.includes(answerLabel) : false)
-
-  if (inB) return 'B'
-  if (inC) return 'C'
-  return 'A'
 }
 
 // ===== QuestionList =====
