@@ -265,7 +265,7 @@ export async function generateSummary(): Promise<string> {
 
   const lines: string[] = []
   lines.push(`📊 毛行天下問卷摘要報告`)
-  lines.push(`產出時間：${new Date().toLocaleString('zh-TW')}`)
+  lines.push(`產出時間：${new Date().toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' })}`)
   lines.push('')
   lines.push(`📋 基本數據`)
   lines.push(`• 總填寫數：${stats.totalResponses} 份`)

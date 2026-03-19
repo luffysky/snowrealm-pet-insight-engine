@@ -286,11 +286,11 @@ function SurveyEditor({
           </div>
           <div>
             <span className="text-white/40">排程開始：</span>
-            <span className="text-white/70">{survey.scheduled_start ? new Date(survey.scheduled_start).toLocaleString('zh-TW') : '—'}</span>
+            <span className="text-white/70">{survey.scheduled_start ? new Date(survey.scheduled_start).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' }) : '—'}</span>
           </div>
           <div>
             <span className="text-white/40">排程結束：</span>
-            <span className="text-white/70">{survey.scheduled_end ? new Date(survey.scheduled_end).toLocaleString('zh-TW') : '—'}</span>
+            <span className="text-white/70">{survey.scheduled_end ? new Date(survey.scheduled_end).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' }) : '—'}</span>
           </div>
         </div>
       )}

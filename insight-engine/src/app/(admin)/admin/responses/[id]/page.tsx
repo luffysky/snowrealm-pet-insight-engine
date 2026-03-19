@@ -48,14 +48,14 @@ export default async function ResponseDetailPage({
             <p className="text-slate-400">提交時間</p>
             <p className="text-white">
               {detail.submittedAt
-                ? new Date(detail.submittedAt).toLocaleString('zh-TW')
+                ? new Date(detail.submittedAt).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' })
                 : '-'}
             </p>
           </div>
           <div>
             <p className="text-slate-400">建立時間</p>
             <p className="text-white">
-              {new Date(detail.createdAt).toLocaleString('zh-TW')}
+              {new Date(detail.createdAt).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' })}
             </p>
           </div>
         </div>
