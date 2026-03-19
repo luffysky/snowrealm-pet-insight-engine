@@ -42,6 +42,12 @@ export function ResponseTable({
               <th className="text-left px-4 sm:px-6 py-3 text-slate-400 font-medium whitespace-nowrap">
                 標籤
               </th>
+              <th className="text-center px-4 sm:px-6 py-3 text-slate-400 font-medium whitespace-nowrap">
+                LINE
+              </th>
+              <th className="text-center px-4 sm:px-6 py-3 text-slate-400 font-medium whitespace-nowrap">
+                IG
+              </th>
               <th className="text-right px-4 sm:px-6 py-3 text-slate-400 font-medium whitespace-nowrap">
                 操作
               </th>
@@ -78,6 +84,16 @@ export function ResponseTable({
                       </span>
                     )}
                   </div>
+                </td>
+                <td className="px-4 sm:px-6 py-3 text-center">
+                  {response.clickEvents?.some((e) => e.eventType === 'line_friend')
+                    ? <span className="text-green-400">✓</span>
+                    : <span className="text-slate-600">-</span>}
+                </td>
+                <td className="px-4 sm:px-6 py-3 text-center">
+                  {response.clickEvents?.some((e) => e.eventType === 'instagram')
+                    ? <span className="text-purple-400">✓</span>
+                    : <span className="text-slate-600">-</span>}
                 </td>
                 <td className="px-4 sm:px-6 py-3 text-right">
                   <Link

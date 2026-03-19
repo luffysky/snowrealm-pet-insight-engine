@@ -412,22 +412,41 @@ export async function getResponseList(
   if (responses.length === 0) return { data: [], total: 0, page, pageSize }
 
   const responseIds = responses.map((r) => r.id)
-  const tagRows = await query<{
-    response_id: string
-    tag_key: string
-    tag_value: string
-  }>(
-    `SELECT response_id, tag_key, tag_value
-     FROM user_tags
-     WHERE response_id = ANY($1)`,
-    [responseIds]
-  )
+  const [tagRows, clickRows] = await Promise.all([
+    query<{
+      response_id: string
+      tag_key: string
+      tag_value: string
+    }>(
+      `SELECT response_id, tag_key, tag_value
+       FROM user_tags
+       WHERE response_id = ANY($1)`,
+      [responseIds]
+    ),
+    query<{
+      response_id: string
+      event_type: string
+      clicked_at: string
+    }>(
+      `SELECT response_id, event_type, clicked_at
+       FROM click_events
+       WHERE response_id = ANY($1)`,
+      [responseIds]
+    ),
+  ])
 
   const tagMap = new Map<string, { key: string; value: string }[]>()
   for (const tag of tagRows) {
     const existing = tagMap.get(tag.response_id) ?? []
     existing.push({ key: tag.tag_key, value: tag.tag_value })
     tagMap.set(tag.response_id, existing)
+  }
+
+  const clickMap = new Map<string, { eventType: string; clickedAt: string }[]>()
+  for (const c of clickRows) {
+    const existing = clickMap.get(c.response_id) ?? []
+    existing.push({ eventType: c.event_type, clickedAt: c.clicked_at })
+    clickMap.set(c.response_id, existing)
   }
 
   const items: ResponseListItem[] = responses.map((r) => ({
@@ -438,6 +457,7 @@ export async function getResponseList(
     submittedAt: r.submitted_at,
     createdAt: r.created_at,
     tags: tagMap.get(r.id) ?? [],
+    clickEvents: clickMap.get(r.id) ?? [],
   }))
 
   return { data: items, total: parseInt(totalRow?.count ?? '0', 10), page, pageSize }
@@ -462,13 +482,17 @@ export async function getResponseDetail(
 
   if (!response) return null
 
-  const [answerRows, tagRows] = await Promise.all([
+  const [answerRows, tagRows, clickRows] = await Promise.all([
     query<{ question_key: string; value: string | string[] }>(
       'SELECT question_key, value FROM answers WHERE response_id = $1',
       [responseId]
     ),
     query<{ tag_key: string; tag_value: string }>(
       'SELECT tag_key, tag_value FROM user_tags WHERE response_id = $1',
+      [responseId]
+    ),
+    query<{ event_type: string; clicked_at: string }>(
+      'SELECT event_type, clicked_at FROM click_events WHERE response_id = $1',
       [responseId]
     ),
   ])
@@ -489,6 +513,10 @@ export async function getResponseDetail(
     tags: tagRows.map((t) => ({
       key: t.tag_key,
       value: t.tag_value,
+    })),
+    clickEvents: clickRows.map((c) => ({
+      eventType: c.event_type,
+      clickedAt: c.clicked_at,
     })),
     answers: answerRows.map((a) => ({
       questionKey: a.question_key,

@@ -182,6 +182,11 @@ export function useSurveyFlow({
         throw new Error(errorData.error ?? '提交失敗')
       }
 
+      const result = await response.json()
+      if (result.responseId) {
+        sessionStorage.setItem('lastResponseId', result.responseId)
+      }
+
       setIsCompleted(true)
     } catch (error) {
       setSubmitError(

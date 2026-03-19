@@ -50,6 +50,7 @@ export interface ResponseListItem {
   submittedAt: string | null
   createdAt: string
   tags: UserTag[]
+  clickEvents: { eventType: string; clickedAt: string }[]
 }
 
 /** 填答詳情 */
