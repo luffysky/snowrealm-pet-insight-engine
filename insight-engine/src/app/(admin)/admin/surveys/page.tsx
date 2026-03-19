@@ -499,14 +499,13 @@ function QuestionList({
                         最多 {q.max_selections} 個
                       </span>
                     )}
-                    {q.route && q.route !== 'all' && (
+                    {(q.route === 'B' || q.route === 'C') && (
                       <span className={`text-xs px-1.5 py-0.5 rounded font-mono ${
-                        q.route === 'A' ? 'bg-green-500/20 text-green-400'
-                        : q.route === 'B' ? 'bg-yellow-500/20 text-yellow-400'
+                        q.route === 'B' ? 'bg-yellow-500/20 text-yellow-400'
                         : q.route === 'C' ? 'bg-orange-500/20 text-orange-400'
                         : 'bg-slate-500/20 text-slate-400'
                       }`}>
-                        {q.route} 路線
+                        分流 {q.route}
                       </span>
                     )}
                   </div>
@@ -787,7 +786,7 @@ function QuestionFormFields({
           className="bg-slate-800 border border-slate-700 rounded px-2 py-1 text-sm text-white/80 w-32"
         >
           <option value="all">所有人 (all)</option>
-          <option value="A">A 路線</option>
+          <option value="A">原始問卷 (A)</option>
           <option value="B">B 路線</option>
           <option value="C">C 路線</option>
         </select>
