@@ -18,7 +18,7 @@ interface SurveyRow {
   variant_group: string | null
   scheduled_start: string | null
   scheduled_end: string | null
-  branch_config: BranchConfig | null
+  branch_config: BranchConfig | string | null
 }
 
 interface QuestionRow {
@@ -234,7 +234,7 @@ function SurveyEditor({
 
   useEffect(() => {
     const candidates = questions.filter((q) => q.type !== 'text' && q.options.length > 0)
-    const surveyConfig = survey.branch_config
+    const surveyConfig = normalizeBranchConfig(survey.branch_config)
     const fallbackKey = candidates[0]?.key ?? ''
     const nextBranchKey = surveyConfig?.branchKey ?? fallbackKey
 
@@ -243,7 +243,8 @@ function SurveyEditor({
 
     const nextAnswerRoutes: Record<string, 'A' | 'B' | 'C'> = {}
     for (const value of optionValues) {
-      const route = getRouteByAnswerValue(surveyConfig, value)
+      const optionLabel = selectedQuestion?.options.find((opt) => opt.value === value)?.label ?? ''
+      const route = getRouteByAnswerValue(surveyConfig, value, optionLabel)
       nextAnswerRoutes[value] = route
     }
 
@@ -308,7 +309,7 @@ function SurveyEditor({
 
     const nextMap: Record<string, 'A' | 'B' | 'C'> = {}
     for (const option of nextQuestion.options) {
-      nextMap[option.value] = getRouteByAnswerValue(currentConfig, option.value)
+      nextMap[option.value] = getRouteByAnswerValue(currentConfig, option.value, option.label)
     }
     setAnswerRoutes(nextMap)
   }
@@ -601,9 +602,31 @@ function SurveyEditor({
   )
 }
 
-function getRouteByAnswerValue(config: BranchConfig | null | undefined, answerValue: string): 'A' | 'B' | 'C' {
-  if (config?.routes?.B?.includes(answerValue)) return 'B'
-  if (config?.routes?.C?.includes(answerValue)) return 'C'
+function normalizeBranchConfig(raw: BranchConfig | string | null | undefined): BranchConfig | null {
+  if (!raw) return null
+  if (typeof raw === 'string') {
+    try {
+      const parsed = JSON.parse(raw) as BranchConfig
+      if (parsed?.branchKey && parsed?.routes) return parsed
+      return null
+    } catch {
+      return null
+    }
+  }
+  if (raw.branchKey && raw.routes) return raw
+  return null
+}
+
+function getRouteByAnswerValue(
+  config: BranchConfig | null | undefined,
+  answerValue: string,
+  answerLabel?: string
+): 'A' | 'B' | 'C' {
+  const inB = config?.routes?.B?.includes(answerValue) || (answerLabel ? config?.routes?.B?.includes(answerLabel) : false)
+  const inC = config?.routes?.C?.includes(answerValue) || (answerLabel ? config?.routes?.C?.includes(answerLabel) : false)
+
+  if (inB) return 'B'
+  if (inC) return 'C'
   return 'A'
 }
 
