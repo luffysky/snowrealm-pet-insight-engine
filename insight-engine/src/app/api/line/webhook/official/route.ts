@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import crypto from 'crypto'
+import { execute } from '@/lib/db'
 
 const CHANNEL_SECRET = process.env.LINE_OFFICIAL_CHANNEL_SECRET ?? ''
 const CHANNEL_ACCESS_TOKEN = process.env.LINE_OFFICIAL_CHANNEL_ACCESS_TOKEN ?? ''
@@ -49,13 +50,36 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     }
 
     if (event.type === 'follow') {
+      const userId = event.source?.userId as string | undefined
       const replyToken = event.replyToken as string
+
+      // 記錄 LINE 好友到 line_users（供推播用）
+      if (userId) {
+        const displayName = await getLineProfile(userId)
+        await execute(
+          `INSERT INTO line_users (line_user_id, display_name)
+           VALUES ($1, $2)
+           ON CONFLICT (line_user_id) DO UPDATE SET display_name = COALESCE($2, line_users.display_name)`,
+          [userId, displayName]
+        )
+      }
+
       await replyMessage(replyToken, [
         {
           type: 'text',
           text: '🐾 歡迎來到毛行天下！\n\n我們正在打造一個留下寵物足跡的平台。\n\n輸入「問卷」即可填寫，幫我們更了解你的需求 💛',
         },
       ])
+    }
+
+    if (event.type === 'unfollow') {
+      const userId = event.source?.userId as string | undefined
+      if (userId) {
+        await execute(
+          'DELETE FROM line_users WHERE line_user_id = $1',
+          [userId]
+        )
+      }
     }
   }
 
@@ -184,5 +208,22 @@ async function replyMessage(
     }
   } catch (err) {
     console.error('[LINE Official Reply] Error:', err)
+  }
+}
+
+// ----- 取得 LINE 使用者 Profile -----
+
+async function getLineProfile(userId: string): Promise<string | null> {
+  if (!CHANNEL_ACCESS_TOKEN) return null
+  try {
+    const res = await fetch(`https://api.line.me/v2/bot/profile/${userId}`, {
+      headers: { Authorization: `Bearer ${CHANNEL_ACCESS_TOKEN}` },
+      signal: AbortSignal.timeout(5000),
+    })
+    if (!res.ok) return null
+    const data = await res.json() as { displayName?: string }
+    return data.displayName ?? null
+  } catch {
+    return null
   }
 }

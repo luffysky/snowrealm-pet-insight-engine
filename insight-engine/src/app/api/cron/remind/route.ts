@@ -12,10 +12,11 @@ const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL ?? ''
  */
 export async function GET(): Promise<NextResponse> {
   const rows = await query<{ line_user_id: string; display_name: string | null; survey_slug: string }>(
-    `SELECT l.line_user_id, l.display_name, r.survey_slug
+    `SELECT l.line_user_id, l.display_name, s.slug AS survey_slug
      FROM responses r
      JOIN line_users l ON l.response_id = r.id
-     WHERE r.status = 'started'
+     JOIN surveys s ON s.id = r.survey_id
+     WHERE r.status = 'in_progress'
        AND r.updated_at < NOW() - INTERVAL '1 day'
      LIMIT 100`
   )
