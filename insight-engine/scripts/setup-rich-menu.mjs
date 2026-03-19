@@ -7,7 +7,7 @@
  *   Row 2: 🌐 官網    | 📢 最新消息 | 💬 聯絡我們
  */
 
-import { deflateSync } from 'node:zlib'
+import sharp from 'sharp'
 
 const TOKEN = process.env.LINE_OFFICIAL_CHANNEL_ACCESS_TOKEN
 if (!TOKEN) {
@@ -58,7 +58,7 @@ async function main() {
       // Row 2
       {
         bounds: { x: 0, y: rowH, width: colW, height: 1686 - rowH },
-        action: { type: 'message', label: '官網', text: '官網' },
+        action: { type: 'uri', label: '官網', uri: 'https://snowrealm.pet' },
       },
       {
         bounds: { x: colW, y: rowH, width: colW, height: 1686 - rowH },
@@ -88,7 +88,7 @@ async function main() {
 
   // Step 2: 產生並上傳 Rich Menu 圖片 (6 格品牌色)
   console.log('🖼️  Step 2: 產生並上傳 Rich Menu 圖片...')
-  const imageBuffer = createRichMenuPng(2500, 1686)
+  const imageBuffer = await createRichMenuPng(2500, 1686)
 
   const uploadRes = await fetch(
     `https://api-data.line.me/v2/bot/richmenu/${richMenuId}/content`,
@@ -131,101 +131,64 @@ async function main() {
   console.log('\n🎉 完成！所有 LINE 好友開啟聊天室都會看到選單')
 }
 
-// ----- 純 Node.js 產生 PNG（6 格品牌色彩）-----
+// ----- SVG + sharp 產生 PNG（6 格品牌色 + 文字標籤）-----
 
-function createRichMenuPng(width, height) {
+async function createRichMenuPng(width, height) {
   const colW = Math.floor(width / 3)
   const rowH = Math.floor(height / 2)
 
-  // 6 格配色 [R, G, B]
-  // Row 1: 填問卷(cyan-700) | 封測報名(emerald-700) | IG(purple-700)
-  // Row 2: 官網(sky-800) | 最新消息(amber-700) | 聯絡我們(rose-700)
-  const colors = [
-    [[0x0e, 0x79, 0x90], [0x04, 0x7e, 0x57], [0x7e, 0x22, 0xce]],
-    [[0x07, 0x59, 0x85], [0xb4, 0x53, 0x09], [0xbe, 0x12, 0x3c]],
+  // 6 格配置：[背景色, emoji, 標籤]
+  const cells = [
+    // Row 1
+    [{ bg: '#0e7990', emoji: '📋', label: '填問卷' }],
+    [{ bg: '#047e57', emoji: '🎉', label: '封測報名' }],
+    [{ bg: '#7e22ce', emoji: '📸', label: 'Instagram' }],
+    // Row 2
+    [{ bg: '#075985', emoji: '🌐', label: '官網' }],
+    [{ bg: '#b45309', emoji: '📢', label: '最新消息' }],
+    [{ bg: '#be123c', emoji: '💬', label: '聯絡我們' }],
   ]
 
-  const lineColor = [0x1e, 0x29, 0x3b] // slate-800 separator
+  // 建構 SVG
+  const rects = []
+  const texts = []
 
-  const rowSize = 1 + width * 3
-  const rawData = Buffer.alloc(rowSize * height)
+  for (let row = 0; row < 2; row++) {
+    for (let col = 0; col < 3; col++) {
+      const idx = row * 3 + col
+      const cell = cells[idx][0]
+      const x = col * colW
+      const y = row * rowH
+      const w = col === 2 ? width - colW * 2 : colW
+      const h = row === 1 ? height - rowH : rowH
 
-  for (let y = 0; y < height; y++) {
-    const rowOffset = y * rowSize
-    rawData[rowOffset] = 0 // filter: None
-    const row = y < rowH ? 0 : 1
-    const isRowBorder = Math.abs(y - rowH) <= 1
+      rects.push(`<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${cell.bg}" />`)
 
-    for (let x = 0; x < width; x++) {
-      const pixelOffset = rowOffset + 1 + x * 3
-      const col = x < colW ? 0 : x < colW * 2 ? 1 : 2
-      const isColBorder = Math.abs(x - colW) <= 1 || Math.abs(x - colW * 2) <= 1
+      // 分隔線
+      if (col > 0) {
+        rects.push(`<line x1="${col * colW}" y1="${y}" x2="${col * colW}" y2="${y + h}" stroke="#1e293b" stroke-width="3" />`)
+      }
+      if (row > 0) {
+        rects.push(`<line x1="${x}" y1="${rowH}" x2="${x + w}" y2="${rowH}" stroke="#1e293b" stroke-width="3" />`)
+      }
 
-      const c = (isRowBorder || isColBorder) ? lineColor : colors[row][col]
-      rawData[pixelOffset] = c[0]
-      rawData[pixelOffset + 1] = c[1]
-      rawData[pixelOffset + 2] = c[2]
+      const cx = x + w / 2
+      const cy = y + h / 2
+
+      // Emoji（上方）
+      texts.push(`<text x="${cx}" y="${cy - 40}" text-anchor="middle" dominant-baseline="central" font-size="100" fill="white">${cell.emoji}</text>`)
+
+      // 文字標籤（下方）
+      texts.push(`<text x="${cx}" y="${cy + 100}" text-anchor="middle" dominant-baseline="central" font-size="72" font-weight="bold" fill="white" font-family="'Noto Sans TC','Microsoft JhengHei','PingFang TC','Helvetica Neue',sans-serif">${cell.label}</text>`)
     }
   }
 
-  const compressed = deflateSync(rawData)
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
+  ${rects.join('\n  ')}
+  ${texts.join('\n  ')}
+</svg>`
 
-  // 組裝 PNG
-  const chunks = []
-
-  // Signature
-  chunks.push(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]))
-
-  // IHDR
-  const ihdr = Buffer.alloc(13)
-  ihdr.writeUInt32BE(width, 0)
-  ihdr.writeUInt32BE(height, 4)
-  ihdr[8] = 8  // bit depth
-  ihdr[9] = 2  // color type: RGB
-  ihdr[10] = 0 // compression
-  ihdr[11] = 0 // filter
-  ihdr[12] = 0 // interlace
-  chunks.push(pngChunk('IHDR', ihdr))
-
-  // IDAT
-  chunks.push(pngChunk('IDAT', compressed))
-
-  // IEND
-  chunks.push(pngChunk('IEND', Buffer.alloc(0)))
-
-  return Buffer.concat(chunks)
-}
-
-function pngChunk(type, data) {
-  const len = Buffer.alloc(4)
-  len.writeUInt32BE(data.length, 0)
-
-  const typeBuffer = Buffer.from(type, 'ascii')
-  const crcInput = Buffer.concat([typeBuffer, data])
-  const crc = crc32(crcInput)
-
-  const crcBuf = Buffer.alloc(4)
-  crcBuf.writeUInt32BE(crc >>> 0, 0)
-
-  return Buffer.concat([len, typeBuffer, data, crcBuf])
-}
-
-function crc32(buf) {
-  // CRC-32 lookup table
-  const table = new Uint32Array(256)
-  for (let i = 0; i < 256; i++) {
-    let c = i
-    for (let j = 0; j < 8; j++) {
-      c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1)
-    }
-    table[i] = c
-  }
-
-  let crc = 0xFFFFFFFF
-  for (let i = 0; i < buf.length; i++) {
-    crc = table[(crc ^ buf[i]) & 0xFF] ^ (crc >>> 8)
-  }
-  return (crc ^ 0xFFFFFFFF) >>> 0
+  return sharp(Buffer.from(svg)).png().toBuffer()
 }
 
 main().catch(console.error)
