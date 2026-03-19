@@ -121,6 +121,20 @@ export async function listSurveys(): Promise<SurveyRow[]> {
   return query<SurveyRow>(`SELECT * FROM surveys ORDER BY created_at DESC`)
 }
 
+/** 新增問卷 */
+export async function createSurvey(data: {
+  title: string
+  slug: string
+}): Promise<SurveyRow> {
+  const row = await queryOne<SurveyRow>(
+    `INSERT INTO surveys (id, title, slug, status, subtitle, cover_title, cover_subtitle, start_button_text, done_title, done_subtitle)
+     VALUES (gen_random_uuid(), $1, $2, 'draft', '', $1, '', '開始填寫', '感謝您的填寫！', '您的回覆已成功送出')
+     RETURNING *`,
+    [data.title, data.slug]
+  )
+  return row!
+}
+
 /** 依 ID 取得問卷 */
 export async function getSurveyById(id: string): Promise<SurveyRow | null> {
   return queryOne<SurveyRow>(`SELECT * FROM surveys WHERE id = $1`, [id])

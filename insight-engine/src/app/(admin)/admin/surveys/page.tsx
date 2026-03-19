@@ -40,18 +40,28 @@ export default function SurveysAdminPage() {
   const [questions, setQuestions] = useState<QuestionRow[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [showCreate, setShowCreate] = useState(false)
+  const [newTitle, setNewTitle] = useState('')
+  const [newSlug, setNewSlug] = useState('')
+  const [creating, setCreating] = useState(false)
+  const [createError, setCreateError] = useState('')
 
   // Load surveys
+  const loadSurveys = useCallback(async () => {
+    const res = await fetch('/api/admin/surveys')
+    const data = (await res.json()) as SurveyRow[]
+    setSurveys(data)
+    return data
+  }, [])
+
   useEffect(() => {
-    fetch('/api/admin/surveys')
-      .then((r) => r.json())
-      .then((data: SurveyRow[]) => {
-        setSurveys(data)
+    loadSurveys()
+      .then((data) => {
         if (data.length > 0) setSelectedSurvey(data[0])
       })
       .catch(() => setError('無法載入問卷列表'))
       .finally(() => setLoading(false))
-  }, [])
+  }, [loadSurveys])
 
   // Load questions when survey selected
   const loadQuestions = useCallback(async (surveyId: string) => {
@@ -69,10 +79,96 @@ export default function SurveysAdminPage() {
 
   return (
     <div className="space-y-8">
-      <h1 className="text-2xl font-bold text-white/90">問卷管理</h1>
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <h1 className="text-2xl font-bold text-white/90">問卷管理</h1>
+        <button
+          type="button"
+          onClick={() => { setShowCreate(true); setCreateError('') }}
+          className="px-4 py-2 bg-cyan-600 hover:bg-cyan-500 text-white rounded-lg text-sm transition-colors cursor-pointer"
+        >
+          ＋ 新增問卷
+        </button>
+      </div>
 
-      {/* Survey selector */}
-      {surveys.length > 1 && (
+      {/* Create survey form */}
+      {showCreate && (
+        <div className="bg-slate-800 border border-slate-700 rounded-xl p-6 space-y-4">
+          <h2 className="text-lg font-semibold text-white/90">建立新問卷</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm text-slate-400 mb-1">問卷標題</label>
+              <input
+                type="text"
+                value={newTitle}
+                onChange={(e) => setNewTitle(e.target.value)}
+                placeholder="例：2025 寵物生活調查"
+                className="w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded-lg text-white text-sm"
+              />
+            </div>
+            <div>
+              <label className="block text-sm text-slate-400 mb-1">Slug（網址路徑）</label>
+              <input
+                type="text"
+                value={newSlug}
+                onChange={(e) => setNewSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
+                placeholder="例：pet-life-2025"
+                className="w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded-lg text-white text-sm"
+              />
+            </div>
+          </div>
+          {createError && <p className="text-red-400 text-sm">{createError}</p>}
+          <div className="flex gap-3">
+            <button
+              type="button"
+              disabled={creating}
+              onClick={async () => {
+                if (!newTitle.trim() || !newSlug.trim()) {
+                  setCreateError('標題和 slug 為必填')
+                  return
+                }
+                setCreating(true)
+                setCreateError('')
+                try {
+                  const res = await fetch('/api/admin/surveys', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ title: newTitle.trim(), slug: newSlug.trim() }),
+                  })
+                  if (!res.ok) {
+                    const data = await res.json()
+                    setCreateError(data.error || '建立失敗')
+                    return
+                  }
+                  const created = (await res.json()) as SurveyRow
+                  const updated = await loadSurveys()
+                  const found = updated.find((s) => s.id === created.id)
+                  setSelectedSurvey(found ?? created)
+                  setShowCreate(false)
+                  setNewTitle('')
+                  setNewSlug('')
+                } catch {
+                  setCreateError('建立失敗')
+                } finally {
+                  setCreating(false)
+                }
+              }}
+              className="px-4 py-2 bg-cyan-600 hover:bg-cyan-500 disabled:opacity-50 text-white rounded-lg text-sm transition-colors cursor-pointer"
+            >
+              {creating ? '建立中...' : '建立'}
+            </button>
+            <button
+              type="button"
+              onClick={() => { setShowCreate(false); setCreateError('') }}
+              className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded-lg text-sm transition-colors cursor-pointer"
+            >
+              取消
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Survey selector - always show */}
+      {surveys.length > 0 && (
         <div className="flex flex-wrap gap-3">
           {surveys.map((s) => (
             <button
