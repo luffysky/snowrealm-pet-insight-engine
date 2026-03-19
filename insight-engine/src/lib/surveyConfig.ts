@@ -95,7 +95,7 @@ export const MVP_SURVEY: SurveyConfig = {
       type: 'single',
       content: '如果只能選一個，你最想留下的是什麼？',
       isRequired: true,
-      route: 'A',
+      route: 'all',
       options: [
         { label: '牠的照片與影片', value: '牠的照片與影片' },
         { label: '和牠發生過的故事', value: '和牠發生過的故事' },

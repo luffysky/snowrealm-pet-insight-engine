@@ -1,5 +1,14 @@
 const CHANNEL_ACCESS_TOKEN = process.env.LINE_INSIGHT_CHANNEL_ACCESS_TOKEN ?? ''
-const YOUR_USER_ID = process.env.LINE_YOUR_USER_ID ?? ''
+const LEGACY_ADMIN_USER_ID = process.env.LINE_YOUR_USER_ID ?? ''
+const ADMIN_USER_IDS = [
+  ...new Set(
+    (process.env.LINE_ADMIN_USER_IDS ?? '')
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean)
+      .concat(LEGACY_ADMIN_USER_ID ? [LEGACY_ADMIN_USER_ID] : [])
+  ),
+]
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL ?? ''
 
 type LineMessage = { type: string; [key: string]: unknown }
@@ -9,25 +18,34 @@ type LineMessage = { type: string; [key: string]: unknown }
  * 不阻塞主流程 — 錯誤只 log 不 throw
  */
 export async function pushLineMessage(messages: LineMessage[]): Promise<void> {
-  if (!CHANNEL_ACCESS_TOKEN || !YOUR_USER_ID) {
-    console.warn('[LINE] Missing LINE_INSIGHT_CHANNEL_ACCESS_TOKEN or LINE_YOUR_USER_ID')
+  if (!CHANNEL_ACCESS_TOKEN || ADMIN_USER_IDS.length === 0) {
+    console.warn('[LINE] Missing LINE_INSIGHT_CHANNEL_ACCESS_TOKEN or LINE_ADMIN_USER_IDS/LINE_YOUR_USER_ID')
     return
   }
 
   try {
-    const res = await fetch('https://api.line.me/v2/bot/message/push', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${CHANNEL_ACCESS_TOKEN}`,
-      },
-      body: JSON.stringify({ to: YOUR_USER_ID, messages }),
-      signal: AbortSignal.timeout(10000),
-    })
+    const results = await Promise.allSettled(
+      ADMIN_USER_IDS.map(async (userId) => {
+        const res = await fetch('https://api.line.me/v2/bot/message/push', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${CHANNEL_ACCESS_TOKEN}`,
+          },
+          body: JSON.stringify({ to: userId, messages }),
+          signal: AbortSignal.timeout(10000),
+        })
 
-    if (!res.ok) {
-      const body = await res.text()
-      console.error(`[LINE] Push failed (${res.status}):`, body)
+        if (!res.ok) {
+          const body = await res.text()
+          console.error(`[LINE] Push failed (${res.status}) for ${userId}:`, body)
+        }
+      })
+    )
+
+    const rejected = results.filter((r) => r.status === 'rejected')
+    if (rejected.length > 0) {
+      console.error(`[LINE] Push error count: ${rejected.length}`)
     }
   } catch (err) {
     console.error('[LINE] Push error:', err)
