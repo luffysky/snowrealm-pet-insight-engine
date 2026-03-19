@@ -1,4 +1,8 @@
+'use client'
+
 import Link from 'next/link'
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import type { ResponseListItem } from '@/types'
 
 interface ResponseTableProps {
@@ -16,12 +20,34 @@ export function ResponseTable({
   totalPages = 1,
   paginationBase = '/admin/responses?',
 }: ResponseTableProps) {
+  const router = useRouter()
+  const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [confirmId, setConfirmId] = useState<string | null>(null)
+
   if (responses.length === 0) {
     return (
       <div className="bg-slate-800/50 border border-slate-700/50 rounded-2xl p-8 text-center text-slate-500">
         尚無填答資料
       </div>
     )
+  }
+
+  async function handleDelete(id: string) {
+    setDeletingId(id)
+    try {
+      const res = await fetch(`/api/admin/responses/${id}`, { method: 'DELETE' })
+      if (res.ok) {
+        router.refresh()
+      } else {
+        const data = await res.json()
+        alert(data.error || '刪除失敗')
+      }
+    } catch {
+      alert('刪除失敗，請稍後再試')
+    } finally {
+      setDeletingId(null)
+      setConfirmId(null)
+    }
   }
 
   return (
@@ -96,12 +122,38 @@ export function ResponseTable({
                     : <span className="text-slate-600">-</span>}
                 </td>
                 <td className="px-4 sm:px-6 py-3 text-right">
-                  <Link
-                    href={`/admin/responses/${response.id}`}
-                    className="text-cyan-400 hover:text-cyan-300 text-sm"
-                  >
-                    查看
-                  </Link>
+                  <div className="flex items-center justify-end gap-2">
+                    <Link
+                      href={`/admin/responses/${response.id}`}
+                      className="text-cyan-400 hover:text-cyan-300 text-sm"
+                    >
+                      查看
+                    </Link>
+                    {confirmId === response.id ? (
+                      <span className="flex items-center gap-1">
+                        <button
+                          onClick={() => handleDelete(response.id)}
+                          disabled={deletingId === response.id}
+                          className="text-red-400 hover:text-red-300 text-sm font-medium disabled:opacity-50 cursor-pointer"
+                        >
+                          {deletingId === response.id ? '刪除中...' : '確認'}
+                        </button>
+                        <button
+                          onClick={() => setConfirmId(null)}
+                          className="text-slate-500 hover:text-slate-300 text-sm cursor-pointer"
+                        >
+                          取消
+                        </button>
+                      </span>
+                    ) : (
+                      <button
+                        onClick={() => setConfirmId(response.id)}
+                        className="text-red-500/60 hover:text-red-400 text-sm cursor-pointer"
+                      >
+                        刪除
+                      </button>
+                    )}
+                  </div>
                 </td>
               </tr>
             ))}

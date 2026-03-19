@@ -1,58 +1,76 @@
 import { NextRequest, NextResponse } from 'next/server'
 
+/** 取得台灣時間的 MM-DD */
+function getTaiwanDateSlug(): string {
+  const now = new Date()
+  // 用 UTC+8 計算
+  const utc = now.getTime() + now.getTimezoneOffset() * 60000
+  const tw = new Date(utc + 8 * 3600000)
+  const mm = String(tw.getMonth() + 1).padStart(2, '0')
+  const dd = String(tw.getDate()).padStart(2, '0')
+  return `${mm}-${dd}`
+}
+
+function isAuthorized(request: NextRequest): boolean {
+  const adminSecret = process.env.ADMIN_SECRET
+  if (!adminSecret) return true // 開發階段放行
+  const cookieToken = request.cookies.get('admin_token')?.value
+  const headerToken = request.headers.get('x-admin-secret')
+  return cookieToken === adminSecret || headerToken === adminSecret
+}
+
 export function middleware(request: NextRequest): NextResponse {
   const { pathname } = request.nextUrl
 
-  // 後台頁面與 API 需要驗證
-  const isAdminPage = pathname.startsWith('/admin')
-  const isAdminApi = pathname.startsWith('/api/admin')
-
-  if (!isAdminPage && !isAdminApi) {
+  // Login / Auth API — 永遠放行
+  if (pathname === '/login' || pathname.startsWith('/api/auth')) {
     return NextResponse.next()
   }
 
-  const adminSecret = process.env.ADMIN_SECRET
-  if (!adminSecret) {
-    // 未設定 ADMIN_SECRET 時放行（開發階段）
-    return NextResponse.next()
+  // 動態 admin URL: /admin-MM-DD/...
+  const dynamicMatch = pathname.match(/^\/admin-(\d{2}-\d{2})(\/.*)?$/)
+  if (dynamicMatch) {
+    const dateSlug = dynamicMatch[1]
+    const rest = dynamicMatch[2] || ''
+    const todaySlug = getTaiwanDateSlug()
+
+    if (dateSlug !== todaySlug) {
+      return new NextResponse('連結已過期，請使用今日的管理後台網址', { status: 403 })
+    }
+
+    if (!isAuthorized(request)) {
+      const loginUrl = new URL('/login', request.url)
+      loginUrl.searchParams.set('redirect', pathname)
+      return NextResponse.redirect(loginUrl)
+    }
+
+    // Rewrite 到實際的 /admin/... 路徑
+    return NextResponse.rewrite(new URL(`/admin${rest}`, request.url))
   }
 
-  // 檢查 cookie 或 header
-  const cookieToken = request.cookies.get('admin_token')?.value
-  const headerToken = request.headers.get('x-admin-secret')
-  const queryToken = request.nextUrl.searchParams.get('token')
-
-  const isAuthorized =
-    cookieToken === adminSecret ||
-    headerToken === adminSecret ||
-    queryToken === adminSecret
-
-  if (isAuthorized) {
-    // 若透過 query token 認證，設定 cookie 以免每次都帶
-    if (queryToken === adminSecret && !cookieToken) {
-      const response = NextResponse.redirect(
-        new URL(pathname, request.url)
-      )
-      response.cookies.set('admin_token', adminSecret, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        maxAge: 60 * 60 * 24 * 7, // 7 天
-        path: '/',
-      })
-      return response
+  // Admin 頁面 /admin/...
+  if (pathname.startsWith('/admin')) {
+    if (!isAuthorized(request)) {
+      // 未登入 → 導向 login
+      const todaySlug = getTaiwanDateSlug()
+      const loginUrl = new URL('/login', request.url)
+      loginUrl.searchParams.set('redirect', `/admin-${todaySlug}${pathname.slice('/admin'.length)}`)
+      return NextResponse.redirect(loginUrl)
     }
     return NextResponse.next()
   }
 
-  // 未授權
-  if (isAdminApi) {
-    return NextResponse.json({ error: '未授權' }, { status: 401 })
+  // Admin API /api/admin/...
+  if (pathname.startsWith('/api/admin')) {
+    if (!isAuthorized(request)) {
+      return NextResponse.json({ error: '未授權' }, { status: 401 })
+    }
+    return NextResponse.next()
   }
 
-  return new NextResponse('未授權：請提供正確的 admin token', { status: 401 })
+  return NextResponse.next()
 }
 
 export const config = {
-  matcher: ['/admin/:path*', '/api/admin/:path*'],
+  matcher: ['/admin/:path*', '/admin-:path*', '/api/admin/:path*', '/login'],
 }
