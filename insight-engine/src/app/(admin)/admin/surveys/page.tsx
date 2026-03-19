@@ -225,8 +225,10 @@ function SurveyEditor({
   const [saving, setSaving] = useState(false)
   const [branchSaving, setBranchSaving] = useState(false)
   const [branchError, setBranchError] = useState('')
+  const [branchSuccess, setBranchSuccess] = useState('')
   const [branchQuestionKey, setBranchQuestionKey] = useState('')
   const [answerRoutes, setAnswerRoutes] = useState<Record<string, 'A' | 'B' | 'C'>>({})
+  const [branchDirty, setBranchDirty] = useState(false)
 
   useEffect(() => {
     setForm(survey)
@@ -250,6 +252,8 @@ function SurveyEditor({
 
     setBranchQuestionKey(nextBranchKey)
     setAnswerRoutes(nextAnswerRoutes)
+    setBranchDirty(false)
+    setBranchSuccess('')
   }, [survey.branch_config, questions])
 
   const handleSave = async () => {
@@ -285,6 +289,7 @@ function SurveyEditor({
   const handleBranchQuestionChange = (nextKey: string) => {
     setBranchQuestionKey(nextKey)
     setBranchError('')
+    setBranchDirty(true)
 
     const nextQuestion = branchableQuestions.find((q) => q.key === nextKey)
     if (!nextQuestion) {
@@ -323,6 +328,9 @@ function SurveyEditor({
       setBranchError('分流題目必須有選項')
       return
     }
+    if (!confirm(`確定要將分流設定儲存為「${branchQuestionKey}」嗎？\n這會影響前台問卷的分流邏輯。`)) {
+      return
+    }
 
     const routes: Record<string, string[]> = { A: [], B: [], C: [] }
     for (const option of selectedBranchQuestion.options) {
@@ -352,6 +360,9 @@ function SurveyEditor({
 
       const updated = (await res.json()) as SurveyRow
       onUpdate(updated)
+      setBranchDirty(false)
+      setBranchSuccess('分流設定已儲存')
+      setTimeout(() => setBranchSuccess(''), 3000)
     } catch {
       setBranchError('儲存分流設定失敗')
     } finally {
@@ -534,6 +545,27 @@ function SurveyEditor({
 
       {activeTab === 'branching' && (
         <div className="space-y-4">
+          {(() => {
+            const saved = normalizeBranchConfig(survey.branch_config)
+            if (saved) {
+              const bCount = saved.routes?.B?.length ?? 0
+              const cCount = saved.routes?.C?.length ?? 0
+              return (
+                <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-3 text-sm">
+                  <p className="text-white/60 mb-1">目前已儲存的分流設定：</p>
+                  <p className="text-white/80">
+                    分流題：<span className="text-cyan-300 font-mono">{saved.branchKey}</span>
+                    {' · '}
+                    原始問卷 (A)：{saved.routes?.A?.length ?? 0} 個選項
+                    {bCount > 0 && <>{' · '}<span className="text-yellow-400">分流 B：{bCount} 個選項</span></>}
+                    {cCount > 0 && <>{' · '}<span className="text-orange-400">分流 C：{cCount} 個選項</span></>}
+                  </p>
+                </div>
+              )
+            }
+            return <p className="text-sm text-yellow-400/80">⚠️ 尚未設定分流規則</p>
+          })()}
+
           <p className="text-sm text-white/60">
             設定同一套問卷中，分流題目各答案要走哪個分流。
           </p>
@@ -569,6 +601,7 @@ function SurveyEditor({
                       onChange={(e) => {
                         const route = e.target.value as 'A' | 'B' | 'C'
                         setAnswerRoutes((prev) => ({ ...prev, [option.value]: route }))
+                        setBranchDirty(true)
                       }}
                       className="bg-slate-900 border border-slate-600 rounded px-2 py-1.5 text-sm text-white/80"
                     >
@@ -585,16 +618,21 @@ function SurveyEditor({
           {branchError && (
             <p className="text-sm text-red-400">{branchError}</p>
           )}
+          {branchSuccess && (
+            <p className="text-sm text-emerald-400">{branchSuccess}</p>
+          )}
 
-          <div>
+          <div className="flex items-center gap-3">
             <button
               type="button"
               onClick={handleSaveBranching}
-              disabled={branchSaving || branchableQuestions.length === 0}
+              disabled={branchSaving || branchableQuestions.length === 0 || !branchDirty}
               className="px-4 py-2 bg-cyan-600 hover:bg-cyan-500 disabled:opacity-50 text-white rounded-lg text-sm transition-colors cursor-pointer"
             >
               {branchSaving ? '儲存中...' : '儲存分流設定'}
             </button>
+            {!branchDirty && <span className="text-xs text-white/30">尚未修改</span>}
+            {branchDirty && <span className="text-xs text-yellow-400">有未儲存的變更</span>}
           </div>
         </div>
       )}
