@@ -1,4 +1,4 @@
-const CHANNEL_ACCESS_TOKEN = process.env.LINE_CHANNEL_ACCESS_TOKEN ?? ''
+const CHANNEL_ACCESS_TOKEN = process.env.LINE_INSIGHT_CHANNEL_ACCESS_TOKEN ?? ''
 const YOUR_USER_ID = process.env.LINE_YOUR_USER_ID ?? ''
 
 interface LineMessage {
@@ -12,7 +12,7 @@ interface LineMessage {
  */
 export async function pushLineMessage(text: string): Promise<void> {
   if (!CHANNEL_ACCESS_TOKEN || !YOUR_USER_ID) {
-    console.warn('[LINE] Missing LINE_CHANNEL_ACCESS_TOKEN or LINE_YOUR_USER_ID')
+    console.warn('[LINE] Missing LINE_INSIGHT_CHANNEL_ACCESS_TOKEN or LINE_YOUR_USER_ID')
     return
   }
 

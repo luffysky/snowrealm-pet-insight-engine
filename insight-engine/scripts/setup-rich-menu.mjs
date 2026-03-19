@@ -9,9 +9,9 @@
 
 import { deflateSync } from 'node:zlib'
 
-const TOKEN = process.env.LINE_CHANNEL_ACCESS_TOKEN
+const TOKEN = process.env.LINE_OFFICIAL_CHANNEL_ACCESS_TOKEN
 if (!TOKEN) {
-  console.error('❌ 請設定環境變數 LINE_CHANNEL_ACCESS_TOKEN')
+  console.error('❌ 請設定環境變數 LINE_OFFICIAL_CHANNEL_ACCESS_TOKEN')
   process.exit(1)
 }
 
