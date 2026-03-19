@@ -22,8 +22,8 @@ function isAuthorized(request: NextRequest): boolean {
 export function middleware(request: NextRequest): NextResponse {
   const { pathname } = request.nextUrl
 
-  // Login / Auth API — 永遠放行
-  if (pathname === '/login' || pathname.startsWith('/api/auth')) {
+  // Login / Register / Auth API — 永遠放行
+  if (pathname === '/login' || pathname === '/register' || pathname.startsWith('/api/auth')) {
     return NextResponse.next()
   }
 
@@ -72,5 +72,5 @@ export function middleware(request: NextRequest): NextResponse {
 }
 
 export const config = {
-  matcher: ['/admin/:path*', '/admin-:path*', '/api/admin/:path*', '/login'],
+  matcher: ['/admin/:path*', '/admin-:path*', '/api/admin/:path*', '/login', '/register'],
 }

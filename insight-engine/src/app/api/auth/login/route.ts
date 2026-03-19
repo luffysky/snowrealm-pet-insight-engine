@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { queryOne } from '@/lib/db'
+import { verifyPassword } from '@/lib/auth'
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
   const body = await request.json().catch(() => null)
@@ -6,15 +8,23 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: '請輸入帳號和密碼' }, { status: 400 })
   }
 
-  const expectedUsername = process.env.ADMIN_USERNAME
-  const expectedPassword = process.env.ADMIN_PASSWORD
   const adminSecret = process.env.ADMIN_SECRET
-
-  if (!expectedUsername || !expectedPassword || !adminSecret) {
-    return NextResponse.json({ error: '管理員帳密未設定' }, { status: 500 })
+  if (!adminSecret) {
+    return NextResponse.json({ error: '系統未設定' }, { status: 500 })
   }
 
-  if (body.username !== expectedUsername || body.password !== expectedPassword) {
+  // 從 DB 查帳號
+  const user = await queryOne<{ id: string; password_hash: string }>(
+    `SELECT id, password_hash FROM admin_users WHERE username = $1`,
+    [body.username],
+  )
+
+  if (!user || !user.password_hash) {
+    return NextResponse.json({ error: '帳號或密碼錯誤' }, { status: 401 })
+  }
+
+  const valid = await verifyPassword(body.password as string, user.password_hash)
+  if (!valid) {
     return NextResponse.json({ error: '帳號或密碼錯誤' }, { status: 401 })
   }
 
@@ -23,7 +33,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
-    maxAge: 60 * 60 * 24, // 1 天（配合每日動態 URL）
+    maxAge: 60 * 60 * 24,
     path: '/',
   })
 

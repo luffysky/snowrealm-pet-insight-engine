@@ -1,14 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import crypto from 'crypto'
-import { query } from '@/lib/db'
+import { query, queryOne } from '@/lib/db'
+import { generateInviteToken } from '@/lib/auth'
 
 const CHANNEL_SECRET = process.env.LINE_INSIGHT_CHANNEL_SECRET ?? ''
 const CHANNEL_ACCESS_TOKEN = process.env.LINE_INSIGHT_CHANNEL_ACCESS_TOKEN ?? ''
-const ADMIN_PASSCODE = process.env.LINE_ADMIN_PASSCODE ?? ''
+const PASSCODE = '我要當足跡管理員'
 
 /**
  * LINE Insight (問卷帳號) Webhook
- * @762wxvfb — 透過口令註冊管理員，取消追蹤則停用
+ * @762wxvfb — 口令觸發註冊連結，取消追蹤則停用
  */
 export async function POST(request: NextRequest): Promise<NextResponse> {
   if (!CHANNEL_SECRET) {
@@ -34,31 +35,52 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
   const body = JSON.parse(rawBody)
   const events = body.events ?? []
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? 'https://insight-engine-sonwrealm-pet.zeabur.app'
 
   for (const event of events) {
     const userId = event.source?.userId as string | undefined
 
-    // 文字訊息 → 檢查管理員口令
+    // 文字訊息
     if (event.type === 'message' && event.message?.type === 'text' && userId) {
       const text = (event.message.text as string).trim()
       const replyToken = event.replyToken as string
 
-      // 口令格式：「管理員 {口令}」
-      const passcodeMatch = text.match(/^管理員\s+(.+)$/)
-      if (passcodeMatch && ADMIN_PASSCODE) {
-        if (passcodeMatch[1].trim() === ADMIN_PASSCODE) {
+      // 口令：「我要當足跡管理員」→ 產生一次性註冊連結
+      if (text === PASSCODE) {
+        // 檢查是否已有帳號
+        const existing = await queryOne(
+          `SELECT id FROM admin_users WHERE line_user_id = $1 AND username IS NOT NULL`,
+          [userId],
+        )
+        if (existing) {
+          await replyMessage(replyToken, '你已經有管理員帳號了！\n直接到後台登入即可 🔑')
+          continue
+        }
+
+        // 檢查是否有未過期的邀請
+        const pendingInvite = await queryOne<{ token: string }>(
+          `SELECT token FROM admin_invites WHERE line_user_id = $1 AND used = false AND expires_at > NOW() ORDER BY created_at DESC LIMIT 1`,
+          [userId],
+        )
+
+        let token: string
+        if (pendingInvite) {
+          token = pendingInvite.token
+        } else {
+          token = generateInviteToken()
           const displayName = await getLineDisplayName(userId)
           await query(
-            `INSERT INTO line_admins (line_user_id, display_name, active)
-             VALUES ($1, $2, true)
-             ON CONFLICT (line_user_id) DO UPDATE SET active = true, display_name = COALESCE($2, line_admins.display_name)`,
-            [userId, displayName]
+            `INSERT INTO admin_invites (token, line_user_id, display_name, expires_at)
+             VALUES ($1, $2, $3, NOW() + INTERVAL '30 minutes')`,
+            [token, userId, displayName],
           )
-          console.log(`[LINE Insight] Admin registered via passcode: ${userId} (${displayName})`)
-          await replyMessage(replyToken, '✅ 註冊成功！你已成為問卷系統管理員。\n\n之後每次有人填寫問卷，你都會收到通知 📋\n\n點選下方選單可直接查看後台數據 📊')
-        } else {
-          await replyMessage(replyToken, '❌ 口令錯誤，請確認後再試。')
         }
+
+        const registerUrl = `${baseUrl}/register?token=${token}`
+        await replyMessage(
+          replyToken,
+          `🎉 口令正確！請點擊以下連結註冊你的管理員帳號：\n\n${registerUrl}\n\n⏰ 連結有效期限：30 分鐘\n📝 請自行設定帳號與密碼`,
+        )
         continue
       }
 
@@ -66,26 +88,26 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       if (/^退出管理員$/.test(text)) {
         await query(
           `UPDATE line_admins SET active = false WHERE line_user_id = $1`,
-          [userId]
+          [userId],
         )
         await replyMessage(replyToken, '已退出管理員通知，之後不會再收到問卷通知。\n如需重新加入，請再次輸入口令。')
         continue
       }
 
       // 其他訊息 → 提示
-      await replyMessage(replyToken, '📊 問卷系統管理帳號\n\n輸入「管理員 口令」即可註冊為管理員，接收問卷通知。\n\n點選下方選單可查看後台數據。')
+      await replyMessage(replyToken, '📊 問卷系統管理帳號\n\n輸入正確口令即可取得註冊連結，成為管理員。\n\n點選下方選單可查看後台數據。')
     }
 
-    // 加好友 → 歡迎訊息（不自動註冊）
+    // 加好友 → 歡迎訊息
     if (event.type === 'follow' && event.replyToken) {
-      await replyMessage(event.replyToken, '👋 歡迎！這是毛行天下問卷系統的管理帳號。\n\n輸入「管理員 口令」即可註冊為管理員，開始接收問卷填寫通知 📋')
+      await replyMessage(event.replyToken, '👋 歡迎！這是毛行天下問卷系統的管理帳號。\n\n輸入口令即可取得註冊連結，成為管理員 📋')
     }
 
     // 取消追蹤 → 停用管理員
     if (event.type === 'unfollow' && userId) {
       await query(
         `UPDATE line_admins SET active = false WHERE line_user_id = $1`,
-        [userId]
+        [userId],
       )
       console.log(`[LINE Insight] Admin deactivated: ${userId}`)
     }

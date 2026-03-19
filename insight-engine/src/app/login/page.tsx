@@ -84,6 +84,10 @@ function LoginForm() {
               {loading ? '登入中...' : '登入'}
             </button>
           </form>
+
+          <p className="text-xs text-slate-500 text-center">
+            還沒有帳號？請在 LINE 輸入口令取得註冊連結
+          </p>
         </div>
       </div>
     </div>
