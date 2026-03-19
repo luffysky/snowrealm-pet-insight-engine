@@ -31,7 +31,7 @@ export default async function CoverPage() {
           </Link>
 
           <p className="text-xs text-white/30">
-            共 {config.questions.length} 題，約 2 分鐘完成
+            共 {config.questions.filter(q => !q.route || q.route === 'A' || q.route === 'all').length} 題，約 2 分鐘完成
           </p>
         </div>
       </SurveyCard>
