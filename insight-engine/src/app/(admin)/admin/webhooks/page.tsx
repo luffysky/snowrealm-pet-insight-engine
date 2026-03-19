@@ -89,6 +89,26 @@ export default function WebhooksPage() {
         <p className="text-slate-400 text-sm">
           問卷送出、加入封測名單時，自動推播訊息到管理員 LINE。已透過 Messaging API 串接。
         </p>
+
+        {/* Webhook URL 設定 */}
+        <div className="space-y-3">
+          <p className="text-xs text-slate-500 font-medium">
+            LINE Developers Console → Messaging API → Webhook settings
+          </p>
+          <div className="bg-slate-800 rounded-lg p-3">
+            <p className="text-xs text-slate-500 mb-1">官方帳號 @474iwlht（用戶互動）</p>
+            <code className="text-sm text-green-300 break-all select-all">
+              {process.env.NEXT_PUBLIC_BASE_URL}/api/line/webhook/official
+            </code>
+          </div>
+          <div className="bg-slate-800 rounded-lg p-3">
+            <p className="text-xs text-slate-500 mb-1">INSIGHT @762wxvfb（管理員通知）</p>
+            <code className="text-sm text-green-300 break-all select-all">
+              {process.env.NEXT_PUBLIC_BASE_URL}/api/line/webhook
+            </code>
+          </div>
+        </div>
+
         <div className="flex items-center gap-3">
           <button
             onClick={async () => {
