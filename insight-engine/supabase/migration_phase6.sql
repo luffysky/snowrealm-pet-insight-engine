@@ -1,0 +1,52 @@
+-- ===== Phase 6: Survey CRUD — 問卷後台管理 =====
+
+-- surveys 表新增文案欄位
+ALTER TABLE surveys ADD COLUMN IF NOT EXISTS subtitle TEXT NOT NULL DEFAULT '';
+ALTER TABLE surveys ADD COLUMN IF NOT EXISTS cover_title TEXT NOT NULL DEFAULT '';
+ALTER TABLE surveys ADD COLUMN IF NOT EXISTS cover_subtitle TEXT NOT NULL DEFAULT '';
+ALTER TABLE surveys ADD COLUMN IF NOT EXISTS start_button_text TEXT NOT NULL DEFAULT '開始填寫';
+ALTER TABLE surveys ADD COLUMN IF NOT EXISTS done_title TEXT NOT NULL DEFAULT '';
+ALTER TABLE surveys ADD COLUMN IF NOT EXISTS done_subtitle TEXT NOT NULL DEFAULT '';
+
+-- questions 表新增 max_selections
+ALTER TABLE questions ADD COLUMN IF NOT EXISTS max_selections INT;
+
+-- Seed MVP 問卷
+INSERT INTO surveys (id, title, slug, status, subtitle, cover_title, cover_subtitle, start_button_text, done_title, done_subtitle)
+VALUES (
+  '00000000-0000-0000-0000-000000000001',
+  '毛行天下 MVP 問卷',
+  'maoxingtianxia-mvp-survey',
+  'published',
+  '幫助我們打造更好的寵物紀錄平台',
+  '如果有一天牠不在了，你還能留下什麼？',
+  '我們正在設計一個真正能留下寵物足跡的地方。這份問卷不長，但你的回答，可能會幫助更多人留下重要的回憶。',
+  '開始留下足跡',
+  '你已經為牠留下了第一個足跡。',
+  '謝謝你的回答。毛行天下想做的，不只是紀錄，而是讓那些重要的存在，不那麼容易被時間沖淡。'
+)
+ON CONFLICT (slug) DO UPDATE SET
+  title = EXCLUDED.title,
+  status = EXCLUDED.status,
+  subtitle = EXCLUDED.subtitle,
+  cover_title = EXCLUDED.cover_title,
+  cover_subtitle = EXCLUDED.cover_subtitle,
+  start_button_text = EXCLUDED.start_button_text,
+  done_title = EXCLUDED.done_title,
+  done_subtitle = EXCLUDED.done_subtitle;
+
+-- Seed 12 題
+INSERT INTO questions (id, survey_id, key, type, content, options, order_index, is_required, max_selections) VALUES
+  (uuid_generate_v4(), '00000000-0000-0000-0000-000000000001', 'q1', 'single', '你目前是否有飼養寵物？', '[{"label":"有","value":"有"},{"label":"曾經有（已離世）","value":"曾經有（已離世）"},{"label":"沒有但未來想養","value":"沒有但未來想養"},{"label":"沒有且暫時不考慮","value":"沒有且暫時不考慮"}]', 0, true, null),
+  (uuid_generate_v4(), '00000000-0000-0000-0000-000000000001', 'q2', 'multiple', '你的寵物類型是？（可複選）', '[{"label":"狗","value":"狗"},{"label":"貓","value":"貓"},{"label":"倉鼠 / 小動物","value":"倉鼠 / 小動物"},{"label":"鳥類","value":"鳥類"},{"label":"水族","value":"水族"},{"label":"爬蟲","value":"爬蟲"},{"label":"其他","value":"其他"}]', 1, true, null),
+  (uuid_generate_v4(), '00000000-0000-0000-0000-000000000001', 'q3', 'multiple', '你平常會怎麼記錄寵物生活？（可複選）', '[{"label":"拍照存在手機","value":"拍照存在手機"},{"label":"發 IG / FB / 社群","value":"發 IG / FB / 社群"},{"label":"寫日記 / 筆記","value":"寫日記 / 筆記"},{"label":"存在雲端相簿","value":"存在雲端相簿"},{"label":"幾乎不記錄","value":"幾乎不記錄"}]', 2, true, null),
+  (uuid_generate_v4(), '00000000-0000-0000-0000-000000000001', 'q4', 'single', '你多久會回頭看一次寵物照片或影片？', '[{"label":"幾乎每天","value":"幾乎每天"},{"label":"一週幾次","value":"一週幾次"},{"label":"偶爾","value":"偶爾"},{"label":"幾乎不會","value":"幾乎不會"}]', 3, true, null),
+  (uuid_generate_v4(), '00000000-0000-0000-0000-000000000001', 'q5', 'single', '你是否曾經擔心，未來會忘記與寵物的重要回憶？', '[{"label":"非常擔心","value":"非常擔心"},{"label":"有點擔心","value":"有點擔心"},{"label":"沒想過","value":"沒想過"},{"label":"不太在意","value":"不太在意"}]', 4, true, null),
+  (uuid_generate_v4(), '00000000-0000-0000-0000-000000000001', 'q6', 'single', '如果寵物離開，你最害怕的是什麼？', '[{"label":"回憶慢慢變模糊","value":"回憶慢慢變模糊"},{"label":"沒有地方好好紀念","value":"沒有地方好好紀念"},{"label":"身邊沒人理解這種感受","value":"身邊沒人理解這種感受"},{"label":"突然失去生活重心","value":"突然失去生活重心"},{"label":"其他","value":"其他"}]', 5, true, null),
+  (uuid_generate_v4(), '00000000-0000-0000-0000-000000000001', 'q7', 'single', '如果有一個平台可以保存寵物的一生紀錄，甚至在某種程度上延續互動，你會有興趣嗎？', '[{"label":"非常有興趣","value":"非常有興趣"},{"label":"可能會試試","value":"可能會試試"},{"label":"不確定","value":"不確定"},{"label":"沒興趣","value":"沒興趣"}]', 6, true, null),
+  (uuid_generate_v4(), '00000000-0000-0000-0000-000000000001', 'q8', 'single', '對這種服務，你比較可能接受哪種付費方式？', '[{"label":"月費訂閱","value":"月費訂閱"},{"label":"一次性付費","value":"一次性付費"},{"label":"免費基本版 + 進階付費","value":"免費基本版 + 進階付費"},{"label":"不確定","value":"不確定"},{"label":"不會付費","value":"不會付費"}]', 7, true, null),
+  (uuid_generate_v4(), '00000000-0000-0000-0000-000000000001', 'q9', 'multiple', '以下功能你最有興趣的是哪些？（最多選 3 個）', '[{"label":"寵物成長紀錄","value":"寵物成長紀錄"},{"label":"足跡時間線","value":"足跡時間線"},{"label":"AI 寵物互動","value":"AI 寵物互動"},{"label":"彩虹國紀念空間","value":"彩虹國紀念空間"},{"label":"寵物社群交流","value":"寵物社群交流"},{"label":"認養 / 流浪動物資訊","value":"認養 / 流浪動物資訊"},{"label":"商城 / 周邊","value":"商城 / 周邊"}]', 8, true, 3),
+  (uuid_generate_v4(), '00000000-0000-0000-0000-000000000001', 'q10', 'single', '如果毛行天下是一個平台，你會多常使用？', '[{"label":"每天","value":"每天"},{"label":"每週","value":"每週"},{"label":"偶爾","value":"偶爾"},{"label":"可能只用幾次","value":"可能只用幾次"},{"label":"幾乎不會用","value":"幾乎不會用"}]', 9, true, null),
+  (uuid_generate_v4(), '00000000-0000-0000-0000-000000000001', 'q11', 'text', '你覺得現在記錄寵物生活最大的問題是什麼？', '[]', 10, false, null),
+  (uuid_generate_v4(), '00000000-0000-0000-0000-000000000001', 'q12', 'text', '如果只能留下與牠有關的一樣東西，你會選擇留下什麼？', '[]', 11, false, null)
+ON CONFLICT DO NOTHING;
