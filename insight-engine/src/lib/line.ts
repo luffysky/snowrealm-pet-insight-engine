@@ -1,6 +1,8 @@
+import { query as dbQuery } from '@/lib/db'
+
 const CHANNEL_ACCESS_TOKEN = process.env.LINE_INSIGHT_CHANNEL_ACCESS_TOKEN ?? ''
 const LEGACY_ADMIN_USER_ID = process.env.LINE_YOUR_USER_ID ?? ''
-const ADMIN_USER_IDS = [
+const ENV_ADMIN_IDS = [
   ...new Set(
     (process.env.LINE_ADMIN_USER_IDS ?? '')
       .split(',')
@@ -13,19 +15,40 @@ const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL ?? ''
 
 type LineMessage = { type: string; [key: string]: unknown }
 
+/** 從 DB 取得所有啟用的管理員 LINE user ID，合併 env 的 */
+async function getAllAdminIds(): Promise<string[]> {
+  try {
+    const rows = await dbQuery<{ line_user_id: string }>(
+      `SELECT line_user_id FROM line_admins WHERE active = true`
+    )
+    const dbIds = rows.map((r) => r.line_user_id)
+    return [...new Set([...ENV_ADMIN_IDS, ...dbIds])]
+  } catch {
+    // DB 查詢失敗時 fallback 到環境變數
+    return ENV_ADMIN_IDS
+  }
+}
+
 /**
- * 透過 LINE Messaging API 推播訊息給管理員
+ * 透過 LINE Messaging API 推播訊息給所有管理員
+ * 自動合併 env + DB 的管理員清單
  * 不阻塞主流程 — 錯誤只 log 不 throw
  */
 export async function pushLineMessage(messages: LineMessage[]): Promise<void> {
-  if (!CHANNEL_ACCESS_TOKEN || ADMIN_USER_IDS.length === 0) {
-    console.warn('[LINE] Missing LINE_INSIGHT_CHANNEL_ACCESS_TOKEN or LINE_ADMIN_USER_IDS/LINE_YOUR_USER_ID')
+  if (!CHANNEL_ACCESS_TOKEN) {
+    console.warn('[LINE] Missing LINE_INSIGHT_CHANNEL_ACCESS_TOKEN')
+    return
+  }
+
+  const adminIds = await getAllAdminIds()
+  if (adminIds.length === 0) {
+    console.warn('[LINE] No admin IDs configured')
     return
   }
 
   try {
     const results = await Promise.allSettled(
-      ADMIN_USER_IDS.map(async (userId) => {
+      adminIds.map(async (userId) => {
         const res = await fetch('https://api.line.me/v2/bot/message/push', {
           method: 'POST',
           headers: {

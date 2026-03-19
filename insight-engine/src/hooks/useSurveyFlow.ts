@@ -44,7 +44,10 @@ function resolveRoute(
 
 /** 根據路線過濾有效題目 */
 function filterQuestions(questions: Question[], route: string | null): Question[] {
-  if (!route) return questions
+  if (!route) {
+    // 尚未決定路線時，只顯示主線題目（A + all + 無 route）
+    return questions.filter((q) => !q.route || q.route === 'all' || q.route === 'A')
+  }
   return questions.filter((q) => !q.route || q.route === 'all' || q.route === route)
 }
 
