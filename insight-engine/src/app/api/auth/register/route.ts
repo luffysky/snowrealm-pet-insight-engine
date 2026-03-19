@@ -3,15 +3,16 @@ import { query, queryOne } from '@/lib/db'
 import { hashPassword } from '@/lib/auth'
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
-  const body = await request.json().catch(() => null)
+  try {
+    const body = await request.json().catch(() => null)
 
-  const token = (body?.token as string)?.trim()
-  const username = (body?.username as string)?.trim()
-  const password = (body?.password as string)
+    const token = (body?.token as string)?.trim()
+    const username = (body?.username as string)?.trim()
+    const password = (body?.password as string)
 
-  if (!token || !username || !password) {
-    return NextResponse.json({ error: '請填寫完整資料' }, { status: 400 })
-  }
+    if (!token || !username || !password) {
+      return NextResponse.json({ error: '請填寫完整資料' }, { status: 400 })
+    }
 
   // 帳號限制
   if (username.length < 3 || username.length > 30) {
@@ -91,4 +92,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   }
 
   return NextResponse.json({ success: true })
+  } catch (err) {
+    console.error('[Register API Error]', err)
+    return NextResponse.json({ error: '系統錯誤，請稍後再試' }, { status: 500 })
+  }
 }
