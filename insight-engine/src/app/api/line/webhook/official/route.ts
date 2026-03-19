@@ -8,6 +8,9 @@ const SURVEY_URL = process.env.NEXT_PUBLIC_BASE_URL
   ? `${process.env.NEXT_PUBLIC_BASE_URL}/survey`
   : 'https://localhost:3000/survey'
 
+const SITE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://localhost:3000'
+const IG_URL = 'https://www.instagram.com/snowrealm.pet?igsh=Y2x1cTRiM3N3NGpw'
+
 /**
  * LINE Official Account Webhook
  * 官方帳號 @474iwlht — 使用者互動、自動回覆、歡迎訊息
@@ -67,6 +70,7 @@ interface LineTextMessage {
 }
 
 function getAutoReply(text: string): LineTextMessage[] {
+  // 問卷相關
   if (/問卷|填問卷|survey/i.test(text)) {
     return [
       {
@@ -76,6 +80,7 @@ function getAutoReply(text: string): LineTextMessage[] {
     ]
   }
 
+  // 封測 / 名單
   if (/封測|內測|名單|waitlist/i.test(text)) {
     return [
       {
@@ -85,7 +90,8 @@ function getAutoReply(text: string): LineTextMessage[] {
     ]
   }
 
-  if (/毛行天下|你是誰|什麼|介紹/i.test(text)) {
+  // 關於毛行天下
+  if (/毛行天下|你是誰|介紹/i.test(text)) {
     return [
       {
         type: 'text',
@@ -94,10 +100,61 @@ function getAutoReply(text: string): LineTextMessage[] {
     ]
   }
 
+  // 寵物 / 紀錄 / 回憶
+  if (/寵物|毛小孩|毛孩|狗|貓|紀錄|回憶|足跡/i.test(text)) {
+    return [
+      {
+        type: 'text',
+        text: '🐾 毛行天下想幫你留下毛孩最珍貴的足跡\n\n我們正在打造一個寵物紀錄平台，讓那些日常的美好不會被遺忘。\n\n📋 填問卷讓我們更了解你 → 輸入「問卷」',
+      },
+    ]
+  }
+
+  // 功能 / 下載
+  if (/功能|下載|app|平台|什麼時候/i.test(text)) {
+    return [
+      {
+        type: 'text',
+        text: '🚀 平台目前正在開發中！\n\n你可以先填問卷告訴我們你最期待的功能，封測開放後會第一時間通知你！\n\n📋 填問卷 → 輸入「問卷」\n🎉 加入封測 → 輸入「封測」',
+      },
+    ]
+  }
+
+  // 官網 (Rich Menu 觸發)
+  if (/官網|網站|website/i.test(text)) {
+    return [
+      {
+        type: 'text',
+        text: `🌐 毛行天下官網\n\n👉 ${SITE_URL}\n\n歡迎隨時來逛逛 🐾`,
+      },
+    ]
+  }
+
+  // 最新消息 (Rich Menu 觸發)
+  if (/最新消息|新聞|news|更新/i.test(text)) {
+    return [
+      {
+        type: 'text',
+        text: '📢 最新消息\n\n🐾 毛行天下目前正在進行 MVP 問卷調查\n📋 歡迎填寫問卷，幫助我們打造更好的產品！\n🎉 填完問卷可加入封測名單\n\n我們會在有新消息時推播通知你 💛',
+      },
+    ]
+  }
+
+  // 聯絡我們 (Rich Menu 觸發)
+  if (/聯絡|聯繫|contact|客服|問題|幫助|help/i.test(text)) {
+    return [
+      {
+        type: 'text',
+        text: `💬 聯絡毛行天下\n\n📸 Instagram：${IG_URL}\n\n有任何問題歡迎直接留言，我們會盡快回覆你！🐾`,
+      },
+    ]
+  }
+
+  // 預設回覆 — 引導訊息
   return [
     {
       type: 'text',
-      text: '嗨～我是毛行天下小助手 🐾\n\n你可以輸入：\n📋「問卷」— 填寫問卷\n🎉「封測」— 加入封測名單\n🐾「毛行天下」— 了解我們',
+      text: '嗨～我是毛行天下小助手 🐾\n\n你可以輸入：\n📋「問卷」— 填寫問卷\n🎉「封測」— 加入封測名單\n🐾「毛行天下」— 了解我們\n🌐「官網」— 前往官網\n📢「最新消息」— 查看動態\n💬「聯絡我們」— 聯繫方式',
     },
   ]
 }

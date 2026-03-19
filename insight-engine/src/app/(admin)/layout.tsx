@@ -14,6 +14,8 @@ const NAV_ITEMS = [
   { href: '/admin/utm', label: '來源分析' },
   { href: '/admin/ab', label: 'A/B 比較' },
   { href: '/admin/webhooks', label: 'Webhook' },
+  { href: '/admin/broadcast', label: 'LINE 推播' },
+  { href: '/admin/line-settings', label: 'LINE 設定' },
   { href: '/admin/waitlist', label: '封測名單' },
 ]
 

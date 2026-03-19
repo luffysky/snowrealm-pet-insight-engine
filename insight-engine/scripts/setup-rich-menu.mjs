@@ -1,10 +1,10 @@
 /**
- * LINE Rich Menu 建立腳本
+ * LINE Rich Menu 建立腳本（6 格版本）
  * 用法：node scripts/setup-rich-menu.mjs
  *
- * 建立一個 2 格 Rich Menu：
- *   左: 📋 填問卷
- *   右: 🐾 關於毛行天下
+ * 建立 2×3 格 Rich Menu：
+ *   Row 1: 📋 填問卷 | 🎉 封測報名 | 📸 Instagram
+ *   Row 2: 🌐 官網    | 📢 最新消息 | 💬 聯絡我們
  */
 
 import { deflateSync } from 'node:zlib'
@@ -15,9 +15,9 @@ if (!TOKEN) {
   process.exit(1)
 }
 
-const SURVEY_URL = process.env.NEXT_PUBLIC_BASE_URL
-  ? `${process.env.NEXT_PUBLIC_BASE_URL}/survey`
-  : 'https://localhost:3000/survey'
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://localhost:3000'
+const SURVEY_URL = `${BASE_URL}/survey`
+const IG_URL = 'https://www.instagram.com/snowrealm.pet?igsh=Y2x1cTRiM3N3NGpw'
 
 const headers = {
   Authorization: `Bearer ${TOKEN}`,
@@ -32,29 +32,41 @@ async function main() {
     headers: { Authorization: `Bearer ${TOKEN}` },
   }).catch(() => {})
 
-  // Step 1: 建立 Rich Menu
-  console.log('📋 Step 1: 建立 Rich Menu...')
+  // Step 1: 建立 Rich Menu (2×3 = 6 格)
+  console.log('📋 Step 1: 建立 Rich Menu (6 格)...')
+  const colW = Math.floor(2500 / 3) // ~833
+  const rowH = Math.floor(1686 / 2) // ~843
   const richMenu = {
-    size: { width: 2500, height: 843 },
+    size: { width: 2500, height: 1686 },
     selected: true,
-    name: '毛行天下選單',
+    name: '毛行天下選單 v2',
     chatBarText: '🐾 打開選單',
     areas: [
+      // Row 1
       {
-        bounds: { x: 0, y: 0, width: 1250, height: 843 },
-        action: {
-          type: 'uri',
-          label: '填問卷',
-          uri: SURVEY_URL,
-        },
+        bounds: { x: 0, y: 0, width: colW, height: rowH },
+        action: { type: 'uri', label: '填問卷', uri: SURVEY_URL },
       },
       {
-        bounds: { x: 1250, y: 0, width: 1250, height: 843 },
-        action: {
-          type: 'message',
-          label: '關於毛行天下',
-          text: '毛行天下',
-        },
+        bounds: { x: colW, y: 0, width: colW, height: rowH },
+        action: { type: 'message', label: '封測報名', text: '封測' },
+      },
+      {
+        bounds: { x: colW * 2, y: 0, width: 2500 - colW * 2, height: rowH },
+        action: { type: 'uri', label: 'Instagram', uri: IG_URL },
+      },
+      // Row 2
+      {
+        bounds: { x: 0, y: rowH, width: colW, height: 1686 - rowH },
+        action: { type: 'message', label: '官網', text: '官網' },
+      },
+      {
+        bounds: { x: colW, y: rowH, width: colW, height: 1686 - rowH },
+        action: { type: 'message', label: '最新消息', text: '最新消息' },
+      },
+      {
+        bounds: { x: colW * 2, y: rowH, width: 2500 - colW * 2, height: 1686 - rowH },
+        action: { type: 'message', label: '聯絡我們', text: '聯絡我們' },
       },
     ],
   }
@@ -74,9 +86,9 @@ async function main() {
   const { richMenuId } = await createRes.json()
   console.log('✅ Rich Menu ID:', richMenuId)
 
-  // Step 2: 產生並上傳 Rich Menu 圖片
+  // Step 2: 產生並上傳 Rich Menu 圖片 (6 格品牌色)
   console.log('🖼️  Step 2: 產生並上傳 Rich Menu 圖片...')
-  const imageBuffer = createRichMenuPng(2500, 843)
+  const imageBuffer = createRichMenuPng(2500, 1686)
 
   const uploadRes = await fetch(
     `https://api-data.line.me/v2/bot/richmenu/${richMenuId}/content`,
@@ -119,38 +131,40 @@ async function main() {
   console.log('\n🎉 完成！所有 LINE 好友開啟聊天室都會看到選單')
 }
 
-// ----- 純 Node.js 產生 PNG（不需外部套件）-----
+// ----- 純 Node.js 產生 PNG（6 格品牌色彩）-----
 
 function createRichMenuPng(width, height) {
-  // 左半：深藍 #0f172a | 右半：深紫 #1e1b4b
-  // 中間分隔線：#334155
-  const midX = Math.floor(width / 2)
+  const colW = Math.floor(width / 3)
+  const rowH = Math.floor(height / 2)
 
-  // 建立 raw pixel rows (每列前面加 filter byte 0)
-  const rowSize = 1 + width * 3  // filter byte + RGB
+  // 6 格配色 [R, G, B]
+  // Row 1: 填問卷(cyan-700) | 封測報名(emerald-700) | IG(purple-700)
+  // Row 2: 官網(sky-800) | 最新消息(amber-700) | 聯絡我們(rose-700)
+  const colors = [
+    [[0x0e, 0x79, 0x90], [0x04, 0x7e, 0x57], [0x7e, 0x22, 0xce]],
+    [[0x07, 0x59, 0x85], [0xb4, 0x53, 0x09], [0xbe, 0x12, 0x3c]],
+  ]
+
+  const lineColor = [0x1e, 0x29, 0x3b] // slate-800 separator
+
+  const rowSize = 1 + width * 3
   const rawData = Buffer.alloc(rowSize * height)
 
   for (let y = 0; y < height; y++) {
     const rowOffset = y * rowSize
     rawData[rowOffset] = 0 // filter: None
+    const row = y < rowH ? 0 : 1
+    const isRowBorder = Math.abs(y - rowH) <= 1
+
     for (let x = 0; x < width; x++) {
       const pixelOffset = rowOffset + 1 + x * 3
-      if (x === midX || x === midX - 1) {
-        // 分隔線
-        rawData[pixelOffset] = 0x33
-        rawData[pixelOffset + 1] = 0x41
-        rawData[pixelOffset + 2] = 0x55
-      } else if (x < midX) {
-        // 左：深藍
-        rawData[pixelOffset] = 0x0f
-        rawData[pixelOffset + 1] = 0x17
-        rawData[pixelOffset + 2] = 0x2a
-      } else {
-        // 右：深紫
-        rawData[pixelOffset] = 0x1e
-        rawData[pixelOffset + 1] = 0x1b
-        rawData[pixelOffset + 2] = 0x4b
-      }
+      const col = x < colW ? 0 : x < colW * 2 ? 1 : 2
+      const isColBorder = Math.abs(x - colW) <= 1 || Math.abs(x - colW * 2) <= 1
+
+      const c = (isRowBorder || isColBorder) ? lineColor : colors[row][col]
+      rawData[pixelOffset] = c[0]
+      rawData[pixelOffset + 1] = c[1]
+      rawData[pixelOffset + 2] = c[2]
     }
   }
 

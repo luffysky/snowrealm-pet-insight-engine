@@ -185,6 +185,16 @@ export function useSurveyFlow({
       const result = await response.json()
       if (result.responseId) {
         sessionStorage.setItem('lastResponseId', result.responseId)
+
+        // 如果已透過 LIFF 綁定 LINE userId，自動關聯 responseId
+        const lineUserId = sessionStorage.getItem('lineUserId')
+        if (lineUserId) {
+          fetch('/api/line/liff-bind', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ lineUserId, responseId: result.responseId }),
+          }).catch(() => {})
+        }
       }
 
       setIsCompleted(true)

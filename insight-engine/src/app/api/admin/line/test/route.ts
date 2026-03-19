@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { pushLineMessage } from '@/lib/line'
+import { pushText } from '@/lib/line'
 
 /**
  * POST /api/admin/line/test
@@ -7,7 +7,7 @@ import { pushLineMessage } from '@/lib/line'
  */
 export async function POST(): Promise<NextResponse> {
   try {
-    await pushLineMessage('✅ LINE 串接測試成功！\n毛行天下問卷系統已連線。')
+    await pushText('✅ LINE 串接測試成功！\n毛行天下問卷系統已連線。')
     return NextResponse.json({ ok: true })
   } catch (error) {
     console.error('[admin/line/test] Failed:', error)
