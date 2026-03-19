@@ -1,5 +1,5 @@
 import { query, queryOne, execute } from './db'
-import type { Question, SurveyConfig, QuestionOption } from '@/types'
+import type { Question, SurveyConfig, QuestionOption, BranchConfig } from '@/types'
 
 // ===== DB Row 型別 =====
 
@@ -17,6 +17,7 @@ interface SurveyRow extends Record<string, unknown> {
   variant_group: string | null
   scheduled_start: string | null
   scheduled_end: string | null
+  branch_config: string | null
   created_at: string
   updated_at: string
 }
@@ -31,6 +32,7 @@ interface QuestionRow extends Record<string, unknown> {
   order_index: number
   is_required: boolean
   max_selections: number | null
+  route: string | null
   created_at: string
 }
 
@@ -180,6 +182,7 @@ export async function updateSurvey(
     variant_group: string | null
     scheduled_start: string | null
     scheduled_end: string | null
+    branch_config: Record<string, unknown> | null
   }>
 ): Promise<number> {
   const allowed = [
@@ -187,6 +190,7 @@ export async function updateSurvey(
     'cover_title', 'cover_subtitle', 'start_button_text',
     'done_title', 'done_subtitle',
     'variant_group', 'scheduled_start', 'scheduled_end',
+    'branch_config',
   ]
   const sets: string[] = []
   const params: unknown[] = []
@@ -194,8 +198,11 @@ export async function updateSurvey(
 
   for (const key of allowed) {
     if (key in data) {
+      const val = key === 'branch_config'
+        ? (data[key as keyof typeof data] ? JSON.stringify(data[key as keyof typeof data]) : null)
+        : data[key as keyof typeof data]
       sets.push(`${key} = $${idx++}`)
-      params.push(data[key as keyof typeof data])
+      params.push(val)
     }
   }
 
@@ -221,10 +228,11 @@ export async function createQuestion(data: {
   order_index: number
   is_required: boolean
   max_selections: number | null
+  route?: string
 }): Promise<QuestionRow> {
   const row = await queryOne<QuestionRow>(
-    `INSERT INTO questions (id, survey_id, key, type, content, options, order_index, is_required, max_selections)
-     VALUES (uuid_generate_v4(), $1, $2, $3, $4, $5, $6, $7, $8)
+    `INSERT INTO questions (id, survey_id, key, type, content, options, order_index, is_required, max_selections, route)
+     VALUES (uuid_generate_v4(), $1, $2, $3, $4, $5, $6, $7, $8, $9)
      RETURNING *`,
     [
       data.survey_id,
@@ -235,6 +243,7 @@ export async function createQuestion(data: {
       data.order_index,
       data.is_required,
       data.max_selections,
+      data.route ?? 'all',
     ]
   )
   return row!
@@ -252,7 +261,7 @@ export async function updateQuestion(
     max_selections: number | null
   }>
 ): Promise<number> {
-  const allowed = ['key', 'type', 'content', 'options', 'order_index', 'is_required', 'max_selections']
+  const allowed = ['key', 'type', 'content', 'options', 'order_index', 'is_required', 'max_selections', 'route']
   const sets: string[] = []
   const params: unknown[] = []
   let idx = 1
@@ -307,7 +316,17 @@ function toQuestion(row: QuestionRow): Question {
     options: parseOptions(row.options),
     isRequired: row.is_required,
     ...(row.max_selections ? { maxSelections: row.max_selections } : {}),
+    route: row.route ?? 'all',
   }
+}
+
+function parseBranchConfig(raw: string | null): BranchConfig | undefined {
+  if (!raw) return undefined
+  try {
+    const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw
+    if (parsed && parsed.branchKey && parsed.routes) return parsed
+    return undefined
+  } catch { return undefined }
 }
 
 function toSurveyConfig(survey: SurveyRow, questions: QuestionRow[]): SurveyConfig {
@@ -321,5 +340,6 @@ function toSurveyConfig(survey: SurveyRow, questions: QuestionRow[]): SurveyConf
     doneTitle: survey.done_title,
     doneSubtitle: survey.done_subtitle,
     questions: questions.map(toQuestion),
+    branchConfig: parseBranchConfig(survey.branch_config),
   }
 }

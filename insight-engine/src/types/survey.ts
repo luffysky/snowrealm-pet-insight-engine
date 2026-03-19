@@ -24,6 +24,16 @@ export interface Question {
   isRequired: boolean
   /** 多選題最大選擇數，不設則不限 */
   maxSelections?: number
+  /** 分流路線：'all' = 所有人, 'A' | 'B' | 'C' = 指定路線 */
+  route?: string
+}
+
+/** 分流規則設定 */
+export interface BranchConfig {
+  /** 分流依據的題目 key（例如 'q1'） */
+  branchKey: string
+  /** 各路線對應的選項值 */
+  routes: Record<string, string[]>
 }
 
 /** 問卷設定 */
@@ -37,6 +47,8 @@ export interface SurveyConfig {
   doneTitle: string
   doneSubtitle: string
   questions: Question[]
+  /** 分流規則（若無則所有題目順序顯示） */
+  branchConfig?: BranchConfig
 }
 
 /** 單筆答案 */
@@ -52,6 +64,8 @@ export interface SubmitSurveyPayload {
   utm: UtmParams
   fingerprint?: string
   progressResponseId?: string
+  /** 分流路線（A/B/C），無分流時不帶 */
+  route?: string
 }
 
 /** UTM 參數 */

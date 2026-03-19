@@ -1,13 +1,14 @@
 'use client'
 
-import { useState, useCallback, useRef, useEffect } from 'react'
-import type { Question, Answer, SubmitSurveyPayload, UtmParams } from '@/types'
+import { useState, useCallback, useRef, useEffect, useMemo } from 'react'
+import type { Question, Answer, SubmitSurveyPayload, UtmParams, BranchConfig } from '@/types'
 
 interface UseSurveyFlowParams {
   questions: Question[]
   surveySlug: string
   utm: UtmParams
   fingerprint?: string
+  branchConfig?: BranchConfig
 }
 
 interface UseSurveyFlowReturn {
@@ -27,11 +28,32 @@ interface UseSurveyFlowReturn {
   dismissDuplicate: () => void
 }
 
+/** 根據分流題答案決定路線 */
+function resolveRoute(
+  branchConfig: BranchConfig | undefined,
+  answers: Map<string, string | string[]>
+): string | null {
+  if (!branchConfig) return null
+  const branchAnswer = answers.get(branchConfig.branchKey)
+  if (!branchAnswer || typeof branchAnswer !== 'string') return null
+  for (const [route, values] of Object.entries(branchConfig.routes)) {
+    if ((values as string[]).includes(branchAnswer)) return route
+  }
+  return null
+}
+
+/** 根據路線過濾有效題目 */
+function filterQuestions(questions: Question[], route: string | null): Question[] {
+  if (!route) return questions
+  return questions.filter((q) => !q.route || q.route === 'all' || q.route === route)
+}
+
 export function useSurveyFlow({
   questions,
   surveySlug,
   utm,
   fingerprint,
+  branchConfig,
 }: UseSurveyFlowParams): UseSurveyFlowReturn {
   const [currentStep, setCurrentStep] = useState(0)
   const [answers, setAnswers] = useState<Map<string, string | string[]>>(new Map())
@@ -40,9 +62,15 @@ export function useSurveyFlow({
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [alreadySubmitted, setAlreadySubmitted] = useState(false)
   const progressIdRef = useRef<string | null>(null)
+  const routeRef = useRef<string | null>(null)
 
-  const currentQuestion = questions[currentStep] ?? null
-  const totalSteps = questions.length
+  // 計算當前路線與有效題目
+  const currentRoute = useMemo(() => resolveRoute(branchConfig, answers), [branchConfig, answers])
+  const activeQuestions = useMemo(() => filterQuestions(questions, currentRoute), [questions, currentRoute])
+  routeRef.current = currentRoute
+
+  const currentQuestion = activeQuestions[currentStep] ?? null
+  const totalSteps = activeQuestions.length
 
   const answersRef = useRef(answers)
   answersRef.current = answers
@@ -168,6 +196,7 @@ export function useSurveyFlow({
       utm,
       progressResponseId: progressIdRef.current ?? undefined,
       fingerprint,
+      route: routeRef.current ?? undefined,
     }
 
     try {

@@ -34,6 +34,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     // 若有 progress response，複用它；否則建立新的
     const responseId = body.progressResponseId ?? uuidv4()
     const fingerprint = body.fingerprint ?? null
+    const route = body.route ?? null
 
     if (body.progressResponseId) {
       // 更新既有的 in_progress response → completed
@@ -43,8 +44,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
           source = $1, utm_source = $2, utm_medium = $3, utm_campaign = $4,
           fingerprint = COALESCE(fingerprint, $5),
           last_step = $6,
+          route = $7,
           submitted_at = NOW()
-         WHERE id = $7`,
+         WHERE id = $8`,
         [
           body.utm?.source ?? null,
           body.utm?.source ?? null,
@@ -52,14 +54,15 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
           body.utm?.campaign ?? null,
           fingerprint,
           body.answers.length,
+          route,
           responseId,
         ]
       )
     } else {
       const sessionId = uuidv4()
       await query(
-        `INSERT INTO responses (id, session_id, status, source, utm_source, utm_medium, utm_campaign, fingerprint, last_step, started_at, submitted_at)
-         VALUES ($1, $2, 'completed', $3, $4, $5, $6, $7, $8, NOW(), NOW())`,
+        `INSERT INTO responses (id, session_id, status, source, utm_source, utm_medium, utm_campaign, fingerprint, last_step, route, started_at, submitted_at)
+         VALUES ($1, $2, 'completed', $3, $4, $5, $6, $7, $8, $9, NOW(), NOW())`,
         [
           responseId,
           sessionId,
@@ -69,6 +72,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
           body.utm?.campaign ?? null,
           fingerprint,
           body.answers.length,
+          route,
         ]
       )
     }

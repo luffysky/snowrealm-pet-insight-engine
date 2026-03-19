@@ -97,6 +97,7 @@ function SurveyFlow({
     surveySlug: config.slug,
     utm,
     fingerprint,
+    branchConfig: config.branchConfig,
   })
 
   useEffect(() => {

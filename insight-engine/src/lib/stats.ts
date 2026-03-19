@@ -101,7 +101,7 @@ async function getDailyTrend(): Promise<DailyTrendItem[]> {
 async function getTopFeatures(): Promise<FeatureCount[]> {
   const rows = await query<{ value: unknown }>(
     `SELECT value FROM answers WHERE question_key = $1`,
-    ['q9']
+    ['q8']
   )
 
   if (rows.length === 0) return []
