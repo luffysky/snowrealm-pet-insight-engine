@@ -34,7 +34,7 @@ export default async function DonePage() {
 
           <div className="space-y-3">
             <a
-              href="https://line.me/R/ti/p/@762wxvfb"
+              href="https://line.me/R/ti/p/@474iwlht"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center justify-center gap-2 w-full px-6 py-3.5 bg-[#06C755] hover:bg-[#05b54e] text-white font-medium rounded-2xl transition-colors"
