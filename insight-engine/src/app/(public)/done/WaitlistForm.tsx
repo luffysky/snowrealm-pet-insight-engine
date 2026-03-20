@@ -1,6 +1,24 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
+
+const STORAGE_KEY = 'waitlist_draft'
+
+function loadDraft() {
+  try {
+    const raw = sessionStorage.getItem(STORAGE_KEY)
+    if (raw) return JSON.parse(raw) as { email?: string; nickname?: string; contactInfo?: string; submitted?: boolean }
+  } catch {}
+  return null
+}
+
+function saveDraft(data: { email: string; nickname: string; contactInfo: string }) {
+  try { sessionStorage.setItem(STORAGE_KEY, JSON.stringify(data)) } catch {}
+}
+
+function markSubmitted() {
+  try { sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ submitted: true })) } catch {}
+}
 
 export function WaitlistForm() {
   const [email, setEmail] = useState('')
@@ -8,6 +26,32 @@ export function WaitlistForm() {
   const [contactInfo, setContactInfo] = useState('')
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
   const [message, setMessage] = useState('')
+
+  // 從 sessionStorage 恢復草稿
+  useEffect(() => {
+    const draft = loadDraft()
+    if (!draft) return
+    if (draft.submitted) {
+      setStatus('success')
+      setMessage('已加入封測名單！')
+      return
+    }
+    if (draft.email) setEmail(draft.email)
+    if (draft.nickname) setNickname(draft.nickname)
+    if (draft.contactInfo) setContactInfo(draft.contactInfo)
+  }, [])
+
+  // 輸入時即時存入 sessionStorage
+  const updateField = useCallback((field: 'email' | 'nickname' | 'contactInfo', value: string) => {
+    const setters = { email: setEmail, nickname: setNickname, contactInfo: setContactInfo }
+    setters[field](value)
+    const current = loadDraft() ?? {}
+    saveDraft({
+      email: field === 'email' ? value : (current.email ?? ''),
+      nickname: field === 'nickname' ? value : (current.nickname ?? ''),
+      contactInfo: field === 'contactInfo' ? value : (current.contactInfo ?? ''),
+    })
+  }, [])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -29,6 +73,7 @@ export function WaitlistForm() {
       if (res.ok) {
         setStatus('success')
         setMessage(data.message ?? '成功加入封測名單！')
+        markSubmitted()
       } else {
         setStatus('error')
         setMessage(data.error ?? '送出失敗，請稍後再試')
@@ -55,7 +100,7 @@ export function WaitlistForm() {
       <input
         type="text"
         value={nickname}
-        onChange={(e) => setNickname(e.target.value)}
+        onChange={(e) => updateField('nickname', e.target.value)}
         placeholder="暱稱（選填）"
         maxLength={50}
         className={inputClass}
@@ -63,7 +108,7 @@ export function WaitlistForm() {
       <input
         type="email"
         value={email}
-        onChange={(e) => setEmail(e.target.value)}
+        onChange={(e) => updateField('email', e.target.value)}
         placeholder="Email *"
         required
         className={inputClass}
@@ -71,7 +116,7 @@ export function WaitlistForm() {
       <input
         type="text"
         value={contactInfo}
-        onChange={(e) => setContactInfo(e.target.value)}
+        onChange={(e) => updateField('contactInfo', e.target.value)}
         placeholder="LINE ID 或 IG 帳號（選填）"
         maxLength={100}
         className={inputClass}
