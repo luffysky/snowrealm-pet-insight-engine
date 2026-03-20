@@ -232,25 +232,25 @@ export function ResponseTable({
                   <NotesCell responseId={response.id} initialNotes={response.notes} />
                 </td>
                 <td className="px-4 sm:px-6 py-3 text-right">
-                  <div className="flex items-center justify-end gap-2">
+                  <div className="flex items-center justify-end gap-4 sm:gap-2">
                     <Link
                       href={`/admin/responses/${response.id}`}
-                      className="text-cyan-400 hover:text-cyan-300 text-sm"
+                      className="text-cyan-400 hover:text-cyan-300 text-sm px-2 py-1 -mx-2 -my-1"
                     >
                       查看
                     </Link>
                     {confirmId === response.id ? (
-                      <span className="flex items-center gap-1">
+                      <span className="flex items-center gap-3 sm:gap-1">
                         <button
                           onClick={() => handleDelete(response.id)}
                           disabled={deletingId === response.id}
-                          className="text-red-400 hover:text-red-300 text-sm font-medium disabled:opacity-50 cursor-pointer"
+                          className="text-red-400 hover:text-red-300 text-sm font-medium disabled:opacity-50 cursor-pointer px-2 py-1 -mx-2 -my-1"
                         >
                           {deletingId === response.id ? '刪除中...' : '確認'}
                         </button>
                         <button
                           onClick={() => setConfirmId(null)}
-                          className="text-slate-500 hover:text-slate-300 text-sm cursor-pointer"
+                          className="text-slate-500 hover:text-slate-300 text-sm cursor-pointer px-2 py-1 -mx-2 -my-1"
                         >
                           取消
                         </button>
@@ -261,7 +261,7 @@ export function ResponseTable({
                           setBatchMode(true)
                           setSelected(new Set([response.id]))
                         }}
-                        className="text-red-500/60 hover:text-red-400 text-sm cursor-pointer"
+                        className="text-red-500/60 hover:text-red-400 text-sm cursor-pointer px-2 py-1 -mx-2 -my-1"
                       >
                         刪除
                       </button>
