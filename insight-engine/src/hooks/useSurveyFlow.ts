@@ -43,11 +43,29 @@ function resolveRoute(
 }
 
 /** 根據路線過濾有效題目 */
-function filterQuestions(questions: Question[], route: string | null): Question[] {
-  if (!route) {
-    // 尚未決定路線時，只顯示主線題目（A + all + 無 route）
-    return questions.filter((q) => !q.route || q.route === 'all' || q.route === 'A')
+function filterQuestions(
+  questions: Question[],
+  route: string | null,
+  branchConfig: BranchConfig | undefined
+): Question[] {
+  if (!branchConfig) {
+    // 無分流設定，顯示所有題目
+    return questions
   }
+
+  if (!route) {
+    // 尚未決定路線：只顯示共用題目 + 分流題本身
+    // 不預設顯示任何分流的題目，避免誤導
+    return questions.filter((q) => {
+      if (!q.route || q.route === 'all') return true
+      // 分流題 key 本身一定要顯示
+      if (q.key === branchConfig.branchKey) return true
+      // A路線題目在分流前也不顯示（除非沒有其他路線）
+      return false
+    })
+  }
+
+  // 已決定路線
   return questions.filter((q) => !q.route || q.route === 'all' || q.route === route)
 }
 
@@ -69,14 +87,46 @@ export function useSurveyFlow({
 
   // 計算當前路線與有效題目
   const currentRoute = useMemo(() => resolveRoute(branchConfig, answers), [branchConfig, answers])
-  const activeQuestions = useMemo(() => filterQuestions(questions, currentRoute), [questions, currentRoute])
+  const activeQuestions = useMemo(() => filterQuestions(questions, currentRoute, branchConfig), [questions, currentRoute, branchConfig])
   routeRef.current = currentRoute
+
+  // 當路線改變導致題目列表變化時，修正 currentStep 以防跳到不存在的位置
+  const prevActiveLen = useRef(activeQuestions.length)
+  useEffect(() => {
+    if (activeQuestions.length !== prevActiveLen.current) {
+      // 路線決定後題目可能增加（正常）或減少（改答案）
+      // 保持當前 step 不超出範圍
+      setCurrentStep((s) => Math.min(s, activeQuestions.length - 1))
+      prevActiveLen.current = activeQuestions.length
+    }
+  }, [activeQuestions.length])
 
   const currentQuestion = activeQuestions[currentStep] ?? null
   const totalSteps = activeQuestions.length
 
   const answersRef = useRef(answers)
   answersRef.current = answers
+
+  // 路線變更時清除不屬於新路線的答案（避免舊分流答案殘留）
+  const prevRouteRef = useRef<string | null>(null)
+  useEffect(() => {
+    if (currentRoute && prevRouteRef.current && currentRoute !== prevRouteRef.current) {
+      // 找出屬於舊路線（不含 all）的題目 keys
+      const oldRouteKeys = new Set(
+        questions
+          .filter((q) => q.route === prevRouteRef.current)
+          .map((q) => q.key)
+      )
+      if (oldRouteKeys.size > 0) {
+        setAnswers((prev) => {
+          const next = new Map(prev)
+          for (const key of oldRouteKeys) next.delete(key)
+          return next
+        })
+      }
+    }
+    prevRouteRef.current = currentRoute
+  }, [currentRoute, questions])
 
   // 開始填答時建立 progress 紀錄（漏斗追蹤）
   useEffect(() => {

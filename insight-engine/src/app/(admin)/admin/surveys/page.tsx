@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import { EmojiPicker } from '@/components/admin/EmojiPicker'
+import { AiGeneratePanel } from '@/components/admin/AiGeneratePanel'
 import { getOptionEmoji } from '@/lib/optionEmoji'
 
 // ===== Types =====
@@ -690,6 +691,7 @@ function QuestionList({
 }) {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [adding, setAdding] = useState(false)
+  const [aiMode, setAiMode] = useState(false)
 
   const handleDelete = async (qid: string) => {
     if (!confirm('確定要刪除此題目？')) return
@@ -734,6 +736,13 @@ function QuestionList({
         >
           + 新增題目
         </button>
+        <button
+          type="button"
+          onClick={() => setAiMode(true)}
+          className="px-4 py-2 bg-gradient-to-r from-cyan-500/20 to-blue-500/20 border border-blue-400/30 text-blue-300 text-sm rounded-lg hover:from-cyan-500/30 hover:to-blue-500/30 transition-colors cursor-pointer"
+        >
+          🤖 AI 出題
+        </button>
       </div>
 
       {adding && (
@@ -742,6 +751,15 @@ function QuestionList({
           nextOrder={questions.length}
           onSaved={() => { setAdding(false); onReload() }}
           onCancel={() => setAdding(false)}
+        />
+      )}
+
+      {aiMode && (
+        <AiGeneratePanel
+          surveyId={surveyId}
+          existingCount={questions.length}
+          onDone={() => { setAiMode(false); onReload() }}
+          onCancel={() => setAiMode(false)}
         />
       )}
 
