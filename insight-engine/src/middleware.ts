@@ -72,5 +72,5 @@ export function middleware(request: NextRequest): NextResponse {
 }
 
 export const config = {
-  matcher: ['/admin/:path*', '/admin-:path*', '/api/admin/:path*', '/login', '/register'],
+  matcher: ['/admin/:path*', '/(admin-\\d{2}-\\d{2})/:path*', '/(admin-\\d{2}-\\d{2})', '/api/admin/:path*', '/login', '/register'],
 }
