@@ -71,7 +71,7 @@ function CoverContent({ config, themeSettings }: { config: SurveyConfig; themeSe
                 <select
                   value={theme}
                   onChange={e => setTheme(e.target.value as SurveyTheme)}
-                  className="px-4 py-2.5 rounded-xl text-sm border bg-white/5 border-white/20 text-white backdrop-blur-sm appearance-none cursor-pointer transition-all hover:border-white/30 focus:border-white/40 focus:outline-none"
+                  className="px-4 py-2.5 rounded-xl text-sm border bg-white/5 border-white/20 text-white backdrop-blur-sm appearance-none cursor-pointer transition-all hover:border-white/30 focus:border-white/40 focus:outline-none [&>option]:bg-gray-900 [&>option]:text-white [&>option:hover]:bg-white [&>option:hover]:text-gray-900 [&>option:checked]:bg-blue-600 [&>option:checked]:text-white"
                   style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'12\' height=\'12\' viewBox=\'0 0 12 12\'%3E%3Cpath fill=\'%23ffffff\' d=\'M6 8L1 3h10z\'/%3E%3C/svg%3E")', backgroundRepeat: 'no-repeat', backgroundPosition: 'right 12px center', paddingRight: '36px' }}
                 >
                   {availableThemes.map(t => (
