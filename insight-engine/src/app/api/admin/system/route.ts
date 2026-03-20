@@ -22,6 +22,7 @@ export async function GET(): Promise<NextResponse> {
       todayResponses,
       recentNotifications,
       dbSize,
+      adminUsers,
     ] = await Promise.all([
       queryOne<{ count: string }>('SELECT count(*) as count FROM surveys'),
       queryOne<{ count: string }>('SELECT count(*) as count FROM questions'),
@@ -41,6 +42,9 @@ export async function GET(): Promise<NextResponse> {
       queryOne<{ size: string }>(
         "SELECT pg_size_pretty(pg_database_size(current_database())) as size"
       ),
+      query<{ id: string; username: string; display_name: string | null; role: string; created_at: string; line_user_id: string | null }>(
+        'SELECT id, username, display_name, role, created_at, line_user_id FROM admin_users ORDER BY created_at ASC'
+      ),
     ])
 
     return NextResponse.json({
@@ -57,6 +61,14 @@ export async function GET(): Promise<NextResponse> {
       },
       todayResponses: Number(todayResponses?.count ?? 0),
       recentNotifications,
+      adminUsers: adminUsers.map(u => ({
+        id: u.id,
+        username: u.username,
+        displayName: u.display_name,
+        role: u.role,
+        createdAt: u.created_at,
+        hasLine: !!u.line_user_id,
+      })),
       dbSize: dbSize?.size ?? 'N/A',
       env: {
         hasLineOfficial: !!process.env.LINE_CHANNEL_ACCESS_TOKEN_OFFICIAL,

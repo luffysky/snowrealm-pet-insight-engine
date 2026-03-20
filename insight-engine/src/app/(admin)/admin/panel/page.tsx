@@ -7,6 +7,7 @@ interface SystemInfo {
   tables: Record<string, number>
   todayResponses: number
   recentNotifications: { type: string; status: string; created_at: string }[]
+  adminUsers: { id: string; username: string; displayName: string | null; role: string; createdAt: string; hasLine: boolean }[]
   dbSize: string
   env: {
     hasLineOfficial: boolean
@@ -144,6 +145,55 @@ export default function AdminPanelPage() {
               <p className="text-sm text-white/80">{info.dbSize}</p>
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* 管理人員 */}
+      <section>
+        <h2 className="text-lg font-semibold text-white/90 mb-3">👤 管理人員</h2>
+        <div className="bg-slate-900/60 border border-slate-800 rounded-xl overflow-hidden">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-slate-800 text-white/40 text-xs">
+                <th className="text-left px-4 py-2">名稱</th>
+                <th className="text-left px-4 py-2">帳號</th>
+                <th className="text-left px-4 py-2">角色</th>
+                <th className="text-left px-4 py-2">LINE 綁定</th>
+                <th className="text-left px-4 py-2">建立時間</th>
+              </tr>
+            </thead>
+            <tbody>
+              {(info.adminUsers ?? []).map((u) => (
+                <tr key={u.id} className="border-b border-slate-800/50 last:border-0">
+                  <td className="px-4 py-2.5 text-white/80 font-medium">
+                    {u.displayName || u.username}
+                  </td>
+                  <td className="px-4 py-2.5 text-white/50 font-mono text-xs">
+                    {u.username}
+                  </td>
+                  <td className="px-4 py-2.5">
+                    <span className={`text-xs px-2 py-0.5 rounded-full ${
+                      u.role === 'admin'
+                        ? 'bg-cyan-500/20 text-cyan-400'
+                        : 'bg-slate-500/20 text-slate-400'
+                    }`}>
+                      {u.role === 'admin' ? '管理員' : u.role}
+                    </span>
+                  </td>
+                  <td className="px-4 py-2.5">
+                    {u.hasLine ? (
+                      <span className="text-xs text-green-400">✓ 已綁定</span>
+                    ) : (
+                      <span className="text-xs text-white/30">未綁定</span>
+                    )}
+                  </td>
+                  <td className="px-4 py-2.5 text-white/40 text-xs">
+                    {formatTime(u.createdAt)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </section>
 
