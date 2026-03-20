@@ -36,7 +36,7 @@ export async function GET(): Promise<NextResponse> {
         "SELECT count(*) as count FROM responses WHERE created_at >= NOW() - INTERVAL '24 hours'"
       ),
       query<{ type: string; status: string; created_at: string }>(
-        `SELECT type, status, created_at FROM notification_logs ORDER BY created_at DESC FETCH FIRST 5 ROWS ONLY`
+        `SELECT trigger_type as type, status, created_at FROM notification_logs ORDER BY created_at DESC FETCH FIRST 5 ROWS ONLY`
       ),
       queryOne<{ size: string }>(
         "SELECT pg_size_pretty(pg_database_size(current_database())) as size"
