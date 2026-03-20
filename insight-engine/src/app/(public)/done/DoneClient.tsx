@@ -275,6 +275,17 @@ function DoneContent({ config }: { config: SurveyConfig }) {
             <p className={`text-xs leading-relaxed max-w-sm mx-auto ${stepTextClass[theme]} opacity-40`}>{tc.closingText}</p>
           </div>
 
+          {/* Divider */}
+          <div className={tc.dividerClass} />
+
+          {/* Waitlist — 放最上面讓使用者第一眼看到 */}
+          <div className="space-y-3">
+            <p className={`text-sm ${stepTextClass[theme]}`}>{tc.ctaText}</p>
+            <WaitlistForm />
+          </div>
+
+          <ClickTrackLinks />
+
           {/* Stats Cards */}
           {gameStats && (
             <div className="space-y-2">
@@ -324,17 +335,6 @@ function DoneContent({ config }: { config: SurveyConfig }) {
               </div>
             </div>
           )}
-
-          {/* Divider */}
-          <div className={tc.dividerClass} />
-
-          {/* Waitlist */}
-          <div className="space-y-3">
-            <p className={`text-sm ${stepTextClass[theme]}`}>{tc.ctaText}</p>
-            <WaitlistForm />
-          </div>
-
-          <ClickTrackLinks />
 
           {/* Toggle Answers */}
           <button
