@@ -43,11 +43,36 @@ export async function PATCH(
 
   try {
     const body = await request.json()
-    const notes = typeof body.notes === 'string' ? body.notes.slice(0, 500) : null
+    const sets: string[] = []
+    const vals: unknown[] = []
+    let idx = 1
 
+    if (typeof body.notes === 'string') {
+      sets.push(`notes = $${idx++}`)
+      vals.push(body.notes.slice(0, 500))
+    } else if (body.notes === null) {
+      sets.push(`notes = $${idx++}`)
+      vals.push(null)
+    }
+
+    if (body.status === 'completed' || body.status === 'in_progress') {
+      sets.push(`status = $${idx++}`)
+      vals.push(body.status)
+    }
+
+    if (typeof body.source === 'string') {
+      sets.push(`utm_source = $${idx++}`)
+      vals.push(body.source.slice(0, 200))
+    }
+
+    if (sets.length === 0) {
+      return NextResponse.json({ error: '無有效欄位' }, { status: 400 })
+    }
+
+    vals.push(id)
     await query(
-      `UPDATE responses SET notes = $1 WHERE id = $2`,
-      [notes, id]
+      `UPDATE responses SET ${sets.join(', ')} WHERE id = $${idx}`,
+      vals
     )
 
     return NextResponse.json({ success: true })
