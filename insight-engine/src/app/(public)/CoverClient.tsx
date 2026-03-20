@@ -104,6 +104,27 @@ function CoverContent({ config, themeSettings, slug }: { config: SurveyConfig; t
           </p>
         </div>
       </SurveyCard>
+
+      {/* Platform CTA */}
+      <div className="mt-6 max-w-md mx-auto px-4">
+        <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-white/[0.04] to-white/[0.02] backdrop-blur-sm p-5 text-center space-y-3">
+          <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/5 via-transparent to-purple-500/5" />
+          <div className="relative space-y-3">
+            <p className="text-[11px] text-white/30 tracking-widest uppercase">Powered by</p>
+            <p className="text-sm font-semibold text-white/70">SnowRealm Insight Engine</p>
+            <p className="text-xs text-white/40 leading-relaxed max-w-xs mx-auto">
+              9 種主題風格、AI 出題、分流邏輯、CRM 標籤 —<br/>
+              3 分鐘建立你的第一份專業問卷
+            </p>
+            <a
+              href="/register"
+              className="inline-block px-5 py-2 rounded-full text-xs font-medium bg-gradient-to-r from-cyan-500/20 to-purple-500/20 border border-white/15 text-white/80 hover:text-white hover:border-white/30 transition-all"
+            >
+              免費建立我的問卷 →
+            </a>
+          </div>
+        </div>
+      </div>
     </SurveyShell>
   )
 }
