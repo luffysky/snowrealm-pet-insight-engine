@@ -1,0 +1,943 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>毛行天下 · 冒險問卷</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700;900&family=ZCOOL+KuaiLe&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg-deep:#0a0e1a;
+  --bg-card:rgba(255,255,255,0.04);
+  --accent:#ff8f50;
+  --accent2:#7c5cfc;
+  --accent3:#50d9a0;
+  --glow:rgba(255,143,80,0.3);
+  --text:#e8e4df;
+  --text-dim:rgba(232,228,223,0.5);
+  --gold:#ffd700;
+  --card-flip-speed:0.6s;
+}
+html{font-size:16px}
+body{
+  font-family:'Noto Sans TC',sans-serif;
+  background:var(--bg-deep);
+  color:var(--text);
+  min-height:100vh;
+  overflow-x:hidden;
+  position:relative;
+}
+/* starfield */
+body::before{
+  content:'';position:fixed;inset:0;
+  background:
+    radial-gradient(1px 1px at 10% 20%,rgba(255,255,255,0.4),transparent),
+    radial-gradient(1px 1px at 30% 60%,rgba(255,255,255,0.3),transparent),
+    radial-gradient(1.5px 1.5px at 50% 10%,rgba(255,255,255,0.5),transparent),
+    radial-gradient(1px 1px at 70% 80%,rgba(255,255,255,0.3),transparent),
+    radial-gradient(1px 1px at 90% 40%,rgba(255,255,255,0.4),transparent),
+    radial-gradient(1.5px 1.5px at 15% 75%,rgba(255,255,255,0.2),transparent),
+    radial-gradient(1px 1px at 85% 15%,rgba(255,255,255,0.35),transparent),
+    radial-gradient(1px 1px at 45% 90%,rgba(255,255,255,0.25),transparent);
+  background-size:200px 200px,300px 300px,250px 250px,180px 180px,220px 220px,280px 280px,160px 160px,350px 350px;
+  animation:twinkle 8s ease-in-out infinite alternate;
+  pointer-events:none;z-index:0;
+}
+@keyframes twinkle{0%{opacity:0.6}100%{opacity:1}}
+
+.app{position:relative;z-index:1;max-width:520px;margin:0 auto;padding:20px 16px 100px}
+
+/* ===== TOP BAR ===== */
+.top-bar{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:12px 0;margin-bottom:8px;
+}
+.avatar-area{display:flex;align-items:center;gap:10px}
+.avatar{
+  width:44px;height:44px;border-radius:50%;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  display:flex;align-items:center;justify-content:center;
+  font-size:22px;box-shadow:0 0 12px var(--glow);
+}
+.player-info .name{font-weight:700;font-size:0.95rem}
+.player-info .title-tag{font-size:0.72rem;color:var(--accent);opacity:0.85}
+.level-badge{
+  background:linear-gradient(135deg,var(--accent2),var(--accent));
+  padding:4px 12px;border-radius:20px;
+  font-size:0.72rem;font-weight:700;letter-spacing:1px;
+}
+
+/* ===== XP BAR ===== */
+.xp-section{margin-bottom:20px}
+.xp-label{display:flex;justify-content:space-between;font-size:0.75rem;color:var(--text-dim);margin-bottom:5px}
+.xp-track{
+  height:8px;border-radius:8px;
+  background:rgba(255,255,255,0.08);overflow:hidden;
+  position:relative;
+}
+.xp-fill{
+  height:100%;border-radius:8px;
+  background:linear-gradient(90deg,var(--accent2),var(--accent),var(--gold));
+  background-size:200% 100%;
+  animation:xpShimmer 2s ease infinite;
+  transition:width 0.8s cubic-bezier(0.22,1,0.36,1);
+  width:0%;
+}
+@keyframes xpShimmer{0%{background-position:0% 50%}100%{background-position:200% 50%}}
+
+/* ===== PROGRESS MAP ===== */
+.progress-map{
+  display:flex;align-items:center;justify-content:center;
+  gap:0;margin-bottom:28px;flex-wrap:wrap;
+  padding:10px 0;
+}
+.map-node{
+  width:28px;height:28px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:0.65rem;font-weight:700;
+  background:rgba(255,255,255,0.06);
+  border:2px solid rgba(255,255,255,0.1);
+  transition:all 0.4s;position:relative;
+  flex-shrink:0;
+}
+.map-node.completed{
+  background:var(--accent);border-color:var(--accent);
+  box-shadow:0 0 10px var(--glow);color:#fff;
+}
+.map-node.current{
+  background:var(--accent2);border-color:var(--accent2);
+  box-shadow:0 0 14px rgba(124,92,252,0.5);color:#fff;
+  animation:pulse 1.5s ease infinite;
+}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.15)}}
+.map-node.locked{color:rgba(255,255,255,0.2)}
+.map-connector{
+  width:14px;height:2px;
+  background:rgba(255,255,255,0.08);
+  flex-shrink:0;
+}
+.map-connector.completed{background:var(--accent)}
+
+/* ===== SCENE ===== */
+.scene{
+  text-align:center;
+  animation:fadeSlideIn 0.5s ease;
+}
+@keyframes fadeSlideIn{
+  from{opacity:0;transform:translateY(20px)}
+  to{opacity:1;transform:translateY(0)}
+}
+.scene-chapter{
+  font-size:0.7rem;color:var(--accent2);
+  letter-spacing:3px;text-transform:uppercase;
+  margin-bottom:6px;font-weight:500;
+}
+.scene-title{
+  font-family:'ZCOOL KuaiLe',cursive;
+  font-size:1.6rem;
+  background:linear-gradient(135deg,var(--accent),var(--gold));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  margin-bottom:10px;
+}
+.scene-narrative{
+  font-size:0.88rem;line-height:1.8;
+  color:var(--text-dim);
+  margin-bottom:24px;
+  max-width:440px;margin-left:auto;margin-right:auto;
+  min-height:60px;
+}
+.scene-narrative .highlight{color:var(--accent);font-weight:500}
+.scene-illustration{
+  font-size:3.2rem;margin-bottom:16px;
+  filter:drop-shadow(0 0 20px var(--glow));
+  animation:float 3s ease-in-out infinite;
+}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+
+/* ===== CARD OPTIONS ===== */
+.options-grid{
+  display:grid;gap:12px;
+  margin-bottom:16px;
+}
+.options-grid.cols-2{grid-template-columns:1fr 1fr}
+.options-grid.cols-1{grid-template-columns:1fr}
+
+.option-card{
+  perspective:800px;
+  cursor:pointer;
+  min-height:90px;
+}
+.option-card-inner{
+  position:relative;
+  width:100%;height:100%;min-height:90px;
+  transition:transform var(--card-flip-speed) ease;
+  transform-style:preserve-3d;
+}
+.option-card.flipped .option-card-inner{
+  transform:rotateY(180deg);
+}
+.option-card-front,.option-card-back{
+  position:absolute;inset:0;
+  backface-visibility:hidden;
+  border-radius:14px;
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  padding:14px 12px;
+  transition:border-color 0.3s,box-shadow 0.3s;
+}
+.option-card-front{
+  background:var(--bg-card);
+  border:1.5px solid rgba(255,255,255,0.08);
+  backdrop-filter:blur(8px);
+}
+.option-card:hover .option-card-front{
+  border-color:rgba(255,143,80,0.3);
+  box-shadow:0 4px 24px rgba(255,143,80,0.1);
+}
+.option-card-back{
+  background:linear-gradient(135deg,rgba(124,92,252,0.2),rgba(255,143,80,0.2));
+  border:1.5px solid var(--accent);
+  transform:rotateY(180deg);
+  box-shadow:0 4px 24px var(--glow);
+}
+.option-emoji{font-size:1.8rem;margin-bottom:6px}
+.option-text{font-size:0.85rem;font-weight:500;text-align:center;line-height:1.4}
+.option-card-back .option-text{color:var(--accent)}
+
+.option-card.selected .option-card-front{
+  border-color:var(--accent);
+  box-shadow:0 0 20px var(--glow);
+  background:rgba(255,143,80,0.08);
+}
+
+/* multi-select hint */
+.multi-hint{
+  font-size:0.72rem;color:var(--text-dim);
+  margin-bottom:12px;
+  display:flex;align-items:center;gap:6px;justify-content:center;
+}
+.multi-hint::before{content:'💡'}
+
+/* ===== SLIDER QUESTION ===== */
+.slider-container{
+  padding:16px 20px;
+  background:var(--bg-card);
+  border-radius:16px;
+  border:1px solid rgba(255,255,255,0.06);
+  margin-bottom:16px;
+}
+.slider-labels{display:flex;justify-content:space-between;font-size:0.72rem;color:var(--text-dim);margin-bottom:10px}
+.slider-track{position:relative;height:6px;background:rgba(255,255,255,0.08);border-radius:6px;cursor:pointer}
+.slider-fill{position:absolute;left:0;top:0;height:100%;border-radius:6px;background:linear-gradient(90deg,var(--accent2),var(--accent));transition:width 0.15s}
+.slider-thumb{
+  position:absolute;top:50%;width:24px;height:24px;border-radius:50%;
+  background:var(--accent);box-shadow:0 0 12px var(--glow);
+  transform:translate(-50%,-50%);cursor:grab;transition:left 0.15s;
+}
+.slider-value{
+  text-align:center;margin-top:12px;
+  font-family:'ZCOOL KuaiLe',cursive;
+  font-size:1.8rem;color:var(--accent);
+}
+
+/* ===== TEXT INPUT ===== */
+.text-input-area{
+  width:100%;padding:14px 16px;
+  background:var(--bg-card);
+  border:1.5px solid rgba(255,255,255,0.08);
+  border-radius:14px;color:var(--text);
+  font-family:'Noto Sans TC',sans-serif;
+  font-size:0.9rem;resize:none;
+  outline:none;min-height:80px;
+  transition:border-color 0.3s;
+  margin-bottom:16px;
+}
+.text-input-area:focus{border-color:var(--accent)}
+.text-input-area::placeholder{color:var(--text-dim)}
+
+/* ===== BUTTONS ===== */
+.btn-next{
+  display:block;width:100%;padding:14px;
+  background:linear-gradient(135deg,var(--accent2),var(--accent));
+  border:none;border-radius:14px;
+  color:#fff;font-size:0.95rem;font-weight:700;
+  font-family:'Noto Sans TC',sans-serif;
+  cursor:pointer;letter-spacing:1px;
+  transition:all 0.3s;
+  box-shadow:0 4px 20px rgba(255,143,80,0.25);
+}
+.btn-next:hover{transform:translateY(-2px);box-shadow:0 6px 28px rgba(255,143,80,0.35)}
+.btn-next:disabled{opacity:0.35;cursor:not-allowed;transform:none;box-shadow:none}
+
+/* ===== ACHIEVEMENT TOAST ===== */
+.achievement-overlay{
+  position:fixed;inset:0;z-index:100;
+  display:flex;align-items:center;justify-content:center;
+  background:rgba(10,14,26,0.85);
+  backdrop-filter:blur(6px);
+  opacity:0;pointer-events:none;
+  transition:opacity 0.4s;
+}
+.achievement-overlay.show{opacity:1;pointer-events:auto}
+.achievement-card{
+  text-align:center;
+  padding:36px 32px;
+  background:linear-gradient(160deg,rgba(255,215,0,0.1),rgba(124,92,252,0.1));
+  border:1.5px solid var(--gold);
+  border-radius:20px;
+  box-shadow:0 0 60px rgba(255,215,0,0.15);
+  transform:scale(0.8);transition:transform 0.4s cubic-bezier(0.34,1.56,0.64,1);
+  max-width:320px;
+}
+.achievement-overlay.show .achievement-card{transform:scale(1)}
+.achievement-icon{font-size:3.5rem;margin-bottom:10px;animation:float 2s ease-in-out infinite}
+.achievement-label{font-size:0.7rem;color:var(--gold);letter-spacing:3px;margin-bottom:4px}
+.achievement-name{font-family:'ZCOOL KuaiLe',cursive;font-size:1.3rem;color:var(--gold);margin-bottom:6px}
+.achievement-desc{font-size:0.8rem;color:var(--text-dim);margin-bottom:18px;line-height:1.6}
+.btn-achievement-ok{
+  padding:10px 36px;border:1.5px solid var(--gold);
+  background:rgba(255,215,0,0.1);
+  border-radius:10px;color:var(--gold);
+  font-size:0.85rem;font-weight:700;cursor:pointer;
+  font-family:'Noto Sans TC',sans-serif;
+  transition:all 0.3s;
+}
+.btn-achievement-ok:hover{background:rgba(255,215,0,0.2)}
+
+/* ===== RESULT SCREEN ===== */
+.result-screen{animation:fadeSlideIn 0.6s ease}
+.result-pet{font-size:5rem;margin-bottom:16px;animation:float 3s ease-in-out infinite}
+.result-type{
+  font-family:'ZCOOL KuaiLe',cursive;
+  font-size:1.8rem;
+  background:linear-gradient(135deg,var(--accent),var(--gold));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  margin-bottom:8px;
+}
+.result-desc{font-size:0.88rem;color:var(--text-dim);line-height:1.8;margin-bottom:24px;max-width:400px;margin-left:auto;margin-right:auto}
+.stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:24px}
+.stat-item{
+  background:var(--bg-card);border:1px solid rgba(255,255,255,0.06);
+  border-radius:12px;padding:14px 8px;text-align:center;
+}
+.stat-value{font-family:'ZCOOL KuaiLe',cursive;font-size:1.4rem;color:var(--accent)}
+.stat-label{font-size:0.68rem;color:var(--text-dim);margin-top:2px}
+.badges-row{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:24px}
+.badge{
+  padding:5px 14px;border-radius:20px;font-size:0.72rem;font-weight:500;
+  background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);
+}
+.badge.gold{border-color:var(--gold);color:var(--gold);background:rgba(255,215,0,0.08)}
+
+/* ===== INTRO SCREEN ===== */
+.intro-screen{
+  text-align:center;padding-top:12vh;
+  animation:fadeSlideIn 0.8s ease;
+}
+.intro-logo{font-size:4.5rem;margin-bottom:12px;filter:drop-shadow(0 0 30px var(--glow));animation:float 3s ease-in-out infinite}
+.intro-title{
+  font-family:'ZCOOL KuaiLe',cursive;
+  font-size:2rem;
+  background:linear-gradient(135deg,var(--accent),var(--gold),var(--accent2));
+  background-size:200% 200%;
+  animation:gradShift 3s ease infinite;
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  margin-bottom:6px;
+}
+@keyframes gradShift{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
+.intro-sub{font-size:0.88rem;color:var(--text-dim);margin-bottom:36px;line-height:1.7}
+.intro-features{
+  display:flex;gap:24px;justify-content:center;margin-bottom:36px;
+}
+.intro-feat{text-align:center}
+.intro-feat-icon{font-size:1.6rem;margin-bottom:4px}
+.intro-feat-text{font-size:0.7rem;color:var(--text-dim)}
+
+/* typing animation */
+.typing-char{opacity:0;animation:typeIn 0.03s forwards}
+@keyframes typeIn{to{opacity:1}}
+
+/* confetti */
+.confetti-piece{
+  position:fixed;width:8px;height:8px;
+  border-radius:2px;z-index:200;
+  animation:confettiFall 2.5s ease-out forwards;
+  pointer-events:none;
+}
+@keyframes confettiFall{
+  0%{transform:translateY(-20px) rotate(0deg);opacity:1}
+  100%{transform:translateY(100vh) rotate(720deg);opacity:0}
+}
+
+/* shake for wrong? no, every answer is valid! */
+.hidden{display:none!important}
+</style>
+</head>
+<body>
+
+<div class="app" id="app">
+  <!-- Intro -->
+  <div id="introScreen" class="intro-screen">
+    <div class="intro-logo">🐾</div>
+    <div class="intro-title">毛行天下 · 冒險問卷</div>
+    <p class="intro-sub">
+      一段關於你和毛孩的奇幻旅程<br>
+      回答問題，解鎖成就，發現你的毛寶類型！
+    </p>
+    <div class="intro-features">
+      <div class="intro-feat"><div class="intro-feat-icon">⚔️</div><div class="intro-feat-text">15 道關卡</div></div>
+      <div class="intro-feat"><div class="intro-feat-icon">🏆</div><div class="intro-feat-text">隱藏成就</div></div>
+      <div class="intro-feat"><div class="intro-feat-icon">🎴</div><div class="intro-feat-text">卡牌翻轉</div></div>
+    </div>
+    <button class="btn-next" onclick="startAdventure()">✨ 開始冒險 ✨</button>
+  </div>
+
+  <!-- Game UI (hidden initially) -->
+  <div id="gameUI" class="hidden">
+    <div class="top-bar">
+      <div class="avatar-area">
+        <div class="avatar">🐾</div>
+        <div class="player-info">
+          <div class="name">冒險者</div>
+          <div class="title-tag" id="playerTitle">見習毛友</div>
+        </div>
+      </div>
+      <div class="level-badge" id="levelBadge">LV 1</div>
+    </div>
+
+    <div class="xp-section">
+      <div class="xp-label"><span>冒險經驗</span><span id="xpText">0 / 100 XP</span></div>
+      <div class="xp-track"><div class="xp-fill" id="xpFill"></div></div>
+    </div>
+
+    <div class="progress-map" id="progressMap"></div>
+
+    <div id="questionArea"></div>
+  </div>
+</div>
+
+<!-- Achievement Overlay -->
+<div class="achievement-overlay" id="achievementOverlay">
+  <div class="achievement-card">
+    <div class="achievement-icon" id="achIcon">🏆</div>
+    <div class="achievement-label">成 就 解 鎖</div>
+    <div class="achievement-name" id="achName"></div>
+    <div class="achievement-desc" id="achDesc"></div>
+    <button class="btn-achievement-ok" onclick="closeAchievement()">繼續冒險 →</button>
+  </div>
+</div>
+
+<script>
+// ===== QUESTIONS DATA =====
+const questions = [
+  {
+    chapter:'序章',title:'你的身份',
+    emoji:'🧙',
+    narrative:'在毛行天下的世界裡，每位冒險者都有自己的身份。你是⋯⋯',
+    type:'single',cols:2,
+    options:[
+      {emoji:'😺',text:'貓奴一枚',value:'cat'},
+      {emoji:'🐶',text:'狗派代表',value:'dog'},
+      {emoji:'🐰',text:'異寵達人',value:'exotic'},
+      {emoji:'🤔',text:'還沒養但很想',value:'planning'},
+    ]
+  },
+  {
+    chapter:'序章',title:'毛孩數量',
+    emoji:'🏠',
+    narrative:'你的小窩裡，有多少位毛茸茸的室友呢？',
+    type:'single',cols:2,
+    options:[
+      {emoji:'0️⃣',text:'目前 0 位',value:'0'},
+      {emoji:'1️⃣',text:'獨生毛孩',value:'1'},
+      {emoji:'✌️',text:'2~3 位',value:'2-3'},
+      {emoji:'🎪',text:'4 位以上，小動物園',value:'4+'},
+    ]
+  },
+  {
+    chapter:'第一章',title:'日常記錄',
+    emoji:'📸',
+    narrative:'平時你會怎麼記錄和毛孩的生活？',
+    type:'multi',cols:2,
+    hint:'可以多選喔！',
+    options:[
+      {emoji:'📷',text:'拍照/影片',value:'photo'},
+      {emoji:'📝',text:'寫文字日記',value:'diary'},
+      {emoji:'📱',text:'發社群動態',value:'social'},
+      {emoji:'🤷',text:'其實很少記錄',value:'none'},
+    ],
+    achievement:{at:true,icon:'📸',name:'記憶收集者',desc:'你已經開始記錄與毛孩的點滴！'}
+  },
+  {
+    chapter:'第一章',title:'社群偏好',
+    emoji:'💬',
+    narrative:'在寵物社群中，你最想看到什麼樣的內容？',
+    type:'single',cols:1,
+    options:[
+      {emoji:'🩺',text:'專業醫療/健康知識',value:'health'},
+      {emoji:'🎉',text:'有趣的萌寵日常',value:'fun'},
+      {emoji:'🛒',text:'好物推薦與團購',value:'shopping'},
+      {emoji:'🤝',text:'找飯友/遛狗夥伴',value:'meetup'},
+    ]
+  },
+  {
+    chapter:'第二章',title:'散步冒險',
+    emoji:'🗺️',
+    narrative:'帶毛孩出門散步時，你最在意什麼？',
+    type:'single',cols:2,
+    options:[
+      {emoji:'📍',text:'附近的寵物友善地點',value:'location'},
+      {emoji:'👣',text:'記錄散步路線和距離',value:'tracking'},
+      {emoji:'🐕',text:'和其他毛孩交朋友',value:'social'},
+      {emoji:'🌿',text:'享受安靜的散步時光',value:'peace'},
+    ]
+  },
+  {
+    chapter:'第二章',title:'出行頻率',
+    emoji:'🚶',
+    narrative:'你帶毛孩出門的頻率大約是？',
+    type:'slider',
+    min:1,max:7,default:3,
+    minLabel:'每週 1 次',maxLabel:'天天出門',
+    unit:'次/週',
+    achievement:{at:true,icon:'🗺️',name:'探險家之心',desc:'毛孩的世界因你而寬廣！'}
+  },
+  {
+    chapter:'第三章',title:'虛擬夥伴',
+    emoji:'🎮',
+    narrative:'如果你的毛孩有一個虛擬分身，你最想⋯⋯',
+    type:'single',cols:2,
+    options:[
+      {emoji:'👗',text:'幫牠穿搭可愛造型',value:'dress'},
+      {emoji:'🏡',text:'打造夢幻小窩',value:'home'},
+      {emoji:'🎯',text:'帶牠完成任務冒險',value:'quest'},
+      {emoji:'💬',text:'讓牠和別的虛擬寵物互動',value:'social'},
+    ]
+  },
+  {
+    chapter:'第三章',title:'AI 助手',
+    emoji:'🤖',
+    narrative:'你覺得 AI 在寵物生活中最有價值的功能是？',
+    type:'single',cols:1,
+    options:[
+      {emoji:'🩺',text:'健康狀態分析與提醒',value:'health_ai'},
+      {emoji:'📊',text:'自動生成生活報告',value:'report'},
+      {emoji:'🎨',text:'AI 生成毛孩的藝術照',value:'art'},
+      {emoji:'💡',text:'個性化飼養建議',value:'advice'},
+    ]
+  },
+  {
+    chapter:'第四章',title:'情感連結',
+    emoji:'🌈',
+    narrative:'如果有一天毛孩離開了，你最希望有什麼方式來紀念牠？',
+    type:'multi',cols:2,
+    hint:'選擇對你有意義的方式',
+    options:[
+      {emoji:'🌳',text:'數位紀念花園',value:'garden'},
+      {emoji:'📖',text:'自動整理的回憶錄',value:'memoir'},
+      {emoji:'⭐',text:'天空中的專屬星星',value:'star'},
+      {emoji:'💝',text:'和牠的虛擬分身對話',value:'chat'},
+    ],
+    achievement:{at:true,icon:'🌈',name:'彩虹守護者',desc:'愛不會因離別而消逝，你懂得珍惜每一刻。'}
+  },
+  {
+    chapter:'第四章',title:'付費意願',
+    emoji:'💎',
+    narrative:'對於喜歡的寵物平台服務，你願意怎麼支持？',
+    type:'single',cols:2,
+    options:[
+      {emoji:'🆓',text:'只用免費功能',value:'free'},
+      {emoji:'☕',text:'小額贊助（月付咖啡錢）',value:'small'},
+      {emoji:'💳',text:'訂閱制（月費）',value:'sub'},
+      {emoji:'🛍️',text:'按需購買特定功能',value:'one-time'},
+    ]
+  },
+  {
+    chapter:'第五章',title:'花費分配',
+    emoji:'💰',
+    narrative:'你每月在毛孩身上的花費大概是？',
+    type:'slider',
+    min:0,max:5000,default:1500,step:500,
+    minLabel:'NT$0',maxLabel:'NT$5000+',
+    unit:'NT$',
+  },
+  {
+    chapter:'第五章',title:'最期待的功能',
+    emoji:'⭐',
+    narrative:'以下功能中，你最期待哪些？（決定我們的開發優先順序！）',
+    type:'multi',cols:1,
+    hint:'最多選 3 個最想要的',
+    maxSelect:3,
+    options:[
+      {emoji:'📍',text:'寵物友善地圖 + 足跡記錄',value:'map'},
+      {emoji:'🎮',text:'虛擬寵物養成遊戲',value:'virtual'},
+      {emoji:'🌈',text:'彩虹國紀念空間',value:'rainbow'},
+      {emoji:'🤖',text:'AI 健康助手',value:'ai_health'},
+    ],
+    achievement:{at:true,icon:'⭐',name:'未來建築師',desc:'你的選擇將影響毛行天下的發展方向！'}
+  },
+  {
+    chapter:'終章',title:'使用平台',
+    emoji:'📱',
+    narrative:'你平常最常用什麼裝置？',
+    type:'single',cols:2,
+    options:[
+      {emoji:'📱',text:'手機 App',value:'mobile'},
+      {emoji:'💻',text:'電腦網頁',value:'desktop'},
+      {emoji:'🔄',text:'兩邊都用',value:'both'},
+      {emoji:'⌚',text:'希望有手錶 App',value:'watch'},
+    ]
+  },
+  {
+    chapter:'終章',title:'推薦意願',
+    emoji:'📣',
+    narrative:'如果毛行天下讓你滿意，你會推薦給朋友嗎？',
+    type:'slider',
+    min:1,max:10,default:7,
+    minLabel:'不太會',maxLabel:'瘋狂安利',
+    unit:'分',
+  },
+  {
+    chapter:'終章',title:'冒險者留言',
+    emoji:'✉️',
+    narrative:'最後，對毛行天下的開發團隊說一句話吧！任何建議、期待、鼓勵都可以 ❤️',
+    type:'text',
+    placeholder:'寫下你的心聲⋯⋯（選填）',
+  }
+];
+
+// ===== STATE =====
+let currentQ = 0;
+let xp = 0;
+let level = 1;
+let answers = [];
+let selectedOptions = [];
+let sliderValue = 0;
+let achievements = [];
+let achievementQueue = [];
+
+// ===== INIT =====
+function startAdventure(){
+  document.getElementById('introScreen').classList.add('hidden');
+  document.getElementById('gameUI').classList.remove('hidden');
+  buildProgressMap();
+  renderQuestion();
+}
+
+function buildProgressMap(){
+  const map = document.getElementById('progressMap');
+  map.innerHTML='';
+  questions.forEach((q,i)=>{
+    const node = document.createElement('div');
+    node.className='map-node locked';
+    node.id='node-'+i;
+    node.textContent=i+1;
+    map.appendChild(node);
+    if(i<questions.length-1){
+      const conn=document.createElement('div');
+      conn.className='map-connector';
+      conn.id='conn-'+i;
+      map.appendChild(conn);
+    }
+  });
+  updateMapState();
+}
+
+function updateMapState(){
+  questions.forEach((_,i)=>{
+    const node=document.getElementById('node-'+i);
+    if(!node)return;
+    node.className='map-node';
+    if(i<currentQ){node.classList.add('completed');node.textContent='✓';}
+    else if(i===currentQ){node.classList.add('current');}
+    else{node.classList.add('locked');}
+    if(i<currentQ){
+      const conn=document.getElementById('conn-'+i);
+      if(conn)conn.classList.add('completed');
+    }
+  });
+}
+
+// ===== RENDER =====
+function renderQuestion(){
+  if(currentQ>=questions.length){showResult();return;}
+  const q=questions[currentQ];
+  selectedOptions=[];
+  const area=document.getElementById('questionArea');
+  
+  let html=`<div class="scene" key="${currentQ}">
+    <div class="scene-chapter">${q.chapter}</div>
+    <div class="scene-illustration">${q.emoji}</div>
+    <div class="scene-title">${q.title}</div>
+    <div class="scene-narrative" id="narrative"></div>`;
+
+  if(q.type==='single'||q.type==='multi'){
+    if(q.hint)html+=`<div class="multi-hint">${q.hint}</div>`;
+    html+=`<div class="options-grid ${q.cols===2?'cols-2':'cols-1'}">`;
+    q.options.forEach((opt,i)=>{
+      html+=`<div class="option-card" id="opt-${i}" onclick="selectOption(${i})">
+        <div class="option-card-inner">
+          <div class="option-card-front">
+            <div class="option-emoji">${opt.emoji}</div>
+            <div class="option-text">${opt.text}</div>
+          </div>
+          <div class="option-card-back">
+            <div class="option-emoji">${opt.emoji}</div>
+            <div class="option-text">✓ ${opt.text}</div>
+          </div>
+        </div>
+      </div>`;
+    });
+    html+=`</div>`;
+    if(q.type==='single'){
+      // auto-advance for single
+    } else {
+      html+=`<button class="btn-next" id="btnNext" onclick="confirmAnswer()" disabled>確認選擇 →</button>`;
+    }
+  } else if(q.type==='slider'){
+    const step=q.step||1;
+    sliderValue=q.default;
+    html+=`<div class="slider-container">
+      <div class="slider-labels"><span>${q.minLabel}</span><span>${q.maxLabel}</span></div>
+      <div class="slider-track" id="sliderTrack">
+        <div class="slider-fill" id="sliderFill"></div>
+        <div class="slider-thumb" id="sliderThumb"></div>
+      </div>
+      <div class="slider-value" id="sliderVal">${q.unit==='NT$'?'NT$ '+q.default:q.default+' '+q.unit}</div>
+    </div>`;
+    html+=`<button class="btn-next" onclick="confirmSlider()">確認 →</button>`;
+  } else if(q.type==='text'){
+    html+=`<textarea class="text-input-area" id="textInput" placeholder="${q.placeholder}" rows="3"></textarea>`;
+    html+=`<button class="btn-next" onclick="confirmText()">完成冒險 🎉</button>`;
+  }
+
+  html+=`</div>`;
+  area.innerHTML=html;
+
+  // typing effect for narrative
+  typeNarrative(q.narrative);
+
+  // init slider
+  if(q.type==='slider') initSlider(q);
+
+  updateMapState();
+}
+
+function typeNarrative(text){
+  const el=document.getElementById('narrative');
+  if(!el)return;
+  el.innerHTML='';
+  [...text].forEach((char,i)=>{
+    const span=document.createElement('span');
+    span.className='typing-char';
+    span.textContent=char;
+    span.style.animationDelay=i*25+'ms';
+    el.appendChild(span);
+  });
+}
+
+// ===== SELECTION =====
+function selectOption(idx){
+  const q=questions[currentQ];
+  
+  if(q.type==='single'){
+    document.querySelectorAll('.option-card').forEach(c=>{
+      c.classList.remove('selected','flipped');
+    });
+    const card=document.getElementById('opt-'+idx);
+    card.classList.add('selected','flipped');
+    selectedOptions=[idx];
+    // auto advance after flip animation
+    setTimeout(()=>confirmAnswer(),700);
+  } else {
+    // multi
+    const card=document.getElementById('opt-'+idx);
+    const pos=selectedOptions.indexOf(idx);
+    if(pos>-1){
+      selectedOptions.splice(pos,1);
+      card.classList.remove('selected','flipped');
+    } else {
+      if(q.maxSelect && selectedOptions.length>=q.maxSelect) return;
+      selectedOptions.push(idx);
+      card.classList.add('selected','flipped');
+    }
+    const btn=document.getElementById('btnNext');
+    if(btn) btn.disabled=selectedOptions.length===0;
+  }
+}
+
+function confirmAnswer(){
+  const q=questions[currentQ];
+  const vals=selectedOptions.map(i=>q.options[i].value);
+  answers.push({question:q.title,value:vals,type:q.type});
+  addXP(q.type==='multi'?15:10);
+  checkAchievement(q);
+  currentQ++;
+  renderQuestion();
+}
+
+// ===== SLIDER =====
+function initSlider(q){
+  const track=document.getElementById('sliderTrack');
+  const fill=document.getElementById('sliderFill');
+  const thumb=document.getElementById('sliderThumb');
+  const step=q.step||1;
+  let dragging=false;
+
+  function update(clientX){
+    const rect=track.getBoundingClientRect();
+    let pct=Math.max(0,Math.min(1,(clientX-rect.left)/rect.width));
+    let val=q.min+pct*(q.max-q.min);
+    val=Math.round(val/step)*step;
+    val=Math.max(q.min,Math.min(q.max,val));
+    sliderValue=val;
+    pct=(val-q.min)/(q.max-q.min);
+    fill.style.width=pct*100+'%';
+    thumb.style.left=pct*100+'%';
+    const display=q.unit==='NT$'?'NT$ '+val:val+' '+q.unit;
+    document.getElementById('sliderVal').textContent=display;
+  }
+
+  const initPct=(q.default-q.min)/(q.max-q.min);
+  fill.style.width=initPct*100+'%';
+  thumb.style.left=initPct*100+'%';
+
+  thumb.addEventListener('mousedown',()=>dragging=true);
+  thumb.addEventListener('touchstart',()=>dragging=true,{passive:true});
+  document.addEventListener('mousemove',e=>{if(dragging)update(e.clientX)});
+  document.addEventListener('touchmove',e=>{if(dragging)update(e.touches[0].clientX)},{passive:true});
+  document.addEventListener('mouseup',()=>dragging=false);
+  document.addEventListener('touchend',()=>dragging=false);
+  track.addEventListener('click',e=>update(e.clientX));
+}
+
+function confirmSlider(){
+  const q=questions[currentQ];
+  answers.push({question:q.title,value:sliderValue,type:'slider'});
+  addXP(10);
+  checkAchievement(q);
+  currentQ++;
+  renderQuestion();
+}
+
+function confirmText(){
+  const val=document.getElementById('textInput')?.value||'';
+  answers.push({question:questions[currentQ].title,value:val,type:'text'});
+  addXP(20);
+  checkAchievement(questions[currentQ]);
+  currentQ++;
+  renderQuestion();
+}
+
+// ===== XP & LEVEL =====
+function addXP(amount){
+  xp+=amount;
+  const maxXP=level*100;
+  if(xp>=maxXP){xp-=maxXP;level++;document.getElementById('levelBadge').textContent='LV '+level;updateTitle();}
+  const pct=Math.min(100,xp/(level*100)*100);
+  document.getElementById('xpFill').style.width=pct+'%';
+  document.getElementById('xpText').textContent=xp+' / '+(level*100)+' XP';
+}
+
+function updateTitle(){
+  const titles=['見習毛友','初階毛友','中階毛友','資深毛友','毛行達人'];
+  document.getElementById('playerTitle').textContent=titles[Math.min(level-1,titles.length-1)];
+}
+
+// ===== ACHIEVEMENTS =====
+function checkAchievement(q){
+  if(q.achievement && q.achievement.at && !achievements.includes(q.title)){
+    achievements.push(q.title);
+    achievementQueue.push(q.achievement);
+    if(achievementQueue.length===1) showNextAchievement();
+  }
+}
+function showNextAchievement(){
+  if(achievementQueue.length===0) return;
+  const ach=achievementQueue[0];
+  document.getElementById('achIcon').textContent=ach.icon;
+  document.getElementById('achName').textContent=ach.name;
+  document.getElementById('achDesc').textContent=ach.desc;
+  document.getElementById('achievementOverlay').classList.add('show');
+  spawnConfetti();
+}
+function closeAchievement(){
+  document.getElementById('achievementOverlay').classList.remove('show');
+  achievementQueue.shift();
+  if(achievementQueue.length>0) setTimeout(showNextAchievement,400);
+}
+
+// ===== CONFETTI =====
+function spawnConfetti(){
+  const colors=['#ff8f50','#7c5cfc','#50d9a0','#ffd700','#ff6b9d','#00d4ff'];
+  for(let i=0;i<40;i++){
+    const c=document.createElement('div');
+    c.className='confetti-piece';
+    c.style.left=Math.random()*100+'vw';
+    c.style.background=colors[Math.floor(Math.random()*colors.length)];
+    c.style.animationDelay=Math.random()*0.8+'s';
+    c.style.width=(4+Math.random()*6)+'px';
+    c.style.height=(4+Math.random()*6)+'px';
+    document.body.appendChild(c);
+    setTimeout(()=>c.remove(),3300);
+  }
+}
+
+// ===== RESULT =====
+function showResult(){
+  const area=document.getElementById('questionArea');
+  // determine pet type based on first answer
+  const first=answers[0]?.value?.[0]||'cat';
+  const petTypes={
+    cat:{emoji:'😺',name:'神秘貓系守護者',desc:'你擁有貓一般的細膩與直覺，總能發現最美的角落。在毛行天下的世界中，你將成為引領潮流的存在！'},
+    dog:{emoji:'🐶',name:'忠誠犬系冒險王',desc:'你熱情、忠誠、充滿行動力！帶著你的毛夥伴，一起探索每一個角落吧！'},
+    exotic:{emoji:'🐰',name:'奇幻異寵魔法師',desc:'你與眾不同，總是走在前端。你的獨特視角將為毛行天下帶來無限可能！'},
+    planning:{emoji:'🌟',name:'未來毛寶預言家',desc:'雖然還沒有毛孩相伴，但你的愛已經準備好了。毛行天下將陪你一起等待那個命中注定的相遇！'},
+  };
+  const pet=petTypes[first]||petTypes.cat;
+  
+  // calculate some fun stats
+  const totalXP=xp+((level-1)*100);
+  
+  area.innerHTML=`<div class="result-screen">
+    <div class="result-pet">${pet.emoji}</div>
+    <div class="result-type">${pet.name}</div>
+    <p class="result-desc">${pet.desc}</p>
+    <div class="stats-grid">
+      <div class="stat-item"><div class="stat-value">LV${level}</div><div class="stat-label">冒險等級</div></div>
+      <div class="stat-item"><div class="stat-value">${totalXP}</div><div class="stat-label">總經驗值</div></div>
+      <div class="stat-item"><div class="stat-value">${achievements.length}</div><div class="stat-label">成就解鎖</div></div>
+    </div>
+    <div class="badges-row">
+      <span class="badge gold">🏆 冒險完成者</span>
+      ${achievements.length>=3?'<span class="badge gold">⭐ 全成就達成</span>':''}
+      <span class="badge">📋 問卷先鋒</span>
+    </div>
+    <button class="btn-next" onclick="exportData()">📊 查看我的回答紀錄</button>
+    <p style="text-align:center;margin-top:12px;font-size:0.75rem;color:var(--text-dim)">感謝你完成毛行天下冒險問卷 ❤️</p>
+  </div>`;
+  spawnConfetti();
+  setTimeout(spawnConfetti,800);
+}
+
+function exportData(){
+  let text='【毛行天下冒險問卷 - 回答紀錄】\n\n';
+  answers.forEach((a,i)=>{
+    text+=`${i+1}. ${a.question}：`;
+    if(Array.isArray(a.value))text+=a.value.join(', ');
+    else text+=a.value;
+    text+='\n';
+  });
+  text+=`\n等級：LV${level}\n成就數：${achievements.length}`;
+  
+  const blob=new Blob([text],{type:'text/plain;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const link=document.createElement('a');
+  link.href=url;link.download='毛行天下問卷回答.txt';
+  link.click();
+  URL.revokeObjectURL(url);
+}
+</script>
+</body>
+</html>

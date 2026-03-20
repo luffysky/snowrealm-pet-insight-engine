@@ -26,6 +26,9 @@ export async function POST(
     order_index: body.order_index ?? 0,
     is_required: body.is_required ?? true,
     max_selections: body.max_selections ?? null,
+    route: body.route ?? 'all',
+    emoji: body.emoji ?? null,
+    narrative: body.narrative ?? null,
   })
 
   return NextResponse.json(question, { status: 201 })

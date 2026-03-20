@@ -200,6 +200,9 @@ export function useSurveyFlow({
       progressResponseId: progressIdRef.current ?? undefined,
       fingerprint,
       route: routeRef.current ?? undefined,
+      lineToken: typeof window !== 'undefined'
+        ? new URLSearchParams(window.location.search).get('lt') ?? undefined
+        : undefined,
     }
 
     try {
@@ -228,6 +231,15 @@ export function useSurveyFlow({
           }).catch(() => {})
         }
       }
+
+      // 儲存回答紀錄供 done 頁面下載 TXT 用
+      const surveyRecord = activeQuestions.map((q) => ({
+        content: q.content,
+        type: q.type,
+        options: q.options,
+        answer: answersRef.current.get(q.key) ?? null,
+      }))
+      sessionStorage.setItem('surveyAnswerRecord', JSON.stringify(surveyRecord))
 
       setIsCompleted(true)
     } catch (error) {

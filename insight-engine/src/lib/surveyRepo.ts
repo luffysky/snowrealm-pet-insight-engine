@@ -33,6 +33,9 @@ interface QuestionRow extends Record<string, unknown> {
   is_required: boolean
   max_selections: number | null
   route: string | null
+  chapter: string | null
+  emoji: string | null
+  narrative: string | null
   created_at: string
 }
 
@@ -229,10 +232,13 @@ export async function createQuestion(data: {
   is_required: boolean
   max_selections: number | null
   route?: string
+  chapter?: string
+  emoji?: string
+  narrative?: string
 }): Promise<QuestionRow> {
   const row = await queryOne<QuestionRow>(
-    `INSERT INTO questions (id, survey_id, key, type, content, options, order_index, is_required, max_selections, route)
-     VALUES (uuid_generate_v4(), $1, $2, $3, $4, $5, $6, $7, $8, $9)
+    `INSERT INTO questions (id, survey_id, key, type, content, options, order_index, is_required, max_selections, route, chapter, emoji, narrative)
+     VALUES (uuid_generate_v4(), $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
      RETURNING *`,
     [
       data.survey_id,
@@ -244,6 +250,9 @@ export async function createQuestion(data: {
       data.is_required,
       data.max_selections,
       data.route ?? 'all',
+      data.chapter ?? null,
+      data.emoji ?? null,
+      data.narrative ?? null,
     ]
   )
   return row!
@@ -261,7 +270,7 @@ export async function updateQuestion(
     max_selections: number | null
   }>
 ): Promise<number> {
-  const allowed = ['key', 'type', 'content', 'options', 'order_index', 'is_required', 'max_selections', 'route']
+  const allowed = ['key', 'type', 'content', 'options', 'order_index', 'is_required', 'max_selections', 'route', 'chapter', 'emoji', 'narrative']
   const sets: string[] = []
   const params: unknown[] = []
   let idx = 1
@@ -317,6 +326,9 @@ function toQuestion(row: QuestionRow): Question {
     isRequired: row.is_required,
     ...(row.max_selections ? { maxSelections: row.max_selections } : {}),
     route: row.route ?? 'all',
+    ...(row.chapter ? { chapter: row.chapter } : {}),
+    ...(row.emoji ? { emoji: row.emoji } : {}),
+    ...(row.narrative ? { narrative: row.narrative } : {}),
   }
 }
 

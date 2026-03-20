@@ -102,6 +102,10 @@ export default function LineSettingsPage() {
             <strong className="text-slate-300">排程推播</strong>：每分鐘一次<br/>
             <code className="bg-slate-700 px-1 rounded text-green-300">GET /api/cron/broadcast</code>
           </li>
+          <li>
+            <strong className="text-slate-300">週報推播</strong>：每週一次（建議週一 10:00）<br/>
+            <code className="bg-slate-700 px-1 rounded text-green-300">GET /api/cron/weekly-report</code>
+          </li>
         </ul>
       </section>
     </div>

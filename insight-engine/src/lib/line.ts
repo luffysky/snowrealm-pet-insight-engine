@@ -1,4 +1,5 @@
 import { query as dbQuery } from '@/lib/db'
+import { getStyle, buildFlexBubble } from '@/lib/lineStyles'
 
 const CHANNEL_ACCESS_TOKEN = process.env.LINE_INSIGHT_CHANNEL_ACCESS_TOKEN ?? ''
 const LEGACY_ADMIN_USER_ID = process.env.LINE_YOUR_USER_ID ?? ''
@@ -81,120 +82,57 @@ export async function pushText(text: string): Promise<void> {
 }
 
 /**
- * 問卷送出時推播 Flex Message 通知
+ * 問卷送出時推播 Flex Message 通知（從 DB 讀取樣式）
  */
 export function notifySurveySubmitted(params: {
   responseId: string
   surveySlug: string
   answersCount: number
 }): void {
-  const flexMessage: LineMessage = {
-    type: 'flex',
-    altText: `📋 新問卷回覆 — ${params.surveySlug}`,
-    contents: {
-      type: 'bubble',
-      header: {
-        type: 'box',
-        layout: 'vertical',
-        backgroundColor: '#0e7990',
-        paddingAll: '16px',
-        contents: [
-          { type: 'text', text: '📋 新問卷回覆！', color: '#ffffff', weight: 'bold', size: 'lg' },
-        ],
-      },
-      body: {
-        type: 'box',
-        layout: 'vertical',
-        spacing: 'md',
-        contents: [
-          { type: 'box', layout: 'horizontal', contents: [
-            { type: 'text', text: '問卷', color: '#8b8b8b', size: 'sm', flex: 2 },
-            { type: 'text', text: params.surveySlug, color: '#333333', size: 'sm', flex: 5, wrap: true },
-          ]},
-          { type: 'box', layout: 'horizontal', contents: [
-            { type: 'text', text: '回答數', color: '#8b8b8b', size: 'sm', flex: 2 },
-            { type: 'text', text: `${params.answersCount} 題`, color: '#333333', size: 'sm', flex: 5 },
-          ]},
-          { type: 'box', layout: 'horizontal', contents: [
-            { type: 'text', text: 'ID', color: '#8b8b8b', size: 'sm', flex: 2 },
-            { type: 'text', text: params.responseId.slice(0, 8) + '...', color: '#999999', size: 'xs', flex: 5 },
-          ]},
-        ],
-      },
-      footer: {
-        type: 'box',
-        layout: 'vertical',
-        contents: [
-          {
-            type: 'button',
-            action: {
-              type: 'uri',
-              label: '查看詳情',
-              uri: `${BASE_URL}/admin/responses/${params.responseId}`,
-            },
-            style: 'primary',
-            color: '#0e7990',
-          },
-        ],
-      },
-    },
-  }
+  ;(async () => {
+    const style = await getStyle('survey_submitted')
+    if (!style) return
 
-  pushLineMessage([flexMessage]).catch(() => {})
+    const footerUrl = style.footer_url.replace('{{response_id}}', params.responseId)
+    const msg = buildFlexBubble({
+      style,
+      bodyRows: [
+        { label: '問卷', value: params.surveySlug },
+        { label: '回答數', value: `${params.answersCount} 題` },
+        { label: 'ID', value: params.responseId.slice(0, 8) + '...' },
+      ],
+      footerUrl,
+      altText: `${style.header_emoji} ${style.header_text} — ${params.surveySlug}`,
+    })
+
+    await pushLineMessage([msg])
+  })().catch(() => {})
 }
 
 /**
- * 加入封測名單時推播 Flex Message 通知
+ * 加入封測名單時推播 Flex Message 通知（從 DB 讀取樣式）
  */
 export function notifyWaitlistJoined(params: {
   email: string
   nickname?: string
 }): void {
-  const flexMessage: LineMessage = {
-    type: 'flex',
-    altText: `🎉 新封測申請 — ${params.email}`,
-    contents: {
-      type: 'bubble',
-      header: {
-        type: 'box',
-        layout: 'vertical',
-        backgroundColor: '#047e57',
-        paddingAll: '16px',
-        contents: [
-          { type: 'text', text: '🎉 新封測申請！', color: '#ffffff', weight: 'bold', size: 'lg' },
-        ],
-      },
-      body: {
-        type: 'box',
-        layout: 'vertical',
-        spacing: 'md',
-        contents: [
-          { type: 'box', layout: 'horizontal', contents: [
-            { type: 'text', text: 'Email', color: '#8b8b8b', size: 'sm', flex: 2 },
-            { type: 'text', text: params.email, color: '#333333', size: 'sm', flex: 5, wrap: true },
-          ]},
-          ...(params.nickname ? [{ type: 'box' as const, layout: 'horizontal' as const, contents: [
-            { type: 'text' as const, text: '暱稱', color: '#8b8b8b', size: 'sm' as const, flex: 2 },
-            { type: 'text' as const, text: params.nickname, color: '#333333', size: 'sm' as const, flex: 5 },
-          ]}] : []),
-        ],
-      },
-      footer: {
-        type: 'box',
-        layout: 'vertical',
-        contents: [
-          {
-            type: 'button',
-            action: { type: 'uri', label: '查看名單', uri: `${BASE_URL}/admin/waitlist` },
-            style: 'primary',
-            color: '#047e57',
-          },
-        ],
-      },
-    },
-  }
+  ;(async () => {
+    const style = await getStyle('waitlist_joined')
+    if (!style) return
 
-  pushLineMessage([flexMessage]).catch(() => {})
+    const bodyRows = [
+      { label: 'Email', value: params.email },
+      ...(params.nickname ? [{ label: '暱稱', value: params.nickname }] : []),
+    ]
+
+    const msg = buildFlexBubble({
+      style,
+      bodyRows,
+      altText: `${style.header_emoji} ${style.header_text} — ${params.email}`,
+    })
+
+    await pushLineMessage([msg])
+  })().catch(() => {})
 }
 
 /**

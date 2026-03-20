@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { v4 as uuidv4 } from 'uuid'
-import { query, queryOne } from '@/lib/db'
+import { query, queryOne, execute } from '@/lib/db'
 import { analyzeResponse } from '@/lib/analyzeResponse'
 import { MVP_SURVEY } from '@/lib/surveyConfig'
 import { fireWebhooks } from '@/lib/webhook'
 import { notifySurveySubmitted } from '@/lib/line'
+import { verifyLineToken } from '@/lib/lineToken'
+import { evaluateNotificationRules } from '@/lib/notificationEngine'
 import type { SubmitSurveyPayload } from '@/types'
 
 const MAX_ANSWER_LENGTH = 2000
@@ -86,7 +88,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     }
 
     // Analyze & insert tags
-    const tags = analyzeResponse(body.answers)
+    const surveyId = slugExists?.id ?? null
+    const tags = await analyzeResponse(body.answers, surveyId ?? undefined)
     for (const t of tags) {
       await query(
         `INSERT INTO user_tags (id, response_id, tag_key, tag_value) VALUES ($1, $2, $3, $4)`,
@@ -107,6 +110,29 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       surveySlug: body.surveySlug,
       answersCount: body.answers.length,
     })
+
+    // LINE 身份綁定（從簽名連結來的使用者）
+    let lineUserId: string | undefined
+    if (body.lineToken) {
+      lineUserId = verifyLineToken(body.lineToken) ?? undefined
+      if (lineUserId) {
+        await execute(
+          `INSERT INTO line_users (line_user_id, response_id)
+           VALUES ($1, $2)
+           ON CONFLICT (line_user_id) DO UPDATE SET response_id = $2`,
+          [lineUserId, responseId]
+        )
+      }
+    }
+
+    // 條件觸發通知（非阻塞）
+    evaluateNotificationRules({
+      responseId,
+      surveySlug: body.surveySlug,
+      surveyId: slugExists?.id,
+      tags,
+      lineUserId,
+    }).catch(() => {})
 
     return NextResponse.json({ success: true, responseId })
   } catch (error) {

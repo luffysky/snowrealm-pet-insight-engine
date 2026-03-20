@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import crypto from 'crypto'
 import { execute } from '@/lib/db'
+import { createLineToken } from '@/lib/lineToken'
 
 const CHANNEL_SECRET = process.env.LINE_OFFICIAL_CHANNEL_SECRET ?? ''
 const CHANNEL_ACCESS_TOKEN = process.env.LINE_OFFICIAL_CHANNEL_ACCESS_TOKEN ?? ''
@@ -45,7 +46,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     if (event.type === 'message' && event.message?.type === 'text') {
       const text = (event.message.text as string).trim()
       const replyToken = event.replyToken as string
-      const reply = getAutoReply(text)
+      const userId = event.source?.userId as string | undefined
+      const reply = getAutoReply(text, userId)
       await replyMessage(replyToken, reply)
     }
 
@@ -88,18 +90,30 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
 // ----- 關鍵字自動回覆邏輯 -----
 
+/** 產生問卷連結（帶 LINE 身份簽名 + utm） */
+function buildSurveyLink(userId?: string): string {
+  const base = SURVEY_URL
+  const params = new URLSearchParams({ utm_source: 'line', utm_medium: 'chat' })
+  if (userId) {
+    params.set('lt', createLineToken(userId))
+  }
+  return `${base}?${params.toString()}`
+}
+
 interface LineTextMessage {
   type: 'text'
   text: string
 }
 
-function getAutoReply(text: string): LineTextMessage[] {
+function getAutoReply(text: string, userId?: string): LineTextMessage[] {
+  const surveyLink = buildSurveyLink(userId)
+
   // 問卷相關
   if (/問卷|填問卷|survey/i.test(text)) {
     return [
       {
         type: 'text',
-        text: `📋 毛行天下 MVP 問卷\n\n花 2 分鐘填寫，幫助我們打造更好的寵物紀錄平台！\n\n👉 ${SURVEY_URL}`,
+        text: `📋 毛行天下 MVP 問卷\n\n花 2 分鐘填寫，幫助我們打造更好的寵物紀錄平台！\n\n👉 ${surveyLink}`,
       },
     ]
   }
@@ -109,7 +123,7 @@ function getAutoReply(text: string): LineTextMessage[] {
     return [
       {
         type: 'text',
-        text: `🎉 想加入封測？\n\n填完問卷後即可留下 email 加入封測名單，上線第一時間通知你！\n\n👉 ${SURVEY_URL}`,
+        text: `🎉 想加入封測？\n\n填完問卷後即可留下 email 加入封測名單，上線第一時間通知你！\n\n👉 ${surveyLink}`,
       },
     ]
   }

@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
+import { EmojiPicker } from '@/components/admin/EmojiPicker'
 
 // ===== Types =====
 
@@ -27,11 +28,13 @@ interface QuestionRow {
   key: string
   type: string
   content: string
-  options: { label: string; value: string }[]
+  options: { label: string; value: string; emoji?: string }[]
   order_index: number
   is_required: boolean
   max_selections: number | null
   route: string | null
+  emoji: string | null
+  narrative: string | null
 }
 
 interface BranchConfig {
@@ -861,10 +864,12 @@ function QuestionForm({
     key: `q${nextOrder + 1}`,
     type: 'single' as string,
     content: '',
-    options: [{ label: '', value: '' }],
+    options: [{ label: '', value: '' }] as { label: string; value: string; emoji?: string }[],
     is_required: true,
     max_selections: null as number | null,
     route: 'all' as string,
+    emoji: '',
+    narrative: '',
   })
   const [saving, setSaving] = useState(false)
 
@@ -886,6 +891,8 @@ function QuestionForm({
         is_required: form.is_required,
         max_selections: form.type === 'multiple' ? form.max_selections : null,
         route: form.route,
+        emoji: form.emoji || null,
+        narrative: form.narrative || null,
       }),
     })
     setSaving(false)
@@ -932,10 +939,12 @@ function QuestionEditForm({
     key: question.key,
     type: question.type,
     content: question.content,
-    options: question.options.length > 0 ? question.options : [{ label: '', value: '' }],
+    options: question.options.length > 0 ? question.options : [{ label: '', value: '' }] as { label: string; value: string; emoji?: string }[],
     is_required: question.is_required,
     max_selections: question.max_selections,
     route: question.route ?? 'all',
+    emoji: question.emoji ?? '',
+    narrative: question.narrative ?? '',
   })
   const [saving, setSaving] = useState(false)
 
@@ -956,6 +965,8 @@ function QuestionEditForm({
         is_required: form.is_required,
         max_selections: form.type === 'multiple' ? form.max_selections : null,
         route: form.route,
+        emoji: form.emoji || null,
+        narrative: form.narrative || null,
       }),
     })
     setSaving(false)
@@ -992,10 +1003,12 @@ interface FormState {
   key: string
   type: string
   content: string
-  options: { label: string; value: string }[]
+  options: { label: string; value: string; emoji?: string }[]
   is_required: boolean
   max_selections: number | null
   route: string
+  emoji: string
+  narrative: string
 }
 
 function QuestionFormFields({
@@ -1015,7 +1028,13 @@ function QuestionFormFields({
 
   const updateOption = (index: number, label: string) => {
     const options = [...form.options]
-    options[index] = { label, value: label }
+    options[index] = { ...options[index], label, value: label }
+    onChange({ ...form, options })
+  }
+
+  const updateOptionEmoji = (index: number, emoji: string | undefined) => {
+    const options = [...form.options]
+    options[index] = { ...options[index], emoji }
     onChange({ ...form, options })
   }
 
@@ -1042,10 +1061,26 @@ function QuestionFormFields({
         </select>
 
         <label className="text-xs text-white/40">題目</label>
+        <div className="flex items-center gap-2">
+          <EmojiPicker
+            value={form.emoji || undefined}
+            onSelect={(emoji) => onChange({ ...form, emoji })}
+            onClear={() => onChange({ ...form, emoji: '' })}
+          />
+          <input
+            type="text"
+            value={form.content}
+            onChange={(e) => onChange({ ...form, content: e.target.value })}
+            className="flex-1 bg-slate-800 border border-slate-700 rounded px-2 py-1 text-sm text-white/80"
+          />
+        </div>
+
+        <label className="text-xs text-white/40">旁白</label>
         <input
           type="text"
-          value={form.content}
-          onChange={(e) => onChange({ ...form, content: e.target.value })}
+          value={form.narrative}
+          onChange={(e) => onChange({ ...form, narrative: e.target.value })}
+          placeholder="選填：題目旁白文字"
           className="bg-slate-800 border border-slate-700 rounded px-2 py-1 text-sm text-white/80"
         />
 
@@ -1094,6 +1129,11 @@ function QuestionFormFields({
           <label className="text-xs text-white/40">選項</label>
           {form.options.map((opt, i) => (
             <div key={i} className="flex items-center gap-2">
+              <EmojiPicker
+                value={opt.emoji || undefined}
+                onSelect={(emoji) => updateOptionEmoji(i, emoji)}
+                onClear={() => updateOptionEmoji(i, undefined)}
+              />
               <input
                 type="text"
                 value={opt.label}

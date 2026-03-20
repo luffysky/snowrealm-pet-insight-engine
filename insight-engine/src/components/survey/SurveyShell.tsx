@@ -1,12 +1,16 @@
 'use client'
 
+import { useTheme } from './ThemeContext'
+import { shellClass } from '@/lib/themes'
+
 interface SurveyShellProps {
   children: React.ReactNode
 }
 
 export function SurveyShell({ children }: SurveyShellProps) {
+  const { theme } = useTheme()
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-indigo-950 to-purple-950 flex items-center justify-center px-4 py-8">
+    <div className={shellClass[theme]}>
       <div className="w-full max-w-lg">
         {children}
       </div>

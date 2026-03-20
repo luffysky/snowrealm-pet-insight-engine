@@ -1,5 +1,8 @@
 'use client'
 
+import { useTheme } from './ThemeContext'
+import { questionTitleClass, textareaClass, stepTextClass } from '@/lib/themes'
+
 interface QuestionTextProps {
   content: string
   value: string
@@ -13,9 +16,10 @@ export function QuestionText({
   onChange,
   isRequired,
 }: QuestionTextProps) {
+  const { theme } = useTheme()
   return (
     <div className="space-y-6">
-      <h2 className="text-xl font-medium text-white/90 leading-relaxed">
+      <h2 className={questionTitleClass[theme]}>
         {content}
       </h2>
       <textarea
@@ -23,11 +27,11 @@ export function QuestionText({
         onChange={(e) => onChange(e.target.value)}
         placeholder={isRequired ? '請輸入你的回答...' : '選填，可以直接跳過'}
         rows={4}
-        className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-white/90 placeholder:text-white/30 focus:outline-none focus:border-cyan-400/50 focus:ring-1 focus:ring-cyan-400/20 resize-none transition-colors"
+        className={textareaClass[theme]}
         maxLength={2000}
       />
       {!isRequired && (
-        <p className="text-sm text-white/30">此題為選填</p>
+        <p className={stepTextClass[theme]}>此題為選填</p>
       )}
     </div>
   )

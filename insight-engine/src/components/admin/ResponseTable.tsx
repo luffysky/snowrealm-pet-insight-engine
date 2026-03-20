@@ -24,6 +24,57 @@ export function ResponseTable({
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [confirmId, setConfirmId] = useState<string | null>(null)
 
+  // 批次選取
+  const [batchMode, setBatchMode] = useState(false)
+  const [selected, setSelected] = useState<Set<string>>(new Set())
+  const [batchDeleting, setBatchDeleting] = useState(false)
+  const [confirmBatch, setConfirmBatch] = useState(false)
+
+  const allIds = responses.map((r) => r.id)
+  const isAllSelected = responses.length > 0 && allIds.every((id) => selected.has(id))
+  const selectedCount = selected.size
+
+  function toggleOne(id: string) {
+    setSelected((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  function toggleAll() {
+    if (isAllSelected) {
+      setSelected(new Set())
+    } else {
+      setSelected(new Set(allIds))
+    }
+  }
+
+  async function handleBatchDelete() {
+    if (selected.size === 0) return
+    setBatchDeleting(true)
+    try {
+      const res = await fetch('/api/admin/responses', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: Array.from(selected) }),
+      })
+      if (res.ok) {
+        setSelected(new Set())
+        setConfirmBatch(false)
+        router.refresh()
+      } else {
+        const data = await res.json()
+        alert(data.error || '批次刪除失敗')
+      }
+    } catch {
+      alert('批次刪除失敗，請稍後再試')
+    } finally {
+      setBatchDeleting(false)
+    }
+  }
+
   if (responses.length === 0) {
     return (
       <div className="bg-slate-800/50 border border-slate-700/50 rounded-2xl p-8 text-center text-slate-500">
@@ -37,6 +88,7 @@ export function ResponseTable({
     try {
       const res = await fetch(`/api/admin/responses/${id}`, { method: 'DELETE' })
       if (res.ok) {
+        setSelected((prev) => { const n = new Set(prev); n.delete(id); return n })
         router.refresh()
       } else {
         const data = await res.json()
@@ -52,6 +104,45 @@ export function ResponseTable({
 
   return (
     <div className="bg-slate-800/50 border border-slate-700/50 rounded-2xl overflow-hidden">
+      {/* 批次操作列 */}
+      {selectedCount > 0 && (
+        <div className="flex items-center gap-3 px-4 sm:px-6 py-2.5 bg-slate-700/40 border-b border-slate-700/50">
+          <button
+            onClick={() => { setSelected(new Set()); setConfirmBatch(false); setBatchMode(false) }}
+            className="text-slate-500 hover:text-slate-300 text-xs cursor-pointer"
+          >
+            取消選取
+          </button>
+          <span className="ml-auto text-sm text-slate-300">
+            已選取 <span className="text-cyan-400 font-medium">{selectedCount}</span> 筆
+          </span>
+          {confirmBatch ? (
+            <span className="flex items-center gap-2">
+              <button
+                onClick={handleBatchDelete}
+                disabled={batchDeleting}
+                className="px-3 py-1 bg-red-600 hover:bg-red-500 text-white text-xs rounded-lg transition-colors disabled:opacity-50 cursor-pointer"
+              >
+                {batchDeleting ? '刪除中...' : `確認刪除 ${selectedCount} 筆`}
+              </button>
+              <button
+                onClick={() => setConfirmBatch(false)}
+                className="text-slate-400 hover:text-slate-200 text-xs cursor-pointer"
+              >
+                取消
+              </button>
+            </span>
+          ) : (
+            <button
+              onClick={() => setConfirmBatch(true)}
+              className="px-3 py-1 bg-red-500/20 hover:bg-red-500/30 text-red-400 text-xs rounded-lg transition-colors cursor-pointer"
+            >
+              刪除選取
+            </button>
+          )}
+        </div>
+      )}
+
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
@@ -77,13 +168,26 @@ export function ResponseTable({
               <th className="text-right px-4 sm:px-6 py-3 text-slate-400 font-medium whitespace-nowrap">
                 操作
               </th>
+              {batchMode && (
+                <th className="w-10 px-3 sm:px-4 py-3 text-center">
+                  <input
+                    type="checkbox"
+                    checked={isAllSelected}
+                    onChange={toggleAll}
+                    className="w-4 h-4 rounded border-slate-600 bg-slate-700 text-cyan-500 focus:ring-cyan-500/30 cursor-pointer accent-cyan-500"
+                    title="全選本頁"
+                  />
+                </th>
+              )}
             </tr>
           </thead>
           <tbody>
             {responses.map((response) => (
               <tr
                 key={response.id}
-                className="border-b border-slate-700/30 hover:bg-slate-700/20"
+                className={`border-b border-slate-700/30 hover:bg-slate-700/20 ${
+                  selected.has(response.id) ? 'bg-cyan-500/5' : ''
+                }`}
               >
                 <td className="px-4 sm:px-6 py-3 text-slate-300 whitespace-nowrap">
                   {formatDateTime(response.submittedAt ?? response.createdAt)}
@@ -96,9 +200,9 @@ export function ResponseTable({
                 </td>
                 <td className="px-4 sm:px-6 py-3">
                   <div className="flex flex-wrap gap-1">
-                    {response.tags.slice(0, 3).map((tag) => (
+                    {response.tags.slice(0, 3).map((tag, i) => (
                       <span
-                        key={`${tag.key}-${tag.value}`}
+                        key={`${tag.key}-${tag.value}-${i}`}
                         className="px-2 py-0.5 bg-slate-700/50 text-slate-300 rounded text-xs"
                       >
                         {tag.key}: {tag.value}
@@ -147,7 +251,10 @@ export function ResponseTable({
                       </span>
                     ) : (
                       <button
-                        onClick={() => setConfirmId(response.id)}
+                        onClick={() => {
+                          setBatchMode(true)
+                          setSelected(new Set([response.id]))
+                        }}
                         className="text-red-500/60 hover:text-red-400 text-sm cursor-pointer"
                       >
                         刪除
@@ -155,6 +262,16 @@ export function ResponseTable({
                     )}
                   </div>
                 </td>
+                {batchMode && (
+                  <td className="px-3 sm:px-4 py-3 text-center">
+                    <input
+                      type="checkbox"
+                      checked={selected.has(response.id)}
+                      onChange={() => toggleOne(response.id)}
+                      className="w-4 h-4 rounded border-slate-600 bg-slate-700 text-cyan-500 focus:ring-cyan-500/30 cursor-pointer accent-cyan-500"
+                    />
+                  </td>
+                )}
               </tr>
             ))}
           </tbody>
@@ -204,12 +321,11 @@ function StatusBadge({ status }: { status: string }) {
 }
 
 function formatDateTime(isoString: string): string {
-  const date = new Date(isoString)
-  return date.toLocaleString('zh-TW', {
-    timeZone: 'Asia/Taipei',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-  })
+  const d = new Date(isoString)
+  // Manually format to avoid locale-dependent hydration mismatch
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  const h = String(d.getHours()).padStart(2, '0')
+  const min = String(d.getMinutes()).padStart(2, '0')
+  return `${m}/${day} ${h}:${min}`
 }

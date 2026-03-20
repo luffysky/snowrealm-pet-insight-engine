@@ -13,6 +13,8 @@ export type ResponseStatus = 'in_progress' | 'completed'
 export interface QuestionOption {
   label: string
   value: string
+  /** 手動指定的 emoji 圖示（後台設定） */
+  emoji?: string
 }
 
 /** 題目定義 */
@@ -26,6 +28,12 @@ export interface Question {
   maxSelections?: number
   /** 分流路線：'all' = 所有人, 'A' | 'B' | 'C' = 指定路線 */
   route?: string
+  /** 章節名稱，例如 '序章'、'第一章 · 相遇' */
+  chapter?: string
+  /** 場景 emoji 插畫 */
+  emoji?: string
+  /** 場景敘事文字 */
+  narrative?: string
 }
 
 /** 分流規則設定 */
@@ -66,6 +74,8 @@ export interface SubmitSurveyPayload {
   progressResponseId?: string
   /** 分流路線（A/B/C），無分流時不帶 */
   route?: string
+  /** LINE 身份簽名 token（從 LINE 點連結時帶入） */
+  lineToken?: string
 }
 
 /** UTM 參數 */
@@ -73,4 +83,21 @@ export interface UtmParams {
   source?: string
   medium?: string
   campaign?: string
+}
+
+// ===== 主題系統型別 =====
+
+/** 可用主題 key */
+export type SurveyTheme = 'default' | 'game' | 'cyber' | 'ancient' | 'sakura' | 'ocean' | 'forest' | 'candy' | 'noir'
+
+/** 裝飾強度 1=輕量 2=標準 3=華麗 */
+export type ThemeIntensity = 1 | 2 | 3
+
+/** 問卷主題設定（DB row → 前端用） */
+export interface ThemeSettings {
+  surveySlug: string
+  defaultTheme: SurveyTheme
+  availableThemes: SurveyTheme[]
+  allowUserChoice: boolean
+  themeIntensity: Record<SurveyTheme, ThemeIntensity>
 }

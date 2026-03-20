@@ -1,19 +1,28 @@
 'use client'
 
+import { useTheme } from './ThemeContext'
+import { progressTrackClass, progressBarClass, stepTextClass } from '@/lib/themes'
+
 interface ProgressBarProps {
   currentStep: number
   totalSteps: number
 }
 
 export function ProgressBar({ currentStep, totalSteps }: ProgressBarProps) {
+  const { theme } = useTheme()
   const progressPercent = totalSteps > 0 ? (currentStep / totalSteps) * 100 : 0
 
   return (
-    <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
-      <div
-        className="h-full bg-gradient-to-r from-cyan-400 to-purple-400 rounded-full transition-all duration-500 ease-out"
-        style={{ width: `${progressPercent}%` }}
-      />
+    <div className="space-y-2">
+      <div className={progressTrackClass[theme]}>
+        <div
+          className={progressBarClass[theme]}
+          style={{ width: `${progressPercent}%` }}
+        />
+      </div>
+      <p className={stepTextClass[theme]}>
+        {currentStep} / {totalSteps}
+      </p>
     </div>
   )
 }

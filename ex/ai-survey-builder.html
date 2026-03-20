@@ -1,0 +1,951 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI 問卷生成器 · 遊戲化預覽</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700;900&family=ZCOOL+KuaiLe&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0c0f1a;
+  --bg2:#111528;
+  --surface:rgba(255,255,255,0.03);
+  --border:rgba(255,255,255,0.07);
+  --accent:#ff8f50;
+  --accent2:#7c5cfc;
+  --accent3:#50d9a0;
+  --gold:#ffd700;
+  --glow:rgba(255,143,80,0.25);
+  --text:#e4e0db;
+  --dim:rgba(228,224,219,0.45);
+  --code-bg:#161b2e;
+  --success:#50d9a0;
+  --error:#ff5c7c;
+}
+html{font-size:15px}
+body{
+  font-family:'Noto Sans TC',sans-serif;
+  background:var(--bg);color:var(--text);
+  min-height:100vh;
+}
+
+/* ===== LAYOUT ===== */
+.layout{display:grid;grid-template-columns:1fr 1fr;min-height:100vh}
+@media(max-width:900px){.layout{grid-template-columns:1fr;grid-template-rows:auto 1fr}}
+
+/* ===== LEFT PANEL - EDITOR ===== */
+.editor-panel{
+  background:var(--bg2);
+  border-right:1px solid var(--border);
+  display:flex;flex-direction:column;
+  overflow:hidden;
+}
+.panel-header{
+  padding:16px 20px;
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+}
+.panel-title{
+  font-weight:700;font-size:0.9rem;
+  display:flex;align-items:center;gap:8px;
+}
+.panel-title .dot{
+  width:8px;height:8px;border-radius:50%;
+  background:var(--accent2);box-shadow:0 0 8px rgba(124,92,252,0.4);
+}
+
+/* Tabs */
+.tabs{display:flex;gap:0;padding:0 20px;border-bottom:1px solid var(--border)}
+.tab{
+  padding:10px 16px;font-size:0.78rem;font-weight:500;
+  color:var(--dim);cursor:pointer;
+  border-bottom:2px solid transparent;
+  transition:all 0.2s;
+}
+.tab:hover{color:var(--text)}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+
+/* Tab Content */
+.tab-content{flex:1;overflow:hidden;display:none;flex-direction:column}
+.tab-content.active{display:flex}
+
+/* Code area */
+.code-area{
+  flex:1;overflow:auto;padding:16px 20px;
+}
+.code-block{
+  font-family:'JetBrains Mono',monospace;
+  font-size:0.78rem;line-height:1.7;
+  background:var(--code-bg);
+  border:1px solid var(--border);
+  border-radius:10px;
+  padding:16px;
+  white-space:pre-wrap;
+  word-break:break-word;
+  color:#c5c0b8;
+  overflow:auto;
+  max-height:100%;
+}
+.code-block .kw{color:#c792ea}
+.code-block .str{color:#c3e88d}
+.code-block .type{color:#ffcb6b}
+.code-block .comment{color:#546e7a;font-style:italic}
+.code-block .fn{color:#82aaff}
+.code-block .num{color:#f78c6c}
+
+/* JSON editor */
+.json-editor{
+  flex:1;
+  font-family:'JetBrains Mono',monospace;
+  font-size:0.78rem;line-height:1.7;
+  background:var(--code-bg);
+  color:#c5c0b8;
+  border:none;outline:none;
+  padding:16px 20px;
+  resize:none;
+  width:100%;
+}
+
+/* Action bar */
+.action-bar{
+  padding:12px 20px;
+  border-top:1px solid var(--border);
+  display:flex;gap:8px;align-items:center;
+}
+.btn{
+  padding:8px 18px;border-radius:8px;
+  font-size:0.78rem;font-weight:600;
+  font-family:'Noto Sans TC',sans-serif;
+  cursor:pointer;transition:all 0.2s;border:none;
+}
+.btn-primary{
+  background:linear-gradient(135deg,var(--accent2),var(--accent));
+  color:#fff;box-shadow:0 2px 12px var(--glow);
+}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:0 4px 18px var(--glow)}
+.btn-secondary{
+  background:var(--surface);color:var(--text);
+  border:1px solid var(--border);
+}
+.btn-secondary:hover{border-color:rgba(255,255,255,0.15)}
+.status-msg{font-size:0.72rem;color:var(--dim);margin-left:auto}
+.status-msg.success{color:var(--success)}
+.status-msg.error{color:var(--error)}
+
+/* ===== RIGHT PANEL - PREVIEW ===== */
+.preview-panel{
+  display:flex;flex-direction:column;
+  background:var(--bg);overflow:hidden;
+}
+.phone-frame{
+  flex:1;overflow:auto;
+  max-width:420px;
+  margin:0 auto;
+  width:100%;
+  padding:16px;
+}
+
+/* ===== GAME UI STYLES ===== */
+.g-topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.g-avatar{
+  width:38px;height:38px;border-radius:50%;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  display:flex;align-items:center;justify-content:center;
+  font-size:18px;box-shadow:0 0 10px var(--glow);
+}
+.g-player{display:flex;align-items:center;gap:8px}
+.g-name{font-weight:700;font-size:0.85rem}
+.g-title-tag{font-size:0.68rem;color:var(--accent);opacity:0.8}
+.g-level{
+  background:linear-gradient(135deg,var(--accent2),var(--accent));
+  padding:3px 10px;border-radius:16px;
+  font-size:0.68rem;font-weight:700;letter-spacing:1px;
+}
+
+.g-xp-bar{margin-bottom:14px}
+.g-xp-label{display:flex;justify-content:space-between;font-size:0.68rem;color:var(--dim);margin-bottom:4px}
+.g-xp-track{height:6px;border-radius:6px;background:rgba(255,255,255,0.06);overflow:hidden}
+.g-xp-fill{
+  height:100%;border-radius:6px;
+  background:linear-gradient(90deg,var(--accent2),var(--accent),var(--gold));
+  background-size:200% 100%;animation:xpShim 2s ease infinite;
+  transition:width 0.6s cubic-bezier(0.22,1,0.36,1);
+}
+@keyframes xpShim{0%{background-position:0% 50%}100%{background-position:200% 50%}}
+
+.g-map{display:flex;align-items:center;justify-content:center;gap:0;flex-wrap:wrap;margin-bottom:20px;padding:6px 0}
+.g-node{
+  width:24px;height:24px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:0.58rem;font-weight:700;
+  background:rgba(255,255,255,0.05);border:2px solid rgba(255,255,255,0.08);
+  transition:all 0.3s;flex-shrink:0;
+}
+.g-node.done{background:var(--accent);border-color:var(--accent);box-shadow:0 0 8px var(--glow);color:#fff}
+.g-node.now{background:var(--accent2);border-color:var(--accent2);box-shadow:0 0 10px rgba(124,92,252,0.4);color:#fff;animation:gpulse 1.5s ease infinite}
+.g-node.lock{color:rgba(255,255,255,0.15)}
+@keyframes gpulse{0%,100%{transform:scale(1)}50%{transform:scale(1.12)}}
+.g-conn{width:10px;height:2px;background:rgba(255,255,255,0.06);flex-shrink:0}
+.g-conn.done{background:var(--accent)}
+
+.g-scene{text-align:center;animation:gfade 0.4s ease}
+@keyframes gfade{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+.g-chapter{font-size:0.65rem;color:var(--accent2);letter-spacing:2px;margin-bottom:4px}
+.g-emoji{font-size:2.6rem;margin-bottom:10px;filter:drop-shadow(0 0 14px var(--glow));animation:gfloat 3s ease-in-out infinite}
+@keyframes gfloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+.g-title{
+  font-family:'ZCOOL KuaiLe',cursive;font-size:1.3rem;
+  background:linear-gradient(135deg,var(--accent),var(--gold));
+  background-clip:text;-webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  margin-bottom:6px;
+}
+.g-narrative{font-size:0.82rem;color:var(--dim);line-height:1.7;margin-bottom:18px}
+.g-hint{font-size:0.68rem;color:var(--dim);margin-bottom:10px;text-align:center}
+
+.g-options{display:grid;gap:10px;margin-bottom:14px}
+.g-options.c2{grid-template-columns:1fr 1fr}
+.g-options.c1{grid-template-columns:1fr}
+
+.g-card{
+  perspective:700px;cursor:pointer;min-height:76px;
+}
+.g-card-inner{
+  position:relative;width:100%;min-height:76px;
+  transition:transform 0.5s ease;transform-style:preserve-3d;
+}
+.g-card.flipped .g-card-inner{transform:rotateY(180deg)}
+.g-card-f,.g-card-b{
+  position:absolute;inset:0;backface-visibility:hidden;
+  border-radius:12px;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;padding:12px 10px;
+}
+.g-card-f{
+  background:var(--surface);border:1.5px solid var(--border);
+  backdrop-filter:blur(6px);transition:border-color 0.3s;
+}
+.g-card:hover .g-card-f{border-color:rgba(255,143,80,0.25)}
+.g-card.selected .g-card-f{border-color:var(--accent);box-shadow:0 0 16px var(--glow);background:rgba(255,143,80,0.06)}
+.g-card-b{
+  background:linear-gradient(135deg,rgba(124,92,252,0.15),rgba(255,143,80,0.15));
+  border:1.5px solid var(--accent);transform:rotateY(180deg);
+  box-shadow:0 2px 16px var(--glow);
+}
+.g-card-emoji{font-size:1.5rem;margin-bottom:4px}
+.g-card-text{font-size:0.78rem;font-weight:500;text-align:center;line-height:1.3}
+.g-card-b .g-card-text{color:var(--accent)}
+
+.g-slider-box{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:14px;padding:14px 16px;margin-bottom:14px;
+}
+.g-slider-labels{display:flex;justify-content:space-between;font-size:0.68rem;color:var(--dim);margin-bottom:8px}
+.g-slider-track{position:relative;height:5px;background:rgba(255,255,255,0.06);border-radius:5px;cursor:pointer}
+.g-slider-fill{position:absolute;left:0;top:0;height:100%;border-radius:5px;background:linear-gradient(90deg,var(--accent2),var(--accent));transition:width 0.12s}
+.g-slider-thumb{
+  position:absolute;top:50%;width:20px;height:20px;border-radius:50%;
+  background:var(--accent);box-shadow:0 0 10px var(--glow);
+  transform:translate(-50%,-50%);cursor:grab;transition:left 0.12s;
+}
+.g-slider-val{text-align:center;margin-top:10px;font-family:'ZCOOL KuaiLe',cursive;font-size:1.5rem;color:var(--accent)}
+
+.g-textarea{
+  width:100%;padding:12px;background:var(--surface);
+  border:1.5px solid var(--border);border-radius:12px;
+  color:var(--text);font-family:'Noto Sans TC',sans-serif;
+  font-size:0.82rem;resize:none;outline:none;min-height:70px;
+  margin-bottom:14px;
+}
+.g-textarea:focus{border-color:var(--accent)}
+.g-textarea::placeholder{color:var(--dim)}
+
+.g-btn{
+  display:block;width:100%;padding:12px;
+  background:linear-gradient(135deg,var(--accent2),var(--accent));
+  border:none;border-radius:12px;color:#fff;
+  font-size:0.88rem;font-weight:700;cursor:pointer;
+  font-family:'Noto Sans TC',sans-serif;
+  box-shadow:0 3px 14px var(--glow);transition:all 0.2s;
+}
+.g-btn:hover{transform:translateY(-1px)}
+.g-btn:disabled{opacity:0.3;cursor:not-allowed;transform:none}
+
+/* Achievement */
+.g-ach-overlay{
+  position:absolute;inset:0;z-index:50;
+  display:flex;align-items:center;justify-content:center;
+  background:rgba(12,15,26,0.85);backdrop-filter:blur(4px);
+  opacity:0;pointer-events:none;transition:opacity 0.3s;
+}
+.g-ach-overlay.show{opacity:1;pointer-events:auto}
+.g-ach-card{
+  text-align:center;padding:28px 24px;
+  background:linear-gradient(160deg,rgba(255,215,0,0.08),rgba(124,92,252,0.08));
+  border:1.5px solid var(--gold);border-radius:16px;
+  box-shadow:0 0 40px rgba(255,215,0,0.1);
+  transform:scale(0.85);transition:transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
+  max-width:280px;
+}
+.g-ach-overlay.show .g-ach-card{transform:scale(1)}
+.g-ach-icon{font-size:2.8rem;margin-bottom:8px;animation:gfloat 2s ease-in-out infinite}
+.g-ach-label{font-size:0.65rem;color:var(--gold);letter-spacing:2px;margin-bottom:3px}
+.g-ach-name{font-family:'ZCOOL KuaiLe',cursive;font-size:1.1rem;color:var(--gold);margin-bottom:5px}
+.g-ach-desc{font-size:0.72rem;color:var(--dim);margin-bottom:14px;line-height:1.5}
+.g-ach-ok{
+  padding:8px 28px;border:1.5px solid var(--gold);
+  background:rgba(255,215,0,0.08);border-radius:8px;
+  color:var(--gold);font-size:0.78rem;font-weight:700;
+  cursor:pointer;font-family:'Noto Sans TC',sans-serif;
+}
+
+/* empty state */
+.empty-state{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  height:100%;color:var(--dim);text-align:center;gap:10px;padding:40px;
+}
+.empty-icon{font-size:3rem;opacity:0.4}
+.empty-text{font-size:0.85rem;line-height:1.6}
+
+.hidden{display:none!important}
+</style>
+</head>
+<body>
+<div class="layout">
+
+<!-- ===== LEFT: EDITOR ===== -->
+<div class="editor-panel">
+  <div class="panel-header">
+    <div class="panel-title"><span class="dot"></span>AI 問卷生成器</div>
+  </div>
+  
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('prompt')">Prompt 模板</div>
+    <div class="tab" onclick="switchTab('types')">TypeScript 型別</div>
+    <div class="tab" onclick="switchTab('json')">JSON 編輯</div>
+  </div>
+
+  <!-- Prompt Tab -->
+  <div class="tab-content active" id="tab-prompt">
+    <div class="code-area">
+      <div class="code-block" id="promptBlock"></div>
+    </div>
+  </div>
+
+  <!-- Types Tab -->
+  <div class="tab-content" id="tab-types">
+    <div class="code-area">
+      <div class="code-block" id="typesBlock"></div>
+    </div>
+  </div>
+
+  <!-- JSON Tab -->
+  <div class="tab-content" id="tab-json">
+    <textarea class="json-editor" id="jsonEditor" spellcheck="false"></textarea>
+  </div>
+
+  <div class="action-bar">
+    <button class="btn btn-primary" onclick="loadSample()">📥 載入範例</button>
+    <button class="btn btn-primary" onclick="renderPreview()">▶ 渲染預覽</button>
+    <button class="btn btn-secondary" onclick="resetPreview()">↺ 重置</button>
+    <span class="status-msg" id="statusMsg"></span>
+  </div>
+</div>
+
+<!-- ===== RIGHT: PREVIEW ===== -->
+<div class="preview-panel">
+  <div class="panel-header">
+    <div class="panel-title"><span class="dot" style="background:var(--accent)"></span>遊戲化預覽</div>
+  </div>
+  <div class="phone-frame" id="phoneFrame">
+    <div class="empty-state" id="emptyState">
+      <div class="empty-icon">🎮</div>
+      <div class="empty-text">在左側 JSON 編輯區貼上 AI 生成的問卷 JSON<br>然後點擊「▶ 渲染預覽」</div>
+    </div>
+    <div id="gameContainer" class="hidden" style="position:relative">
+      <!-- Game UI rendered here -->
+      <div class="g-topbar">
+        <div class="g-player">
+          <div class="g-avatar">🐾</div>
+          <div><div class="g-name">冒險者</div><div class="g-title-tag" id="pTitle">見習毛友</div></div>
+        </div>
+        <div class="g-level" id="pLevel">LV 1</div>
+      </div>
+      <div class="g-xp-bar">
+        <div class="g-xp-label"><span>冒險經驗</span><span id="pXpText">0 / 100 XP</span></div>
+        <div class="g-xp-track"><div class="g-xp-fill" id="pXpFill" style="width:0%"></div></div>
+      </div>
+      <div class="g-map" id="pMap"></div>
+      <div id="pQuestion"></div>
+      <!-- Achievement overlay -->
+      <div class="g-ach-overlay" id="pAchOverlay">
+        <div class="g-ach-card">
+          <div class="g-ach-icon" id="pAchIcon">🏆</div>
+          <div class="g-ach-label">成 就 解 鎖</div>
+          <div class="g-ach-name" id="pAchName"></div>
+          <div class="g-ach-desc" id="pAchDesc"></div>
+          <button class="g-ach-ok" onclick="closeAch()">繼續 →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<script>
+// ===== PROMPT TEMPLATE =====
+const PROMPT_TEMPLATE = `你是問卷設計專家，同時精通遊戲化（Gamification）設計。
+請根據用戶的需求，生成一份遊戲化問卷的 JSON 結構。
+
+## 輸出格式規範
+
+嚴格按照以下 JSON Schema 輸出，不要添加任何額外文字：
+
+{
+  "meta": {
+    "title": "問卷標題",
+    "description": "一句話描述",
+    "theme": "adventure" | "cute" | "sci-fi" | "nature"
+  },
+  "questions": [
+    {
+      "id": "q1",
+      "chapter": "序章",          // 章節名稱（營造劇情感）
+      "title": "問題簡短標題",
+      "emoji": "🧙",              // 代表這題的 emoji
+      "narrative": "劇情旁白文字，引導用戶進入情境",
+      "type": "single",           // single | multi | slider | text
+      "cols": 2,                  // 選項排列：1 或 2 欄（type=single/multi 時）
+      "options": [                // type=single/multi 時必填
+        {
+          "emoji": "😺",
+          "text": "選項文字",
+          "value": "option_key"   // 用於資料收集的 key
+        }
+      ],
+      "hint": "",                 // 多選提示文字（type=multi 時可選）
+      "maxSelect": 3,             // 最多可選數（type=multi 時可選）
+      "min": 1,                   // type=slider 時的最小值
+      "max": 10,                  // type=slider 時的最大值
+      "default": 5,               // type=slider 時的預設值
+      "step": 1,                  // type=slider 時的步進值
+      "minLabel": "最小端標籤",   // type=slider 時
+      "maxLabel": "最大端標籤",   // type=slider 時
+      "unit": "分",               // type=slider 時的單位
+      "placeholder": "",          // type=text 時的佔位文字
+      "achievement": {            // 可選：回答後觸發成就
+        "icon": "🏆",
+        "name": "成就名稱",
+        "desc": "成就描述"
+      }
+    }
+  ]
+}
+
+## 設計原則
+
+1. 每題都要有劇情感的 narrative，像在說故事
+2. 章節命名要有冒險感（序章、第一章...終章）
+3. emoji 選擇要與題目情境匹配
+4. 適當穿插不同題型，避免單調
+5. 成就設計要讓人有驚喜感，不要每題都有
+6. 選項文字要口語化、有趣，不要太正式
+7. slider 類型適合用於數量、頻率、程度的問題
+8. text 類型通常放最後，作為開放式回饋
+
+## 用戶需求
+{USER_REQUIREMENT}
+
+請直接輸出 JSON，不需要其他說明。`;
+
+// ===== TYPES =====
+const TYPES_CODE = `<span class="comment">// ===== 問卷遊戲化 UI 共用型別 =====</span>
+<span class="comment">// 前後端共用，確保 AI 輸出 → 前端渲染一致</span>
+
+<span class="kw">interface</span> <span class="type">SurveyMeta</span> {
+  <span class="fn">title</span>: <span class="type">string</span>;
+  <span class="fn">description</span>: <span class="type">string</span>;
+  <span class="fn">theme</span>: <span class="str">'adventure'</span> | <span class="str">'cute'</span> | <span class="str">'sci-fi'</span> | <span class="str">'nature'</span>;
+}
+
+<span class="kw">interface</span> <span class="type">QuestionOption</span> {
+  <span class="fn">emoji</span>: <span class="type">string</span>;
+  <span class="fn">text</span>: <span class="type">string</span>;
+  <span class="fn">value</span>: <span class="type">string</span>;
+}
+
+<span class="kw">interface</span> <span class="type">Achievement</span> {
+  <span class="fn">icon</span>: <span class="type">string</span>;
+  <span class="fn">name</span>: <span class="type">string</span>;
+  <span class="fn">desc</span>: <span class="type">string</span>;
+}
+
+<span class="kw">interface</span> <span class="type">BaseQuestion</span> {
+  <span class="fn">id</span>: <span class="type">string</span>;
+  <span class="fn">chapter</span>: <span class="type">string</span>;
+  <span class="fn">title</span>: <span class="type">string</span>;
+  <span class="fn">emoji</span>: <span class="type">string</span>;
+  <span class="fn">narrative</span>: <span class="type">string</span>;
+  <span class="fn">achievement</span>?: <span class="type">Achievement</span>;
+}
+
+<span class="kw">interface</span> <span class="type">SingleQuestion</span> <span class="kw">extends</span> <span class="type">BaseQuestion</span> {
+  <span class="fn">type</span>: <span class="str">'single'</span>;
+  <span class="fn">cols</span>: <span class="num">1</span> | <span class="num">2</span>;
+  <span class="fn">options</span>: <span class="type">QuestionOption</span>[];
+}
+
+<span class="kw">interface</span> <span class="type">MultiQuestion</span> <span class="kw">extends</span> <span class="type">BaseQuestion</span> {
+  <span class="fn">type</span>: <span class="str">'multi'</span>;
+  <span class="fn">cols</span>: <span class="num">1</span> | <span class="num">2</span>;
+  <span class="fn">options</span>: <span class="type">QuestionOption</span>[];
+  <span class="fn">hint</span>?: <span class="type">string</span>;
+  <span class="fn">maxSelect</span>?: <span class="type">number</span>;
+}
+
+<span class="kw">interface</span> <span class="type">SliderQuestion</span> <span class="kw">extends</span> <span class="type">BaseQuestion</span> {
+  <span class="fn">type</span>: <span class="str">'slider'</span>;
+  <span class="fn">min</span>: <span class="type">number</span>;
+  <span class="fn">max</span>: <span class="type">number</span>;
+  <span class="fn">default</span>: <span class="type">number</span>;
+  <span class="fn">step</span>?: <span class="type">number</span>;
+  <span class="fn">minLabel</span>: <span class="type">string</span>;
+  <span class="fn">maxLabel</span>: <span class="type">string</span>;
+  <span class="fn">unit</span>: <span class="type">string</span>;
+}
+
+<span class="kw">interface</span> <span class="type">TextQuestion</span> <span class="kw">extends</span> <span class="type">BaseQuestion</span> {
+  <span class="fn">type</span>: <span class="str">'text'</span>;
+  <span class="fn">placeholder</span>: <span class="type">string</span>;
+}
+
+<span class="kw">type</span> <span class="type">Question</span> = <span class="type">SingleQuestion</span> | <span class="type">MultiQuestion</span>
+                  | <span class="type">SliderQuestion</span> | <span class="type">TextQuestion</span>;
+
+<span class="kw">interface</span> <span class="type">GameSurvey</span> {
+  <span class="fn">meta</span>: <span class="type">SurveyMeta</span>;
+  <span class="fn">questions</span>: <span class="type">Question</span>[];
+}
+
+<span class="comment">// ===== API 呼叫範例 =====</span>
+
+<span class="kw">async function</span> <span class="fn">generateSurvey</span>(
+  <span class="fn">requirement</span>: <span class="type">string</span>
+): <span class="type">Promise</span>&lt;<span class="type">GameSurvey</span>&gt; {
+  <span class="kw">const</span> res = <span class="kw">await</span> openai.chat.completions.<span class="fn">create</span>({
+    <span class="fn">model</span>: <span class="str">'gpt-4o-mini'</span>,
+    <span class="fn">response_format</span>: { <span class="fn">type</span>: <span class="str">'json_object'</span> },
+    <span class="fn">messages</span>: [
+      {
+        <span class="fn">role</span>: <span class="str">'system'</span>,
+        <span class="fn">content</span>: SYSTEM_PROMPT  <span class="comment">// 上面的 Prompt 模板</span>
+      },
+      {
+        <span class="fn">role</span>: <span class="str">'user'</span>,
+        <span class="fn">content</span>: requirement
+      }
+    ],
+    <span class="fn">temperature</span>: <span class="num">0.7</span>,
+  });
+
+  <span class="kw">const</span> data = JSON.<span class="fn">parse</span>(
+    res.choices[<span class="num">0</span>].message.content!
+  ) <span class="kw">as</span> <span class="type">GameSurvey</span>;
+
+  <span class="comment">// 驗證結構</span>
+  <span class="fn">validateSurvey</span>(data);
+  <span class="kw">return</span> data;
+}`;
+
+// ===== SAMPLE JSON =====
+const SAMPLE_JSON = {
+  "meta": {
+    "title": "毛行天下 · 冒險問卷",
+    "description": "發現你的毛寶冒險類型！",
+    "theme": "adventure"
+  },
+  "questions": [
+    {
+      "id": "q1",
+      "chapter": "序章",
+      "title": "你的身份",
+      "emoji": "🧙",
+      "narrative": "在毛行天下的世界裡，每位冒險者都有自己的身份。你是⋯⋯",
+      "type": "single",
+      "cols": 2,
+      "options": [
+        {"emoji": "😺", "text": "貓奴一枚", "value": "cat"},
+        {"emoji": "🐶", "text": "狗派代表", "value": "dog"},
+        {"emoji": "🐰", "text": "異寵達人", "value": "exotic"},
+        {"emoji": "🤔", "text": "還沒養但很想", "value": "planning"}
+      ]
+    },
+    {
+      "id": "q2",
+      "chapter": "序章",
+      "title": "毛孩數量",
+      "emoji": "🏠",
+      "narrative": "你的小窩裡住了多少位毛茸茸的室友？",
+      "type": "single",
+      "cols": 2,
+      "options": [
+        {"emoji": "0️⃣", "text": "目前 0 位", "value": "0"},
+        {"emoji": "1️⃣", "text": "獨生毛孩", "value": "1"},
+        {"emoji": "✌️", "text": "2~3 位", "value": "2-3"},
+        {"emoji": "🎪", "text": "4+ 小動物園", "value": "4+"}
+      ]
+    },
+    {
+      "id": "q3",
+      "chapter": "第一章",
+      "title": "日常記錄",
+      "emoji": "📸",
+      "narrative": "冒險者都會記錄旅途中的美好時刻。你怎麼記錄和毛孩的生活？",
+      "type": "multi",
+      "cols": 2,
+      "hint": "可以多選喔！",
+      "options": [
+        {"emoji": "📷", "text": "拍照/影片", "value": "photo"},
+        {"emoji": "📝", "text": "寫文字日記", "value": "diary"},
+        {"emoji": "📱", "text": "發社群動態", "value": "social"},
+        {"emoji": "🤷", "text": "很少記錄", "value": "none"}
+      ],
+      "achievement": {
+        "icon": "📸",
+        "name": "記憶收集者",
+        "desc": "你已開啟記錄毛孩生活的冒險！"
+      }
+    },
+    {
+      "id": "q4",
+      "chapter": "第一章",
+      "title": "社群偏好",
+      "emoji": "💬",
+      "narrative": "在寵物社群的情報站中，什麼內容最吸引你？",
+      "type": "single",
+      "cols": 1,
+      "options": [
+        {"emoji": "🩺", "text": "專業醫療/健康知識", "value": "health"},
+        {"emoji": "🎉", "text": "有趣的萌寵日常", "value": "fun"},
+        {"emoji": "🛒", "text": "好物推薦與團購", "value": "shopping"},
+        {"emoji": "🤝", "text": "找飯友/遛狗夥伴", "value": "meetup"}
+      ]
+    },
+    {
+      "id": "q5",
+      "chapter": "第二章",
+      "title": "出門頻率",
+      "emoji": "🚶",
+      "narrative": "身為冒險者，你多常帶毛孩出門探索世界？",
+      "type": "slider",
+      "min": 1,
+      "max": 7,
+      "default": 3,
+      "step": 1,
+      "minLabel": "每週 1 次",
+      "maxLabel": "天天出門",
+      "unit": "次/週",
+      "achievement": {
+        "icon": "🗺️",
+        "name": "探險家之心",
+        "desc": "毛孩的世界因你而寬廣！"
+      }
+    },
+    {
+      "id": "q6",
+      "chapter": "第二章",
+      "title": "最期待功能",
+      "emoji": "⭐",
+      "narrative": "以下哪些功能讓你最心動？你的選擇將影響我們的冒險地圖！",
+      "type": "multi",
+      "cols": 1,
+      "hint": "最多選 3 個",
+      "maxSelect": 3,
+      "options": [
+        {"emoji": "📍", "text": "寵物友善地圖 + 足跡記錄", "value": "map"},
+        {"emoji": "🎮", "text": "虛擬寵物養成", "value": "virtual"},
+        {"emoji": "🌈", "text": "彩虹國紀念空間", "value": "rainbow"},
+        {"emoji": "🤖", "text": "AI 健康助手", "value": "ai_health"}
+      ],
+      "achievement": {
+        "icon": "⭐",
+        "name": "未來建築師",
+        "desc": "你的選擇正在塑造毛行天下的未來！"
+      }
+    },
+    {
+      "id": "q7",
+      "chapter": "終章",
+      "title": "冒險者留言",
+      "emoji": "✉️",
+      "narrative": "旅途的終點也是新的起點。對毛行天下說一句話吧！",
+      "type": "text",
+      "placeholder": "任何建議、期待、鼓勵都可以 ❤️"
+    }
+  ]
+};
+
+// ===== TAB SWITCHING =====
+function switchTab(tab){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
+  document.querySelector(`.tab:nth-child(${tab==='prompt'?1:tab==='types'?2:3})`).classList.add('active');
+  document.getElementById('tab-'+tab).classList.add('active');
+}
+
+// ===== INIT PROMPT & TYPES DISPLAY =====
+function initEditors(){
+  // Prompt - just show as highlighted text
+  const promptEl = document.getElementById('promptBlock');
+  promptEl.textContent = PROMPT_TEMPLATE;
+  
+  // Types
+  document.getElementById('typesBlock').innerHTML = TYPES_CODE;
+  
+  // JSON editor with sample
+  document.getElementById('jsonEditor').value = JSON.stringify(SAMPLE_JSON, null, 2);
+}
+
+function loadSample(){
+  document.getElementById('jsonEditor').value = JSON.stringify(SAMPLE_JSON, null, 2);
+  switchTab('json');
+  setStatus('範例 JSON 已載入','success');
+}
+
+function setStatus(msg,type=''){
+  const el=document.getElementById('statusMsg');
+  el.textContent=msg;
+  el.className='status-msg'+(type?' '+type:'');
+  if(type)setTimeout(()=>{el.textContent='';el.className='status-msg'},3000);
+}
+
+// ===== GAME STATE =====
+let gData=null, gIdx=0, gXP=0, gLV=1, gSel=[], gSliderVal=0, gAnswers=[], gAchQueue=[], gAchDone=[];
+
+function resetPreview(){
+  gData=null;gIdx=0;gXP=0;gLV=1;gSel=[];gSliderVal=0;gAnswers=[];gAchQueue=[];gAchDone=[];
+  document.getElementById('gameContainer').classList.add('hidden');
+  document.getElementById('emptyState').classList.remove('hidden');
+  document.getElementById('pXpFill').style.width='0%';
+  document.getElementById('pXpText').textContent='0 / 100 XP';
+  document.getElementById('pLevel').textContent='LV 1';
+  document.getElementById('pTitle').textContent='見習毛友';
+  setStatus('已重置','');
+}
+
+function renderPreview(){
+  const raw=document.getElementById('jsonEditor').value.trim();
+  try{
+    gData=JSON.parse(raw);
+    if(!gData.questions||!gData.questions.length) throw new Error('缺少 questions 陣列');
+  }catch(e){
+    setStatus('JSON 解析失敗: '+e.message,'error');
+    return;
+  }
+  gIdx=0;gXP=0;gLV=1;gSel=[];gAnswers=[];gAchQueue=[];gAchDone=[];
+  document.getElementById('emptyState').classList.add('hidden');
+  document.getElementById('gameContainer').classList.remove('hidden');
+  document.getElementById('pXpFill').style.width='0%';
+  document.getElementById('pXpText').textContent='0 / 100 XP';
+  document.getElementById('pLevel').textContent='LV 1';
+  document.getElementById('pTitle').textContent='見習毛友';
+  buildMap();
+  renderQ();
+  setStatus('✓ 渲染成功！共 '+gData.questions.length+' 題','success');
+}
+
+function buildMap(){
+  const map=document.getElementById('pMap');
+  map.innerHTML='';
+  gData.questions.forEach((_,i)=>{
+    const n=document.createElement('div');
+    n.className='g-node lock';n.id='gn-'+i;n.textContent=i+1;
+    map.appendChild(n);
+    if(i<gData.questions.length-1){
+      const c=document.createElement('div');
+      c.className='g-conn';c.id='gc-'+i;
+      map.appendChild(c);
+    }
+  });
+  updMap();
+}
+
+function updMap(){
+  if(!gData)return;
+  gData.questions.forEach((_,i)=>{
+    const n=document.getElementById('gn-'+i);if(!n)return;
+    n.className='g-node';
+    if(i<gIdx){n.classList.add('done');n.textContent='✓';}
+    else if(i===gIdx)n.classList.add('now');
+    else n.classList.add('lock');
+    if(i<gIdx){const c=document.getElementById('gc-'+i);if(c)c.classList.add('done');}
+  });
+}
+
+function renderQ(){
+  if(!gData||gIdx>=gData.questions.length){showEnd();return;}
+  const q=gData.questions[gIdx];
+  gSel=[];
+  let h=`<div class="g-scene" style="animation:gfade 0.4s ease">
+    <div class="g-chapter">${q.chapter||''}</div>
+    <div class="g-emoji">${q.emoji||'❓'}</div>
+    <div class="g-title">${q.title}</div>
+    <div class="g-narrative">${q.narrative||''}</div>`;
+
+  if(q.type==='single'||q.type==='multi'){
+    if(q.hint)h+=`<div class="g-hint">💡 ${q.hint}</div>`;
+    const cols=q.cols===1?'c1':'c2';
+    h+=`<div class="g-options ${cols}">`;
+    (q.options||[]).forEach((o,i)=>{
+      h+=`<div class="g-card" id="gc-${i}" onclick="pickOpt(${i})">
+        <div class="g-card-inner">
+          <div class="g-card-f"><div class="g-card-emoji">${o.emoji||''}</div><div class="g-card-text">${o.text}</div></div>
+          <div class="g-card-b"><div class="g-card-emoji">${o.emoji||''}</div><div class="g-card-text">✓ ${o.text}</div></div>
+        </div>
+      </div>`;
+    });
+    h+=`</div>`;
+    if(q.type==='multi')h+=`<button class="g-btn" id="gBtn" onclick="confirmQ()" disabled>確認選擇 →</button>`;
+  } else if(q.type==='slider'){
+    const step=q.step||1;
+    gSliderVal=q.default||q.min||0;
+    const pct=((gSliderVal-(q.min||0))/((q.max||10)-(q.min||0)))*100;
+    const disp=q.unit==='NT$'?'NT$ '+gSliderVal:gSliderVal+' '+(q.unit||'');
+    h+=`<div class="g-slider-box">
+      <div class="g-slider-labels"><span>${q.minLabel||q.min}</span><span>${q.maxLabel||q.max}</span></div>
+      <div class="g-slider-track" id="gSliderTrack">
+        <div class="g-slider-fill" id="gSliderFill" style="width:${pct}%"></div>
+        <div class="g-slider-thumb" id="gSliderThumb" style="left:${pct}%"></div>
+      </div>
+      <div class="g-slider-val" id="gSliderVal">${disp}</div>
+    </div>`;
+    h+=`<button class="g-btn" onclick="confirmQ()">確認 →</button>`;
+  } else if(q.type==='text'){
+    h+=`<textarea class="g-textarea" id="gText" placeholder="${q.placeholder||'請輸入...'}" rows="3"></textarea>`;
+    h+=`<button class="g-btn" onclick="confirmQ()">完成 🎉</button>`;
+  }
+  h+=`</div>`;
+  document.getElementById('pQuestion').innerHTML=h;
+  updMap();
+
+  if(q.type==='slider') initGSlider(q);
+}
+
+function pickOpt(idx){
+  const q=gData.questions[gIdx];
+  if(q.type==='single'){
+    document.querySelectorAll('.g-card').forEach(c=>{c.classList.remove('selected','flipped')});
+    const card=document.getElementById('gc-'+idx);
+    card.classList.add('selected','flipped');
+    gSel=[idx];
+    setTimeout(()=>confirmQ(),600);
+  } else {
+    const card=document.getElementById('gc-'+idx);
+    const pos=gSel.indexOf(idx);
+    if(pos>-1){gSel.splice(pos,1);card.classList.remove('selected','flipped');}
+    else{
+      if(q.maxSelect&&gSel.length>=q.maxSelect)return;
+      gSel.push(idx);card.classList.add('selected','flipped');
+    }
+    const btn=document.getElementById('gBtn');
+    if(btn)btn.disabled=gSel.length===0;
+  }
+}
+
+function confirmQ(){
+  const q=gData.questions[gIdx];
+  let val;
+  if(q.type==='single'||q.type==='multi'){
+    val=gSel.map(i=>(q.options||[])[i]?.value);
+  } else if(q.type==='slider'){
+    val=gSliderVal;
+  } else {
+    val=document.getElementById('gText')?.value||'';
+  }
+  gAnswers.push({id:q.id,title:q.title,value:val});
+  addGXP(q.type==='multi'?15:q.type==='text'?20:10);
+  
+  if(q.achievement&&!gAchDone.includes(q.id)){
+    gAchDone.push(q.id);
+    gAchQueue.push(q.achievement);
+  }
+  gIdx++;
+  
+  if(gAchQueue.length>0) showAch();
+  else renderQ();
+}
+
+function addGXP(amt){
+  gXP+=amt;
+  const max=gLV*100;
+  if(gXP>=max){gXP-=max;gLV++;document.getElementById('pLevel').textContent='LV '+gLV;updTitle();}
+  const pct=Math.min(100,gXP/(gLV*100)*100);
+  document.getElementById('pXpFill').style.width=pct+'%';
+  document.getElementById('pXpText').textContent=gXP+' / '+(gLV*100)+' XP';
+}
+function updTitle(){
+  const t=['見習毛友','初階毛友','中階毛友','資深毛友','毛行達人'];
+  document.getElementById('pTitle').textContent=t[Math.min(gLV-1,t.length-1)];
+}
+
+function showAch(){
+  const a=gAchQueue[0];
+  document.getElementById('pAchIcon').textContent=a.icon||'🏆';
+  document.getElementById('pAchName').textContent=a.name;
+  document.getElementById('pAchDesc').textContent=a.desc;
+  document.getElementById('pAchOverlay').classList.add('show');
+}
+function closeAch(){
+  document.getElementById('pAchOverlay').classList.remove('show');
+  gAchQueue.shift();
+  if(gAchQueue.length>0)setTimeout(showAch,300);
+  else renderQ();
+}
+
+function initGSlider(q){
+  const track=document.getElementById('gSliderTrack');
+  const fill=document.getElementById('gSliderFill');
+  const thumb=document.getElementById('gSliderThumb');
+  const step=q.step||1;
+  let dragging=false;
+  function upd(cx){
+    const r=track.getBoundingClientRect();
+    let p=Math.max(0,Math.min(1,(cx-r.left)/r.width));
+    let v=q.min+p*(q.max-q.min);
+    v=Math.round(v/step)*step;
+    v=Math.max(q.min,Math.min(q.max,v));
+    gSliderVal=v;
+    p=(v-q.min)/(q.max-q.min);
+    fill.style.width=p*100+'%';
+    thumb.style.left=p*100+'%';
+    const d=q.unit==='NT$'?'NT$ '+v:v+' '+(q.unit||'');
+    document.getElementById('gSliderVal').textContent=d;
+  }
+  thumb.onmousedown=()=>dragging=true;
+  thumb.ontouchstart=()=>dragging=true;
+  document.addEventListener('mousemove',e=>{if(dragging)upd(e.clientX)});
+  document.addEventListener('touchmove',e=>{if(dragging)upd(e.touches[0].clientX)},{passive:true});
+  document.addEventListener('mouseup',()=>dragging=false);
+  document.addEventListener('touchend',()=>dragging=false);
+  track.onclick=e=>upd(e.clientX);
+}
+
+function showEnd(){
+  const total=gXP+((gLV-1)*100);
+  document.getElementById('pQuestion').innerHTML=`
+    <div class="g-scene" style="text-align:center">
+      <div class="g-emoji">🎉</div>
+      <div class="g-title">冒險完成！</div>
+      <div class="g-narrative">共回答 ${gAnswers.length} 題 · LV${gLV} · ${total} XP · ${gAchDone.length} 成就</div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px;margin-top:14px;text-align:left">
+        <div style="font-size:0.72rem;color:var(--accent);margin-bottom:8px;font-weight:700">📊 收集到的資料</div>
+        <pre style="font-family:'JetBrains Mono',monospace;font-size:0.68rem;color:var(--dim);white-space:pre-wrap;line-height:1.6">${JSON.stringify(gAnswers,null,2)}</pre>
+      </div>
+    </div>`;
+}
+
+// ===== BOOT =====
+initEditors();
+</script>
+</body>
+</html>

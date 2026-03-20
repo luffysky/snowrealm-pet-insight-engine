@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { query, execute } from '@/lib/db'
 import { broadcastMessage } from '@/lib/line'
+import { getStyle, buildFlexBubble } from '@/lib/lineStyles'
 
 /**
  * GET /api/cron/broadcast
@@ -23,8 +24,20 @@ export async function GET(): Promise<NextResponse> {
   }
 
   let processed = 0
+  const style = await getStyle('broadcast')
+
   for (const row of rows) {
-    const messages = [{ type: 'text' as const, text: row.message }]
+    let messages: { type: string; [key: string]: unknown }[]
+    if (style) {
+      const msg = buildFlexBubble({
+        style,
+        bodyRows: [{ label: '訊息', value: row.message }],
+        altText: `${style.header_emoji} ${style.header_text}`,
+      })
+      messages = [msg]
+    } else {
+      messages = [{ type: 'text' as const, text: row.message }]
+    }
 
     if (row.tag_filter) {
       const filter = row.tag_filter as { key: string; value: string }

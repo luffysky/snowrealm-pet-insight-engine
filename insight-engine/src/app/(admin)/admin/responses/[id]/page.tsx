@@ -68,9 +68,9 @@ export default async function ResponseDetailPage({
           {detail.tags.length === 0 && (
             <p className="text-slate-500 text-sm">尚無標籤</p>
           )}
-          {detail.tags.map((tag) => (
+          {detail.tags.map((tag, i) => (
             <span
-              key={`${tag.key}-${tag.value}`}
+              key={`${tag.key}-${tag.value}-${i}`}
               className="px-3 py-1 bg-slate-700/60 text-slate-200 rounded-lg text-sm"
             >
               {tag.key}: <span className="text-cyan-300">{tag.value}</span>
@@ -82,9 +82,9 @@ export default async function ResponseDetailPage({
       {/* 問答內容 */}
       <div className="bg-slate-800/50 border border-slate-700/50 rounded-2xl p-6 space-y-4">
         <h2 className="text-lg font-semibold text-white">問答內容</h2>
-        {detail.answers.map((answer) => (
+        {detail.answers.map((answer, idx) => (
           <div
-            key={answer.questionKey}
+            key={`${answer.questionKey}-${idx}`}
             className="border-b border-slate-700/30 pb-3 last:border-0"
           >
             <p className="text-sm text-slate-400 mb-1">

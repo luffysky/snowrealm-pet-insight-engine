@@ -8,12 +8,22 @@ interface TagOption {
   count: number
 }
 
+interface MessageTemplate {
+  id: string
+  name: string
+  type: string
+  content: string
+  category: string
+  is_active: boolean
+}
+
 export default function BroadcastPage() {
   const [text, setText] = useState('')
   const [useTag, setUseTag] = useState(false)
   const [tagKey, setTagKey] = useState('')
   const [tagValue, setTagValue] = useState('')
   const [tags, setTags] = useState<TagOption[]>([])
+  const [templates, setTemplates] = useState<MessageTemplate[]>([])
   const [sending, setSending] = useState(false)
   const [result, setResult] = useState('')
   const [useSchedule, setUseSchedule] = useState(false)
@@ -29,6 +39,11 @@ export default function BroadcastPage() {
     fetch('/api/admin/broadcast?logs=1')
       .then((r) => r.json())
       .then((data) => setLogs(data))
+      .catch(() => {})
+
+    fetch('/api/admin/templates')
+      .then((r) => r.json())
+      .then((data: MessageTemplate[]) => setTemplates(data.filter((t) => t.is_active && t.type === 'text')))
       .catch(() => {})
   }, [])
 
@@ -81,6 +96,26 @@ export default function BroadcastPage() {
 
       {/* 發送表單 */}
       <div className="bg-slate-800/50 border border-slate-700/50 rounded-2xl p-6 space-y-4">
+        {/* 模板選擇 */}
+        {templates.length > 0 && (
+          <div>
+            <label className="block text-sm text-slate-400 mb-1">套用模板</label>
+            <select
+              value=""
+              onChange={(e) => {
+                const tpl = templates.find((t) => t.id === e.target.value)
+                if (tpl) setText(tpl.content)
+              }}
+              className="w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded-lg text-white text-sm"
+            >
+              <option value="">自由輸入（或選擇模板）</option>
+              {templates.map((t) => (
+                <option key={t.id} value={t.id}>[{t.category}] {t.name}</option>
+              ))}
+            </select>
+          </div>
+        )}
+
         <div>
           <label className="block text-sm text-slate-400 mb-1">推播訊息</label>
           <textarea
