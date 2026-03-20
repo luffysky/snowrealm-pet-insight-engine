@@ -169,8 +169,14 @@ export async function getSurveyById(id: string): Promise<SurveyRow | null> {
   return queryOne<SurveyRow>(`SELECT * FROM surveys WHERE id = $1`, [id])
 }
 
-/** 依 survey_id 取得所有題目 */
-export async function getQuestionsBySurveyId(surveyId: string): Promise<QuestionRow[]> {
+/** 依 survey_id 取得題目，可依 route 過濾（預設全部） */
+export async function getQuestionsBySurveyId(surveyId: string, route?: string): Promise<QuestionRow[]> {
+  if (route) {
+    return query<QuestionRow>(
+      `SELECT * FROM questions WHERE survey_id = $1 AND route IN ('all', $2) ORDER BY order_index ASC`,
+      [surveyId, route]
+    )
+  }
   return query<QuestionRow>(
     `SELECT * FROM questions WHERE survey_id = $1 ORDER BY order_index ASC`,
     [surveyId]

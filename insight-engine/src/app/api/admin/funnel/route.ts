@@ -6,7 +6,8 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   try {
     const { tenantId } = await getTenantContext()
     const surveyId = request.nextUrl.searchParams.get('surveyId') || undefined
-    const data = await getFunnelStats(tenantId, surveyId)
+    const route = request.nextUrl.searchParams.get('route') || undefined
+    const data = await getFunnelStats(tenantId, surveyId, route)
     return NextResponse.json(data)
   } catch (error) {
     console.error('[admin/funnel] Failed:', error)

@@ -5,20 +5,27 @@ import type { FunnelStep } from '@/lib/stats'
 import { useAdminSurvey } from '@/components/admin/AdminSurveyContext'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts'
 
+const ROUTES = [
+  { value: 'A', label: 'A 路線（主路線）' },
+  { value: 'B', label: 'B 路線' },
+  { value: 'C', label: 'C 路線' },
+]
+
 export default function FunnelPage() {
   const { selectedSurveyId } = useAdminSurvey()
   const [data, setData] = useState<FunnelStep[]>([])
   const [loading, setLoading] = useState(true)
+  const [route, setRoute] = useState('A')
 
   useEffect(() => {
     if (!selectedSurveyId) return
     setLoading(true)
-    fetch(`/api/admin/funnel?surveyId=${selectedSurveyId}`)
+    fetch(`/api/admin/funnel?surveyId=${selectedSurveyId}&route=${route}`)
       .then((r) => r.json())
       .then(setData)
       .catch(console.error)
       .finally(() => setLoading(false))
-  }, [selectedSurveyId])
+  }, [selectedSurveyId, route])
 
   if (loading) return <p className="text-slate-400">載入中…</p>
   if (data.length === 0) return <p className="text-slate-400">尚無填答資料</p>
@@ -38,9 +45,20 @@ export default function FunnelPage() {
 
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-2xl font-bold text-white">📉 漏斗分析</h1>
-        <p className="text-slate-400 mt-1">每一題的到達人數與跳出率</p>
+      <div className="flex items-center justify-between flex-wrap gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-white">📉 漏斗分析</h1>
+          <p className="text-slate-400 mt-1">每一題的到達人數與跳出率</p>
+        </div>
+        <select
+          value={route}
+          onChange={(e) => setRoute(e.target.value)}
+          className="bg-slate-800 border border-slate-700 text-white rounded-lg px-3 py-2 text-sm"
+        >
+          {ROUTES.map((r) => (
+            <option key={r.value} value={r.value}>{r.label}</option>
+          ))}
+        </select>
       </div>
 
       {/* 漏斗圖 */}

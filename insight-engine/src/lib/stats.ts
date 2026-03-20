@@ -171,10 +171,16 @@ export interface FunnelStep {
   dropOffRate: number
 }
 
-export async function getFunnelStats(tenantId?: string, surveyId?: string): Promise<FunnelStep[]> {
-  const questions = await resolveQuestions(tenantId, surveyId)
+export async function getFunnelStats(tenantId?: string, surveyId?: string, route?: string): Promise<FunnelStep[]> {
+  // 取得指定路線的題目（預設 route A = 主路線）
+  const effectiveRoute = route || 'A'
+  const questions = surveyId
+    ? (await getQuestionsBySurveyId(surveyId, effectiveRoute)).map(toQuestion)
+    : await resolveQuestions(tenantId, surveyId)
 
-  const { where, params } = buildWhere(tenantId, surveyId)
+  const { conds, params, nextIdx } = buildWhere(tenantId, surveyId)
+  if (route) { conds.push(`route = $${nextIdx}`); params.push(route) }
+  const where = conds.length > 0 ? `WHERE ${conds.join(' AND ')}` : ''
   const rows = await query<{ last_step: number; count: string }>(
     `SELECT last_step, COUNT(*)::text AS count FROM responses ${where} GROUP BY last_step`, params
   )
