@@ -49,6 +49,7 @@ export interface ResponseListItem {
   utmSource: string | null
   submittedAt: string | null
   createdAt: string
+  notes: string | null
   tags: UserTag[]
   clickEvents: { eventType: string; clickedAt: string }[]
 }

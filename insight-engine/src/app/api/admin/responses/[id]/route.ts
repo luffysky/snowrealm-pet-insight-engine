@@ -31,6 +31,32 @@ export async function GET(
   }
 }
 
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+): Promise<NextResponse> {
+  const { id } = await params
+
+  if (!UUID_REGEX.test(id)) {
+    return NextResponse.json({ error: '無效的 ID 格式' }, { status: 400 })
+  }
+
+  try {
+    const body = await request.json()
+    const notes = typeof body.notes === 'string' ? body.notes.slice(0, 500) : null
+
+    await query(
+      `UPDATE responses SET notes = $1 WHERE id = $2`,
+      [notes, id]
+    )
+
+    return NextResponse.json({ success: true })
+  } catch (error) {
+    console.error('[admin/responses/:id PATCH] Failed:', error)
+    return NextResponse.json({ error: '更新備註失敗' }, { status: 500 })
+  }
+}
+
 export async function DELETE(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }

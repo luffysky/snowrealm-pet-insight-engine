@@ -165,6 +165,9 @@ export function ResponseTable({
               <th className="text-center px-4 sm:px-6 py-3 text-slate-400 font-medium whitespace-nowrap">
                 IG
               </th>
+              <th className="text-left px-4 sm:px-6 py-3 text-slate-400 font-medium whitespace-nowrap">
+                備註
+              </th>
               <th className="text-right px-4 sm:px-6 py-3 text-slate-400 font-medium whitespace-nowrap">
                 操作
               </th>
@@ -224,6 +227,9 @@ export function ResponseTable({
                   {response.clickEvents?.some((e) => e.eventType === 'instagram')
                     ? <span className="text-purple-400">✓</span>
                     : <span className="text-slate-600">-</span>}
+                </td>
+                <td className="px-4 sm:px-6 py-3">
+                  <NotesCell responseId={response.id} initialNotes={response.notes} />
                 </td>
                 <td className="px-4 sm:px-6 py-3 text-right">
                   <div className="flex items-center justify-end gap-2">
@@ -328,4 +334,59 @@ function formatDateTime(isoString: string): string {
   const h = String(d.getHours()).padStart(2, '0')
   const min = String(d.getMinutes()).padStart(2, '0')
   return `${m}/${day} ${h}:${min}`
+}
+
+function NotesCell({ responseId, initialNotes }: { responseId: string; initialNotes: string | null }) {
+  const [editing, setEditing] = useState(false)
+  const [value, setValue] = useState(initialNotes ?? '')
+  const [saving, setSaving] = useState(false)
+
+  async function save() {
+    setSaving(true)
+    try {
+      const res = await fetch(`/api/admin/responses/${responseId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ notes: value }),
+      })
+      if (!res.ok) {
+        const data = await res.json()
+        alert(data.error || '儲存失敗')
+      }
+    } catch {
+      alert('儲存失敗')
+    } finally {
+      setSaving(false)
+      setEditing(false)
+    }
+  }
+
+  if (editing) {
+    return (
+      <div className="flex items-center gap-1 min-w-[140px]">
+        <input
+          type="text"
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          maxLength={500}
+          className="flex-1 px-2 py-1 bg-slate-700 border border-slate-600 rounded text-xs text-white focus:outline-none focus:ring-1 focus:ring-cyan-500/50"
+          onKeyDown={(e) => { if (e.key === 'Enter') save(); if (e.key === 'Escape') setEditing(false) }}
+          autoFocus
+          disabled={saving}
+        />
+        <button onClick={save} disabled={saving} className="text-cyan-400 hover:text-cyan-300 text-xs cursor-pointer">✓</button>
+        <button onClick={() => { setValue(initialNotes ?? ''); setEditing(false) }} className="text-slate-500 hover:text-slate-300 text-xs cursor-pointer">✕</button>
+      </div>
+    )
+  }
+
+  return (
+    <span
+      onClick={() => setEditing(true)}
+      className="text-slate-400 text-xs cursor-pointer hover:text-slate-200 max-w-[160px] truncate inline-block"
+      title={value || '點擊新增備註'}
+    >
+      {value || <span className="text-slate-600">—</span>}
+    </span>
+  )
 }

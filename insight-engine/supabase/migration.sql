@@ -40,7 +40,8 @@ CREATE TABLE IF NOT EXISTS responses (
   utm_campaign TEXT,
   started_at TIMESTAMPTZ,
   submitted_at TIMESTAMPTZ,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  notes TEXT
 );
 
 -- 4. answers 答案表

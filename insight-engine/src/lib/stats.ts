@@ -396,8 +396,9 @@ export async function getResponseList(
       utm_source: string | null
       submitted_at: string
       created_at: string
+      notes: string | null
     }>(
-      `SELECT id, status, source, utm_source, submitted_at, created_at
+      `SELECT id, status, source, utm_source, submitted_at, created_at, notes
        FROM responses ${where}
        ORDER BY created_at DESC
        LIMIT $${paramIdx++} OFFSET $${paramIdx}`,
@@ -456,6 +457,7 @@ export async function getResponseList(
     utmSource: r.utm_source,
     submittedAt: r.submitted_at,
     createdAt: r.created_at,
+    notes: r.notes,
     tags: tagMap.get(r.id) ?? [],
     clickEvents: clickMap.get(r.id) ?? [],
   }))
@@ -475,8 +477,9 @@ export async function getResponseDetail(
     utm_source: string | null
     submitted_at: string
     created_at: string
+    notes: string | null
   }>(
-    'SELECT id, status, source, utm_source, submitted_at, created_at FROM responses WHERE id = $1',
+    'SELECT id, status, source, utm_source, submitted_at, created_at, notes FROM responses WHERE id = $1',
     [responseId]
   )
 
@@ -510,6 +513,7 @@ export async function getResponseDetail(
     utmSource: response.utm_source,
     submittedAt: response.submitted_at,
     createdAt: response.created_at,
+    notes: response.notes ?? null,
     tags: tagRows.map((t) => ({
       key: t.tag_key,
       value: t.tag_value,
