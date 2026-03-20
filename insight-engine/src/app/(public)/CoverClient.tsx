@@ -58,6 +58,11 @@ function CoverContent({ config, themeSettings }: { config: SurveyConfig; themeSe
             <h1 className={`text-2xl md:text-3xl font-bold leading-snug ${questionTitleClass[theme]}`}>
               {config.coverTitle}
             </h1>
+            {config.subtitle && (
+              <p className={`text-lg font-medium ${questionTitleClass[theme]} opacity-80`}>
+                {config.subtitle}
+              </p>
+            )}
             <p className={`text-base leading-relaxed ${stepTextClass[theme]} !text-base opacity-70`}>
               {config.coverSubtitle}
             </p>
