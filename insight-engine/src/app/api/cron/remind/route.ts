@@ -65,7 +65,7 @@ export async function GET(): Promise<NextResponse> {
               contents: [
                 {
                   type: 'button',
-                  action: { type: 'uri', label: '繼續填寫', uri: `${BASE_URL}/survey` },
+                  action: { type: 'uri', label: '繼續填寫', uri: `${BASE_URL}/` },
                   style: 'primary',
                   color: '#0e7990',
                 },

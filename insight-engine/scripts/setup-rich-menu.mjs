@@ -16,7 +16,7 @@ if (!TOKEN) {
 }
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://localhost:3000'
-const SURVEY_URL = `${BASE_URL}/survey`
+const SURVEY_URL = `${BASE_URL}/`
 const IG_URL = 'https://www.instagram.com/snowrealm.pet?igsh=Y2x1cTRiM3N3NGpw'
 
 const headers = {

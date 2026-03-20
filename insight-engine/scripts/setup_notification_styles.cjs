@@ -61,7 +61,7 @@ async function main() {
       header_emoji: '💌',
       header_text: '感謝你的回覆',
       footer_label: '查看更多',
-      footer_url: '/survey',
+      footer_url: '/',
       footer_color: '#2563eb',
     },
     {
@@ -81,7 +81,7 @@ async function main() {
       header_emoji: '🐾',
       header_text: '問卷還沒填完喔！',
       footer_label: '繼續填寫',
-      footer_url: '/survey',
+      footer_url: '/',
       footer_color: '#d97706',
     },
     {
