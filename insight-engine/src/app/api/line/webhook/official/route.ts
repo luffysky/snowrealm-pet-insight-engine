@@ -2,9 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import crypto from 'crypto'
 import { execute } from '@/lib/db'
 import { createLineToken } from '@/lib/lineToken'
-
-const CHANNEL_SECRET = process.env.LINE_OFFICIAL_CHANNEL_SECRET ?? ''
-const CHANNEL_ACCESS_TOKEN = process.env.LINE_OFFICIAL_CHANNEL_ACCESS_TOKEN ?? ''
+import { getLineConfig } from '@/lib/lineConfig'
 
 const SURVEY_URL = process.env.NEXT_PUBLIC_BASE_URL
   ? `${process.env.NEXT_PUBLIC_BASE_URL}/`
@@ -18,6 +16,8 @@ const IG_URL = 'https://www.instagram.com/snowrealm.pet?igsh=Y2x1cTRiM3N3NGpw'
  * 官方帳號 @474iwlht — 使用者互動、自動回覆、歡迎訊息
  */
 export async function POST(request: NextRequest): Promise<NextResponse> {
+  const CHANNEL_SECRET = await getLineConfig('OFFICIAL_CHANNEL_SECRET') ?? ''
+  const CHANNEL_ACCESS_TOKEN = await getLineConfig('OFFICIAL_CHANNEL_ACCESS_TOKEN') ?? ''
   if (!CHANNEL_SECRET) {
     return NextResponse.json({ error: 'LINE Official not configured' }, { status: 500 })
   }
@@ -48,7 +48,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       const replyToken = event.replyToken as string
       const userId = event.source?.userId as string | undefined
       const reply = getAutoReply(text, userId)
-      await replyMessage(replyToken, reply)
+      await replyMessage(replyToken, reply, CHANNEL_ACCESS_TOKEN)
     }
 
     if (event.type === 'follow') {
@@ -57,7 +57,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
       // 記錄 LINE 好友到 line_users（供推播用）
       if (userId) {
-        const displayName = await getLineProfile(userId)
+        const displayName = await getLineProfile(userId, CHANNEL_ACCESS_TOKEN)
         await execute(
           `INSERT INTO line_users (line_user_id, display_name)
            VALUES ($1, $2)
@@ -71,7 +71,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
           type: 'text',
           text: '🐾 歡迎來到毛行天下！\n\n我們正在打造一個留下寵物足跡的平台。\n\n輸入「問卷」即可填寫，幫我們更了解你的需求 💛',
         },
-      ])
+      ], CHANNEL_ACCESS_TOKEN)
     }
 
     if (event.type === 'unfollow') {
@@ -201,16 +201,18 @@ function getAutoReply(text: string, userId?: string): LineTextMessage[] {
 
 async function replyMessage(
   replyToken: string,
-  messages: LineTextMessage[]
+  messages: LineTextMessage[],
+  accessToken?: string
 ): Promise<void> {
-  if (!CHANNEL_ACCESS_TOKEN) return
+  const token = accessToken || await getLineConfig('OFFICIAL_CHANNEL_ACCESS_TOKEN') || ''
+  if (!token) return
 
   try {
     const res = await fetch('https://api.line.me/v2/bot/message/reply', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${CHANNEL_ACCESS_TOKEN}`,
+        Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify({ replyToken, messages }),
       signal: AbortSignal.timeout(10000),
@@ -227,11 +229,12 @@ async function replyMessage(
 
 // ----- 取得 LINE 使用者 Profile -----
 
-async function getLineProfile(userId: string): Promise<string | null> {
-  if (!CHANNEL_ACCESS_TOKEN) return null
+async function getLineProfile(userId: string, accessToken?: string): Promise<string | null> {
+  const token = accessToken || await getLineConfig('OFFICIAL_CHANNEL_ACCESS_TOKEN') || ''
+  if (!token) return null
   try {
     const res = await fetch(`https://api.line.me/v2/bot/profile/${userId}`, {
-      headers: { Authorization: `Bearer ${CHANNEL_ACCESS_TOKEN}` },
+      headers: { Authorization: `Bearer ${token}` },
       signal: AbortSignal.timeout(5000),
     })
     if (!res.ok) return null

@@ -2,9 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import crypto from 'crypto'
 import { query, queryOne } from '@/lib/db'
 import { generateInviteToken } from '@/lib/auth'
+import { getLineConfig } from '@/lib/lineConfig'
 
-const CHANNEL_SECRET = process.env.LINE_INSIGHT_CHANNEL_SECRET ?? ''
-const CHANNEL_ACCESS_TOKEN = process.env.LINE_INSIGHT_CHANNEL_ACCESS_TOKEN ?? ''
 const PASSCODE = '我要當足跡管理員'
 
 /**
@@ -12,6 +11,8 @@ const PASSCODE = '我要當足跡管理員'
  * @762wxvfb — 口令觸發註冊連結，取消追蹤則停用
  */
 export async function POST(request: NextRequest): Promise<NextResponse> {
+  const CHANNEL_SECRET = await getLineConfig('INSIGHT_CHANNEL_SECRET') ?? ''
+  const CHANNEL_ACCESS_TOKEN = await getLineConfig('INSIGHT_CHANNEL_ACCESS_TOKEN') ?? ''
   if (!CHANNEL_SECRET) {
     return NextResponse.json({ error: 'LINE Insight not configured' }, { status: 500 })
   }
@@ -53,7 +54,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
           [userId],
         )
         if (existing) {
-          await replyMessage(replyToken, '你已經有管理員帳號了！\n直接到後台登入即可 🔑')
+          await replyMessage(replyToken, '你已經有管理員帳號了！\n直接到後台登入即可 🔑', CHANNEL_ACCESS_TOKEN)
           continue
         }
 
@@ -68,7 +69,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
           token = pendingInvite.token
         } else {
           token = generateInviteToken()
-          const displayName = await getLineDisplayName(userId)
+          const displayName = await getLineDisplayName(userId, CHANNEL_ACCESS_TOKEN)
           await query(
             `INSERT INTO admin_invites (token, line_user_id, display_name, expires_at)
              VALUES ($1, $2, $3, NOW() + INTERVAL '30 minutes')`,
@@ -80,6 +81,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         await replyMessage(
           replyToken,
           `🎉 口令正確！請點擊以下連結註冊你的管理員帳號：\n\n${registerUrl}\n\n⏰ 連結有效期限：30 分鐘\n📝 請自行設定帳號與密碼`,
+          CHANNEL_ACCESS_TOKEN,
         )
         continue
       }
@@ -90,17 +92,17 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
           `UPDATE line_admins SET active = false WHERE line_user_id = $1`,
           [userId],
         )
-        await replyMessage(replyToken, '已退出管理員通知，之後不會再收到問卷通知。\n如需重新加入，請再次輸入口令。')
+        await replyMessage(replyToken, '已退出管理員通知，之後不會再收到問卷通知。\n如需重新加入，請再次輸入口令。', CHANNEL_ACCESS_TOKEN)
         continue
       }
 
       // 其他訊息 → 提示
-      await replyMessage(replyToken, '📊 問卷系統管理帳號\n\n輸入正確口令即可取得註冊連結，成為管理員。\n\n點選下方選單可查看後台數據。')
+      await replyMessage(replyToken, '📊 問卷系統管理帳號\n\n輸入正確口令即可取得註冊連結，成為管理員。\n\n點選下方選單可查看後台數據。', CHANNEL_ACCESS_TOKEN)
     }
 
     // 加好友 → 歡迎訊息
     if (event.type === 'follow' && event.replyToken) {
-      await replyMessage(event.replyToken, '👋 歡迎！這是毛行天下問卷系統的管理帳號。\n\n輸入口令即可取得註冊連結，成為管理員 📋')
+      await replyMessage(event.replyToken, '👋 歡迎！這是毛行天下問卷系統的管理帳號。\n\n輸入口令即可取得註冊連結，成為管理員 📋', CHANNEL_ACCESS_TOKEN)
     }
 
     // 取消追蹤 → 停用管理員
@@ -117,13 +119,14 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 }
 
 /** 回覆訊息 */
-async function replyMessage(replyToken: string, text: string): Promise<void> {
-  if (!CHANNEL_ACCESS_TOKEN) return
+async function replyMessage(replyToken: string, text: string, accessToken?: string): Promise<void> {
+  const token = accessToken || await getLineConfig('INSIGHT_CHANNEL_ACCESS_TOKEN') || ''
+  if (!token) return
   await fetch('https://api.line.me/v2/bot/message/reply', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${CHANNEL_ACCESS_TOKEN}`,
+      Authorization: `Bearer ${token}`,
     },
     body: JSON.stringify({
       replyToken,
@@ -133,11 +136,12 @@ async function replyMessage(replyToken: string, text: string): Promise<void> {
 }
 
 /** 取得 LINE 使用者名稱 */
-async function getLineDisplayName(userId: string): Promise<string | null> {
-  if (!CHANNEL_ACCESS_TOKEN) return null
+async function getLineDisplayName(userId: string, accessToken?: string): Promise<string | null> {
+  const token = accessToken || await getLineConfig('INSIGHT_CHANNEL_ACCESS_TOKEN') || ''
+  if (!token) return null
   try {
     const res = await fetch(`https://api.line.me/v2/bot/profile/${userId}`, {
-      headers: { Authorization: `Bearer ${CHANNEL_ACCESS_TOKEN}` },
+      headers: { Authorization: `Bearer ${token}` },
       signal: AbortSignal.timeout(5000),
     })
     if (!res.ok) return null

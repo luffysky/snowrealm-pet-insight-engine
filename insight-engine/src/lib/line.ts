@@ -1,32 +1,23 @@
 import { query as dbQuery } from '@/lib/db'
 import { getStyle, buildFlexBubble } from '@/lib/lineStyles'
+import { getLineConfig } from '@/lib/lineConfig'
 
-const CHANNEL_ACCESS_TOKEN = process.env.LINE_INSIGHT_CHANNEL_ACCESS_TOKEN ?? ''
-const LEGACY_ADMIN_USER_ID = process.env.LINE_YOUR_USER_ID ?? ''
-const ENV_ADMIN_IDS = [
-  ...new Set(
-    (process.env.LINE_ADMIN_USER_IDS ?? '')
-      .split(',')
-      .map((s) => s.trim())
-      .filter(Boolean)
-      .concat(LEGACY_ADMIN_USER_ID ? [LEGACY_ADMIN_USER_ID] : [])
-  ),
-]
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL ?? ''
 
 type LineMessage = { type: string; [key: string]: unknown }
 
 /** 從 DB 取得所有啟用的管理員 LINE user ID，合併 env 的 */
 async function getAllAdminIds(): Promise<string[]> {
+  const legacyId = await getLineConfig('ADMIN_USER_ID') ?? ''
+  const envIds = legacyId ? [legacyId] : []
   try {
     const rows = await dbQuery<{ line_user_id: string }>(
       `SELECT line_user_id FROM line_admins WHERE active = true`
     )
     const dbIds = rows.map((r) => r.line_user_id)
-    return [...new Set([...ENV_ADMIN_IDS, ...dbIds])]
+    return [...new Set([...envIds, ...dbIds])]
   } catch {
-    // DB 查詢失敗時 fallback 到環境變數
-    return ENV_ADMIN_IDS
+    return envIds
   }
 }
 
@@ -36,8 +27,9 @@ async function getAllAdminIds(): Promise<string[]> {
  * 不阻塞主流程 — 錯誤只 log 不 throw
  */
 export async function pushLineMessage(messages: LineMessage[]): Promise<void> {
+  const CHANNEL_ACCESS_TOKEN = await getLineConfig('INSIGHT_CHANNEL_ACCESS_TOKEN') ?? ''
   if (!CHANNEL_ACCESS_TOKEN) {
-    console.warn('[LINE] Missing LINE_INSIGHT_CHANNEL_ACCESS_TOKEN')
+    console.warn('[LINE] Missing INSIGHT_CHANNEL_ACCESS_TOKEN')
     return
   }
 
@@ -139,8 +131,8 @@ export function notifyWaitlistJoined(params: {
  * 使用官方帳號廣播訊息給所有好友
  */
 export async function broadcastMessage(messages: LineMessage[]): Promise<{ ok: boolean; error?: string }> {
-  const token = process.env.LINE_OFFICIAL_CHANNEL_ACCESS_TOKEN ?? ''
-  if (!token) return { ok: false, error: 'Missing LINE_OFFICIAL_CHANNEL_ACCESS_TOKEN' }
+  const token = await getLineConfig('OFFICIAL_CHANNEL_ACCESS_TOKEN') ?? ''
+  if (!token) return { ok: false, error: 'Missing OFFICIAL_CHANNEL_ACCESS_TOKEN' }
 
   try {
     const res = await fetch('https://api.line.me/v2/bot/message/broadcast', {
@@ -167,8 +159,8 @@ export async function broadcastMessage(messages: LineMessage[]): Promise<{ ok: b
  * 使用官方帳號推播給特定使用者
  */
 export async function pushToUser(userId: string, messages: LineMessage[]): Promise<{ ok: boolean; error?: string }> {
-  const token = process.env.LINE_OFFICIAL_CHANNEL_ACCESS_TOKEN ?? ''
-  if (!token) return { ok: false, error: 'Missing LINE_OFFICIAL_CHANNEL_ACCESS_TOKEN' }
+  const token = await getLineConfig('OFFICIAL_CHANNEL_ACCESS_TOKEN') ?? ''
+  if (!token) return { ok: false, error: 'Missing OFFICIAL_CHANNEL_ACCESS_TOKEN' }
 
   try {
     const res = await fetch('https://api.line.me/v2/bot/message/push', {

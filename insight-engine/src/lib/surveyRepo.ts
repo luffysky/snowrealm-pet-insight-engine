@@ -175,6 +175,7 @@ export async function updateSurvey(
   id: string,
   data: Partial<{
     title: string
+    slug: string
     subtitle: string
     status: string
     cover_title: string
@@ -189,7 +190,7 @@ export async function updateSurvey(
   }>
 ): Promise<number> {
   const allowed = [
-    'title', 'subtitle', 'status',
+    'title', 'slug', 'subtitle', 'status',
     'cover_title', 'cover_subtitle', 'start_button_text',
     'done_title', 'done_subtitle',
     'variant_group', 'scheduled_start', 'scheduled_end',

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { query, execute } from '@/lib/db'
 import { broadcastMessage } from '@/lib/line'
 import { getStyle, buildFlexBubble } from '@/lib/lineStyles'
+import { getLineConfig } from '@/lib/lineConfig'
 
 /**
  * GET /api/cron/broadcast
@@ -50,7 +51,7 @@ export async function GET(): Promise<NextResponse> {
       )
 
       if (users.length > 0) {
-        const token = process.env.LINE_OFFICIAL_CHANNEL_ACCESS_TOKEN ?? ''
+        const token = await getLineConfig('OFFICIAL_CHANNEL_ACCESS_TOKEN') ?? ''
         const userIds = users.map((u) => u.line_user_id)
         for (let i = 0; i < userIds.length; i += 500) {
           await fetch('https://api.line.me/v2/bot/message/multicast', {

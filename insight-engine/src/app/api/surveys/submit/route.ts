@@ -38,18 +38,23 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     const fingerprint = body.fingerprint ?? null
     const route = body.route ?? null
 
+    // 查詢 survey_id
+    const surveyId = slugExists?.id ?? null
+
     if (body.progressResponseId) {
       // 更新既有的 in_progress response → completed
       await query(
         `UPDATE responses SET
           status = 'completed',
-          source = $1, utm_source = $2, utm_medium = $3, utm_campaign = $4,
-          fingerprint = COALESCE(fingerprint, $5),
-          last_step = $6,
-          route = $7,
+          survey_id = COALESCE(survey_id, $1),
+          source = $2, utm_source = $3, utm_medium = $4, utm_campaign = $5,
+          fingerprint = COALESCE(fingerprint, $6),
+          last_step = $7,
+          route = $8,
           submitted_at = NOW()
-         WHERE id = $8`,
+         WHERE id = $9`,
         [
+          surveyId,
           body.utm?.source ?? null,
           body.utm?.source ?? null,
           body.utm?.medium ?? null,
@@ -63,11 +68,12 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     } else {
       const sessionId = uuidv4()
       await query(
-        `INSERT INTO responses (id, session_id, status, source, utm_source, utm_medium, utm_campaign, fingerprint, last_step, route, started_at, submitted_at)
-         VALUES ($1, $2, 'completed', $3, $4, $5, $6, $7, $8, $9, NOW(), NOW())`,
+        `INSERT INTO responses (id, session_id, survey_id, status, source, utm_source, utm_medium, utm_campaign, fingerprint, last_step, route, started_at, submitted_at)
+         VALUES ($1, $2, $3, 'completed', $4, $5, $6, $7, $8, $9, $10, NOW(), NOW())`,
         [
           responseId,
           sessionId,
+          surveyId,
           body.utm?.source ?? null,
           body.utm?.source ?? null,
           body.utm?.medium ?? null,
@@ -88,7 +94,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     }
 
     // Analyze & insert tags
-    const surveyId = slugExists?.id ?? null
     const tags = await analyzeResponse(body.answers, surveyId ?? undefined)
     for (const t of tags) {
       await query(

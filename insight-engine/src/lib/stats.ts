@@ -400,7 +400,7 @@ export async function getResponseList(
     }>(
       `SELECT id, status, source, utm_source, submitted_at, created_at, notes
        FROM responses ${where}
-       ORDER BY created_at DESC
+       ORDER BY COALESCE(submitted_at, created_at) DESC
        LIMIT $${paramIdx++} OFFSET $${paramIdx}`,
       [...params, pageSize, offset]
     ),

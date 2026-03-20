@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { query, queryOne } from '@/lib/db'
+import { getLineConfig } from '@/lib/lineConfig'
 
 interface TableCount {
   table_name: string
@@ -71,8 +72,8 @@ export async function GET(): Promise<NextResponse> {
       })),
       dbSize: dbSize?.size ?? 'N/A',
       env: {
-        hasLineOfficial: !!process.env.LINE_CHANNEL_ACCESS_TOKEN_OFFICIAL,
-        hasLineInsight: !!process.env.LINE_CHANNEL_ACCESS_TOKEN,
+        hasLineOfficial: !!(await getLineConfig('OFFICIAL_CHANNEL_ACCESS_TOKEN')),
+        hasLineInsight: !!(await getLineConfig('INSIGHT_CHANNEL_ACCESS_TOKEN')),
         hasLiff: !!process.env.NEXT_PUBLIC_LIFF_ID,
         hasOpenAI: !!process.env.OPENAI_API_KEY,
         hasDbUrl: !!process.env.DATABASE_URL,

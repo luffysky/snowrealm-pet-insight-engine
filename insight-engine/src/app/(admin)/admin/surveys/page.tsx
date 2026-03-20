@@ -241,6 +241,7 @@ function SurveyEditor({
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         title: form.title,
+        slug: form.slug,
         subtitle: form.subtitle,
         status: form.status,
         cover_title: form.cover_title,
@@ -324,6 +325,12 @@ function SurveyEditor({
       {activeTab === 'basic' && editing && (
         <div className="space-y-3">
           <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+            <label className="text-sm text-white/50 sm:w-20">Slug</label>
+            <input type="text" value={form.slug}
+              onChange={(e) => setForm({ ...form, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '') })}
+              className="flex-1 bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-sm text-white/80 font-mono" />
+          </div>
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
             <label className="text-sm text-white/50 sm:w-20">狀態</label>
             <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })}
               className="bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-sm text-white/80">
@@ -367,6 +374,7 @@ function SurveyEditor({
       {/* Basic settings - read-only */}
       {activeTab === 'basic' && !editing && (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+          <div><span className="text-white/40">Slug：</span><span className="text-white/70 font-mono">{survey.slug}</span></div>
           {fields.map((f) => (
             <div key={f.key}>
               <span className="text-white/40">{f.label}：</span>

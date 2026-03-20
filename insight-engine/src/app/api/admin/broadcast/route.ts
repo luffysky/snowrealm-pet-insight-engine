@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { broadcastMessage } from '@/lib/line'
 import { query, execute } from '@/lib/db'
+import { getLineConfig } from '@/lib/lineConfig'
 
 /** GET /api/admin/broadcast?logs=1 — 推播紀錄 */
 export async function GET(): Promise<NextResponse> {
@@ -57,7 +58,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       return NextResponse.json({ error: '找不到符合條件的使用者（需先透過 LIFF 綁定）', sent: 0 }, { status: 404 })
     }
 
-    const token = process.env.LINE_OFFICIAL_CHANNEL_ACCESS_TOKEN ?? ''
+    const token = await getLineConfig('OFFICIAL_CHANNEL_ACCESS_TOKEN') ?? ''
     const userIds = rows.map((r) => r.line_user_id)
 
     for (let i = 0; i < userIds.length; i += 500) {
