@@ -1,0 +1,238 @@
+'use client'
+
+import { useEffect, useState } from 'react'
+import Link from 'next/link'
+
+interface SystemInfo {
+  tables: Record<string, number>
+  todayResponses: number
+  recentNotifications: { type: string; status: string; created_at: string }[]
+  dbSize: string
+  env: {
+    hasLineOfficial: boolean
+    hasLineInsight: boolean
+    hasLiff: boolean
+    hasOpenAI: boolean
+    hasDbUrl: boolean
+    nodeEnv: string
+    baseUrl: string
+  }
+  serverTime: string
+}
+
+const QUICK_LINKS = [
+  { icon: '📊', label: 'Dashboard', href: '/admin', desc: 'KPI 總覽與趨勢圖表' },
+  { icon: '📝', label: '問卷管理', href: '/admin/surveys', desc: '題目編輯與排序' },
+  { icon: '📋', label: '填答列表', href: '/admin/responses', desc: '查看所有填答資料' },
+  { icon: '🏷️', label: '標籤規則', href: '/admin/tag-rules', desc: 'CRM 自動標籤引擎' },
+  { icon: '📢', label: 'LINE 推播', href: '/admin/broadcast', desc: '發送 LINE 推播訊息' },
+  { icon: '🔔', label: '通知規則', href: '/admin/notification-rules', desc: '自動通知觸發條件' },
+  { icon: '🎨', label: '主題設定', href: '/admin/theme-settings', desc: '問卷風格與主題' },
+  { icon: '🤖', label: 'AI 設定', href: '/admin/ai-settings', desc: 'AI 問卷生成功能' },
+  { icon: '🔗', label: 'UTM 管理', href: '/admin/utm-links', desc: '行銷追蹤連結' },
+  { icon: '📱', label: 'Rich Menu', href: '/admin/rich-menu', desc: 'LINE 選單管理' },
+  { icon: '🔗', label: 'Webhook', href: '/admin/webhooks', desc: '外部服務串接' },
+  { icon: '👥', label: '封測名單', href: '/admin/waitlist', desc: 'Beta 使用者管理' },
+]
+
+function StatusDot({ ok }: { ok: boolean }) {
+  return (
+    <span
+      className={`inline-block w-2.5 h-2.5 rounded-full ${ok ? 'bg-green-400' : 'bg-red-400'}`}
+    />
+  )
+}
+
+function formatTime(iso: string) {
+  try {
+    return new Date(iso).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' })
+  } catch {
+    return iso
+  }
+}
+
+export default function AdminPanelPage() {
+  const [info, setInfo] = useState<SystemInfo | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+
+  useEffect(() => {
+    fetch('/api/admin/system')
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.error) throw new Error(data.error)
+        setInfo(data)
+      })
+      .catch((e) => setError(e.message))
+      .finally(() => setLoading(false))
+  }, [])
+
+  if (loading) return <p className="text-white/50 animate-pulse">載入系統資訊中...</p>
+  if (error) return <p className="text-red-400">錯誤：{error}</p>
+  if (!info) return null
+
+  const tableLabels: Record<string, string> = {
+    surveys: '問卷',
+    questions: '題目',
+    responses: '填答',
+    waitlist: '封測名單',
+    lineUsers: 'LINE 用戶',
+    tagRules: '標籤規則',
+    notificationLogs: '通知紀錄',
+    templates: '訊息模板',
+    broadcasts: '推播紀錄',
+  }
+
+  const envLabels: { key: keyof SystemInfo['env']; label: string; isBoolean: boolean }[] = [
+    { key: 'hasDbUrl', label: 'PostgreSQL', isBoolean: true },
+    { key: 'hasLineOfficial', label: 'LINE Official', isBoolean: true },
+    { key: 'hasLineInsight', label: 'LINE Insight', isBoolean: true },
+    { key: 'hasLiff', label: 'LIFF', isBoolean: true },
+    { key: 'hasOpenAI', label: 'OpenAI', isBoolean: true },
+    { key: 'nodeEnv', label: '環境', isBoolean: false },
+    { key: 'baseUrl', label: '網址', isBoolean: false },
+  ]
+
+  const notifTypeLabels: Record<string, string> = {
+    survey_submitted: '📋 填答完成',
+    waitlist_joined: '👥 加入封測',
+    rule_admin: '🏷️ 標籤通知(管)',
+    rule_user: '🏷️ 標籤通知(用)',
+    weekly_report: '📊 週報',
+    remind: '⏰ 提醒',
+    broadcast: '📢 推播',
+    follow_welcome: '👋 歡迎',
+  }
+
+  return (
+    <div className="space-y-8">
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold text-white">管理員面板</h1>
+        <span className="text-xs text-white/30">
+          伺服器時間：{formatTime(info.serverTime)}
+        </span>
+      </div>
+
+      {/* 服務狀態 */}
+      <section>
+        <h2 className="text-lg font-semibold text-white/90 mb-3">🔧 服務狀態</h2>
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+          {envLabels.map((item) => (
+            <div
+              key={item.key}
+              className="bg-slate-900/60 border border-slate-800 rounded-xl p-3 flex items-center gap-3"
+            >
+              {item.isBoolean ? (
+                <StatusDot ok={info.env[item.key] as boolean} />
+              ) : (
+                <span className="w-2.5 h-2.5 rounded-full bg-blue-400 inline-block" />
+              )}
+              <div>
+                <p className="text-xs text-white/40">{item.label}</p>
+                <p className="text-sm text-white/80">
+                  {item.isBoolean
+                    ? (info.env[item.key] ? '已連接' : '未設定')
+                    : String(info.env[item.key])}
+                </p>
+              </div>
+            </div>
+          ))}
+          <div className="bg-slate-900/60 border border-slate-800 rounded-xl p-3 flex items-center gap-3">
+            <span className="w-2.5 h-2.5 rounded-full bg-purple-400 inline-block" />
+            <div>
+              <p className="text-xs text-white/40">資料庫大小</p>
+              <p className="text-sm text-white/80">{info.dbSize}</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 資料概覽 */}
+      <section>
+        <h2 className="text-lg font-semibold text-white/90 mb-3">📈 資料概覽</h2>
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+          {Object.entries(info.tables).map(([key, count]) => (
+            <div
+              key={key}
+              className="bg-slate-900/60 border border-slate-800 rounded-xl p-3 text-center"
+            >
+              <p className="text-2xl font-bold text-cyan-400">{count.toLocaleString()}</p>
+              <p className="text-xs text-white/40 mt-1">{tableLabels[key] ?? key}</p>
+            </div>
+          ))}
+          <div className="bg-slate-900/60 border border-cyan-500/20 rounded-xl p-3 text-center">
+            <p className="text-2xl font-bold text-emerald-400">
+              {info.todayResponses.toLocaleString()}
+            </p>
+            <p className="text-xs text-white/40 mt-1">今日填答</p>
+          </div>
+        </div>
+      </section>
+
+      {/* 最近通知 */}
+      {info.recentNotifications.length > 0 && (
+        <section>
+          <h2 className="text-lg font-semibold text-white/90 mb-3">🔔 最近通知紀錄</h2>
+          <div className="bg-slate-900/60 border border-slate-800 rounded-xl overflow-hidden">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-slate-800 text-white/40 text-xs">
+                  <th className="text-left px-4 py-2">類型</th>
+                  <th className="text-left px-4 py-2">狀態</th>
+                  <th className="text-left px-4 py-2">時間</th>
+                </tr>
+              </thead>
+              <tbody>
+                {info.recentNotifications.map((n, i) => (
+                  <tr key={i} className="border-b border-slate-800/50 last:border-0">
+                    <td className="px-4 py-2 text-white/70">
+                      {notifTypeLabels[n.type] ?? n.type}
+                    </td>
+                    <td className="px-4 py-2">
+                      <span
+                        className={`text-xs px-2 py-0.5 rounded-full ${
+                          n.status === 'sent'
+                            ? 'bg-green-500/20 text-green-400'
+                            : n.status === 'failed'
+                              ? 'bg-red-500/20 text-red-400'
+                              : 'bg-yellow-500/20 text-yellow-400'
+                        }`}
+                      >
+                        {n.status === 'sent' ? '已送達' : n.status === 'failed' ? '失敗' : n.status}
+                      </span>
+                    </td>
+                    <td className="px-4 py-2 text-white/40 text-xs">
+                      {formatTime(n.created_at)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
+
+      {/* 快捷入口 */}
+      <section>
+        <h2 className="text-lg font-semibold text-white/90 mb-3">🚀 快捷入口</h2>
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+          {QUICK_LINKS.map((link) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              className="bg-slate-900/60 border border-slate-800 rounded-xl p-4 hover:border-cyan-500/30 hover:bg-slate-800/60 transition-all group"
+            >
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-lg">{link.icon}</span>
+                <span className="text-sm font-medium text-white/80 group-hover:text-cyan-300 transition-colors">
+                  {link.label}
+                </span>
+              </div>
+              <p className="text-xs text-white/30">{link.desc}</p>
+            </Link>
+          ))}
+        </div>
+      </section>
+    </div>
+  )
+}

@@ -16,6 +16,7 @@ const ALL_NAV_ITEMS = [
   { href: '/admin/utm', label: '來源分析' },
   { href: '/admin/ab', label: 'A/B 比較' },
   { href: '/admin/webhooks', label: 'Webhook' },
+  { href: '/admin/panel', label: '管理員面板' },
   { href: '/admin/broadcast', label: 'LINE 推播' },
   { href: '/admin/notification-rules', label: '通知規則' },
   { href: '/admin/templates', label: '訊息模板' },
@@ -64,6 +65,7 @@ const NAV_GROUPS: NavGroup[] = [
   {
     label: '⚙️ 系統',
     items: [
+      { href: '/admin/panel', label: '管理員面板' },
       { href: '/admin/ai-settings', label: 'AI 設定' },
       { href: '/admin/theme-settings', label: '主題設定' },
       { href: '/admin/utm-links', label: 'UTM 管理' },
@@ -108,6 +110,7 @@ const MOBILE_GROUPS = [
   {
     title: '系統',
     items: [
+      { href: '/admin/panel', label: '管理員面板' },
       { href: '/admin/ai-settings', label: 'AI 設定' },
       { href: '/admin/theme-settings', label: '主題設定' },
       { href: '/admin/utm-links', label: 'UTM 管理' },
