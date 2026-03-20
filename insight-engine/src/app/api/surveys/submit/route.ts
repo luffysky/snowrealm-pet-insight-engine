@@ -24,13 +24,15 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   }
 
   // 驗證 slug 是否存在於 DB 或 fallback config
-  const slugExists = await queryOne<{ id: string }>(
-    `SELECT id FROM surveys WHERE slug = $1`,
+  const slugExists = await queryOne<{ id: string; tenant_id: string }>(
+    `SELECT id, tenant_id FROM surveys WHERE slug = $1`,
     [body.surveySlug]
   )
   if (!slugExists && body.surveySlug !== MVP_SURVEY.slug) {
     return NextResponse.json({ error: '問卷不存在' }, { status: 400 })
   }
+
+  const tenantId = slugExists?.tenant_id ?? 'maoxingtianxia'
 
   try {
     // 若有 progress response，複用它；否則建立新的
@@ -51,6 +53,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
           fingerprint = COALESCE(fingerprint, $6),
           last_step = $7,
           route = $8,
+          tenant_id = $10,
           submitted_at = NOW()
          WHERE id = $9`,
         [
@@ -63,13 +66,14 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
           body.answers.length,
           route,
           responseId,
+          tenantId,
         ]
       )
     } else {
       const sessionId = uuidv4()
       await query(
-        `INSERT INTO responses (id, session_id, survey_id, status, source, utm_source, utm_medium, utm_campaign, fingerprint, last_step, route, started_at, submitted_at)
-         VALUES ($1, $2, $3, 'completed', $4, $5, $6, $7, $8, $9, $10, NOW(), NOW())`,
+        `INSERT INTO responses (id, session_id, survey_id, status, source, utm_source, utm_medium, utm_campaign, fingerprint, last_step, route, tenant_id, started_at, submitted_at)
+         VALUES ($1, $2, $3, 'completed', $4, $5, $6, $7, $8, $9, $10, $11, NOW(), NOW())`,
         [
           responseId,
           sessionId,
@@ -81,6 +85,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
           fingerprint,
           body.answers.length,
           route,
+          tenantId,
         ]
       )
     }
@@ -88,8 +93,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     // Insert answers
     for (const a of body.answers) {
       await query(
-        `INSERT INTO answers (id, response_id, question_key, value) VALUES ($1, $2, $3, $4)`,
-        [uuidv4(), responseId, a.questionKey, JSON.stringify(a.value)]
+        `INSERT INTO answers (id, response_id, question_key, value, tenant_id) VALUES ($1, $2, $3, $4, $5)`,
+        [uuidv4(), responseId, a.questionKey, JSON.stringify(a.value), tenantId]
       )
     }
 
@@ -97,8 +102,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     const tags = await analyzeResponse(body.answers, surveyId ?? undefined)
     for (const t of tags) {
       await query(
-        `INSERT INTO user_tags (id, response_id, tag_key, tag_value) VALUES ($1, $2, $3, $4)`,
-        [uuidv4(), responseId, t.key, t.value]
+        `INSERT INTO user_tags (id, response_id, tag_key, tag_value, tenant_id) VALUES ($1, $2, $3, $4, $5)`,
+        [uuidv4(), responseId, t.key, t.value, tenantId]
       )
     }
 

@@ -6,7 +6,6 @@ import { ThemeProvider, useTheme } from '@/components/survey/ThemeContext'
 import { SurveyShell, SurveyCard } from '@/components/survey'
 import { THEME_LIST, ctaBtnClass, questionTitleClass, stepTextClass } from '@/lib/themes'
 import type { SurveyTheme, ThemeIntensity, SurveyConfig } from '@/types'
-import { MVP_SURVEY_SLUG } from '@/constants'
 
 interface ThemeSettings {
   defaultTheme: SurveyTheme
@@ -18,12 +17,19 @@ interface ThemeSettings {
 export function CoverClient() {
   const [config, setConfig] = useState<SurveyConfig | null>(null)
   const [themeSettings, setThemeSettings] = useState<ThemeSettings | null>(null)
+  const [slug, setSlug] = useState<string | null>(null)
 
   useEffect(() => {
-    Promise.all([
-      fetch(`/api/surveys/${MVP_SURVEY_SLUG}`).then(r => r.json() as Promise<SurveyConfig>),
-      fetch(`/api/surveys/theme?slug=${MVP_SURVEY_SLUG}`).then(r => r.json() as Promise<ThemeSettings>),
-    ])
+    // 先取得主問卷 slug，再載入問卷設定
+    fetch('/api/primary-survey')
+      .then(r => r.json() as Promise<{ slug: string }>)
+      .then(({ slug: primarySlug }) => {
+        setSlug(primarySlug)
+        return Promise.all([
+          fetch(`/api/surveys/${primarySlug}`).then(r => r.json() as Promise<SurveyConfig>),
+          fetch(`/api/surveys/theme?slug=${primarySlug}`).then(r => r.json() as Promise<ThemeSettings>),
+        ])
+      })
       .then(([surveyData, themeData]) => {
         setConfig(surveyData)
         setThemeSettings(themeData)
@@ -31,7 +37,7 @@ export function CoverClient() {
       .catch(() => {})
   }, [])
 
-  if (!config || !themeSettings) {
+  if (!config || !themeSettings || !slug) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-950 via-indigo-950 to-purple-950 flex items-center justify-center">
         <p className="text-white/50 animate-pulse">載入中...</p>
@@ -41,12 +47,12 @@ export function CoverClient() {
 
   return (
     <ThemeProvider initialTheme={themeSettings.defaultTheme} intensityMap={themeSettings.themeIntensity}>
-      <CoverContent config={config} themeSettings={themeSettings} />
+      <CoverContent config={config} themeSettings={themeSettings} slug={slug} />
     </ThemeProvider>
   )
 }
 
-function CoverContent({ config, themeSettings }: { config: SurveyConfig; themeSettings: ThemeSettings }) {
+function CoverContent({ config, themeSettings, slug }: { config: SurveyConfig; themeSettings: ThemeSettings; slug: string }) {
   const { theme, setTheme } = useTheme()
   const availableThemes = THEME_LIST.filter(t => themeSettings.availableThemes.includes(t.value))
 
@@ -89,7 +95,7 @@ function CoverContent({ config, themeSettings }: { config: SurveyConfig; themeSe
             </div>
           )}
 
-          <Link href="/survey" className={ctaBtnClass[theme]}>
+          <Link href={`/survey/${slug}`} className={ctaBtnClass[theme]}>
             {config.startButtonText}
           </Link>
 

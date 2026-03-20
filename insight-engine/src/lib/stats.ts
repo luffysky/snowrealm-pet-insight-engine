@@ -13,17 +13,19 @@ import type {
   UtmSourceStats,
 } from '@/types'
 import { MVP_SURVEY } from './surveyConfig'
-import { getQuestionsBySlug } from './surveyRepo'
+import { getQuestionsBySlug, getPrimarySurveySlug } from './surveyRepo'
 
 /** 從 DB 取得題目，若無則 fallback 到靜態 config */
-async function resolveQuestions() {
-  const dbQuestions = await getQuestionsBySlug(MVP_SURVEY_SLUG)
+async function resolveQuestions(tenantId?: string) {
+  // 優先查該租戶的主問卷，否則 fallback 到 MVP_SURVEY_SLUG
+  const slug = (tenantId ? await getPrimarySurveySlug(tenantId) : null) ?? MVP_SURVEY_SLUG
+  const dbQuestions = await getQuestionsBySlug(slug)
   return dbQuestions.length > 0 ? dbQuestions : MVP_SURVEY.questions
 }
 
 // ===== Dashboard 統計 =====
 
-export async function getDashboardStats(): Promise<DashboardStats> {
+export async function getDashboardStats(tenantId?: string): Promise<DashboardStats> {
   const [
     totalResponses,
     completedResponses,
@@ -32,12 +34,12 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     topFeatures,
     emotionDistribution,
   ] = await Promise.all([
-    countTotalResponses(),
-    countCompletedResponses(),
-    countTodayResponses(),
-    getDailyTrend(),
-    getTopFeatures(),
-    getEmotionDistribution(),
+    countTotalResponses(tenantId),
+    countCompletedResponses(tenantId),
+    countTodayResponses(tenantId),
+    getDailyTrend(tenantId),
+    getTopFeatures(tenantId),
+    getEmotionDistribution(tenantId),
   ])
 
   const completionRate =
@@ -54,55 +56,56 @@ export async function getDashboardStats(): Promise<DashboardStats> {
   }
 }
 
-async function countTotalResponses(): Promise<number> {
-  const row = await queryOne<{ count: string }>(
-    'SELECT COUNT(*)::text AS count FROM responses'
-  )
+async function countTotalResponses(tenantId?: string): Promise<number> {
+  const row = tenantId
+    ? await queryOne<{ count: string }>('SELECT COUNT(*)::text AS count FROM responses WHERE tenant_id = $1', [tenantId])
+    : await queryOne<{ count: string }>('SELECT COUNT(*)::text AS count FROM responses')
   return parseInt(row?.count ?? '0', 10)
 }
 
-async function countCompletedResponses(): Promise<number> {
-  const row = await queryOne<{ count: string }>(
-    'SELECT COUNT(*)::text AS count FROM responses WHERE status = $1',
-    ['completed']
-  )
+async function countCompletedResponses(tenantId?: string): Promise<number> {
+  const row = tenantId
+    ? await queryOne<{ count: string }>('SELECT COUNT(*)::text AS count FROM responses WHERE status = $1 AND tenant_id = $2', ['completed', tenantId])
+    : await queryOne<{ count: string }>('SELECT COUNT(*)::text AS count FROM responses WHERE status = $1', ['completed'])
   return parseInt(row?.count ?? '0', 10)
 }
 
-async function countTodayResponses(): Promise<number> {
-  const row = await queryOne<{ count: string }>(
-    `SELECT COUNT(*)::text AS count FROM responses
-     WHERE created_at >= CURRENT_DATE`
-  )
+async function countTodayResponses(tenantId?: string): Promise<number> {
+  const row = tenantId
+    ? await queryOne<{ count: string }>(`SELECT COUNT(*)::text AS count FROM responses WHERE created_at >= CURRENT_DATE AND tenant_id = $1`, [tenantId])
+    : await queryOne<{ count: string }>(`SELECT COUNT(*)::text AS count FROM responses WHERE created_at >= CURRENT_DATE`)
   return parseInt(row?.count ?? '0', 10)
 }
 
-async function getDailyTrend(): Promise<DailyTrendItem[]> {
-  const rows = await query<{ date: string; count: string }>(
-    `SELECT d::date::text AS date, COALESCE(c.cnt, 0)::text AS count
-     FROM generate_series(
-       CURRENT_DATE - ($1 - 1) * INTERVAL '1 day',
-       CURRENT_DATE,
-       '1 day'
-     ) AS d
-     LEFT JOIN (
-       SELECT created_at::date AS day, COUNT(*) AS cnt
-       FROM responses
-       WHERE created_at >= CURRENT_DATE - ($1 - 1) * INTERVAL '1 day'
-       GROUP BY created_at::date
-     ) c ON c.day = d::date
-     ORDER BY d`,
-    [TREND_DAYS]
-  )
-
+async function getDailyTrend(tenantId?: string): Promise<DailyTrendItem[]> {
+  const rows = tenantId
+    ? await query<{ date: string; count: string }>(
+        `SELECT d::date::text AS date, COALESCE(c.cnt, 0)::text AS count
+         FROM generate_series(CURRENT_DATE - ($1 - 1) * INTERVAL '1 day', CURRENT_DATE, '1 day') AS d
+         LEFT JOIN (
+           SELECT created_at::date AS day, COUNT(*) AS cnt
+           FROM responses WHERE created_at >= CURRENT_DATE - ($1 - 1) * INTERVAL '1 day' AND tenant_id = $2
+           GROUP BY created_at::date
+         ) c ON c.day = d::date ORDER BY d`,
+        [TREND_DAYS, tenantId]
+      )
+    : await query<{ date: string; count: string }>(
+        `SELECT d::date::text AS date, COALESCE(c.cnt, 0)::text AS count
+         FROM generate_series(CURRENT_DATE - ($1 - 1) * INTERVAL '1 day', CURRENT_DATE, '1 day') AS d
+         LEFT JOIN (
+           SELECT created_at::date AS day, COUNT(*) AS cnt
+           FROM responses WHERE created_at >= CURRENT_DATE - ($1 - 1) * INTERVAL '1 day'
+           GROUP BY created_at::date
+         ) c ON c.day = d::date ORDER BY d`,
+        [TREND_DAYS]
+      )
   return rows.map((r) => ({ date: r.date, count: parseInt(r.count, 10) }))
 }
 
-async function getTopFeatures(): Promise<FeatureCount[]> {
-  const rows = await query<{ value: unknown }>(
-    `SELECT value FROM answers WHERE question_key = $1`,
-    ['q8']
-  )
+async function getTopFeatures(tenantId?: string): Promise<FeatureCount[]> {
+  const rows = tenantId
+    ? await query<{ value: unknown }>(`SELECT value FROM answers WHERE question_key = $1 AND tenant_id = $2`, ['q8', tenantId])
+    : await query<{ value: unknown }>(`SELECT value FROM answers WHERE question_key = $1`, ['q8'])
 
   if (rows.length === 0) return []
 
@@ -122,14 +125,16 @@ async function getTopFeatures(): Promise<FeatureCount[]> {
     .slice(0, 5)
 }
 
-async function getEmotionDistribution(): Promise<TagDistribution[]> {
-  const rows = await query<{ tag_key: string; tag_value: string; count: string }>(
-    `SELECT tag_key, tag_value, COUNT(*)::text AS count
-     FROM user_tags
-     WHERE tag_key = ANY($1)
-     GROUP BY tag_key, tag_value`,
-    [['emotion_level', 'payment_intent', 'loss_status']]
-  )
+async function getEmotionDistribution(tenantId?: string): Promise<TagDistribution[]> {
+  const rows = tenantId
+    ? await query<{ tag_key: string; tag_value: string; count: string }>(
+        `SELECT tag_key, tag_value, COUNT(*)::text AS count FROM user_tags WHERE tag_key = ANY($1) AND tenant_id = $2 GROUP BY tag_key, tag_value`,
+        [['emotion_level', 'payment_intent', 'loss_status'], tenantId]
+      )
+    : await query<{ tag_key: string; tag_value: string; count: string }>(
+        `SELECT tag_key, tag_value, COUNT(*)::text AS count FROM user_tags WHERE tag_key = ANY($1) GROUP BY tag_key, tag_value`,
+        [['emotion_level', 'payment_intent', 'loss_status']]
+      )
 
   return rows.map((r) => ({
     tagKey: r.tag_key,
@@ -149,13 +154,12 @@ export interface FunnelStep {
   dropOffRate: number
 }
 
-export async function getFunnelStats(): Promise<FunnelStep[]> {
-  const questions = await resolveQuestions()
+export async function getFunnelStats(tenantId?: string): Promise<FunnelStep[]> {
+  const questions = await resolveQuestions(tenantId)
 
-  // 所有有 last_step 紀錄的 responses（包含 in_progress + completed）
-  const rows = await query<{ last_step: number; count: string }>(
-    `SELECT last_step, COUNT(*)::text AS count FROM responses GROUP BY last_step`
-  )
+  const rows = tenantId
+    ? await query<{ last_step: number; count: string }>(`SELECT last_step, COUNT(*)::text AS count FROM responses WHERE tenant_id = $1 GROUP BY last_step`, [tenantId])
+    : await query<{ last_step: number; count: string }>(`SELECT last_step, COUNT(*)::text AS count FROM responses GROUP BY last_step`)
 
   const stepCountMap = new Map<number, number>()
   let totalStarted = 0
@@ -204,18 +208,24 @@ export interface CrossTabResult {
 
 export async function getCrossTabData(
   questionKeyA: string,
-  questionKeyB: string
+  questionKeyB: string,
+  tenantId?: string,
 ): Promise<CrossTabResult> {
-  const rows = await query<{
-    val_a: unknown
-    val_b: unknown
-  }>(
-    `SELECT a1.value AS val_a, a2.value AS val_b
-     FROM answers a1
-     INNER JOIN answers a2 ON a1.response_id = a2.response_id
-     WHERE a1.question_key = $1 AND a2.question_key = $2`,
-    [questionKeyA, questionKeyB]
-  )
+  const rows = tenantId
+    ? await query<{ val_a: unknown; val_b: unknown }>(
+        `SELECT a1.value AS val_a, a2.value AS val_b
+         FROM answers a1
+         INNER JOIN answers a2 ON a1.response_id = a2.response_id
+         WHERE a1.question_key = $1 AND a2.question_key = $2 AND a1.tenant_id = $3`,
+        [questionKeyA, questionKeyB, tenantId]
+      )
+    : await query<{ val_a: unknown; val_b: unknown }>(
+        `SELECT a1.value AS val_a, a2.value AS val_b
+         FROM answers a1
+         INNER JOIN answers a2 ON a1.response_id = a2.response_id
+         WHERE a1.question_key = $1 AND a2.question_key = $2`,
+        [questionKeyA, questionKeyB]
+      )
 
   // 展開多選答案
   const pairs: [string, string][] = []
@@ -258,10 +268,10 @@ export async function getCrossTabData(
 
 // ===== 自動摘要 =====
 
-export async function generateSummary(): Promise<string> {
-  const stats = await getDashboardStats()
-  const questions = await resolveQuestions()
-  const funnel = await getFunnelStats()
+export async function generateSummary(tenantId?: string): Promise<string> {
+  const stats = await getDashboardStats(tenantId)
+  const questions = await resolveQuestions(tenantId)
+  const funnel = await getFunnelStats(tenantId)
 
   const lines: string[] = []
   lines.push(`📊 毛行天下問卷摘要報告`)
@@ -307,12 +317,12 @@ export async function generateSummary(): Promise<string> {
 
 // ===== 題目統計 =====
 
-export async function getQuestionStats(): Promise<QuestionStats[]> {
-  const questions = await resolveQuestions()
+export async function getQuestionStats(tenantId?: string): Promise<QuestionStats[]> {
+  const questions = await resolveQuestions(tenantId)
 
-  const allAnswers = await query<{ question_key: string; value: unknown }>(
-    `SELECT question_key, value FROM answers`
-  )
+  const allAnswers = tenantId
+    ? await query<{ question_key: string; value: unknown }>(`SELECT question_key, value FROM answers WHERE tenant_id = $1`, [tenantId])
+    : await query<{ question_key: string; value: unknown }>(`SELECT question_key, value FROM answers`)
 
   const answersByKey = new Map<string, { value: unknown }[]>()
   for (const row of allAnswers) {
@@ -370,13 +380,18 @@ export interface ResponseListFilters {
 export async function getResponseList(
   page: number,
   pageSize: number,
-  filters?: ResponseListFilters
+  filters?: ResponseListFilters,
+  tenantId?: string,
 ): Promise<PaginatedResponse<ResponseListItem>> {
   const offset = (page - 1) * pageSize
   const conditions: string[] = []
   const params: unknown[] = []
   let paramIdx = 1
 
+  if (tenantId) {
+    conditions.push(`tenant_id = $${paramIdx++}`)
+    params.push(tenantId)
+  }
   if (filters?.status) {
     conditions.push(`status = $${paramIdx++}`)
     params.push(filters.status)
@@ -532,13 +547,15 @@ export async function getResponseDetail(
 
 // ===== 標籤統計 =====
 
-export async function getTagDistribution(): Promise<TagDistribution[]> {
-  const rows = await query<{ tag_key: string; tag_value: string; count: string }>(
-    `SELECT tag_key, tag_value, COUNT(*)::text AS count
-     FROM user_tags
-     GROUP BY tag_key, tag_value
-     ORDER BY COUNT(*) DESC`
-  )
+export async function getTagDistribution(tenantId?: string): Promise<TagDistribution[]> {
+  const rows = tenantId
+    ? await query<{ tag_key: string; tag_value: string; count: string }>(
+        `SELECT tag_key, tag_value, COUNT(*)::text AS count FROM user_tags WHERE tenant_id = $1 GROUP BY tag_key, tag_value ORDER BY COUNT(*) DESC`,
+        [tenantId]
+      )
+    : await query<{ tag_key: string; tag_value: string; count: string }>(
+        `SELECT tag_key, tag_value, COUNT(*)::text AS count FROM user_tags GROUP BY tag_key, tag_value ORDER BY COUNT(*) DESC`
+      )
 
   return rows.map((r) => ({
     tagKey: r.tag_key,
@@ -549,23 +566,22 @@ export async function getTagDistribution(): Promise<TagDistribution[]> {
 
 // ===== UTM 來源分析 =====
 
-async function getUtmBreakdown(column: string): Promise<UtmSourceStats[]> {
+async function getUtmBreakdown(column: string, tenantId?: string): Promise<UtmSourceStats[]> {
   const allowedColumns = ['utm_source', 'utm_medium', 'utm_campaign']
   if (!allowedColumns.includes(column)) return []
 
-  const rows = await query<{
-    label: string
-    total: string
-    completed: string
-  }>(
-    `SELECT
-       COALESCE(${column}, '(direct)') AS label,
-       COUNT(*)::text AS total,
-       COUNT(*) FILTER (WHERE status = 'completed')::text AS completed
-     FROM responses
-     GROUP BY ${column}
-     ORDER BY COUNT(*) DESC`
-  )
+  const rows = tenantId
+    ? await query<{ label: string; total: string; completed: string }>(
+        `SELECT COALESCE(${column}, '(direct)') AS label, COUNT(*)::text AS total,
+         COUNT(*) FILTER (WHERE status = 'completed')::text AS completed
+         FROM responses WHERE tenant_id = $1 GROUP BY ${column} ORDER BY COUNT(*) DESC`,
+        [tenantId]
+      )
+    : await query<{ label: string; total: string; completed: string }>(
+        `SELECT COALESCE(${column}, '(direct)') AS label, COUNT(*)::text AS total,
+         COUNT(*) FILTER (WHERE status = 'completed')::text AS completed
+         FROM responses GROUP BY ${column} ORDER BY COUNT(*) DESC`
+      )
 
   return rows.map((r) => {
     const total = parseInt(r.total, 10)
@@ -579,31 +595,29 @@ async function getUtmBreakdown(column: string): Promise<UtmSourceStats[]> {
   })
 }
 
-export async function getUtmAnalytics(): Promise<UtmAnalytics> {
+export async function getUtmAnalytics(tenantId?: string): Promise<UtmAnalytics> {
   const [bySources, byMedium, byCampaign] = await Promise.all([
-    getUtmBreakdown('utm_source'),
-    getUtmBreakdown('utm_medium'),
-    getUtmBreakdown('utm_campaign'),
+    getUtmBreakdown('utm_source', tenantId),
+    getUtmBreakdown('utm_medium', tenantId),
+    getUtmBreakdown('utm_campaign', tenantId),
   ])
   return { bySources, byMedium, byCampaign }
 }
 
 // ===== CSV 匯出 =====
 
-export async function getResponsesCsv(): Promise<string> {
-  const responses = await query<{
-    id: string
-    status: string
-    source: string | null
-    utm_source: string | null
-    utm_medium: string | null
-    utm_campaign: string | null
-    submitted_at: string | null
-    created_at: string
-  }>(
-    `SELECT id, status, source, utm_source, utm_medium, utm_campaign, submitted_at, created_at
-     FROM responses ORDER BY created_at DESC`
-  )
+export async function getResponsesCsv(tenantId?: string): Promise<string> {
+  const responses = tenantId
+    ? await query<{
+        id: string; status: string; source: string | null
+        utm_source: string | null; utm_medium: string | null; utm_campaign: string | null
+        submitted_at: string | null; created_at: string
+      }>(`SELECT id, status, source, utm_source, utm_medium, utm_campaign, submitted_at, created_at FROM responses WHERE tenant_id = $1 ORDER BY created_at DESC`, [tenantId])
+    : await query<{
+        id: string; status: string; source: string | null
+        utm_source: string | null; utm_medium: string | null; utm_campaign: string | null
+        submitted_at: string | null; created_at: string
+      }>(`SELECT id, status, source, utm_source, utm_medium, utm_campaign, submitted_at, created_at FROM responses ORDER BY created_at DESC`)
 
   const answers = await query<{
     response_id: string
@@ -635,7 +649,7 @@ export async function getResponsesCsv(): Promise<string> {
     tagMap.get(t.response_id)!.set(t.tag_key, t.tag_value)
   }
 
-  const questions = await resolveQuestions()
+  const questions = await resolveQuestions(tenantId)
   const tagKeys = [...new Set(tags.map((t) => t.tag_key))].sort()
 
   const headers = [

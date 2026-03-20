@@ -46,8 +46,17 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       return NextResponse.json({ success: true, message: '你已經在名單中了' })
     }
 
+    // Derive tenant from response if available
+    let tenantId = 'maoxingtianxia'
+    if (body.responseId) {
+      const resp = await queryOne<{ tenant_id: string }>(
+        'SELECT tenant_id FROM responses WHERE id = $1', [body.responseId]
+      )
+      if (resp?.tenant_id) tenantId = resp.tenant_id
+    }
+
     await query(
-      'INSERT INTO waitlist (id, email, nickname, contact_info, response_id, source) VALUES ($1, $2, $3, $4, $5, $6)',
+      'INSERT INTO waitlist (id, email, nickname, contact_info, response_id, source, tenant_id) VALUES ($1, $2, $3, $4, $5, $6, $7)',
       [
         uuidv4(),
         email,
@@ -55,6 +64,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         contactInfo,
         body.responseId || null,
         'survey_done_page',
+        tenantId,
       ]
     )
 

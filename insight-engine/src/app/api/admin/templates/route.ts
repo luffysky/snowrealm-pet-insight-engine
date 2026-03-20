@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { query, queryOne, execute } from '@/lib/db'
+import { getTenantContext } from '@/lib/tenant'
 
 interface TemplateRow {
   id: string
@@ -16,8 +17,9 @@ interface TemplateRow {
 
 // GET /api/admin/templates
 export async function GET(): Promise<NextResponse> {
+  const { tenantId } = await getTenantContext()
   const rows = await query<TemplateRow>(
-    `SELECT * FROM message_templates ORDER BY created_at DESC`
+    `SELECT * FROM message_templates WHERE tenant_id = $1 ORDER BY created_at DESC`, [tenantId]
   )
   return NextResponse.json(rows)
 }
@@ -35,10 +37,10 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   }
 
   const row = await queryOne<TemplateRow>(
-    `INSERT INTO message_templates (name, type, content, flex_json, category)
-     VALUES ($1, $2, $3, $4, $5)
+    `INSERT INTO message_templates (name, type, content, flex_json, category, tenant_id)
+     VALUES ($1, $2, $3, $4, $5, $6)
      RETURNING *`,
-    [name, type, content ?? '', flex_json ? JSON.stringify(flex_json) : null, category ?? 'general']
+    [name, type, content ?? '', flex_json ? JSON.stringify(flex_json) : null, category ?? 'general', (await getTenantContext()).tenantId]
   )
 
   return NextResponse.json(row, { status: 201 })

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { query, queryOne, execute } from '@/lib/db'
+import { getTenantContext } from '@/lib/tenant'
 
 interface UtmLinkRow {
   id: string
@@ -24,8 +25,9 @@ function buildFullUrl(baseUrl: string, source: string, medium: string, campaign:
 
 // GET /api/admin/utm-links
 export async function GET(): Promise<NextResponse> {
+  const { tenantId } = await getTenantContext()
   const rows = await query<UtmLinkRow>(
-    `SELECT * FROM utm_links ORDER BY created_at DESC`
+    `SELECT * FROM utm_links WHERE tenant_id = $1 ORDER BY created_at DESC`, [tenantId]
   )
   return NextResponse.json(rows)
 }
@@ -48,11 +50,12 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
   const fullUrl = buildFullUrl(base_url, utm_source ?? '', utm_medium ?? '', utm_campaign ?? '')
 
+  const { tenantId } = await getTenantContext()
   const row = await queryOne<UtmLinkRow>(
-    `INSERT INTO utm_links (name, base_url, utm_source, utm_medium, utm_campaign, full_url)
-     VALUES ($1, $2, $3, $4, $5, $6)
+    `INSERT INTO utm_links (name, base_url, utm_source, utm_medium, utm_campaign, full_url, tenant_id)
+     VALUES ($1, $2, $3, $4, $5, $6, $7)
      RETURNING *`,
-    [name, base_url, utm_source ?? '', utm_medium ?? '', utm_campaign ?? '', fullUrl]
+    [name, base_url, utm_source ?? '', utm_medium ?? '', utm_campaign ?? '', fullUrl, tenantId]
   )
 
   return NextResponse.json(row, { status: 201 })

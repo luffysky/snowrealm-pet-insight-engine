@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getCrossTabData } from '@/lib/stats'
+import { getTenantContext } from '@/lib/tenant'
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
   try {
@@ -20,7 +21,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       return NextResponse.json({ error: '無效的題目 key' }, { status: 400 })
     }
 
-    const data = await getCrossTabData(a, b)
+    const data = await getCrossTabData(a, b, (await getTenantContext()).tenantId)
     return NextResponse.json(data)
   } catch (error) {
     console.error('[admin/crosstab] Failed:', error)

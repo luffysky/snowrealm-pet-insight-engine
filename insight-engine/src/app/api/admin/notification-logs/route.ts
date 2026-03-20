@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { query, queryOne } from '@/lib/db'
+import { getTenantContext } from '@/lib/tenant'
 
 interface NotificationLogRow {
   id: string
@@ -27,12 +28,14 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       `SELECT nl.*, nr.name AS rule_name
        FROM notification_logs nl
        LEFT JOIN notification_rules nr ON nr.id = nl.rule_id
+       WHERE nl.tenant_id = $1
        ORDER BY nl.created_at DESC
-       LIMIT $1 OFFSET $2`,
-      [pageSize, offset]
+       LIMIT $2 OFFSET $3`,
+      [(await getTenantContext()).tenantId, pageSize, offset]
     ),
     queryOne<{ count: string }>(
-      `SELECT COUNT(*)::text AS count FROM notification_logs`
+      `SELECT COUNT(*)::text AS count FROM notification_logs WHERE tenant_id = $1`,
+      [(await getTenantContext()).tenantId]
     ),
   ])
 

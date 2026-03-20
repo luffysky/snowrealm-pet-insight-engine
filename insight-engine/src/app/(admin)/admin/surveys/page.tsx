@@ -22,6 +22,7 @@ interface SurveyRow {
   scheduled_start: string | null
   scheduled_end: string | null
   branch_config: BranchConfig | string | null
+  is_primary: boolean
 }
 
 interface QuestionRow {
@@ -181,22 +182,48 @@ export default function SurveysAdminPage() {
 
       {/* Survey selector - always show */}
       {surveys.length > 0 && (
-        <div className="flex flex-wrap gap-3">
+        <div className="flex flex-wrap gap-3 items-center">
           {surveys.map((s) => (
             <button
               key={s.id}
               type="button"
               onClick={() => setSelectedSurvey(s)}
-              className={`px-4 py-2 rounded-lg text-sm transition-colors cursor-pointer ${
+              className={`px-4 py-2 rounded-lg text-sm transition-colors cursor-pointer flex items-center gap-1.5 ${
                 selectedSurvey?.id === s.id
                   ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-400/30'
                   : 'bg-slate-800 text-slate-400 border border-slate-700 hover:text-white'
               }`}
             >
+              {s.is_primary && <span className="text-yellow-400" title="主問卷">⭐</span>}
               {s.title}
             </button>
           ))}
         </div>
+      )}
+
+      {/* 設為主問卷 */}
+      {selectedSurvey && !selectedSurvey.is_primary && (
+        <button
+          type="button"
+          onClick={async () => {
+            const res = await fetch('/api/admin/surveys', {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ action: 'set-primary', surveyId: selectedSurvey.id }),
+            })
+            if (res.ok) {
+              const updated = await loadSurveys()
+              const found = updated.find((s) => s.id === selectedSurvey.id)
+              if (found) setSelectedSurvey(found)
+            }
+          }}
+          className="px-4 py-2 bg-yellow-600/20 border border-yellow-500/30 text-yellow-300 text-sm rounded-lg hover:bg-yellow-600/30 transition-colors cursor-pointer"
+        >
+          ⭐ 設為主問卷（首頁封面）
+        </button>
+      )}
+      {selectedSurvey?.is_primary && (
+        <p className="text-xs text-yellow-400/60">⭐ 此問卷為主問卷，首頁封面將顯示此問卷內容</p>
       )}
 
       {selectedSurvey && (

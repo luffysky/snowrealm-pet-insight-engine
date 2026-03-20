@@ -2,11 +2,13 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getResponseList } from '@/lib/stats'
 import { query } from '@/lib/db'
 import { DEFAULT_PAGE_SIZE } from '@/constants'
+import { getTenantContext } from '@/lib/tenant'
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
   try {
+    const { tenantId } = await getTenantContext()
     const searchParams = request.nextUrl.searchParams
     const page = Math.max(1, parseInt(searchParams.get('page') ?? '1', 10))
     const pageSize = Math.min(
@@ -17,7 +19,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     const status = searchParams.get('status') || undefined
     const source = searchParams.get('source') || undefined
 
-    const result = await getResponseList(page, pageSize, { status, source })
+    const result = await getResponseList(page, pageSize, { status, source }, tenantId)
     return NextResponse.json(result)
   } catch (error) {
     console.error('[admin/responses] Failed:', error)

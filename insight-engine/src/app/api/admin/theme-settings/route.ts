@@ -1,14 +1,9 @@
 import { NextResponse } from 'next/server'
-import { cookies } from 'next/headers'
 import { query, queryOne, execute } from '@/lib/db'
+import { getTenantContext } from '@/lib/tenant'
 import type { SurveyTheme, ThemeIntensity } from '@/types'
 
 const VALID_THEMES: SurveyTheme[] = ['default', 'game', 'cyber', 'ancient', 'sakura', 'ocean', 'forest', 'candy', 'noir']
-
-function isAdmin(cookieStore: Awaited<ReturnType<typeof cookies>>): boolean {
-  const token = cookieStore.get('admin_token')
-  return token?.value === process.env.ADMIN_SECRET
-}
 
 interface ThemeRow extends Record<string, unknown> {
   id: number
@@ -21,15 +16,14 @@ interface ThemeRow extends Record<string, unknown> {
 
 /** GET — 取得某問卷的主題設定 */
 export async function GET(request: Request) {
-  const jar = await cookies()
-  if (!isAdmin(jar)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const { tenantId } = await getTenantContext()
 
   const { searchParams } = new URL(request.url)
   const slug = searchParams.get('slug')
   if (!slug) return NextResponse.json({ error: 'Missing slug' }, { status: 400 })
 
   const row = await queryOne<ThemeRow>(
-    `SELECT * FROM survey_theme_settings WHERE survey_slug = $1`, [slug]
+    `SELECT * FROM survey_theme_settings WHERE survey_slug = $1 AND tenant_id = $2`, [slug, tenantId]
   )
 
   if (!row) {
@@ -53,8 +47,7 @@ export async function GET(request: Request) {
 
 /** POST — 建立/更新主題設定 */
 export async function POST(request: Request) {
-  const jar = await cookies()
-  if (!isAdmin(jar)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const { tenantId } = await getTenantContext()
 
   const body = await request.json()
   const { surveySlug, defaultTheme, availableThemes, allowUserChoice, themeIntensity } = body
@@ -79,15 +72,15 @@ export async function POST(request: Request) {
   }
 
   await execute(
-    `INSERT INTO survey_theme_settings (survey_slug, default_theme, available_themes, allow_user_choice, theme_intensity)
-     VALUES ($1, $2, $3, $4, $5)
+    `INSERT INTO survey_theme_settings (survey_slug, default_theme, available_themes, allow_user_choice, theme_intensity, tenant_id)
+     VALUES ($1, $2, $3, $4, $5, $6)
      ON CONFLICT (survey_slug) DO UPDATE SET
        default_theme = EXCLUDED.default_theme,
        available_themes = EXCLUDED.available_themes,
        allow_user_choice = EXCLUDED.allow_user_choice,
        theme_intensity = EXCLUDED.theme_intensity,
        updated_at = now()`,
-    [surveySlug, safeDefault, JSON.stringify(safeAvailable), !!allowUserChoice, JSON.stringify(safeIntensity)]
+    [surveySlug, safeDefault, JSON.stringify(safeAvailable), !!allowUserChoice, JSON.stringify(safeIntensity), tenantId]
   )
 
   return NextResponse.json({ ok: true })

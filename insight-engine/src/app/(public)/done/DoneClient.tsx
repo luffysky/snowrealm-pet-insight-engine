@@ -34,10 +34,18 @@ export function DoneClient() {
   const [themeSettings, setThemeSettings] = useState<ThemeSettings | null>(null)
 
   useEffect(() => {
-    Promise.all([
-      fetch(`/api/surveys/${MVP_SURVEY_SLUG}`).then(r => r.json() as Promise<SurveyConfig>),
-      fetch(`/api/surveys/theme?slug=${MVP_SURVEY_SLUG}`).then(r => r.json() as Promise<ThemeSettings>),
-    ])
+    // 優先從 sessionStorage 取 slug（由 survey 頁面存入），fallback 到主問卷 API
+    const savedSlug = sessionStorage.getItem('surveySlug')
+    const slugPromise = savedSlug
+      ? Promise.resolve(savedSlug)
+      : fetch('/api/primary-survey').then(r => r.json() as Promise<{ slug: string }>).then(d => d.slug ?? MVP_SURVEY_SLUG)
+
+    slugPromise.then(slug =>
+      Promise.all([
+        fetch(`/api/surveys/${slug}`).then(r => r.json() as Promise<SurveyConfig>),
+        fetch(`/api/surveys/theme?slug=${slug}`).then(r => r.json() as Promise<ThemeSettings>),
+      ])
+    )
       .then(([surveyData, themeData]) => {
         setConfig(surveyData)
         setThemeSettings(themeData)

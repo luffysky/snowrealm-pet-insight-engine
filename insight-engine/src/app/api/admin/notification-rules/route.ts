@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { query, queryOne, execute } from '@/lib/db'
+import { getTenantContext } from '@/lib/tenant'
 
 interface NotificationRuleRow {
   id: string
@@ -17,8 +18,9 @@ interface NotificationRuleRow {
 
 // GET /api/admin/notification-rules
 export async function GET(): Promise<NextResponse> {
+  const { tenantId } = await getTenantContext()
   const rules = await query<NotificationRuleRow>(
-    `SELECT * FROM notification_rules ORDER BY created_at DESC`
+    `SELECT * FROM notification_rules WHERE tenant_id = $1 ORDER BY created_at DESC`, [tenantId]
   )
   return NextResponse.json(rules)
 }
@@ -39,8 +41,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   }
 
   const row = await queryOne<NotificationRuleRow>(
-    `INSERT INTO notification_rules (name, survey_id, condition_type, condition_config, action_type, message_template)
-     VALUES ($1, $2, $3, $4, $5, $6)
+    `INSERT INTO notification_rules (name, survey_id, condition_type, condition_config, action_type, message_template, tenant_id)
+     VALUES ($1, $2, $3, $4, $5, $6, $7)
      RETURNING *`,
     [
       name,
@@ -49,6 +51,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       JSON.stringify(condition_config ?? {}),
       action_type,
       message_template ?? '',
+      (await getTenantContext()).tenantId,
     ]
   )
 

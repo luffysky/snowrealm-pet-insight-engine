@@ -1,9 +1,11 @@
 import { NextResponse } from 'next/server'
 import { generateSummary } from '@/lib/stats'
+import { getTenantContext } from '@/lib/tenant'
 
 export async function GET(): Promise<NextResponse> {
   try {
-    const text = await generateSummary()
+    const { tenantId } = await getTenantContext()
+    const text = await generateSummary(tenantId)
     return NextResponse.json({ text })
   } catch (error) {
     console.error('[admin/summary] Failed:', error)

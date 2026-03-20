@@ -85,10 +85,12 @@ export async function getRandomVariant(slug: string): Promise<SurveyConfig | nul
 }
 
 /** 取得 variant group 內所有問卷的比較統計 */
-export async function getVariantGroupStats(variantGroup: string) {
+export async function getVariantGroupStats(variantGroup: string, tenantId?: string) {
   const surveys = await query<SurveyRow>(
-    `SELECT * FROM surveys WHERE variant_group = $1`,
-    [variantGroup]
+    tenantId
+      ? `SELECT * FROM surveys WHERE variant_group = $1 AND tenant_id = $2`
+      : `SELECT * FROM surveys WHERE variant_group = $1`,
+    tenantId ? [variantGroup, tenantId] : [variantGroup]
   )
 
   const results = []
@@ -114,28 +116,50 @@ export async function getVariantGroupStats(variantGroup: string) {
 }
 
 /** 列出所有 variant group 名稱 */
-export async function listVariantGroups(): Promise<string[]> {
+export async function listVariantGroups(tenantId?: string): Promise<string[]> {
   const rows = await query<{ variant_group: string }>(
-    `SELECT DISTINCT variant_group FROM surveys WHERE variant_group IS NOT NULL ORDER BY variant_group`
+    tenantId
+      ? `SELECT DISTINCT variant_group FROM surveys WHERE variant_group IS NOT NULL AND tenant_id = $1 ORDER BY variant_group`
+      : `SELECT DISTINCT variant_group FROM surveys WHERE variant_group IS NOT NULL ORDER BY variant_group`,
+    tenantId ? [tenantId] : []
   )
   return rows.map((r) => r.variant_group)
 }
 
 /** 取得所有問卷（admin 列表用） */
-export async function listSurveys(): Promise<SurveyRow[]> {
+export async function listSurveys(tenantId?: string): Promise<SurveyRow[]> {
+  if (tenantId) {
+    return query<SurveyRow>(`SELECT * FROM surveys WHERE tenant_id = $1 ORDER BY created_at DESC`, [tenantId])
+  }
   return query<SurveyRow>(`SELECT * FROM surveys ORDER BY created_at DESC`)
+}
+
+/** 取得租戶的主問卷 slug */
+export async function getPrimarySurveySlug(tenantId: string): Promise<string | null> {
+  const row = await queryOne<{ slug: string }>(
+    `SELECT slug FROM surveys WHERE tenant_id = $1 AND is_primary = true AND status = 'published' LIMIT 1`,
+    [tenantId]
+  )
+  return row?.slug ?? null
+}
+
+/** 設定某問卷為該租戶的主問卷（同時取消其他主問卷） */
+export async function setPrimarySurvey(surveyId: string, tenantId: string): Promise<void> {
+  await execute(`UPDATE surveys SET is_primary = false WHERE tenant_id = $1`, [tenantId])
+  await execute(`UPDATE surveys SET is_primary = true WHERE id = $1 AND tenant_id = $2`, [surveyId, tenantId])
 }
 
 /** 新增問卷 */
 export async function createSurvey(data: {
   title: string
   slug: string
+  tenantId?: string
 }): Promise<SurveyRow> {
   const row = await queryOne<SurveyRow>(
-    `INSERT INTO surveys (id, title, slug, status, subtitle, cover_title, cover_subtitle, start_button_text, done_title, done_subtitle)
-     VALUES (gen_random_uuid(), $1, $2, 'draft', '', $1, '', '開始填寫', '感謝您的填寫！', '您的回覆已成功送出')
+    `INSERT INTO surveys (id, title, slug, status, subtitle, cover_title, cover_subtitle, start_button_text, done_title, done_subtitle, tenant_id)
+     VALUES (gen_random_uuid(), $1, $2, 'draft', '', $1, '', '開始填寫', '感謝您的填寫！', '您的回覆已成功送出', $3)
      RETURNING *`,
-    [data.title, data.slug]
+    [data.title, data.slug, data.tenantId ?? 'default']
   )
   return row!
 }

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { query, execute } from '@/lib/db'
+import { getTenantContext } from '@/lib/tenant'
 
 interface TagRuleRow {
   [key: string]: unknown
@@ -18,13 +19,14 @@ interface TagRuleRow {
 
 /** GET /api/admin/tag-rules — 取得所有標籤規則 */
 export async function GET(req: NextRequest): Promise<NextResponse> {
+  const { tenantId } = await getTenantContext()
   const surveyId = req.nextUrl.searchParams.get('surveyId')
 
-  let sql = 'SELECT * FROM tag_rules'
-  const params: unknown[] = []
+  let sql = 'SELECT * FROM tag_rules WHERE tenant_id = $1'
+  const params: unknown[] = [tenantId]
 
   if (surveyId) {
-    sql += ' WHERE survey_id = $1'
+    sql += ' AND survey_id = $2'
     params.push(surveyId)
   }
 
@@ -55,8 +57,8 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   }
 
   const rows = await query<TagRuleRow>(
-    `INSERT INTO tag_rules (survey_id, question_key, answer_value, match_mode, tag_key, tag_value, priority)
-     VALUES ($1, $2, $3, $4, $5, $6, $7)
+    `INSERT INTO tag_rules (survey_id, question_key, answer_value, match_mode, tag_key, tag_value, priority, tenant_id)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
      RETURNING *`,
     [
       body.surveyId,
@@ -66,6 +68,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       body.tagKey.trim(),
       body.tagValue.trim(),
       body.priority ?? 0,
+      (await getTenantContext()).tenantId,
     ]
   )
 

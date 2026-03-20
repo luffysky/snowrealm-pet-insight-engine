@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getActiveAiKey, getPlatformKey, checkFreeQuota, logAiUsage } from '@/lib/aiService'
+import { getTenantContext } from '@/lib/tenant'
 
 const MAX_QUESTIONS = 15
 
@@ -157,13 +158,15 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
   const effectiveAction = action ?? 'generate'
 
+  const { tenantId } = await getTenantContext()
+
   // 決定使用哪個 key
-  let aiKey = await getActiveAiKey('default')
+  let aiKey = await getActiveAiKey(tenantId)
   let isFree = false
 
   if (!aiKey) {
     // 沒有自己的 key，嘗試用免費額度
-    const hasFree = await checkFreeQuota('default', effectiveAction)
+    const hasFree = await checkFreeQuota(tenantId, effectiveAction)
     if (!hasFree) {
       return NextResponse.json(
         { error: '免費額度已用完，請在 AI 設定中新增自己的 API Key' },
@@ -201,7 +204,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     // 記錄使用紀錄
     await logAiUsage({
-      tenantId: 'default',
+      tenantId,
       action: effectiveAction,
       keySource: aiKey.keySource,
       provider: aiKey.provider,

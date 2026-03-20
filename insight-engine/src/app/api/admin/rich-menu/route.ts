@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getLineConfig } from '@/lib/lineConfig'
+import { getTenantContext } from '@/lib/tenant'
 
-const TOKEN = async () => await getLineConfig('OFFICIAL_CHANNEL_ACCESS_TOKEN') ?? ''
+const TOKEN = async (tenantId?: string) => await getLineConfig('OFFICIAL_CHANNEL_ACCESS_TOKEN', tenantId) ?? ''
 
 const LINE_API = 'https://api.line.me/v2/bot'
 
@@ -20,7 +21,8 @@ interface RichMenuItem {
  * 列出所有 Rich Menu + 目前預設
  */
 export async function GET(): Promise<NextResponse> {
-  const token = await TOKEN()
+  const { tenantId } = await getTenantContext()
+  const token = await TOKEN(tenantId)
   if (!token) return NextResponse.json({ error: 'Missing LINE token' }, { status: 500 })
 
   try {
@@ -55,7 +57,8 @@ export async function GET(): Promise<NextResponse> {
  * action: 'set-default' | 'delete' | 'unset-default'
  */
 export async function POST(request: NextRequest): Promise<NextResponse> {
-  const token = await TOKEN()
+  const { tenantId } = await getTenantContext()
+  const token = await TOKEN(tenantId)
   if (!token) return NextResponse.json({ error: 'Missing LINE token' }, { status: 500 })
 
   const body = await request.json() as { action: string; richMenuId?: string }

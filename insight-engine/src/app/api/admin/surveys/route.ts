@@ -1,12 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { listSurveys, createSurvey } from '@/lib/surveyRepo'
+import { listSurveys, createSurvey, setPrimarySurvey } from '@/lib/surveyRepo'
+import { getTenantContext } from '@/lib/tenant'
 
 export async function GET(): Promise<NextResponse> {
-  const surveys = await listSurveys()
+  const { tenantId } = await getTenantContext()
+  const surveys = await listSurveys(tenantId)
   return NextResponse.json(surveys)
 }
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
+  const { tenantId } = await getTenantContext()
   const body = await req.json() as { title?: string; slug?: string }
   const title = body.title?.trim()
   const slug = body.slug?.trim()
@@ -20,7 +23,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   }
 
   try {
-    const survey = await createSurvey({ title, slug })
+    const survey = await createSurvey({ title, slug, tenantId })
     return NextResponse.json(survey, { status: 201 })
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err)
@@ -29,4 +32,17 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     }
     return NextResponse.json({ error: '建立失敗' }, { status: 500 })
   }
+}
+
+/** PATCH /api/admin/surveys — 設定主問卷 */
+export async function PATCH(req: NextRequest): Promise<NextResponse> {
+  const { tenantId } = await getTenantContext()
+  const body = await req.json() as { action?: string; surveyId?: string }
+
+  if (body.action === 'set-primary' && body.surveyId) {
+    await setPrimarySurvey(body.surveyId, tenantId)
+    return NextResponse.json({ ok: true })
+  }
+
+  return NextResponse.json({ error: '不支援的操作' }, { status: 400 })
 }

@@ -2,12 +2,14 @@ import { NextRequest, NextResponse } from 'next/server'
 import { broadcastMessage } from '@/lib/line'
 import { query, execute } from '@/lib/db'
 import { getLineConfig } from '@/lib/lineConfig'
+import { getTenantContext } from '@/lib/tenant'
 
 /** GET /api/admin/broadcast?logs=1 — 推播紀錄 */
 export async function GET(): Promise<NextResponse> {
+  const { tenantId } = await getTenantContext()
   const rows = await query<{
     id: string; message: string; tag_filter: unknown; sent_count: number; created_at: string
-  }>('SELECT * FROM broadcast_logs ORDER BY created_at DESC LIMIT 50')
+  }>('SELECT * FROM broadcast_logs WHERE tenant_id = $1 ORDER BY created_at DESC LIMIT 50', [tenantId])
   return NextResponse.json(rows)
 }
 
@@ -28,6 +30,8 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: '訊息不可為空' }, { status: 400 })
   }
 
+  const { tenantId } = await getTenantContext()
+
   // 排程推播：寫入 broadcast_logs 等待 cron 執行
   if (body.scheduledAt) {
     const scheduledAt = new Date(body.scheduledAt)
@@ -35,8 +39,8 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       return NextResponse.json({ error: '排程時間必須是未來時間' }, { status: 400 })
     }
     await execute(
-      'INSERT INTO broadcast_logs (message, tag_filter, sent_count, scheduled_at) VALUES ($1, $2, 0, $3)',
-      [text, body.tagFilter ? JSON.stringify(body.tagFilter) : null, scheduledAt.toISOString()]
+      'INSERT INTO broadcast_logs (message, tag_filter, sent_count, scheduled_at, tenant_id) VALUES ($1, $2, 0, $3, $4)',
+      [text, body.tagFilter ? JSON.stringify(body.tagFilter) : null, scheduledAt.toISOString(), tenantId]
     )
     return NextResponse.json({ ok: true, scheduled: true, scheduledAt: scheduledAt.toISOString() })
   }
@@ -74,8 +78,8 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     }
 
     await execute(
-      'INSERT INTO broadcast_logs (message, tag_filter, sent_count) VALUES ($1, $2, $3)',
-      [text, JSON.stringify({ key, value }), userIds.length]
+      'INSERT INTO broadcast_logs (message, tag_filter, sent_count, tenant_id) VALUES ($1, $2, $3, $4)',
+      [text, JSON.stringify({ key, value }), userIds.length, tenantId]
     )
 
     return NextResponse.json({ ok: true, sent: userIds.length })
@@ -88,8 +92,8 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   }
 
   await execute(
-    'INSERT INTO broadcast_logs (message, sent_count) VALUES ($1, 0)',
-    [text]
+    'INSERT INTO broadcast_logs (message, sent_count, tenant_id) VALUES ($1, 0, $2)',
+    [text, tenantId]
   )
 
   return NextResponse.json({ ok: true, broadcast: true })

@@ -53,16 +53,16 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       }
 
       // 查詢 survey_id
-      const survey = await queryOne<{ id: string }>(
-        `SELECT id FROM surveys WHERE slug = $1`, [surveySlug]
+      const survey = await queryOne<{ id: string; tenant_id: string }>(
+        `SELECT id, tenant_id FROM surveys WHERE slug = $1`, [surveySlug]
       )
 
       // 建立 in_progress response
       const newId = uuidv4()
       await query(
-        `INSERT INTO responses (id, session_id, survey_id, status, fingerprint, last_step, started_at)
-         VALUES ($1, $2, $3, 'in_progress', $4, 0, NOW())`,
-        [newId, uuidv4(), survey?.id ?? null, fingerprint]
+        `INSERT INTO responses (id, session_id, survey_id, status, fingerprint, last_step, tenant_id, started_at)
+         VALUES ($1, $2, $3, 'in_progress', $4, 0, $5, NOW())`,
+        [newId, uuidv4(), survey?.id ?? null, fingerprint, survey?.tenant_id ?? 'maoxingtianxia']
       )
 
       return NextResponse.json({ responseId: newId, alreadySubmitted: false })

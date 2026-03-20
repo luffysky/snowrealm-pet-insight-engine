@@ -1,9 +1,11 @@
 import { NextResponse } from 'next/server'
 import { getTagDistribution } from '@/lib/stats'
+import { getTenantContext } from '@/lib/tenant'
 
 export async function GET(): Promise<NextResponse> {
   try {
-    const distribution = await getTagDistribution()
+    const { tenantId } = await getTenantContext()
+    const distribution = await getTagDistribution(tenantId)
     return NextResponse.json(distribution)
   } catch (error) {
     console.error('[admin/tags] Failed:', error)

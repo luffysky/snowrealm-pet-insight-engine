@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { query, queryOne, execute } from '@/lib/db'
+import { getTenantContext } from '@/lib/tenant'
 
 interface WebhookRow extends Record<string, unknown> {
   id: string
@@ -11,8 +12,9 @@ interface WebhookRow extends Record<string, unknown> {
 
 export async function GET(): Promise<NextResponse> {
   try {
+    const { tenantId } = await getTenantContext()
     const rows = await query<WebhookRow>(
-      `SELECT * FROM webhook_configs ORDER BY created_at DESC`
+      `SELECT * FROM webhook_configs WHERE tenant_id = $1 ORDER BY created_at DESC`, [tenantId]
     )
     return NextResponse.json(rows)
   } catch (error) {
@@ -48,11 +50,12 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       )
     }
 
+    const { tenantId } = await getTenantContext()
     const row = await queryOne<WebhookRow>(
-      `INSERT INTO webhook_configs (id, event_type, url, active)
-       VALUES (uuid_generate_v4(), $1, $2, true)
+      `INSERT INTO webhook_configs (id, event_type, url, active, tenant_id)
+       VALUES (uuid_generate_v4(), $1, $2, true, $3)
        RETURNING *`,
-      [event_type, url]
+      [event_type, url, tenantId]
     )
     return NextResponse.json(row, { status: 201 })
   } catch (error) {

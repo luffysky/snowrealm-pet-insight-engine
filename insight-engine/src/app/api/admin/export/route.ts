@@ -1,9 +1,11 @@
 import { NextResponse } from 'next/server'
 import { getResponsesCsv } from '@/lib/stats'
+import { getTenantContext } from '@/lib/tenant'
 
 export async function GET(): Promise<NextResponse> {
   try {
-    const csv = await getResponsesCsv()
+    const { tenantId } = await getTenantContext()
+    const csv = await getResponsesCsv(tenantId)
     return new NextResponse(csv, {
       headers: {
         'Content-Type': 'text/csv; charset=utf-8',

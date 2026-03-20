@@ -1,12 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { query, queryOne } from '@/lib/db'
 import { v4 as uuidv4 } from 'uuid'
+import { getTenantContext } from '@/lib/tenant'
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 export async function GET(): Promise<NextResponse> {
   try {
+    const { tenantId } = await getTenantContext()
     const [entries, totalRow] = await Promise.all([
       query<{
         id: string
@@ -17,10 +19,10 @@ export async function GET(): Promise<NextResponse> {
         source: string | null
         created_at: string
       }>(
-        'SELECT id, email, nickname, contact_info, response_id, source, created_at FROM waitlist ORDER BY created_at DESC'
+        'SELECT id, email, nickname, contact_info, response_id, source, created_at FROM waitlist WHERE tenant_id = $1 ORDER BY created_at DESC', [tenantId]
       ),
       queryOne<{ count: string }>(
-        'SELECT COUNT(*)::text AS count FROM waitlist'
+        'SELECT COUNT(*)::text AS count FROM waitlist WHERE tenant_id = $1', [tenantId]
       ),
     ])
 
@@ -57,9 +59,10 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     const contactInfo = (body.contact_info ?? '').trim().slice(0, 100)
     const source = (body.source ?? 'admin').trim().slice(0, 50)
 
+    const { tenantId } = await getTenantContext()
     await query(
-      'INSERT INTO waitlist (id, email, nickname, contact_info, source) VALUES ($1, $2, $3, $4, $5)',
-      [uuidv4(), email, nickname, contactInfo, source]
+      'INSERT INTO waitlist (id, email, nickname, contact_info, source, tenant_id) VALUES ($1, $2, $3, $4, $5, $6)',
+      [uuidv4(), email, nickname, contactInfo, source, tenantId]
     )
     return NextResponse.json({ success: true })
   } catch (error) {

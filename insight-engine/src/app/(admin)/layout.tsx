@@ -1,8 +1,17 @@
 'use client'
 
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
-import { useState, useRef, useEffect } from 'react'
+import { usePathname, useRouter } from 'next/navigation'
+import { useState, useRef, useEffect, useCallback } from 'react'
+
+interface UserInfo {
+  userId: string
+  role: string
+  tenantId: string
+  userName: string
+  tenantName?: string
+  tenants?: { slug: string; name: string }[]
+}
 
 // 所有導航項（供 mobile menu 使用）
 const ALL_NAV_ITEMS = [
@@ -175,7 +184,77 @@ export default function AdminLayout({
   children: React.ReactNode
 }) {
   const [menuOpen, setMenuOpen] = useState(false)
+  const [user, setUser] = useState<UserInfo | null>(null)
+  const [tenantDropOpen, setTenantDropOpen] = useState(false)
+  const tenantRef = useRef<HTMLDivElement>(null)
   const pathname = usePathname()
+  const router = useRouter()
+
+  const fetchUser = useCallback(async () => {
+    try {
+      const res = await fetch('/api/auth/me')
+      if (res.ok) {
+        const data = await res.json()
+        setUser(data)
+      }
+    } catch { /* ignore */ }
+  }, [])
+
+  useEffect(() => { fetchUser() }, [fetchUser])
+
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (tenantRef.current && !tenantRef.current.contains(e.target as Node)) setTenantDropOpen(false)
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [])
+
+  const handleLogout = async () => {
+    await fetch('/api/auth/logout', { method: 'POST' })
+    window.location.href = '/login'
+  }
+
+  const handleSwitchTenant = async (tenantSlug: string) => {
+    const res = await fetch('/api/auth/switch-tenant', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tenantId: tenantSlug }),
+    })
+    if (res.ok) {
+      setTenantDropOpen(false)
+      window.location.reload()
+    }
+  }
+
+  const isSuperAdmin = user?.role === 'super_admin'
+
+  // Dynamic nav groups — super_admin sees tenant management
+  const systemItems = [
+    { href: '/admin/panel', label: '管理員面板' },
+    { href: '/admin/ai-settings', label: 'AI 設定' },
+    { href: '/admin/theme-settings', label: '主題設定' },
+    { href: '/admin/utm-links', label: 'UTM 管理' },
+    { href: '/admin/webhooks', label: 'Webhook' },
+    { href: '/admin/waitlist', label: '封測名單' },
+    ...(isSuperAdmin ? [{ href: '/admin/tenants', label: '租戶管理' }] : []),
+  ]
+
+  const dynamicGroups: NavGroup[] = [
+    NAV_GROUPS[0], // 數據分析
+    NAV_GROUPS[1], // LINE
+    { label: '⚙️ 系統', items: systemItems },
+  ]
+
+  const dynamicMobileGroups = [
+    MOBILE_GROUPS[0], // 總覽
+    MOBILE_GROUPS[1], // 數據分析
+    MOBILE_GROUPS[2], // LINE
+    {
+      title: '系統',
+      items: systemItems,
+    },
+  ]
 
   return (
     <div className="min-h-screen bg-slate-950">
@@ -203,9 +282,51 @@ export default function AdminLayout({
                 {item.label}
               </Link>
             ))}
-            {NAV_GROUPS.map((group) => (
+            {dynamicGroups.map((group) => (
               <NavDropdown key={group.label} group={group} pathname={pathname} />
             ))}
+          </div>
+
+          {/* User info + tenant switcher + logout */}
+          <div className="hidden lg:flex items-center gap-3 ml-auto">
+            {user && isSuperAdmin && user.tenants && user.tenants.length > 1 && (
+              <div className="relative" ref={tenantRef}>
+                <button
+                  onClick={() => setTenantDropOpen(!tenantDropOpen)}
+                  className="flex items-center gap-1 text-xs text-slate-400 hover:text-white bg-slate-800 px-2.5 py-1.5 rounded-lg cursor-pointer"
+                >
+                  <span className="text-slate-500">🏢</span>
+                  <span>{user.tenantName ?? user.tenantId}</span>
+                  <svg className={`w-3 h-3 transition-transform ${tenantDropOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+                {tenantDropOpen && (
+                  <div className="absolute top-full right-0 mt-1 w-48 bg-slate-800 border border-slate-700 rounded-lg shadow-xl py-1 z-50">
+                    {user.tenants.map((t) => (
+                      <button
+                        key={t.slug}
+                        onClick={() => handleSwitchTenant(t.slug)}
+                        className={`block w-full text-left px-4 py-2 text-sm cursor-pointer ${
+                          t.slug === user.tenantId
+                            ? 'text-cyan-400 bg-cyan-500/10'
+                            : 'text-slate-300 hover:text-white hover:bg-slate-700'
+                        }`}
+                      >
+                        {t.name}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+            {user && (
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-slate-500">{user.userName}</span>
+                <span className="text-[10px] text-slate-600 bg-slate-800 px-1.5 py-0.5 rounded">{user.role}</span>
+                <button onClick={handleLogout} className="text-xs text-slate-500 hover:text-red-400 cursor-pointer">登出</button>
+              </div>
+            )}
           </div>
 
           {/* Mobile hamburger */}
@@ -228,7 +349,7 @@ export default function AdminLayout({
         {menuOpen && (
           <div className="lg:hidden border-t border-slate-800 bg-slate-900/95 backdrop-blur-sm max-h-[75vh] overflow-y-auto">
             <div className="max-w-7xl mx-auto px-4 py-3 space-y-4">
-              {MOBILE_GROUPS.map((group) => (
+              {dynamicMobileGroups.map((group) => (
                 <div key={group.title}>
                   <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider px-3 mb-1">
                     {group.title}
@@ -251,6 +372,16 @@ export default function AdminLayout({
                   </div>
                 </div>
               ))}
+              {/* Mobile user info */}
+              {user && (
+                <div className="border-t border-slate-800 pt-3 px-3 flex items-center justify-between">
+                  <div className="text-xs text-slate-500">
+                    {user.userName} <span className="text-slate-600">({user.role})</span>
+                    {user.tenantName && <span className="ml-2 text-slate-600">• {user.tenantName}</span>}
+                  </div>
+                  <button onClick={handleLogout} className="text-xs text-slate-500 hover:text-red-400 cursor-pointer">登出</button>
+                </div>
+              )}
             </div>
           </div>
         )}

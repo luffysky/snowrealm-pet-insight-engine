@@ -2,9 +2,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import { query, queryOne, execute } from '@/lib/db'
 import { encryptApiKey, decryptApiKey, maskApiKey } from '@/lib/aiCrypto'
 import { randomUUID } from 'crypto'
+import { getTenantContext } from '@/lib/tenant'
 
 // ===== GET: 列出所有 AI provider configs（不回傳明文 key） =====
 export async function GET(): Promise<NextResponse> {
+  const { tenantId } = await getTenantContext()
   const rows = await query<{
     id: string
     tenant_id: string
@@ -21,8 +23,8 @@ export async function GET(): Promise<NextResponse> {
             is_primary, is_active, created_at, updated_at,
             encrypted_api_key
      FROM ai_provider_configs
-     WHERE tenant_id = 'default'
-     ORDER BY is_primary DESC, created_at ASC`
+     WHERE tenant_id = $1
+     ORDER BY is_primary DESC, created_at ASC`, [tenantId]
   )
 
   const configs = rows.map((r) => ({
@@ -43,6 +45,7 @@ export async function GET(): Promise<NextResponse> {
 
 // ===== POST: 新增或更新 AI provider config =====
 export async function POST(request: NextRequest): Promise<NextResponse> {
+  const { tenantId } = await getTenantContext()
   const body = await request.json()
   const { provider, displayName, apiKey, defaultModel, isPrimary } = body as {
     provider?: string
@@ -68,14 +71,14 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   // 如果設為主要，先取消其他主要
   if (isPrimary) {
     await execute(
-      `UPDATE ai_provider_configs SET is_primary = false WHERE tenant_id = 'default'`
+      `UPDATE ai_provider_configs SET is_primary = false WHERE tenant_id = $1`, [tenantId]
     )
   }
 
   // Upsert by tenant_id + provider
   const existing = await queryOne<{ id: string }>(
-    `SELECT id FROM ai_provider_configs WHERE tenant_id = 'default' AND provider = $1`,
-    [provider]
+    `SELECT id FROM ai_provider_configs WHERE tenant_id = $1 AND provider = $2`,
+    [tenantId, provider]
   )
 
   if (existing) {
@@ -98,8 +101,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   await execute(
     `INSERT INTO ai_provider_configs
        (id, tenant_id, provider, display_name, encrypted_api_key, encryption_iv, encryption_tag, default_model, is_primary, is_active)
-     VALUES ($1, 'default', $2, $3, $4, $5, $6, $7, $8, true)`,
-    [id, provider, displayName ?? provider, encrypted, iv, tag, defaultModel ?? 'gpt-4o-mini', isPrimary ?? false]
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, true)`,
+    [id, tenantId, provider, displayName ?? provider, encrypted, iv, tag, defaultModel ?? 'gpt-4o-mini', isPrimary ?? false]
   )
 
   return NextResponse.json({ success: true, id, action: 'created' })
@@ -107,6 +110,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
 // ===== DELETE: 刪除 AI provider config =====
 export async function DELETE(request: NextRequest): Promise<NextResponse> {
+  const { tenantId } = await getTenantContext()
   const { searchParams } = new URL(request.url)
   const id = searchParams.get('id')
 
@@ -115,8 +119,8 @@ export async function DELETE(request: NextRequest): Promise<NextResponse> {
   }
 
   const count = await execute(
-    `DELETE FROM ai_provider_configs WHERE id = $1 AND tenant_id = 'default'`,
-    [id]
+    `DELETE FROM ai_provider_configs WHERE id = $1 AND tenant_id = $2`,
+    [id, tenantId]
   )
 
   if (count === 0) {
@@ -144,8 +148,8 @@ export async function PATCH(request: NextRequest): Promise<NextResponse> {
       encryption_tag: string
     }>(
       `SELECT provider, encrypted_api_key, encryption_iv, encryption_tag
-       FROM ai_provider_configs WHERE id = $1 AND tenant_id = 'default'`,
-      [id]
+       FROM ai_provider_configs WHERE id = $1 AND tenant_id = $2`,
+      [id, (await getTenantContext()).tenantId]
     )
 
     if (!row || !row.encrypted_api_key) {
@@ -209,8 +213,9 @@ export async function PATCH(request: NextRequest): Promise<NextResponse> {
   }
 
   if (action === 'set-primary') {
+    const { tenantId: tid } = await getTenantContext()
     await execute(
-      `UPDATE ai_provider_configs SET is_primary = false WHERE tenant_id = 'default'`
+      `UPDATE ai_provider_configs SET is_primary = false WHERE tenant_id = $1`, [tid]
     )
     await execute(
       `UPDATE ai_provider_configs SET is_primary = true, updated_at = NOW() WHERE id = $1`,

@@ -7,10 +7,12 @@ import {
   LINE_CONFIG_KEYS,
   type LineConfigKey,
 } from '@/lib/lineConfig'
+import { getTenantContext } from '@/lib/tenant'
 
 // ===== GET: 列出所有 LINE 設定（敏感值遮罩，前端安全） =====
 export async function GET(): Promise<NextResponse> {
-  const configs = await listLineConfigs()
+  const { tenantId } = await getTenantContext()
+  const configs = await listLineConfigs(tenantId)
   return NextResponse.json({ configs })
 }
 
@@ -27,7 +29,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: '無效的 config key' }, { status: 400 })
   }
 
-  await saveLineConfig(key as LineConfigKey, value)
+  const { tenantId } = await getTenantContext()
+  await saveLineConfig(key as LineConfigKey, value, tenantId)
   return NextResponse.json({ success: true })
 }
 
@@ -40,7 +43,7 @@ export async function DELETE(request: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: '無效的 config key' }, { status: 400 })
   }
 
-  const deleted = await deleteLineConfig(key as LineConfigKey)
+  const deleted = await deleteLineConfig(key as LineConfigKey, (await getTenantContext()).tenantId)
   if (!deleted) {
     return NextResponse.json({ error: '無 DB 設定（已使用 ENV 備援）' }, { status: 404 })
   }
@@ -57,6 +60,6 @@ export async function PATCH(request: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: '無效的 channel（insight / official）' }, { status: 400 })
   }
 
-  const result = await testLineConnection(channel)
+  const result = await testLineConnection(channel, (await getTenantContext()).tenantId)
   return NextResponse.json(result)
 }

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { query, queryOne } from '@/lib/db'
 import { getLineConfig } from '@/lib/lineConfig'
+import { getTenantContext } from '@/lib/tenant'
 
 interface TableCount {
   table_name: string
@@ -9,6 +10,7 @@ interface TableCount {
 
 export async function GET(): Promise<NextResponse> {
   try {
+    const { tenantId } = await getTenantContext()
     // 平行查詢系統資訊
     const [
       surveyCount,
@@ -25,26 +27,26 @@ export async function GET(): Promise<NextResponse> {
       dbSize,
       adminUsers,
     ] = await Promise.all([
-      queryOne<{ count: string }>('SELECT count(*) as count FROM surveys'),
-      queryOne<{ count: string }>('SELECT count(*) as count FROM questions'),
-      queryOne<{ count: string }>('SELECT count(*) as count FROM responses'),
-      queryOne<{ count: string }>('SELECT count(*) as count FROM waitlist'),
-      queryOne<{ count: string }>('SELECT count(*) as count FROM line_users'),
-      queryOne<{ count: string }>('SELECT count(*) as count FROM tag_rules'),
-      queryOne<{ count: string }>('SELECT count(*) as count FROM notification_logs'),
-      queryOne<{ count: string }>('SELECT count(*) as count FROM message_templates'),
-      queryOne<{ count: string }>('SELECT count(*) as count FROM broadcast_logs'),
+      queryOne<{ count: string }>('SELECT count(*) as count FROM surveys WHERE tenant_id = $1', [tenantId]),
+      queryOne<{ count: string }>('SELECT count(*) as count FROM questions WHERE survey_id IN (SELECT id FROM surveys WHERE tenant_id = $1)', [tenantId]),
+      queryOne<{ count: string }>('SELECT count(*) as count FROM responses WHERE tenant_id = $1', [tenantId]),
+      queryOne<{ count: string }>('SELECT count(*) as count FROM waitlist WHERE tenant_id = $1', [tenantId]),
+      queryOne<{ count: string }>('SELECT count(*) as count FROM line_users WHERE tenant_id = $1', [tenantId]),
+      queryOne<{ count: string }>('SELECT count(*) as count FROM tag_rules WHERE tenant_id = $1', [tenantId]),
+      queryOne<{ count: string }>('SELECT count(*) as count FROM notification_logs WHERE tenant_id = $1', [tenantId]),
+      queryOne<{ count: string }>('SELECT count(*) as count FROM message_templates WHERE tenant_id = $1', [tenantId]),
+      queryOne<{ count: string }>('SELECT count(*) as count FROM broadcast_logs WHERE tenant_id = $1', [tenantId]),
       queryOne<{ count: string }>(
-        "SELECT count(*) as count FROM responses WHERE created_at >= NOW() - INTERVAL '24 hours'"
+        "SELECT count(*) as count FROM responses WHERE tenant_id = $1 AND created_at >= NOW() - INTERVAL '24 hours'", [tenantId]
       ),
       query<{ type: string; status: string; created_at: string }>(
-        `SELECT trigger_type as type, status, created_at FROM notification_logs ORDER BY created_at DESC FETCH FIRST 5 ROWS ONLY`
+        `SELECT trigger_type as type, status, created_at FROM notification_logs WHERE tenant_id = $1 ORDER BY created_at DESC FETCH FIRST 5 ROWS ONLY`, [tenantId]
       ),
       queryOne<{ size: string }>(
         "SELECT pg_size_pretty(pg_database_size(current_database())) as size"
       ),
       query<{ id: string; username: string; display_name: string | null; role: string; created_at: string; line_user_id: string | null }>(
-        'SELECT id, username, display_name, role, created_at, line_user_id FROM admin_users ORDER BY created_at ASC'
+        'SELECT id, username, display_name, role, created_at, line_user_id FROM admin_users WHERE tenant_id = $1 ORDER BY created_at ASC', [tenantId]
       ),
     ])
 
@@ -72,8 +74,8 @@ export async function GET(): Promise<NextResponse> {
       })),
       dbSize: dbSize?.size ?? 'N/A',
       env: {
-        hasLineOfficial: !!(await getLineConfig('OFFICIAL_CHANNEL_ACCESS_TOKEN')),
-        hasLineInsight: !!(await getLineConfig('INSIGHT_CHANNEL_ACCESS_TOKEN')),
+        hasLineOfficial: !!(await getLineConfig('OFFICIAL_CHANNEL_ACCESS_TOKEN', tenantId)),
+        hasLineInsight: !!(await getLineConfig('INSIGHT_CHANNEL_ACCESS_TOKEN', tenantId)),
         hasLiff: !!process.env.NEXT_PUBLIC_LIFF_ID,
         hasOpenAI: !!process.env.OPENAI_API_KEY,
         hasDbUrl: !!process.env.DATABASE_URL,

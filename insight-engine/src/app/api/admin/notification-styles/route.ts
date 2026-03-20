@@ -1,13 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { query } from '@/lib/db'
 import { invalidateStyleCache } from '@/lib/lineStyles'
+import { getTenantContext } from '@/lib/tenant'
 
 const COLOR_REGEX = /^#[0-9a-fA-F]{6}$/
 
 export async function GET(): Promise<NextResponse> {
   try {
+    const { tenantId } = await getTenantContext()
     const rows = await query(
-      `SELECT * FROM line_notification_styles ORDER BY id`
+      `SELECT * FROM line_notification_styles WHERE tenant_id = $1 ORDER BY id`, [tenantId]
     )
     return NextResponse.json(rows)
   } catch (error) {

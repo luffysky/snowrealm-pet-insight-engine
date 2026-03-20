@@ -26,24 +26,29 @@ interface ThemeSettings {
   themeIntensity: Record<SurveyTheme, ThemeIntensity>
 }
 
-const SLUG = 'maoxingtianxia-mvp-survey'
-
 function SurveyContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
+  const [slug, setSlug] = useState<string | null>(null)
   const [config, setConfig] = useState<SurveyConfig | null>(null)
   const [themeSettings, setThemeSettings] = useState<ThemeSettings | null>(null)
   const [loadError, setLoadError] = useState(false)
   const [fingerprint, setFingerprint] = useState<string | undefined>()
 
   useEffect(() => {
-    Promise.all([
-      fetch(`/api/surveys/${SLUG}`).then(r => {
-        if (!r.ok) throw new Error('survey')
-        return r.json() as Promise<SurveyConfig>
-      }),
-      fetch(`/api/surveys/theme?slug=${SLUG}`).then(r => r.json() as Promise<ThemeSettings>),
-    ])
+    // 取得主問卷 slug 再載入問卷
+    fetch('/api/primary-survey')
+      .then(r => r.json() as Promise<{ slug: string }>)
+      .then(({ slug: primarySlug }) => {
+        setSlug(primarySlug)
+        return Promise.all([
+          fetch(`/api/surveys/${primarySlug}`).then(r => {
+            if (!r.ok) throw new Error('survey')
+            return r.json() as Promise<SurveyConfig>
+          }),
+          fetch(`/api/surveys/theme?slug=${primarySlug}`).then(r => r.json() as Promise<ThemeSettings>),
+        ])
+      })
       .then(([surveyData, themeData]) => {
         setConfig(surveyData)
         setThemeSettings(themeData)
@@ -67,7 +72,7 @@ function SurveyContent() {
     )
   }
 
-  if (!config || !themeSettings) {
+  if (!config || !themeSettings || !slug) {
     return (
       <ThemeProvider>
         <SurveyShell>
@@ -84,18 +89,20 @@ function SurveyContent() {
       initialTheme={themeSettings.defaultTheme}
       intensityMap={themeSettings.themeIntensity}
     >
-      <SurveyFlow config={config} searchParams={searchParams} router={router} fingerprint={fingerprint} />
+      <SurveyFlow config={config} slug={slug} searchParams={searchParams} router={router} fingerprint={fingerprint} />
     </ThemeProvider>
   )
 }
 
 function SurveyFlow({
   config,
+  slug,
   searchParams,
   router,
   fingerprint,
 }: {
   config: SurveyConfig
+  slug: string
   searchParams: ReturnType<typeof useSearchParams>
   router: ReturnType<typeof useRouter>
   fingerprint?: string
@@ -155,9 +162,10 @@ function SurveyFlow({
         theme,
       }
       sessionStorage.setItem('gameStats', JSON.stringify(gameStats))
+      sessionStorage.setItem('surveySlug', slug)
       router.push('/done')
     }
-  }, [isCompleted, router, game, milestoneCount, totalSteps, theme])
+  }, [isCompleted, router, game, milestoneCount, totalSteps, theme, slug])
 
   if (isCompleted) return null
 
