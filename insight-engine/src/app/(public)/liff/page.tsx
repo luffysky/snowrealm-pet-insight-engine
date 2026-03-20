@@ -14,8 +14,8 @@ export default function LiffPage() {
   useEffect(() => {
     const liffId = process.env.NEXT_PUBLIC_LIFF_ID
     if (!liffId) {
-      // 沒有設定 LIFF ID，直接導向一般問卷
-      router.replace('/survey')
+      // 沒有設定 LIFF ID，導向問卷封面
+      router.replace('/')
       return
     }
 
@@ -50,13 +50,13 @@ export default function LiffPage() {
         sessionStorage.setItem('lineUserId', profile.userId)
 
         if (!cancelled) {
-          router.replace('/survey')
+          router.replace('/')
         }
       } catch (err) {
         console.error('[LIFF] init error:', err)
         if (!cancelled) {
-          // LIFF 初始化失敗，fallback 到一般問卷
-          router.replace('/survey')
+          // LIFF 初始化失敗，fallback 到問卷封面
+          router.replace('/')
         }
       }
     }
