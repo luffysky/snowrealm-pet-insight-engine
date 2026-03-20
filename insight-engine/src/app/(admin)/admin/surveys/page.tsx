@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import { EmojiPicker } from '@/components/admin/EmojiPicker'
+import { getOptionEmoji } from '@/lib/optionEmoji'
 
 // ===== Types =====
 
@@ -939,7 +940,9 @@ function QuestionEditForm({
     key: question.key,
     type: question.type,
     content: question.content,
-    options: question.options.length > 0 ? question.options : [{ label: '', value: '' }] as { label: string; value: string; emoji?: string }[],
+    options: question.options.length > 0
+      ? question.options.map(o => ({ ...o, emoji: o.emoji || getOptionEmoji(o.label) }))
+      : [{ label: '', value: '' }] as { label: string; value: string; emoji?: string }[],
     is_required: question.is_required,
     max_selections: question.max_selections,
     route: question.route ?? 'all',
