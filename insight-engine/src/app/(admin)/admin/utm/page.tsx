@@ -1,11 +1,26 @@
-import { getUtmAnalytics } from '@/lib/stats'
+'use client'
+
+import { useEffect, useState } from 'react'
 import { BarChartBlock } from '@/components/admin'
-import type { UtmSourceStats } from '@/types'
+import { useAdminSurvey } from '@/components/admin/AdminSurveyContext'
+import type { UtmSourceStats, UtmAnalytics } from '@/types'
 
-export const dynamic = 'force-dynamic'
+export default function AdminUtmPage() {
+  const { selectedSurveyId } = useAdminSurvey()
+  const [analytics, setAnalytics] = useState<UtmAnalytics | null>(null)
+  const [loading, setLoading] = useState(true)
 
-export default async function AdminUtmPage() {
-  const analytics = await getUtmAnalytics()
+  useEffect(() => {
+    if (!selectedSurveyId) return
+    setLoading(true)
+    fetch(`/api/admin/utm?surveyId=${selectedSurveyId}`)
+      .then((r) => r.json())
+      .then(setAnalytics)
+      .catch(console.error)
+      .finally(() => setLoading(false))
+  }, [selectedSurveyId])
+
+  if (loading || !analytics) return <p className="text-slate-400 animate-pulse">載入中…</p>
 
   return (
     <div className="space-y-8">

@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 
-export default function SummaryButton() {
+export default function SummaryButton({ surveyId }: { surveyId?: string | null }) {
   const [text, setText] = useState('')
   const [loading, setLoading] = useState(false)
   const [copied, setCopied] = useState(false)
@@ -11,7 +11,8 @@ export default function SummaryButton() {
     setLoading(true)
     setCopied(false)
     try {
-      const res = await fetch('/api/admin/summary')
+      const url = surveyId ? `/api/admin/summary?surveyId=${surveyId}` : '/api/admin/summary'
+      const res = await fetch(url)
       const data = await res.json()
       setText(data.text ?? '')
     } catch {

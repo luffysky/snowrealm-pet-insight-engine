@@ -21,7 +21,9 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       return NextResponse.json({ error: '無效的題目 key' }, { status: 400 })
     }
 
-    const data = await getCrossTabData(a, b, (await getTenantContext()).tenantId)
+    const { tenantId } = await getTenantContext()
+    const surveyId = searchParams.get('surveyId') || undefined
+    const data = await getCrossTabData(a, b, tenantId, surveyId)
     return NextResponse.json(data)
   } catch (error) {
     console.error('[admin/crosstab] Failed:', error)

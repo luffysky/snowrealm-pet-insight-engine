@@ -342,7 +342,7 @@ function parseOptions(raw: QuestionOption[] | string): QuestionOption[] {
   return raw
 }
 
-function toQuestion(row: QuestionRow): Question {
+export function toQuestion(row: QuestionRow): Question {
   return {
     key: row.key,
     type: row.type as Question['type'],

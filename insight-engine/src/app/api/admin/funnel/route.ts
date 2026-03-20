@@ -1,11 +1,12 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { getFunnelStats } from '@/lib/stats'
 import { getTenantContext } from '@/lib/tenant'
 
-export async function GET(): Promise<NextResponse> {
+export async function GET(request: NextRequest): Promise<NextResponse> {
   try {
     const { tenantId } = await getTenantContext()
-    const data = await getFunnelStats(tenantId)
+    const surveyId = request.nextUrl.searchParams.get('surveyId') || undefined
+    const data = await getFunnelStats(tenantId, surveyId)
     return NextResponse.json(data)
   } catch (error) {
     console.error('[admin/funnel] Failed:', error)

@@ -2,19 +2,23 @@
 
 import { useEffect, useState } from 'react'
 import type { FunnelStep } from '@/lib/stats'
+import { useAdminSurvey } from '@/components/admin/AdminSurveyContext'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts'
 
 export default function FunnelPage() {
+  const { selectedSurveyId } = useAdminSurvey()
   const [data, setData] = useState<FunnelStep[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetch('/api/admin/funnel')
+    if (!selectedSurveyId) return
+    setLoading(true)
+    fetch(`/api/admin/funnel?surveyId=${selectedSurveyId}`)
       .then((r) => r.json())
       .then(setData)
       .catch(console.error)
       .finally(() => setLoading(false))
-  }, [])
+  }, [selectedSurveyId])
 
   if (loading) return <p className="text-slate-400">載入中…</p>
   if (data.length === 0) return <p className="text-slate-400">尚無填答資料</p>

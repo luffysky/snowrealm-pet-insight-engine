@@ -1,7 +1,9 @@
-import { getTagDistribution } from '@/lib/stats'
-import { TagChart } from '@/components/admin'
+'use client'
 
-export const dynamic = 'force-dynamic'
+import { useEffect, useState } from 'react'
+import { TagChart } from '@/components/admin'
+import { useAdminSurvey } from '@/components/admin/AdminSurveyContext'
+import type { TagDistribution } from '@/types'
 
 const TAG_GROUPS = [
   { key: 'emotion_level', title: '情感等級分佈' },
@@ -14,8 +16,22 @@ const TAG_GROUPS = [
   { key: 'revisit_frequency', title: '回看頻率' },
 ]
 
-export default async function AdminTagsPage() {
-  const distributions = await getTagDistribution()
+export default function AdminTagsPage() {
+  const { selectedSurveyId } = useAdminSurvey()
+  const [distributions, setDistributions] = useState<TagDistribution[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    if (!selectedSurveyId) return
+    setLoading(true)
+    fetch(`/api/admin/tags?surveyId=${selectedSurveyId}`)
+      .then((r) => r.json())
+      .then(setDistributions)
+      .catch(console.error)
+      .finally(() => setLoading(false))
+  }, [selectedSurveyId])
+
+  if (loading) return <p className="text-slate-400 animate-pulse">載入中…</p>
 
   return (
     <div className="space-y-6">

@@ -3,10 +3,12 @@
 import { useEffect, useState, useCallback } from 'react'
 import type { CrossTabResult } from '@/lib/stats'
 import type { QuestionStats } from '@/types'
+import { useAdminSurvey } from '@/components/admin/AdminSurveyContext'
 
 interface QuestionItem { key: string; content: string }
 
 export default function CrossTabPage() {
+  const { selectedSurveyId } = useAdminSurvey()
   const [questions, setQuestions] = useState<QuestionItem[]>([])
   const [keyA, setKeyA] = useState('')
   const [keyB, setKeyB] = useState('')
@@ -14,7 +16,8 @@ export default function CrossTabPage() {
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
-    fetch('/api/admin/questions')
+    if (!selectedSurveyId) return
+    fetch(`/api/admin/questions?surveyId=${selectedSurveyId}`)
       .then((r) => r.json())
       .then((data: QuestionStats[]) => {
         const items = data.map((q) => ({ key: q.questionKey, content: q.questionContent }))
@@ -25,17 +28,19 @@ export default function CrossTabPage() {
         }
       })
       .catch(console.error)
-  }, [])
+  }, [selectedSurveyId])
 
   const fetchCrossTab = useCallback(() => {
     if (!keyA || !keyB || keyA === keyB) return
     setLoading(true)
-    fetch(`/api/admin/crosstab?a=${encodeURIComponent(keyA)}&b=${encodeURIComponent(keyB)}`)
+    const q = new URLSearchParams({ a: keyA, b: keyB })
+    if (selectedSurveyId) q.set('surveyId', selectedSurveyId)
+    fetch(`/api/admin/crosstab?${q}`)
       .then((r) => r.json())
       .then(setResult)
       .catch(console.error)
       .finally(() => setLoading(false))
-  }, [keyA, keyB])
+  }, [keyA, keyB, selectedSurveyId])
 
   useEffect(() => {
     if (keyA && keyB && keyA !== keyB) fetchCrossTab()

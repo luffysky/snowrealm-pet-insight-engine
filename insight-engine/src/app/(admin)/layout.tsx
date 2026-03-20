@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useState, useRef, useEffect, useCallback } from 'react'
+import { AdminSurveyProvider, useAdminSurvey, ADMIN_THEME_COLORS } from '@/components/admin/AdminSurveyContext'
 
 interface UserInfo {
   userId: string
@@ -129,7 +130,7 @@ const MOBILE_GROUPS = [
   },
 ]
 
-function NavDropdown({ group, pathname }: { group: NavGroup; pathname: string }) {
+function NavDropdown({ group, pathname, themeColors }: { group: NavGroup; pathname: string; themeColors: typeof ADMIN_THEME_COLORS['default'] }) {
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
 
@@ -148,7 +149,7 @@ function NavDropdown({ group, pathname }: { group: NavGroup; pathname: string })
       <button
         onClick={() => setOpen(!open)}
         className={`flex items-center gap-1 transition-colors whitespace-nowrap cursor-pointer ${
-          hasActive ? 'text-cyan-400 font-medium' : 'text-slate-400 hover:text-white'
+          hasActive ? `${themeColors.accent} font-medium` : 'text-slate-400 hover:text-white'
         }`}
       >
         {group.label}
@@ -165,7 +166,7 @@ function NavDropdown({ group, pathname }: { group: NavGroup; pathname: string })
               onClick={() => setOpen(false)}
               className={`block px-4 py-2 text-sm transition-colors ${
                 pathname === item.href
-                  ? 'text-cyan-400 bg-cyan-500/10 font-medium'
+                  ? `${themeColors.accent} ${themeColors.accentBg} font-medium`
                   : 'text-slate-300 hover:text-white hover:bg-slate-700'
               }`}
             >
@@ -183,6 +184,20 @@ export default function AdminLayout({
 }: {
   children: React.ReactNode
 }) {
+  return (
+    <AdminSurveyProvider>
+      <AdminLayoutInner>{children}</AdminLayoutInner>
+    </AdminSurveyProvider>
+  )
+}
+
+function AdminLayoutInner({
+  children,
+}: {
+  children: React.ReactNode
+}) {
+  const { surveys, selectedSurveyId, selectedSurvey, theme, setSelectedSurveyId } = useAdminSurvey()
+  const tc = ADMIN_THEME_COLORS[theme]
   const [menuOpen, setMenuOpen] = useState(false)
   const [user, setUser] = useState<UserInfo | null>(null)
   const [tenantDropOpen, setTenantDropOpen] = useState(false)
@@ -258,7 +273,7 @@ export default function AdminLayout({
 
   return (
     <div className="min-h-screen bg-slate-950">
-      <nav className="border-b border-slate-800 bg-slate-900/80 backdrop-blur-sm sticky top-0 z-50">
+      <nav className={`border-b ${tc.navBorder} ${tc.navBg} backdrop-blur-sm sticky top-0 z-50 ${tc.headerGlow}`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
           <Link
             href="/admin"
@@ -275,7 +290,7 @@ export default function AdminLayout({
                 href={item.href}
                 className={`transition-colors whitespace-nowrap ${
                   pathname === item.href
-                    ? 'text-cyan-400 font-medium'
+                    ? `${tc.accent} font-medium`
                     : 'text-slate-400 hover:text-white'
                 }`}
               >
@@ -283,7 +298,7 @@ export default function AdminLayout({
               </Link>
             ))}
             {dynamicGroups.map((group) => (
-              <NavDropdown key={group.label} group={group} pathname={pathname} />
+              <NavDropdown key={group.label} group={group} pathname={pathname} themeColors={tc} />
             ))}
           </div>
 
@@ -309,7 +324,7 @@ export default function AdminLayout({
                         onClick={() => handleSwitchTenant(t.slug)}
                         className={`block w-full text-left px-4 py-2 text-sm cursor-pointer ${
                           t.slug === user.tenantId
-                            ? 'text-cyan-400 bg-cyan-500/10'
+                            ? `${tc.accent} ${tc.accentBg}`
                             : 'text-slate-300 hover:text-white hover:bg-slate-700'
                         }`}
                       >
@@ -345,6 +360,29 @@ export default function AdminLayout({
           </button>
         </div>
 
+        {/* Survey Selector Bar */}
+        {surveys.length > 0 && (
+          <div className={`border-t ${tc.navBorder} bg-slate-950/60`}>
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 py-2 flex items-center gap-3">
+              <span className="text-xs text-slate-500 shrink-0">問卷:</span>
+              <select
+                value={selectedSurveyId ?? ''}
+                onChange={(e) => setSelectedSurveyId(e.target.value || null)}
+                className={`bg-slate-800 border ${tc.accentBorder} ${tc.accent} rounded-lg px-3 py-1.5 text-sm max-w-xs truncate cursor-pointer`}
+              >
+                {surveys.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.title}{s.is_primary ? ' ⭐' : ''}
+                  </option>
+                ))}
+              </select>
+              {selectedSurvey && (
+                <span className="text-xs text-slate-600 hidden sm:inline font-mono">{selectedSurvey.slug}</span>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Mobile menu — 分組顯示 */}
         {menuOpen && (
           <div className="lg:hidden border-t border-slate-800 bg-slate-900/95 backdrop-blur-sm max-h-[75vh] overflow-y-auto">
@@ -362,7 +400,7 @@ export default function AdminLayout({
                         onClick={() => setMenuOpen(false)}
                         className={`px-3 py-2.5 rounded-lg text-sm transition-colors ${
                           pathname === item.href
-                            ? 'bg-cyan-500/10 text-cyan-400 font-medium'
+                            ? `${tc.accentBg} ${tc.accent} font-medium`
                             : 'text-slate-400 hover:text-white hover:bg-slate-800'
                         }`}
                       >

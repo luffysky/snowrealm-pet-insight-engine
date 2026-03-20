@@ -1,11 +1,12 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { getResponsesCsv } from '@/lib/stats'
 import { getTenantContext } from '@/lib/tenant'
 
-export async function GET(): Promise<NextResponse> {
+export async function GET(request: NextRequest): Promise<NextResponse> {
   try {
     const { tenantId } = await getTenantContext()
-    const csv = await getResponsesCsv(tenantId)
+    const surveyId = request.nextUrl.searchParams.get('surveyId') || undefined
+    const csv = await getResponsesCsv(tenantId, surveyId)
     return new NextResponse(csv, {
       headers: {
         'Content-Type': 'text/csv; charset=utf-8',

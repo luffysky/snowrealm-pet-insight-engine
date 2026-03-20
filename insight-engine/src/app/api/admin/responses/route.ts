@@ -18,9 +18,19 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 
     const status = searchParams.get('status') || undefined
     const source = searchParams.get('source') || undefined
+    const surveyId = searchParams.get('surveyId') || undefined
 
-    const result = await getResponseList(page, pageSize, { status, source }, tenantId)
-    return NextResponse.json(result)
+    const [result, clickStats] = await Promise.all([
+      getResponseList(page, pageSize, { status, source }, tenantId, surveyId),
+      query<{ event_type: string; cnt: string }>(
+        `SELECT event_type, COUNT(DISTINCT response_id)::text AS cnt FROM click_events GROUP BY event_type`
+      ),
+    ])
+
+    const lineClicks = parseInt(clickStats.find((r) => r.event_type === 'line_friend')?.cnt ?? '0', 10)
+    const igClicks = parseInt(clickStats.find((r) => r.event_type === 'instagram')?.cnt ?? '0', 10)
+
+    return NextResponse.json({ ...result, lineClicks, igClicks })
   } catch (error) {
     console.error('[admin/responses] Failed:', error)
     return NextResponse.json(

@@ -1,14 +1,36 @@
-import { getDashboardStats, getResponseList } from '@/lib/stats'
+'use client'
+
+import { useEffect, useState } from 'react'
 import { StatCard } from '@/components/admin'
 import { LineChartBlock, BarChartBlock, PieChartBlock } from '@/components/admin'
 import { ResponseTable } from '@/components/admin'
 import SummaryButton from '@/components/admin/SummaryButton'
+import { useAdminSurvey } from '@/components/admin/AdminSurveyContext'
+import type { DashboardStats, ResponseListItem } from '@/types'
 
-export const dynamic = 'force-dynamic'
+export default function AdminDashboardPage() {
+  const { selectedSurveyId } = useAdminSurvey()
+  const [stats, setStats] = useState<DashboardStats | null>(null)
+  const [recentResponses, setRecentResponses] = useState<ResponseListItem[]>([])
+  const [loading, setLoading] = useState(true)
 
-export default async function AdminDashboardPage() {
-  const stats = await getDashboardStats()
-  const recentResponses = await getResponseList(1, 10)
+  useEffect(() => {
+    if (!selectedSurveyId) return
+    setLoading(true)
+    const q = `?surveyId=${selectedSurveyId}`
+    Promise.all([
+      fetch(`/api/admin/stats${q}`).then(r => r.json()),
+      fetch(`/api/admin/responses${q}&pageSize=10`).then(r => r.json()),
+    ])
+      .then(([s, r]) => {
+        setStats(s)
+        setRecentResponses(r.data ?? [])
+      })
+      .catch(console.error)
+      .finally(() => setLoading(false))
+  }, [selectedSurveyId])
+
+  if (loading || !stats) return <p className="text-slate-400 animate-pulse">載入中…</p>
 
   const emotionData = stats.emotionDistribution
     .filter((d) => d.tagKey === 'emotion_level')
@@ -25,7 +47,7 @@ export default async function AdminDashboardPage() {
       <h1 className="text-2xl font-bold text-white">Dashboard</h1>
 
       {/* 自動摘要 */}
-      <SummaryButton />
+      <SummaryButton surveyId={selectedSurveyId} />
 
       {/* KPI 卡片 */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -61,7 +83,7 @@ export default async function AdminDashboardPage() {
       {/* 最近填答 */}
       <div>
         <h2 className="text-lg font-semibold text-white mb-4">最近填答</h2>
-        <ResponseTable responses={recentResponses.data} />
+        <ResponseTable responses={recentResponses} />
       </div>
     </div>
   )

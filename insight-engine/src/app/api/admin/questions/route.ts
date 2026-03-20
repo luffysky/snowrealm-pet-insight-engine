@@ -1,11 +1,12 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { getQuestionStats } from '@/lib/stats'
 import { getTenantContext } from '@/lib/tenant'
 
-export async function GET(): Promise<NextResponse> {
+export async function GET(request: NextRequest): Promise<NextResponse> {
   try {
     const { tenantId } = await getTenantContext()
-    const questionStats = await getQuestionStats(tenantId)
+    const surveyId = request.nextUrl.searchParams.get('surveyId') || undefined
+    const questionStats = await getQuestionStats(tenantId, surveyId)
     return NextResponse.json(questionStats)
   } catch (error) {
     console.error('[admin/questions] Failed:', error)
