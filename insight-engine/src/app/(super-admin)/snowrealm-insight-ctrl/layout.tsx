@@ -9,6 +9,7 @@ const NAV_ITEMS = [
   { href: '/snowrealm-insight-ctrl/tenants', label: '租戶管理', icon: '🏢' },
   { href: '/snowrealm-insight-ctrl/users', label: '使用者', icon: '👤' },
   { href: '/snowrealm-insight-ctrl/usage', label: '用量追蹤', icon: '📈' },
+  { href: '/snowrealm-insight-ctrl/site-settings', label: '首頁 SEO', icon: '🌐' },
   { href: '/snowrealm-insight-ctrl/plans', label: '收費規劃', icon: '💰' },
 ]
 
