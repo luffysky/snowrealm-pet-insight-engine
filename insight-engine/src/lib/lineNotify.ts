@@ -1,36 +1,53 @@
 /**
- * LINE Notify 管理員通知模組
+ * LINE Messaging API 管理員通知模組
  *
- * 環境變數：
- * - LINE_NOTIFY_TOKEN：LINE Notify 個人存取權杖
- *   取得方式：https://notify-bot.line.me/my/ → 發行權杖 → 選擇「透過 1 對 1 聊天接收」
+ * 使用 LINE Messaging API pushMessage 推送通知到管理員的私人 LINE
  *
- * 用途：有人註冊或登入平台時通知管理員
+ * 需要的設定（透過 line-settings 頁面或 .env.local）：
+ * - ADMIN_USER_ID：你的 LINE User ID（在 LINE Developers Console 可查到）
+ * - INSIGHT_CHANNEL_ACCESS_TOKEN 或 OFFICIAL_CHANNEL_ACCESS_TOKEN
  */
 
-const LINE_NOTIFY_URL = 'https://notify-api.line.me/api/notify'
+import { getLineConfig } from '@/lib/lineConfig'
+
+const PUSH_URL = 'https://api.line.me/v2/bot/message/push'
 
 /**
- * 發送 LINE Notify 通知（非阻塞）
+ * 用 LINE Messaging API 推送通知給管理員（非阻塞）
  */
-export async function sendLineNotify(message: string): Promise<void> {
-  const token = process.env.LINE_NOTIFY_TOKEN
-  if (!token) {
-    console.log('[LINE Notify] TOKEN 未設定，跳過通知')
-    return
-  }
+async function pushToAdmin(message: string): Promise<void> {
+  try {
+    const adminUserId = await getLineConfig('ADMIN_USER_ID')
+    if (!adminUserId) {
+      console.log('[LINE Push] ADMIN_USER_ID 未設定，跳過通知')
+      return
+    }
 
-  fetch(LINE_NOTIFY_URL, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/x-www-form-urlencoded',
-      Authorization: `Bearer ${token}`,
-    },
-    body: new URLSearchParams({ message }),
-    signal: AbortSignal.timeout(10000),
-  }).catch((err) => {
-    console.error('[LINE Notify] 發送失敗:', err)
-  })
+    // 優先用 Insight 帳號，備援用 Official 帳號
+    let token = await getLineConfig('INSIGHT_CHANNEL_ACCESS_TOKEN')
+    if (!token) token = await getLineConfig('OFFICIAL_CHANNEL_ACCESS_TOKEN')
+    if (!token) {
+      console.log('[LINE Push] 無可用的 Channel Access Token，跳過通知')
+      return
+    }
+
+    fetch(PUSH_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        to: adminUserId,
+        messages: [{ type: 'text', text: message }],
+      }),
+      signal: AbortSignal.timeout(10000),
+    }).catch((err) => {
+      console.error('[LINE Push] 發送失敗:', err)
+    })
+  } catch (err) {
+    console.error('[LINE Push] 初始化失敗:', err)
+  }
 }
 
 // ━━━━━━━━━━━━━━━━━━ 通知樣板 ━━━━━━━━━━━━━━━━━━
@@ -56,8 +73,8 @@ export function notifyNewRegistration(info: {
   }
 
   const lines = [
-    '\n🎉 新使用者註冊！',
-    `━━━━━━━━━━━━━━`,
+    '🎉 新使用者註冊！',
+    '━━━━━━━━━━━━━━',
     `方式：${methodLabel[info.method] || info.method}`,
   ]
 
@@ -68,7 +85,7 @@ export function notifyNewRegistration(info: {
   if (info.slug) lines.push(`後台：/insight-admin/${info.slug}`)
   lines.push(`時間：${now()}`)
 
-  sendLineNotify(lines.join('\n'))
+  pushToAdmin(lines.join('\n'))
 }
 
 /** 使用者登入通知 */
@@ -85,8 +102,8 @@ export function notifyUserLogin(info: {
   }
 
   const lines = [
-    '\n👤 使用者登入',
-    `━━━━━━━━━━━━━━`,
+    '👤 使用者登入',
+    '━━━━━━━━━━━━━━',
     `方式：${methodLabel[info.method] || info.method}`,
     `帳號：${info.identifier}`,
   ]
@@ -95,5 +112,5 @@ export function notifyUserLogin(info: {
   if (info.tenantId) lines.push(`租戶：${info.tenantId}`)
   lines.push(`時間：${now()}`)
 
-  sendLineNotify(lines.join('\n'))
+  pushToAdmin(lines.join('\n'))
 }
