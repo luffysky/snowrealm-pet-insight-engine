@@ -18,7 +18,7 @@ export const THEME_LIST: { value: SurveyTheme; label: string; icon: string; desc
 // === Shell (最外層背景) ===
 export const shellClass: Record<SurveyTheme, string> = {
   default:
-    'min-h-screen bg-gradient-to-br from-slate-950 via-indigo-950 to-purple-950 flex items-center justify-center px-4 py-8',
+    'min-h-screen bg-linear-to-br from-slate-950 via-indigo-950 to-purple-950 flex items-center justify-center px-4 py-8',
   game:
     'min-h-screen bg-[#1a1a2e] flex items-center justify-center px-4 py-8 theme-game-bg',
   cyber:
@@ -73,14 +73,14 @@ export const progressTrackClass: Record<SurveyTheme, string> = {
 }
 
 export const progressBarClass: Record<SurveyTheme, string> = {
-  default: 'h-full bg-gradient-to-r from-cyan-400 to-purple-400 rounded-full transition-all duration-500 ease-out',
-  game: 'h-full bg-gradient-to-r from-yellow-400 via-amber-400 to-orange-500 transition-all duration-700 ease-out theme-game-progress-fill',
-  cyber: 'h-full bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-500 rounded-full transition-all duration-500 ease-out theme-cyber-progress-fill',
-  ancient: 'h-full bg-gradient-to-r from-amber-800 via-red-800 to-amber-700 rounded-full transition-all duration-700 ease-out theme-ancient-progress-fill',
-  sakura: 'h-full bg-gradient-to-r from-pink-400 via-rose-300 to-pink-400 rounded-full transition-all duration-500 ease-out',
-  ocean: 'h-full bg-gradient-to-r from-cyan-500 via-blue-400 to-teal-400 rounded-full transition-all duration-600 ease-out theme-ocean-progress-fill',
-  forest: 'h-full bg-gradient-to-r from-emerald-500 via-green-400 to-lime-400 rounded-full transition-all duration-500 ease-out',
-  candy: 'h-full bg-gradient-to-r from-pink-400 via-purple-400 to-cyan-400 rounded-full transition-all duration-500 ease-out theme-candy-progress-fill',
+  default: 'h-full bg-linear-to-r from-cyan-400 to-purple-400 rounded-full transition-all duration-500 ease-out',
+  game: 'h-full bg-linear-to-r from-yellow-400 via-amber-400 to-orange-500 transition-all duration-700 ease-out theme-game-progress-fill',
+  cyber: 'h-full bg-linear-to-r from-cyan-400 via-blue-400 to-purple-500 rounded-full transition-all duration-500 ease-out theme-cyber-progress-fill',
+  ancient: 'h-full bg-linear-to-r from-amber-800 via-red-800 to-amber-700 rounded-full transition-all duration-700 ease-out theme-ancient-progress-fill',
+  sakura: 'h-full bg-linear-to-r from-pink-400 via-rose-300 to-pink-400 rounded-full transition-all duration-500 ease-out',
+  ocean: 'h-full bg-linear-to-r from-cyan-500 via-blue-400 to-teal-400 rounded-full transition-all duration-600 ease-out theme-ocean-progress-fill',
+  forest: 'h-full bg-linear-to-r from-emerald-500 via-green-400 to-lime-400 rounded-full transition-all duration-500 ease-out',
+  candy: 'h-full bg-linear-to-r from-pink-400 via-purple-400 to-cyan-400 rounded-full transition-all duration-500 ease-out theme-candy-progress-fill',
   noir: 'h-full bg-white transition-all duration-500 ease-out',
 }
 
@@ -172,11 +172,11 @@ export const actionBtnClass: Record<SurveyTheme, string> = {
   default:
     'px-6 py-2.5 bg-cyan-500/20 border border-cyan-400/30 text-cyan-300 rounded-xl hover:bg-cyan-500/30 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer',
   game:
-    'px-6 py-2.5 bg-gradient-to-r from-amber-500 to-orange-500 text-[#1a1a2e] font-bold rounded-lg hover:from-amber-400 hover:to-orange-400 disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer theme-game-btn shadow-lg shadow-amber-500/30',
+    'px-6 py-2.5 bg-linear-to-r from-amber-500 to-orange-500 text-[#1a1a2e] font-bold rounded-lg hover:from-amber-400 hover:to-orange-400 disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer theme-game-btn shadow-lg shadow-amber-500/30',
   cyber:
     'px-6 py-2.5 border border-cyan-400/40 text-cyan-300 rounded-xl hover:bg-cyan-500/10 disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer theme-cyber-btn',
   ancient:
-    'px-6 py-2.5 bg-gradient-to-r from-amber-900 to-red-900 text-amber-100 font-bold rounded-lg hover:from-amber-800 hover:to-red-800 disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer theme-ancient-btn shadow-lg shadow-amber-900/30',
+    'px-6 py-2.5 bg-linear-to-r from-amber-900 to-red-900 text-amber-100 font-bold rounded-lg hover:from-amber-800 hover:to-red-800 disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer theme-ancient-btn shadow-lg shadow-amber-900/30',
   sakura:
     'px-6 py-2.5 bg-pink-500/20 border border-pink-400/30 text-pink-200 rounded-2xl hover:bg-pink-500/30 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer',
   ocean:
@@ -184,7 +184,7 @@ export const actionBtnClass: Record<SurveyTheme, string> = {
   forest:
     'px-6 py-2.5 bg-emerald-500/20 border border-emerald-400/30 text-emerald-200 rounded-xl hover:bg-emerald-500/30 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer',
   candy:
-    'px-6 py-2.5 bg-gradient-to-r from-pink-500 to-purple-500 text-white font-bold rounded-full hover:from-pink-400 hover:to-purple-400 disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer shadow-lg shadow-purple-500/25',
+    'px-6 py-2.5 bg-linear-to-r from-pink-500 to-purple-500 text-white font-bold rounded-full hover:from-pink-400 hover:to-purple-400 disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer shadow-lg shadow-purple-500/25',
   noir:
     'px-6 py-2.5 bg-white text-black font-medium rounded-lg hover:bg-white/90 disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer',
 }
@@ -192,21 +192,21 @@ export const actionBtnClass: Record<SurveyTheme, string> = {
 // === CTA button (開始問卷) ===
 export const ctaBtnClass: Record<SurveyTheme, string> = {
   default:
-    'inline-block px-8 py-4 bg-gradient-to-r from-cyan-500 to-purple-500 text-white font-medium rounded-2xl shadow-lg shadow-cyan-500/20 hover:shadow-cyan-500/30 hover:scale-[1.02] transition-all duration-200',
+    'inline-block px-8 py-4 bg-linear-to-r from-cyan-500 to-purple-500 text-white font-medium rounded-2xl shadow-lg shadow-cyan-500/20 hover:shadow-cyan-500/30 hover:scale-[1.02] transition-all duration-200',
   game:
-    'inline-block px-8 py-4 bg-gradient-to-r from-amber-500 to-red-500 text-white font-bold rounded-xl shadow-lg shadow-amber-500/30 hover:shadow-amber-500/50 hover:scale-[1.03] transition-all duration-200 theme-game-cta',
+    'inline-block px-8 py-4 bg-linear-to-r from-amber-500 to-red-500 text-white font-bold rounded-xl shadow-lg shadow-amber-500/30 hover:shadow-amber-500/50 hover:scale-[1.03] transition-all duration-200 theme-game-cta',
   cyber:
     'inline-block px-8 py-4 text-white font-medium rounded-2xl transition-all duration-300 hover:scale-[1.02] theme-cyber-cta',
   ancient:
-    'inline-block px-8 py-4 bg-gradient-to-r from-amber-900 via-red-900 to-amber-900 text-amber-100 font-bold rounded-xl shadow-lg shadow-amber-900/40 hover:shadow-amber-900/60 hover:scale-[1.02] transition-all duration-200 theme-ancient-cta',
+    'inline-block px-8 py-4 bg-linear-to-r from-amber-900 via-red-900 to-amber-900 text-amber-100 font-bold rounded-xl shadow-lg shadow-amber-900/40 hover:shadow-amber-900/60 hover:scale-[1.02] transition-all duration-200 theme-ancient-cta',
   sakura:
-    'inline-block px-8 py-4 bg-gradient-to-r from-pink-500 to-rose-400 text-white font-medium rounded-2xl shadow-lg shadow-pink-500/25 hover:shadow-pink-500/40 hover:scale-[1.02] transition-all duration-200',
+    'inline-block px-8 py-4 bg-linear-to-r from-pink-500 to-rose-400 text-white font-medium rounded-2xl shadow-lg shadow-pink-500/25 hover:shadow-pink-500/40 hover:scale-[1.02] transition-all duration-200',
   ocean:
-    'inline-block px-8 py-4 bg-gradient-to-r from-cyan-500 to-blue-500 text-white font-medium rounded-2xl shadow-lg shadow-cyan-500/25 hover:shadow-cyan-500/40 hover:scale-[1.02] transition-all duration-200',
+    'inline-block px-8 py-4 bg-linear-to-r from-cyan-500 to-blue-500 text-white font-medium rounded-2xl shadow-lg shadow-cyan-500/25 hover:shadow-cyan-500/40 hover:scale-[1.02] transition-all duration-200',
   forest:
-    'inline-block px-8 py-4 bg-gradient-to-r from-emerald-500 to-green-500 text-white font-medium rounded-xl shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/40 hover:scale-[1.02] transition-all duration-200',
+    'inline-block px-8 py-4 bg-linear-to-r from-emerald-500 to-green-500 text-white font-medium rounded-xl shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/40 hover:scale-[1.02] transition-all duration-200',
   candy:
-    'inline-block px-8 py-4 bg-gradient-to-r from-pink-500 via-purple-500 to-cyan-400 text-white font-bold rounded-full shadow-lg shadow-purple-500/30 hover:shadow-purple-500/50 hover:scale-[1.03] transition-all duration-200 theme-candy-cta',
+    'inline-block px-8 py-4 bg-linear-to-r from-pink-500 via-purple-500 to-cyan-400 text-white font-bold rounded-full shadow-lg shadow-purple-500/30 hover:shadow-purple-500/50 hover:scale-[1.03] transition-all duration-200 theme-candy-cta',
   noir:
     'inline-block px-8 py-4 bg-white text-black font-medium rounded-lg shadow-lg shadow-white/10 hover:shadow-white/20 hover:scale-[1.01] transition-all duration-200',
 }

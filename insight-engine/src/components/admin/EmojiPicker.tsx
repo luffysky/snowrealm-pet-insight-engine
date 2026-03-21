@@ -193,7 +193,7 @@ export function EmojiPicker({ value, onSelect, onClear }: EmojiPickerProps) {
           </div>
 
           {/* Emoji Grid */}
-          <div className="p-2 max-h-[200px] overflow-y-auto">
+          <div className="p-2 max-h-50 overflow-y-auto">
             <div className="grid grid-cols-8 gap-1">
               {emojis
                 .filter((e) => !search || e.includes(search))

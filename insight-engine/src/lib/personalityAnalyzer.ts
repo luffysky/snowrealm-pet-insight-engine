@@ -86,11 +86,7 @@ export function analyzePersonality(records: AnswerRecord[]): PersonalityResult {
   // 1. 判斷寵物類型 → 基底人格
   const petType = getFirstAnswer(records, '什麼類型的孩子')
   const hasPet = getFirstAnswer(records, '現在有養寵物')
-  const recordMethod = getAnswer(records, '紀錄')
-  const memoryFade = getFirstAnswer(records, '記憶')
   const mostWant = getFirstAnswer(records, '最想留下')
-  const interest = getFirstAnswer(records, '有興趣')
-  const hope = getFirstAnswer(records, '希望毛行天下')
 
   // 2. 根據寵物類型選基底
   let archetype: PersonalityArchetype

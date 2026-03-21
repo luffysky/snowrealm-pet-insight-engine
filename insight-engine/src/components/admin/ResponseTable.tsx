@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
 import type { ResponseListItem } from '@/types'
 
 interface ResponseTableProps {
@@ -18,9 +18,13 @@ export function ResponseTable({
   showPagination = false,
   currentPage = 1,
   totalPages = 1,
-  paginationBase = '/admin/responses?',
+  paginationBase,
 }: ResponseTableProps) {
   const router = useRouter()
+  const pathname = usePathname()
+  // Extract /insight-admin/{slug} prefix from current pathname
+  const slugMatch = pathname.match(/^\/insight-admin\/([^/]+)/)
+  const basePath = slugMatch ? `/insight-admin/${slugMatch[1]}` : '/insight-admin'
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [confirmId, setConfirmId] = useState<string | null>(null)
 
@@ -77,7 +81,7 @@ export function ResponseTable({
 
   if (responses.length === 0) {
     return (
-      <div className="bg-slate-800/50 border border-slate-700/50 rounded-2xl p-8 text-center text-slate-500">
+      <div className="bg-t-card-bg border border-t-card-border rounded-2xl p-8 text-center text-slate-500">
         尚無填答資料
       </div>
     )
@@ -103,7 +107,7 @@ export function ResponseTable({
   }
 
   return (
-    <div className="bg-slate-800/50 border border-slate-700/50 rounded-2xl overflow-hidden">
+    <div className="bg-t-card-bg border border-t-card-border rounded-2xl overflow-hidden">
       {/* 批次操作列 */}
       {selectedCount > 0 && (
         <div className="flex items-center gap-3 px-4 sm:px-6 py-2.5 bg-slate-700/40 border-b border-slate-700/50">
@@ -114,7 +118,7 @@ export function ResponseTable({
             取消選取
           </button>
           <span className="ml-auto text-sm text-slate-300">
-            已選取 <span className="text-cyan-400 font-medium">{selectedCount}</span> 筆
+            已選取 <span className="text-t-accent font-medium">{selectedCount}</span> 筆
           </span>
           {confirmBatch ? (
             <span className="flex items-center gap-2">
@@ -177,7 +181,7 @@ export function ResponseTable({
                     type="checkbox"
                     checked={isAllSelected}
                     onChange={toggleAll}
-                    className="w-4 h-4 rounded border-slate-600 bg-slate-700 text-cyan-500 focus:ring-cyan-500/30 cursor-pointer accent-cyan-500"
+                    className="w-4 h-4 rounded border-slate-600 bg-slate-700 text-t-accent cursor-pointer accent-t-accent"
                     title="全選本頁"
                   />
                 </th>
@@ -189,7 +193,7 @@ export function ResponseTable({
               <tr
                 key={response.id}
                 className={`border-b border-slate-700/30 hover:bg-slate-700/20 ${
-                  selected.has(response.id) ? 'bg-cyan-500/5' : ''
+                  selected.has(response.id) ? 'bg-t-accent-bg' : ''
                 }`}
               >
                 <td className="px-4 sm:px-6 py-3 text-slate-300 whitespace-nowrap">
@@ -234,8 +238,8 @@ export function ResponseTable({
                 <td className="px-4 sm:px-6 py-3 text-right">
                   <div className="flex items-center justify-end gap-4 sm:gap-2">
                     <Link
-                      href={`/admin/responses/${response.id}`}
-                      className="text-cyan-400 hover:text-cyan-300 text-sm px-2 py-1 -mx-2 -my-1"
+                      href={`${basePath}/responses/${response.id}`}
+                      className="text-t-accent hover:opacity-80 text-sm px-2 py-1 -mx-2 -my-1"
                     >
                       查看
                     </Link>
@@ -274,7 +278,7 @@ export function ResponseTable({
                       type="checkbox"
                       checked={selected.has(response.id)}
                       onChange={() => toggleOne(response.id)}
-                      className="w-4 h-4 rounded border-slate-600 bg-slate-700 text-cyan-500 focus:ring-cyan-500/30 cursor-pointer accent-cyan-500"
+                      className="w-4 h-4 rounded border-slate-600 bg-slate-700 text-t-accent cursor-pointer accent-t-accent"
                     />
                   </td>
                 )}
@@ -289,7 +293,7 @@ export function ResponseTable({
           {currentPage > 1 && (
             <Link
               href={`${paginationBase}page=${currentPage - 1}`}
-              className="text-sm text-cyan-400 hover:text-cyan-300"
+              className="text-sm text-t-accent hover:opacity-80"
             >
               ← 上一頁
             </Link>
@@ -300,7 +304,7 @@ export function ResponseTable({
           {currentPage < totalPages && (
             <Link
               href={`${paginationBase}page=${currentPage + 1}`}
-              className="text-sm text-cyan-400 hover:text-cyan-300"
+              className="text-sm text-t-accent hover:opacity-80"
             >
               下一頁 →
             </Link>
@@ -369,12 +373,12 @@ function NotesCell({ responseId, initialNotes }: { responseId: string; initialNo
           value={value}
           onChange={(e) => setValue(e.target.value)}
           maxLength={500}
-          className="flex-1 px-2 py-1 bg-slate-700 border border-slate-600 rounded text-xs text-white focus:outline-none focus:ring-1 focus:ring-cyan-500/50"
+          className="flex-1 px-2 py-1 bg-slate-700 border border-slate-600 rounded text-xs text-white focus:outline-none focus:ring-1 focus:ring-t-accent-border"
           onKeyDown={(e) => { if (e.key === 'Enter') save(); if (e.key === 'Escape') setEditing(false) }}
           autoFocus
           disabled={saving}
         />
-        <button onClick={save} disabled={saving} className="text-cyan-400 hover:text-cyan-300 text-xs cursor-pointer">✓</button>
+        <button onClick={save} disabled={saving} className="text-t-accent hover:opacity-80 text-xs cursor-pointer">✓</button>
         <button onClick={() => { setValue(initialNotes ?? ''); setEditing(false) }} className="text-slate-500 hover:text-slate-300 text-xs cursor-pointer">✕</button>
       </div>
     )

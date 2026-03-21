@@ -12,11 +12,11 @@ export function AchievementOverlay({ achievement, onDismiss }: AchievementOverla
 
   return (
     <div
-      className="fixed inset-0 z-[100] flex items-center justify-center bg-[#0a0e1a]/85 backdrop-blur-sm animate-in fade-in duration-300"
+      className="fixed inset-0 z-100 flex items-center justify-center bg-[#0a0e1a]/85 backdrop-blur-sm animate-in fade-in duration-300"
       onClick={onDismiss}
     >
       <div
-        className="text-center px-8 py-9 bg-gradient-to-br from-[rgba(255,215,0,0.1)] to-[rgba(124,92,252,0.1)] border-[1.5px] border-[#ffd700] rounded-[20px] shadow-[0_0_60px_rgba(255,215,0,0.15)] max-w-xs game-achievement-enter"
+        className="text-center px-8 py-9 bg-linear-to-br from-[rgba(255,215,0,0.1)] to-[rgba(124,92,252,0.1)] border-[1.5px] border-[#ffd700] rounded-[20px] shadow-[0_0_60px_rgba(255,215,0,0.15)] max-w-xs game-achievement-enter"
         onClick={e => e.stopPropagation()}
       >
         <div className="text-5xl mb-3 animate-[float_2s_ease-in-out_infinite]">

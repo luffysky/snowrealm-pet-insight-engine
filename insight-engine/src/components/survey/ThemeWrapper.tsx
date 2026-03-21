@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { ThemeProvider, useTheme } from './ThemeContext'
-import { THEME_LIST, shellClass, ctaBtnClass, questionTitleClass, stepTextClass } from '@/lib/themes'
+import { THEME_LIST, stepTextClass } from '@/lib/themes'
 import type { SurveyTheme, ThemeIntensity } from '@/types'
 
 interface ThemeSettings {
@@ -35,7 +35,7 @@ export function ThemeWrapper({ children }: { children: React.ReactNode }) {
 
   if (!settings) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-indigo-950 to-purple-950 flex items-center justify-center">
+      <div className="min-h-screen bg-linear-to-br from-slate-950 via-indigo-950 to-purple-950 flex items-center justify-center">
         <p className="text-white/50">載入中...</p>
       </div>
     )

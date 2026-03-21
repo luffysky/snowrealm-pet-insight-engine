@@ -129,9 +129,9 @@ export async function listVariantGroups(tenantId?: string): Promise<string[]> {
 /** 取得所有問卷（admin 列表用） */
 export async function listSurveys(tenantId?: string): Promise<SurveyRow[]> {
   if (tenantId) {
-    return query<SurveyRow>(`SELECT * FROM surveys WHERE tenant_id = $1 ORDER BY created_at DESC`, [tenantId])
+    return query<SurveyRow>(`SELECT * FROM surveys WHERE tenant_id = $1 ORDER BY display_order ASC, created_at DESC`, [tenantId])
   }
-  return query<SurveyRow>(`SELECT * FROM surveys ORDER BY created_at DESC`)
+  return query<SurveyRow>(`SELECT * FROM surveys ORDER BY display_order ASC, created_at DESC`)
 }
 
 /** 取得租戶的主問卷 slug */
@@ -167,6 +167,16 @@ export async function createSurvey(data: {
 /** 依 ID 取得問卷 */
 export async function getSurveyById(id: string): Promise<SurveyRow | null> {
   return queryOne<SurveyRow>(`SELECT * FROM surveys WHERE id = $1`, [id])
+}
+
+/** 重新排序問卷（更新 display_order） */
+export async function reorderSurveys(orderedIds: string[], tenantId: string): Promise<void> {
+  for (let i = 0; i < orderedIds.length; i++) {
+    await execute(
+      `UPDATE surveys SET display_order = $1 WHERE id = $2 AND tenant_id = $3`,
+      [i, orderedIds[i], tenantId]
+    )
+  }
 }
 
 /** 依 survey_id 取得題目，可依 route 過濾（預設全部） */

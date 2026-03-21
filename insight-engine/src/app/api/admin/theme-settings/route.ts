@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { query, queryOne, execute } from '@/lib/db'
+import { queryOne, execute } from '@/lib/db'
 import { getTenantContext } from '@/lib/tenant'
 import type { SurveyTheme, ThemeIntensity } from '@/types'
 

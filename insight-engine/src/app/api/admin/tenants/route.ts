@@ -21,7 +21,8 @@ export async function GET(): Promise<NextResponse> {
   }
 
   const tenants = await query<TenantRow>(
-    `SELECT * FROM tenants ORDER BY created_at ASC`,
+    `SELECT id, name, slug, plan, is_active, created_at, updated_at
+     FROM tenants ORDER BY created_at ASC`,
   )
   return NextResponse.json({ tenants })
 }

@@ -16,7 +16,7 @@ export function XpBar({ xp, maxXp, level, playerTitle, xpSparkle }: XpBarProps) 
       {/* 玩家資訊列 */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2.5">
-          <div className="w-9 h-9 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-lg shadow-[0_0_12px_rgba(255,180,50,0.3)]">
+          <div className="w-9 h-9 rounded-full bg-linear-to-br from-amber-400 to-orange-500 flex items-center justify-center text-lg shadow-[0_0_12px_rgba(255,180,50,0.3)]">
             🐾
           </div>
           <div>
@@ -24,7 +24,7 @@ export function XpBar({ xp, maxXp, level, playerTitle, xpSparkle }: XpBarProps) 
             <p className="text-[11px] text-amber-400/70">{playerTitle}</p>
           </div>
         </div>
-        <span className="px-3 py-1 bg-gradient-to-r from-purple-500/80 to-amber-500/80 rounded-full text-[11px] font-bold tracking-wider text-white">
+        <span className="px-3 py-1 bg-linear-to-r from-purple-500/80 to-amber-500/80 rounded-full text-[11px] font-bold tracking-wider text-white">
           LV {level}
         </span>
       </div>
@@ -44,7 +44,7 @@ export function XpBar({ xp, maxXp, level, playerTitle, xpSparkle }: XpBarProps) 
         </div>
         <div className="h-2 bg-[#2a2a4a] rounded-sm border border-[#4a4a6a] overflow-hidden theme-game-progress-track">
           <div
-            className="h-full bg-gradient-to-r from-purple-400 via-amber-400 to-orange-400 transition-all duration-700 ease-out"
+            className="h-full bg-linear-to-r from-purple-400 via-amber-400 to-orange-400 transition-all duration-700 ease-out"
             style={{ width: `${pct}%`, backgroundSize: '200% 100%', animation: 'xpShimmer 2s ease infinite' }}
           />
         </div>

@@ -91,7 +91,7 @@ export function DownloadAnswers() {
     <button
       type="button"
       onClick={handleDownload}
-      className="inline-flex items-center justify-center gap-2 w-full px-6 py-3.5 bg-gradient-to-r from-amber-500/20 to-orange-500/20 border border-amber-400/20 text-amber-300 font-medium rounded-2xl hover:from-amber-500/30 hover:to-orange-500/30 transition-all cursor-pointer"
+      className="inline-flex items-center justify-center gap-2 w-full px-6 py-3.5 bg-linear-to-r from-amber-500/20 to-orange-500/20 border border-amber-400/20 text-amber-300 font-medium rounded-2xl hover:from-amber-500/30 hover:to-orange-500/30 transition-all cursor-pointer"
     >
       📋 查看我的回答紀錄
     </button>

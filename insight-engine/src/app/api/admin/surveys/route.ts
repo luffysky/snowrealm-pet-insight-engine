@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { listSurveys, createSurvey, setPrimarySurvey } from '@/lib/surveyRepo'
+import { listSurveys, createSurvey, setPrimarySurvey, reorderSurveys } from '@/lib/surveyRepo'
 import { getTenantContext } from '@/lib/tenant'
 
 export async function GET(): Promise<NextResponse> {
@@ -37,10 +37,15 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 /** PATCH /api/admin/surveys — 設定主問卷 */
 export async function PATCH(req: NextRequest): Promise<NextResponse> {
   const { tenantId } = await getTenantContext()
-  const body = await req.json() as { action?: string; surveyId?: string }
+  const body = await req.json() as { action?: string; surveyId?: string; orderedIds?: string[] }
 
   if (body.action === 'set-primary' && body.surveyId) {
     await setPrimarySurvey(body.surveyId, tenantId)
+    return NextResponse.json({ ok: true })
+  }
+
+  if (body.action === 'reorder' && Array.isArray(body.orderedIds)) {
+    await reorderSurveys(body.orderedIds, tenantId)
     return NextResponse.json({ ok: true })
   }
 

@@ -28,7 +28,7 @@ function LoginForm() {
 
       if (res.ok) {
         const slug = data.slug
-        const redirect = searchParams.get('redirect') || (slug ? `/admin/${slug}` : '/admin')
+        const redirect = searchParams.get('redirect') || (slug ? `/insight-admin/${slug}` : '/insight-admin')
         window.location.href = redirect
         return
       } else {
@@ -89,6 +89,10 @@ function LoginForm() {
               </div>
             </div>
 
+            <div className="text-right">
+              <a href="/forgot-password" className="text-xs text-cyan-400 hover:underline">忘記密碼？</a>
+            </div>
+
             {error && (
               <p className="text-sm text-red-400 text-center">{error}</p>
             )}
@@ -118,6 +122,14 @@ function LoginForm() {
           <p className="text-xs text-slate-500 text-center">
             還沒有帳號？<a href="/register" className="text-cyan-400 hover:underline">免費註冊</a>
           </p>
+
+          <div className="flex justify-center gap-3 text-xs text-slate-600">
+            <a href="/privacy" className="hover:text-slate-400 transition-colors">隱私權政策</a>
+            <span>·</span>
+            <a href="/terms" className="hover:text-slate-400 transition-colors">使用者條款</a>
+            <span>·</span>
+            <a href="/cookies" className="hover:text-slate-400 transition-colors">Cookie 政策</a>
+          </div>
         </div>
       </div>
     </div>

@@ -18,7 +18,7 @@ const DEFAULT_TITLE = 'SnowRealm Insight Engine — 問卷系統'
 const DEFAULT_DESC = '免費建立你的專屬問卷系統，支持多租戶、數據分析、LINE 整合。'
 
 export async function generateMetadata(): Promise<Metadata> {
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://insight-engine-sonwrealm-pet.zeabur.app'
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://insight.snowrealm.pet'
 
   // 嘗試從 DB 讀主 tenant 的 site_settings
   let s: Record<string, string> | null = null

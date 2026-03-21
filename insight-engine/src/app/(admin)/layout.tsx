@@ -2,8 +2,11 @@
 
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { useState, useRef, useEffect, useCallback } from 'react'
-import { AdminSurveyProvider, useAdminSurvey, ADMIN_THEME_COLORS } from '@/components/admin/AdminSurveyContext'
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
+import { AdminSurveyProvider, useAdminSurvey, ADMIN_THEME_COLORS, THEME_CSS_VALUES } from '@/components/admin/AdminSurveyContext'
+import dynamic from 'next/dynamic'
+
+const AdminBackground3D = dynamic(() => import('@/components/admin/AdminBackground3D'), { ssr: false })
 
 interface UserInfo {
   userId: string
@@ -14,126 +17,147 @@ interface UserInfo {
   tenants?: { slug: string; name: string }[]
 }
 
-// 所有導航項（供 mobile menu 使用）
-const ALL_NAV_ITEMS = [
-  { href: '/admin', label: 'Dashboard' },
-  { href: '/admin/surveys', label: '問卷管理' },
-  { href: '/admin/responses', label: '填答列表' },
-  { href: '/admin/funnel', label: '漏斗分析' },
-  { href: '/admin/crosstab', label: '交叉分析' },
-  { href: '/admin/tags', label: '標籤統計' },
-  { href: '/admin/tag-rules', label: '標籤規則' },
-  { href: '/admin/utm', label: '來源分析' },
-  { href: '/admin/ab', label: 'A/B 比較' },
-  { href: '/admin/webhooks', label: 'Webhook' },
-  { href: '/admin/panel', label: '管理員面板' },
-  { href: '/admin/broadcast', label: 'LINE 推播' },
-  { href: '/admin/notification-rules', label: '通知規則' },
-  { href: '/admin/templates', label: '訊息模板' },
-  { href: '/admin/utm-links', label: 'UTM 管理' },
-  { href: '/admin/rich-menu', label: 'Rich Menu' },
-  { href: '/admin/line-settings', label: 'LINE 設定' },
-  { href: '/admin/notification-styles', label: '通知樣式' },
-  { href: '/admin/waitlist', label: '封測名單' },
-  { href: '/admin/site-settings', label: 'Meta / OG' },
-]
+/** 已知的 admin 子頁面路徑（與 middleware 保持一致，用來區分 tenant slug） */
+const KNOWN_ADMIN_PAGES = new Set([
+  'ab', 'account', 'ai-settings', 'broadcast', 'crosstab', 'funnel', 'line-settings',
+  'my-responses', 'notification-rules', 'notification-styles', 'panel', 'rich-menu',
+  'site-settings', 'surveys', 'tag-rules', 'tags', 'team', 'templates', 'tenants',
+  'theme-settings', 'utm', 'utm-links', 'waitlist', 'webhooks', 'responses',
+])
 
-// Desktop 分組下拉
-interface NavGroup {
-  label: string
-  items: { href: string; label: string }[]
+/** 從 pathname 提取 tenant slug（如 /insight-admin/snowrealm-pet/surveys → snowrealm-pet） */
+function extractSlug(pathname: string): string | null {
+  if (!pathname.startsWith('/insight-admin/')) return null
+  const firstSegment = pathname.slice('/insight-admin/'.length).split('/')[0]
+  if (firstSegment && !KNOWN_ADMIN_PAGES.has(firstSegment)) return firstSegment
+  return null
 }
 
-const DIRECT_ITEMS = [
-  { href: '/admin', label: 'Dashboard' },
-  { href: '/admin/surveys', label: '問卷管理' },
+// 基礎導航路徑定義（不含 slug，slug 由 render 時動態加入）
+const BASE_NAV_ITEMS = [
+  { path: '', label: 'Dashboard' },
+  { path: '/surveys', label: '問卷管理' },
+  { path: '/responses', label: '填答列表' },
+  { path: '/funnel', label: '漏斗分析' },
+  { path: '/crosstab', label: '交叉分析' },
+  { path: '/tags', label: '標籤統計' },
+  { path: '/tag-rules', label: '標籤規則' },
+  { path: '/utm', label: '來源分析' },
+  { path: '/ab', label: 'A/B 比較' },
+  { path: '/webhooks', label: 'Webhook' },
+  { path: '/panel', label: '管理員面板' },
+  { path: '/broadcast', label: 'LINE 推播' },
+  { path: '/notification-rules', label: '通知規則' },
+  { path: '/templates', label: '訊息模板' },
+  { path: '/utm-links', label: 'UTM 管理' },
+  { path: '/rich-menu', label: 'Rich Menu' },
+  { path: '/line-settings', label: 'LINE 設定' },
+  { path: '/notification-styles', label: '通知樣式' },
+  { path: '/waitlist', label: '封測名單' },
+  { path: '/site-settings', label: 'Meta / OG' },
 ]
 
-const NAV_GROUPS: NavGroup[] = [
+const BASE_DIRECT = [
+  { path: '', label: 'Dashboard' },
+  { path: '/surveys', label: '問卷管理' },
+]
+
+const BASE_NAV_GROUPS = [
   {
     label: '📊 數據分析',
     items: [
-      { href: '/admin/responses', label: '填答列表' },
-      { href: '/admin/funnel', label: '漏斗分析' },
-      { href: '/admin/crosstab', label: '交叉分析' },
-      { href: '/admin/tags', label: '標籤統計' },
-      { href: '/admin/tag-rules', label: '標籤規則' },
-      { href: '/admin/utm', label: '來源分析' },
-      { href: '/admin/ab', label: 'A/B 比較' },
+      { path: '/responses', label: '填答列表' },
+      { path: '/funnel', label: '漏斗分析' },
+      { path: '/crosstab', label: '交叉分析' },
+      { path: '/tags', label: '標籤統計' },
+      { path: '/tag-rules', label: '標籤規則' },
+      { path: '/utm', label: '來源分析' },
+      { path: '/ab', label: 'A/B 比較' },
     ],
   },
   {
     label: '💬 LINE',
     items: [
-      { href: '/admin/broadcast', label: 'LINE 推播' },
-      { href: '/admin/notification-rules', label: '通知規則' },
-      { href: '/admin/templates', label: '訊息模板' },
-      { href: '/admin/rich-menu', label: 'Rich Menu' },
-      { href: '/admin/line-settings', label: 'LINE 設定' },
-      { href: '/admin/notification-styles', label: '通知樣式' },
+      { path: '/line-settings', label: 'LINE 設定' },
+      { path: '/broadcast', label: 'LINE 推播' },
+      { path: '/notification-rules', label: '通知規則' },
+      { path: '/templates', label: '訊息模板' },
+      { path: '/rich-menu', label: 'Rich Menu' },
+      { path: '/notification-styles', label: '通知樣式' },
     ],
   },
   {
     label: '⚙️ 系統',
     items: [
-      { href: '/admin/panel', label: '管理員面板' },
-      { href: '/admin/ai-settings', label: 'AI 設定' },
-      { href: '/admin/theme-settings', label: '主題設定' },
-      { href: '/admin/site-settings', label: 'Meta / OG' },
-      { href: '/admin/utm-links', label: 'UTM 管理' },
-      { href: '/admin/webhooks', label: 'Webhook' },
-      { href: '/admin/waitlist', label: '封測名單' },
+      { path: '/panel', label: '管理員面板' },
+      { path: '/ai-settings', label: 'AI 設定' },
+      { path: '/theme-settings', label: '主題設定' },
+      { path: '/site-settings', label: 'Meta / OG' },
+      { path: '/utm-links', label: 'UTM 管理' },
+      { path: '/webhooks', label: 'Webhook' },
+      { path: '/waitlist', label: '封測名單' },
+      { path: '/team', label: '團隊管理' },
+      { path: '/account', label: '帳號設定' },
+      { path: '/my-responses', label: '我的填答' },
     ],
   },
 ]
 
-// Mobile 分組（含 icon）
-const MOBILE_GROUPS = [
+const BASE_MOBILE_GROUPS = [
   {
     title: '總覽',
     items: [
-      { href: '/admin', label: 'Dashboard' },
-      { href: '/admin/surveys', label: '問卷管理' },
+      { path: '', label: 'Dashboard' },
+      { path: '/surveys', label: '問卷管理' },
     ],
   },
   {
     title: '數據分析',
     items: [
-      { href: '/admin/responses', label: '填答列表' },
-      { href: '/admin/funnel', label: '漏斗分析' },
-      { href: '/admin/crosstab', label: '交叉分析' },
-      { href: '/admin/tags', label: '標籤統計' },
-      { href: '/admin/tag-rules', label: '標籤規則' },
-      { href: '/admin/utm', label: '來源分析' },
-      { href: '/admin/ab', label: 'A/B 比較' },
+      { path: '/responses', label: '填答列表' },
+      { path: '/funnel', label: '漏斗分析' },
+      { path: '/crosstab', label: '交叉分析' },
+      { path: '/tags', label: '標籤統計' },
+      { path: '/tag-rules', label: '標籤規則' },
+      { path: '/utm', label: '來源分析' },
+      { path: '/ab', label: 'A/B 比較' },
     ],
   },
   {
     title: 'LINE',
     items: [
-      { href: '/admin/broadcast', label: 'LINE 推播' },
-      { href: '/admin/notification-rules', label: '通知規則' },
-      { href: '/admin/templates', label: '訊息模板' },
-      { href: '/admin/rich-menu', label: 'Rich Menu' },
-      { href: '/admin/line-settings', label: 'LINE 設定' },
-      { href: '/admin/notification-styles', label: '通知樣式' },
+      { path: '/line-settings', label: 'LINE 設定' },
+      { path: '/broadcast', label: 'LINE 推播' },
+      { path: '/notification-rules', label: '通知規則' },
+      { path: '/templates', label: '訊息模板' },
+      { path: '/rich-menu', label: 'Rich Menu' },
+      { path: '/notification-styles', label: '通知樣式' },
     ],
   },
   {
     title: '系統',
     items: [
-      { href: '/admin/panel', label: '管理員面板' },
-      { href: '/admin/ai-settings', label: 'AI 設定' },
-      { href: '/admin/theme-settings', label: '主題設定' },
-      { href: '/admin/site-settings', label: 'Meta / OG' },
-      { href: '/admin/utm-links', label: 'UTM 管理' },
-      { href: '/admin/webhooks', label: 'Webhook' },
-      { href: '/admin/waitlist', label: '封測名單' },
+      { path: '/panel', label: '管理員面板' },
+      { path: '/ai-settings', label: 'AI 設定' },
+      { path: '/theme-settings', label: '主題設定' },
+      { path: '/site-settings', label: 'Meta / OG' },
+      { path: '/utm-links', label: 'UTM 管理' },
+      { path: '/webhooks', label: 'Webhook' },
+      { path: '/waitlist', label: '封測名單' },
+      { path: '/team', label: '團隊管理' },
     ],
   },
 ]
 
-function NavDropdown({ group, pathname, themeColors }: { group: NavGroup; pathname: string; themeColors: typeof ADMIN_THEME_COLORS['default'] }) {
+/** 將 base path 加上 admin prefix（含 slug） */
+function toHref(basePath: string, adminPrefix: string): string {
+  return `${adminPrefix}${basePath}`
+}
+
+interface NavItem { href: string; label: string }
+interface NavGroup { label: string; items: NavItem[] }
+
+function NavDropdown({ group, pathname, themeColors }: { group: NavGroup; pathname: string; themeColors: any }) {
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
 
@@ -201,12 +225,21 @@ function AdminLayoutInner({
 }) {
   const { surveys, selectedSurveyId, selectedSurvey, theme, setSelectedSurveyId } = useAdminSurvey()
   const tc = ADMIN_THEME_COLORS[theme]
+  const cssVars = THEME_CSS_VALUES[theme] as React.CSSProperties
   const [menuOpen, setMenuOpen] = useState(false)
   const [user, setUser] = useState<UserInfo | null>(null)
   const [tenantDropOpen, setTenantDropOpen] = useState(false)
   const tenantRef = useRef<HTMLDivElement>(null)
   const pathname = usePathname()
   const router = useRouter()
+
+  const slug = extractSlug(pathname) ?? user?.tenantId ?? null
+  const adminPrefix = slug ? `/insight-admin/${slug}` : '/insight-admin'
+
+  const directItems = useMemo(() =>
+    BASE_DIRECT.map(i => ({ href: toHref(i.path, adminPrefix), label: i.label })),
+    [adminPrefix]
+  )
 
   const fetchUser = useCallback(async () => {
     try {
@@ -241,45 +274,59 @@ function AdminLayoutInner({
     })
     if (res.ok) {
       setTenantDropOpen(false)
-      window.location.reload()
+      window.location.href = `/insight-admin/${tenantSlug}`
     }
   }
 
   const isSuperAdmin = user?.role === 'super_admin'
 
-  // Dynamic nav groups — super_admin sees tenant management
-  const systemItems = [
-    { href: '/admin/panel', label: '管理員面板' },
-    { href: '/admin/ai-settings', label: 'AI 設定' },
-    { href: '/admin/theme-settings', label: '主題設定' },
-    { href: '/admin/utm-links', label: 'UTM 管理' },
-    { href: '/admin/webhooks', label: 'Webhook' },
-    { href: '/admin/waitlist', label: '封測名單' },
-    ...(isSuperAdmin ? [{ href: '/admin/tenants', label: '租戶管理' }] : []),
-  ]
+  const resolvedNavGroups = useMemo(() =>
+    BASE_NAV_GROUPS.map(g => ({
+      label: g.label,
+      items: g.items.map(i => ({ href: toHref(i.path, adminPrefix), label: i.label })),
+    })),
+    [adminPrefix]
+  )
 
-  const dynamicGroups: NavGroup[] = [
-    NAV_GROUPS[0], // 數據分析
-    NAV_GROUPS[1], // LINE
+  const resolvedMobileGroups = useMemo(() =>
+    BASE_MOBILE_GROUPS.map(g => ({
+      title: g.title,
+      items: g.items.map(i => ({ href: toHref(i.path, adminPrefix), label: i.label })),
+    })),
+    [adminPrefix]
+  )
+
+  const systemItems: NavItem[] = useMemo(() => [
+    { href: toHref('/panel', adminPrefix), label: '管理員面板' },
+    { href: toHref('/ai-settings', adminPrefix), label: 'AI 設定' },
+    { href: toHref('/theme-settings', adminPrefix), label: '主題設定' },
+    { href: toHref('/site-settings', adminPrefix), label: 'Meta / OG' },
+    { href: toHref('/utm-links', adminPrefix), label: 'UTM 管理' },
+    { href: toHref('/webhooks', adminPrefix), label: 'Webhook' },
+    { href: toHref('/waitlist', adminPrefix), label: '封測名單' },
+    { href: toHref('/team', adminPrefix), label: '團隊管理' },
+    ...(isSuperAdmin ? [{ href: toHref('/tenants', adminPrefix), label: '租戶管理' }] : []),
+  ], [adminPrefix, isSuperAdmin])
+
+  const dynamicGroups: NavGroup[] = useMemo(() => [
+    resolvedNavGroups[0],
+    resolvedNavGroups[1],
     { label: '⚙️ 系統', items: systemItems },
-  ]
+  ], [resolvedNavGroups, systemItems])
 
-  const dynamicMobileGroups = [
-    MOBILE_GROUPS[0], // 總覽
-    MOBILE_GROUPS[1], // 數據分析
-    MOBILE_GROUPS[2], // LINE
-    {
-      title: '系統',
-      items: systemItems,
-    },
-  ]
+  const dynamicMobileGroups = useMemo(() => [
+    resolvedMobileGroups[0],
+    resolvedMobileGroups[1],
+    resolvedMobileGroups[2],
+    { title: '系統', items: systemItems },
+  ], [resolvedMobileGroups, systemItems])
 
   return (
-    <div className="min-h-screen bg-slate-950">
+    <div className={`min-h-screen ${tc.bodyBg} transition-colors duration-300`} style={cssVars} data-admin-theme={theme}>
       <nav className={`border-b ${tc.navBorder} ${tc.navBg} backdrop-blur-sm sticky top-0 z-50 ${tc.headerGlow}`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
           <Link
-            href="/admin"
+            href={adminPrefix}
             className="text-lg font-bold text-white/90 shrink-0"
           >
             🐾 毛行天下後台
@@ -287,7 +334,7 @@ function AdminLayoutInner({
 
           {/* Desktop nav — 直連 + 分組下拉 */}
           <div className="hidden lg:flex items-center gap-5 text-sm ml-8">
-            {DIRECT_ITEMS.map((item) => (
+            {directItems.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
@@ -365,7 +412,7 @@ function AdminLayoutInner({
 
         {/* Survey Selector Bar */}
         {surveys.length > 0 && (
-          <div className={`border-t ${tc.navBorder} bg-slate-950/60`}>
+          <div className={`border-t ${tc.navBorder} ${tc.bodyBg}/60`}>
             <div className="max-w-7xl mx-auto px-4 sm:px-6 py-2 flex items-center gap-3">
               <span className="text-xs text-slate-500 shrink-0">問卷:</span>
               <select
@@ -427,6 +474,7 @@ function AdminLayoutInner({
           </div>
         )}
       </nav>
+      <AdminBackground3D />
       <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8">{children}</main>
     </div>
   )

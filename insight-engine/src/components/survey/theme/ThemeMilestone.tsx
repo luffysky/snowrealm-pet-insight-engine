@@ -22,8 +22,8 @@ const overlayBg: Record<SurveyTheme, string> = {
 }
 
 const cardStyle: Record<SurveyTheme, string> = {
-  default: 'bg-gradient-to-br from-slate-800/90 to-slate-900/90 border border-white/20 rounded-2xl shadow-[0_0_40px_rgba(255,255,255,0.05)]',
-  game: 'bg-gradient-to-br from-[rgba(255,215,0,0.1)] to-[rgba(124,92,252,0.1)] border-[1.5px] border-[#ffd700] rounded-[20px] shadow-[0_0_60px_rgba(255,215,0,0.15)]',
+  default: 'bg-linear-to-br from-slate-800/90 to-slate-900/90 border border-white/20 rounded-2xl shadow-[0_0_40px_rgba(255,255,255,0.05)]',
+  game: 'bg-linear-to-br from-[rgba(255,215,0,0.1)] to-[rgba(124,92,252,0.1)] border-[1.5px] border-[#ffd700] rounded-[20px] shadow-[0_0_60px_rgba(255,215,0,0.15)]',
   cyber: 'bg-[#0a0f1e]/95 border border-cyan-500/40 rounded-xl shadow-[0_0_50px_rgba(0,200,255,0.2)] backdrop-blur-xl cyber-scanline',
   ancient: 'bg-[#1a1208]/95 border border-amber-700/40 rounded-lg shadow-[0_0_40px_rgba(180,130,60,0.15)]',
   sakura: 'bg-[#2a1020]/85 border border-pink-400/30 rounded-2xl shadow-[0_0_60px_rgba(255,150,200,0.15)] backdrop-blur-xl',
@@ -89,7 +89,7 @@ const btnStyle: Record<SurveyTheme, string> = {
   sakura: 'px-8 py-2.5 border border-pink-400/30 rounded-xl text-pink-200 text-sm hover:bg-pink-500/10 transition-colors cursor-pointer',
   ocean: 'px-8 py-2.5 border border-cyan-400/30 rounded-xl text-cyan-200 text-sm hover:bg-cyan-500/10 transition-colors cursor-pointer',
   forest: 'px-8 py-2.5 border border-emerald-500/30 rounded-lg text-emerald-200 text-sm hover:bg-emerald-500/10 transition-colors cursor-pointer',
-  candy: 'px-8 py-2.5 bg-gradient-to-r from-pink-500/30 to-purple-500/30 border border-purple-400/30 rounded-full text-white text-sm font-bold hover:from-pink-500/40 hover:to-purple-500/40 transition-all cursor-pointer',
+  candy: 'px-8 py-2.5 bg-linear-to-r from-pink-500/30 to-purple-500/30 border border-purple-400/30 rounded-full text-white text-sm font-bold hover:from-pink-500/40 hover:to-purple-500/40 transition-all cursor-pointer',
   noir: 'px-8 py-2.5 border border-white/30 rounded text-white/70 text-sm font-mono hover:bg-white/5 transition-colors cursor-pointer',
 }
 
@@ -110,7 +110,7 @@ export function ThemeMilestone({ theme, milestone, onDismiss }: Props) {
 
   return (
     <div
-      className={`fixed inset-0 z-[100] flex items-center justify-center backdrop-blur-sm ${overlayBg[theme]} animate-in fade-in duration-300`}
+      className={`fixed inset-0 z-100 flex items-center justify-center backdrop-blur-sm ${overlayBg[theme]} animate-in fade-in duration-300`}
       onClick={onDismiss}
     >
       <div

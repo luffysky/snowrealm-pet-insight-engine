@@ -1,7 +1,7 @@
 'use client'
 
 import { useSearchParams, useRouter, useParams } from 'next/navigation'
-import { Suspense, useCallback, useEffect, useRef, useState } from 'react'
+import { Suspense, useEffect, useRef, useState } from 'react'
 import { useSurveyFlow } from '@/hooks/useSurveyFlow'
 import { useThemeInteraction } from '@/hooks/useThemeInteraction'
 import {

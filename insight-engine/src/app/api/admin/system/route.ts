@@ -3,11 +3,6 @@ import { query, queryOne } from '@/lib/db'
 import { getLineConfig } from '@/lib/lineConfig'
 import { getTenantContext } from '@/lib/tenant'
 
-interface TableCount {
-  table_name: string
-  count: string
-}
-
 export async function GET(): Promise<NextResponse> {
   try {
     const { tenantId } = await getTenantContext()

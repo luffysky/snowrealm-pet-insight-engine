@@ -3,6 +3,17 @@
 :root {
   --background: #020617;
   --foreground: #e2e8f0;
+
+  /* ── Admin Theme CSS Variables (default theme) ── */
+  --t-accent: #22d3ee;
+  --t-accent-bg: rgba(6,182,212,0.1);
+  --t-accent-border: rgba(34,211,238,0.3);
+  --t-card-bg: rgba(15,23,42,0.6);
+  --t-card-border: #1e293b;
+  --t-btn: #0891b2;
+  --t-btn-hover: #06b6d4;
+  --t-glow-from: rgba(6,182,212,0.08);
+  --t-glow-via: rgba(99,102,241,0.05);
 }
 
 @theme inline {
@@ -10,6 +21,17 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+
+  /* Admin theme colors — resolved at runtime via CSS variables */
+  --color-t-accent: var(--t-accent);
+  --color-t-accent-bg: var(--t-accent-bg);
+  --color-t-accent-border: var(--t-accent-border);
+  --color-t-card-bg: var(--t-card-bg);
+  --color-t-card-border: var(--t-card-border);
+  --color-t-btn: var(--t-btn);
+  --color-t-btn-hover: var(--t-btn-hover);
+  --color-t-glow-from: var(--t-glow-from);
+  --color-t-glow-via: var(--t-glow-via);
 }
 
 body {

@@ -1,33 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { verifyToken, type TokenPayload } from '@/lib/jwt'
 
-/** 取得台灣時間的 MM-DD */
-function getTaiwanDateSlug(): string {
-  const now = new Date()
-  const utc = now.getTime() + now.getTimezoneOffset() * 60000
-  const tw = new Date(utc + 8 * 3600000)
-  const mm = String(tw.getMonth() + 1).padStart(2, '0')
-  const dd = String(tw.getDate()).padStart(2, '0')
-  return `${mm}-${dd}`
-}
-
-/** 解析 JWT 或 legacy 認證，回傳 payload 或 null */
+/** 解析 JWT 認證，回傳 payload 或 null */
 async function getAuthContext(request: NextRequest): Promise<TokenPayload | null> {
-  // JWT-based
   const sessionToken = request.cookies.get('admin_session')?.value
   if (sessionToken) {
     const payload = await verifyToken(sessionToken)
     if (payload) return payload
-  }
-  // Legacy: x-admin-secret header（cron/server-to-server）
-  const headerToken = request.headers.get('x-admin-secret')
-  if (headerToken && headerToken === process.env.ADMIN_SECRET) {
-    return { sub: 'system', tid: 'maoxingtianxia', role: 'super_admin', name: 'System', exp: 0 }
-  }
-  // Legacy: 舊版 admin_token cookie（過渡期）
-  const oldToken = request.cookies.get('admin_token')?.value
-  if (oldToken && oldToken === process.env.ADMIN_SECRET) {
-    return { sub: 'legacy', tid: 'maoxingtianxia', role: 'super_admin', name: 'Legacy', exp: 0 }
   }
   return null
 }
@@ -58,27 +37,8 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
     return NextResponse.next()
   }
 
-  // 動態 admin URL: /admin-MM-DD/...
-  const dynamicMatch = pathname.match(/^\/admin-(\d{2}-\d{2})(\/.*)?$/)
-  if (dynamicMatch) {
-    const dateSlug = dynamicMatch[1]
-    const rest = dynamicMatch[2] || ''
-    if (dateSlug !== getTaiwanDateSlug()) {
-      return new NextResponse('連結已過期，請使用今日的管理後台網址', { status: 403 })
-    }
-    const auth = await getAuthContext(request)
-    if (!auth) {
-      const loginUrl = new URL('/login', request.url)
-      loginUrl.searchParams.set('redirect', pathname)
-      return NextResponse.redirect(loginUrl)
-    }
-    return NextResponse.rewrite(new URL(`/admin${rest}`, request.url), {
-      request: { headers: withTenantHeaders(request, auth) },
-    })
-  }
-
-  // Admin 頁面 /admin/...
-  if (pathname.startsWith('/admin')) {
+  // Admin 頁面 /insight-admin/...
+  if (pathname.startsWith('/insight-admin')) {
     const auth = await getAuthContext(request)
     if (!auth) {
       const loginUrl = new URL('/login', request.url)
@@ -86,21 +46,21 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
       return NextResponse.redirect(loginUrl)
     }
 
-    // 檢查是否為 /admin/{slug}/... 格式（tenant slug 路由）
-    if (pathname !== '/admin') {
-      const afterAdmin = pathname.slice('/admin/'.length) // e.g. "my-cafe/surveys" or "surveys"
+    // 檢查是否為 /insight-admin/{slug}/... 格式（tenant slug 路由）
+    if (pathname !== '/insight-admin') {
+      const afterAdmin = pathname.slice('/insight-admin/'.length) // e.g. "my-cafe/surveys" or "surveys"
       const firstSegment = afterAdmin.split('/')[0]
 
       if (firstSegment && !KNOWN_ADMIN_PAGES.has(firstSegment)) {
         // 這是 tenant slug — 驗證是否與 JWT 中的 tenant 一致
         if (firstSegment !== auth.tid) {
           // slug 不匹配 → 導向使用者自己的 tenant
-          const correctUrl = pathname.replace(`/admin/${firstSegment}`, `/admin/${auth.tid}`)
+          const correctUrl = pathname.replace(`/insight-admin/${firstSegment}`, `/insight-admin/${auth.tid}`)
           return NextResponse.redirect(new URL(correctUrl, request.url))
         }
         // 移除 slug，rewrite 到實際 admin 頁面
         const rest = afterAdmin.slice(firstSegment.length) // e.g. "/surveys" or ""
-        return NextResponse.rewrite(new URL(`/admin${rest}`, request.url), {
+        return NextResponse.rewrite(new URL(`/insight-admin${rest}`, request.url), {
           request: { headers: withTenantHeaders(request, auth) },
         })
       }
@@ -122,9 +82,25 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
     })
   }
 
+  // Super Admin 控制台 /snowrealm-insight-ctrl/...（僅 super_admin 可存取）
+  if (pathname.startsWith('/snowrealm-insight-ctrl')) {
+    const auth = await getAuthContext(request)
+    if (!auth) {
+      const loginUrl = new URL('/login', request.url)
+      loginUrl.searchParams.set('redirect', pathname)
+      return NextResponse.redirect(loginUrl)
+    }
+    if (auth.role !== 'super_admin') {
+      return new NextResponse('Forbidden', { status: 403 })
+    }
+    return NextResponse.next({
+      request: { headers: withTenantHeaders(request, auth) },
+    })
+  }
+
   return NextResponse.next()
 }
 
 export const config = {
-  matcher: ['/admin/:path*', '/admin', '/(admin-\\d{2}-\\d{2})/:path*', '/(admin-\\d{2}-\\d{2})', '/api/admin/:path*', '/login', '/register'],
+  matcher: ['/insight-admin/:path*', '/insight-admin', '/api/admin/:path*', '/login', '/register', '/snowrealm-insight-ctrl/:path*', '/snowrealm-insight-ctrl'],
 }

@@ -72,7 +72,7 @@ function RegisterForm() {
     } finally {
       setLoading(false)
     }
-  }, [email, displayName, orgName, password, confirmPassword])
+  }, [email, displayName, orgName, slug, password, confirmPassword])
 
   // ── Step 2: 重新發送 ──
   const handleResend = useCallback(async () => {
@@ -117,7 +117,7 @@ function RegisterForm() {
       })
       const data = await res.json()
       if (res.ok) {
-        window.location.href = `/admin/${data.slug || slug}`
+        window.location.href = `/insight-admin/${data.slug || slug}`
         return
       } else {
         setError(data.error || '註冊失敗')
@@ -167,7 +167,7 @@ function RegisterForm() {
               <div>
                 <label className="block text-sm text-slate-400 mb-1">後台網址</label>
                 <div className="flex items-center gap-0">
-                  <span className="text-xs text-slate-500 bg-slate-900 border border-r-0 border-slate-700 rounded-l-lg px-3 py-2.5 whitespace-nowrap">/admin/</span>
+                  <span className="text-xs text-slate-500 bg-slate-900 border border-r-0 border-slate-700 rounded-l-lg px-3 py-2.5 whitespace-nowrap">/insight-admin/</span>
                   <input type="text" value={slug}
                     onChange={(e) => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '').slice(0, 30))}
                     placeholder="my-brand" className={`${inputCls} rounded-l-none`} required />
@@ -261,6 +261,13 @@ function RegisterForm() {
 
           <p className="text-xs text-slate-500 text-center">
             已有帳號？<a href="/login" className="text-cyan-400 hover:underline">前往登入</a>
+          </p>
+
+          <p className="text-xs text-slate-600 text-center leading-relaxed">
+            註冊即表示您同意我們的{' '}
+            <a href="/terms" className="text-slate-400 hover:text-slate-300 underline">使用者條款</a>、
+            <a href="/privacy" className="text-slate-400 hover:text-slate-300 underline">隱私權政策</a>{' '}
+            及 <a href="/cookies" className="text-slate-400 hover:text-slate-300 underline">Cookie 政策</a>
           </p>
         </div>
       </div>

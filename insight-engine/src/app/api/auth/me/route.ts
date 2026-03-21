@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
-import { getTenantContext } from '@/lib/tenant'
+import { cookies } from 'next/headers'
+import { verifyToken } from '@/lib/jwt'
 import { queryOne, query } from '@/lib/db'
 
 interface TenantRow extends Record<string, unknown> {
@@ -8,9 +9,22 @@ interface TenantRow extends Record<string, unknown> {
 }
 
 export async function GET(): Promise<NextResponse> {
-  const ctx = await getTenantContext()
-  if (!ctx.userId) {
+  // 直接讀取 JWT cookie（此路由不經過 middleware 注入 headers）
+  const cookieStore = await cookies()
+  const token = cookieStore.get('admin_session')?.value
+  if (!token) {
     return NextResponse.json({ error: '未登入' }, { status: 401 })
+  }
+  const payload = await verifyToken(token)
+  if (!payload) {
+    return NextResponse.json({ error: '未登入' }, { status: 401 })
+  }
+
+  const ctx = {
+    tenantId: payload.tid,
+    userId: payload.sub,
+    role: payload.role,
+    userName: payload.name,
   }
 
   // 取得當前租戶名稱

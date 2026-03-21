@@ -192,7 +192,7 @@ export function BarChartBlock({ title, data, defaultType = 'bar' }: BarChartBloc
   const types: ChartType[] = ['bar', 'line', 'area', 'pie', 'radar']
 
   return (
-    <div className="bg-slate-800/50 border border-slate-700/50 rounded-2xl p-6">
+    <div className="bg-t-card-bg border border-t-card-border rounded-2xl p-6">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-sm text-slate-400">{title}</h3>
         <ChartTypeSwitcher types={types} active={type} onChange={setType} />
@@ -226,7 +226,7 @@ export function LineChartBlock({ title, data, defaultType = 'line' }: LineChartB
   const mapped = data.map((d) => ({ label: d.date, count: d.count }))
 
   return (
-    <div className="bg-slate-800/50 border border-slate-700/50 rounded-2xl p-6">
+    <div className="bg-t-card-bg border border-t-card-border rounded-2xl p-6">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-sm text-slate-400">{title}</h3>
         <ChartTypeSwitcher types={types} active={type} onChange={setType} />
@@ -255,7 +255,7 @@ export function PieChartBlock({ title, data, defaultType = 'pie' }: PieChartBloc
   const types: ChartType[] = ['pie', 'bar', 'radar']
 
   return (
-    <div className="bg-slate-800/50 border border-slate-700/50 rounded-2xl p-6">
+    <div className="bg-t-card-bg border border-t-card-border rounded-2xl p-6">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-sm text-slate-400">{title}</h3>
         <ChartTypeSwitcher types={types} active={type} onChange={setType} />

@@ -38,7 +38,7 @@ export function ClickTrackLinks() {
         target="_blank"
         rel="noopener noreferrer"
         onClick={() => trackClick('instagram')}
-        className="inline-block w-full px-6 py-3.5 bg-gradient-to-r from-cyan-500/20 to-purple-500/20 border border-white/10 text-white/80 rounded-2xl hover:bg-white/10 transition-colors"
+        className="inline-block w-full px-6 py-3.5 bg-linear-to-r from-cyan-500/20 to-purple-500/20 border border-white/10 text-white/80 rounded-2xl hover:bg-white/10 transition-colors"
       >
         關注毛行天下 Instagram
       </a>

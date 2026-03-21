@@ -2,7 +2,6 @@ import { createCipheriv, createDecipheriv, randomBytes } from 'crypto'
 
 const ALGORITHM = 'aes-256-gcm'
 const IV_LENGTH = 12
-const TAG_LENGTH = 16
 
 /** 從 ADMIN_SECRET 取前 32 bytes 作為 AES-256 key */
 function getEncryptionKey(): Buffer {

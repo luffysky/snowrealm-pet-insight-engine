@@ -33,13 +33,13 @@ export default function SummaryButton({ surveyId }: { surveyId?: string | null }
       <button
         onClick={handleGenerate}
         disabled={loading}
-        className="bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-sm px-4 py-2 rounded-lg transition-colors"
+        className="bg-t-btn hover:bg-t-btn-hover disabled:opacity-50 text-white text-sm px-4 py-2 rounded-lg transition-colors"
       >
         {loading ? '產生中…' : '📋 產生摘要報告'}
       </button>
 
       {text && (
-        <div className="mt-4 bg-slate-900 rounded-xl border border-slate-800 p-4">
+        <div className="mt-4 bg-t-card-bg rounded-xl border border-t-card-border p-4">
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm text-slate-400">自動摘要</span>
             <button

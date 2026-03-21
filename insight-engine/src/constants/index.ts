@@ -10,7 +10,7 @@ export const TREND_DAYS = 7
 export const MVP_SURVEY_SLUG = 'maoxingtianxia-mvp-survey'
 
 /** 後台路由前綴 */
-export const ADMIN_ROUTE_PREFIX = '/admin'
+export const ADMIN_ROUTE_PREFIX = '/insight-admin'
 
 /** Q8 功能選項對照（用於統計顯示） */
 export const FEATURE_LABELS: Record<string, string> = {

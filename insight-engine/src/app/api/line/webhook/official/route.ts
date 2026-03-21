@@ -6,7 +6,7 @@ import { getLineConfig } from '@/lib/lineConfig'
 
 const SURVEY_URL = process.env.NEXT_PUBLIC_BASE_URL
   ? `${process.env.NEXT_PUBLIC_BASE_URL}/`
-  : 'https://localhost:3000/'
+  : 'https://insight.snowrealm.pet/'
 
 const SITE_URL = 'https://snowrealm.pet'
 const IG_URL = 'https://www.instagram.com/snowrealm.pet?igsh=Y2x1cTRiM3N3NGpw'

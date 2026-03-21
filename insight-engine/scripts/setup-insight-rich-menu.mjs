@@ -18,7 +18,7 @@ if (!TOKEN) {
   process.exit(1)
 }
 
-const BASE = process.env.NEXT_PUBLIC_BASE_URL || 'https://insight-engine-sonwrealm-pet.zeabur.app'
+const BASE = process.env.NEXT_PUBLIC_BASE_URL || 'https://insight.snowrealm.pet'
 const ADMIN = `${BASE}/admin`
 
 const headers = {

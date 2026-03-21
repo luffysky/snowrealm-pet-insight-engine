@@ -36,7 +36,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
   const body = JSON.parse(rawBody)
   const events = body.events ?? []
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? 'https://insight-engine-sonwrealm-pet.zeabur.app'
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? 'https://insight.snowrealm.pet'
 
   for (const event of events) {
     const userId = event.source?.userId as string | undefined

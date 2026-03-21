@@ -183,7 +183,7 @@ export function AiGeneratePanel({ surveyId, existingCount, onDone, onCancel }: A
             <button
               onClick={handleGenerate}
               disabled={generating}
-              className="px-4 py-2 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 disabled:opacity-50 text-white rounded-lg text-sm transition-all cursor-pointer"
+              className="px-4 py-2 bg-linear-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 disabled:opacity-50 text-white rounded-lg text-sm transition-all cursor-pointer"
             >
               {generating ? '🔄 AI 生成中...' : '✨ 開始生成'}
             </button>
