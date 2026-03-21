@@ -42,6 +42,14 @@ function withTenantHeaders(request: NextRequest, auth: TokenPayload): Headers {
   return headers
 }
 
+/** 已知的 admin 子頁面路徑（用來區分 tenant slug） */
+const KNOWN_ADMIN_PAGES = new Set([
+  'ab', 'ai-settings', 'broadcast', 'crosstab', 'funnel', 'line-settings',
+  'notification-rules', 'notification-styles', 'panel', 'rich-menu',
+  'site-settings', 'surveys', 'tag-rules', 'tags', 'templates', 'tenants',
+  'theme-settings', 'utm', 'utm-links', 'waitlist', 'webhooks', 'responses',
+])
+
 export async function middleware(request: NextRequest): Promise<NextResponse> {
   const { pathname } = request.nextUrl
 
@@ -73,11 +81,31 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
   if (pathname.startsWith('/admin')) {
     const auth = await getAuthContext(request)
     if (!auth) {
-      const todaySlug = getTaiwanDateSlug()
       const loginUrl = new URL('/login', request.url)
-      loginUrl.searchParams.set('redirect', `/admin-${todaySlug}${pathname.slice('/admin'.length)}`)
+      loginUrl.searchParams.set('redirect', pathname)
       return NextResponse.redirect(loginUrl)
     }
+
+    // 檢查是否為 /admin/{slug}/... 格式（tenant slug 路由）
+    if (pathname !== '/admin') {
+      const afterAdmin = pathname.slice('/admin/'.length) // e.g. "my-cafe/surveys" or "surveys"
+      const firstSegment = afterAdmin.split('/')[0]
+
+      if (firstSegment && !KNOWN_ADMIN_PAGES.has(firstSegment)) {
+        // 這是 tenant slug — 驗證是否與 JWT 中的 tenant 一致
+        if (firstSegment !== auth.tid) {
+          // slug 不匹配 → 導向使用者自己的 tenant
+          const correctUrl = pathname.replace(`/admin/${firstSegment}`, `/admin/${auth.tid}`)
+          return NextResponse.redirect(new URL(correctUrl, request.url))
+        }
+        // 移除 slug，rewrite 到實際 admin 頁面
+        const rest = afterAdmin.slice(firstSegment.length) // e.g. "/surveys" or ""
+        return NextResponse.rewrite(new URL(`/admin${rest}`, request.url), {
+          request: { headers: withTenantHeaders(request, auth) },
+        })
+      }
+    }
+
     return NextResponse.next({
       request: { headers: withTenantHeaders(request, auth) },
     })
@@ -98,5 +126,5 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
 }
 
 export const config = {
-  matcher: ['/admin/:path*', '/(admin-\\d{2}-\\d{2})/:path*', '/(admin-\\d{2}-\\d{2})', '/api/admin/:path*', '/login', '/register'],
+  matcher: ['/admin/:path*', '/admin', '/(admin-\\d{2}-\\d{2})/:path*', '/(admin-\\d{2}-\\d{2})', '/api/admin/:path*', '/login', '/register'],
 }

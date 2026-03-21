@@ -27,7 +27,8 @@ function LoginForm() {
       const data = await res.json()
 
       if (res.ok) {
-        const redirect = searchParams.get('redirect') || '/admin'
+        const slug = data.slug
+        const redirect = searchParams.get('redirect') || (slug ? `/admin/${slug}` : '/admin')
         window.location.href = redirect
         return
       } else {
@@ -51,12 +52,13 @@ function LoginForm() {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm text-slate-400 mb-1">帳號</label>
+              <label className="block text-sm text-slate-400 mb-1">Email / 帳號</label>
               <input
                 type="text"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                className="w-full bg-slate-900 border border-slate-700 text-white rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500"
+                placeholder="輸入 Email 或帳號"
+                className="w-full bg-slate-900 border border-slate-700 text-white rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500 placeholder:text-slate-600"
                 autoComplete="username"
                 required
               />

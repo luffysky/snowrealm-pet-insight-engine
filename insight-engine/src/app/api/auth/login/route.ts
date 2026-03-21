@@ -6,9 +6,12 @@ import { signToken } from '@/lib/jwt'
 export async function POST(request: NextRequest): Promise<NextResponse> {
   const body = await request.json().catch(() => null)
   if (!body?.username || !body?.password) {
-    return NextResponse.json({ error: '請輸入帳號和密碼' }, { status: 400 })
+    return NextResponse.json({ error: '請輸入 Email / 帳號和密碼' }, { status: 400 })
   }
 
+  const loginId = (body.username as string).trim()
+
+  // 支援 email 或 username 登入
   const user = await queryOne<{
     id: string
     password_hash: string
@@ -16,8 +19,10 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     role: string
     display_name: string
   }>(
-    `SELECT id, password_hash, tenant_id, role, display_name FROM admin_users WHERE username = $1`,
-    [body.username],
+    `SELECT id, password_hash, tenant_id, role, display_name
+     FROM admin_users
+     WHERE username = $1 OR email = $1`,
+    [loginId],
   )
 
   if (!user || !user.password_hash) {
@@ -33,11 +38,12 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     sub: user.id,
     tid: user.tenant_id ?? 'default',
     role: user.role ?? 'admin',
-    name: user.display_name ?? body.username,
+    name: user.display_name ?? loginId,
   })
 
   const response = NextResponse.json({
     success: true,
+    slug: user.tenant_id,
     user: { id: user.id, role: user.role, tenantId: user.tenant_id },
   })
   response.cookies.set('admin_session', token, {

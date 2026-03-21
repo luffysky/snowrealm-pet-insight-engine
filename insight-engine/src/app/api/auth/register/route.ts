@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { query, queryOne } from '@/lib/db'
 import { hashPassword } from '@/lib/auth'
 import { signToken } from '@/lib/jwt'
+import { createHash } from 'crypto'
 
 /** 將中文/英文組織名轉成 URL 安全 slug */
 function toSlug(name: string): string {
@@ -16,20 +17,20 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
     const body = await request.json().catch(() => null)
 
-    const username = (body?.username as string)?.trim()
+    const email = (body?.email as string)?.trim().toLowerCase()
     const password = (body?.password as string)
     const displayName = (body?.displayName as string)?.trim()
     const orgName = (body?.orgName as string)?.trim()
+    const customSlug = (body?.slug as string)?.trim().toLowerCase()
+    const codeId = (body?.codeId as string)?.trim()
+    const code = (body?.code as string)?.trim()
 
     // ── 基本驗證 ──
-    if (!username || !password || !displayName || !orgName) {
-      return NextResponse.json({ error: '請填寫完整資料' }, { status: 400 })
+    if (!email || !password || !displayName || !orgName || !codeId || !code) {
+      return NextResponse.json({ error: '請填寫完整資料並完成 Email 驗證' }, { status: 400 })
     }
-    if (username.length < 3 || username.length > 30) {
-      return NextResponse.json({ error: '帳號長度需 3～30 字元' }, { status: 400 })
-    }
-    if (!/^[a-zA-Z0-9_]+$/.test(username)) {
-      return NextResponse.json({ error: '帳號只允許英文、數字、底線' }, { status: 400 })
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return NextResponse.json({ error: '請輸入有效的 Email' }, { status: 400 })
     }
     if (password.length < 6) {
       return NextResponse.json({ error: '密碼至少 6 個字元' }, { status: 400 })
@@ -38,20 +39,62 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       return NextResponse.json({ error: '組織名稱不能超過 100 字' }, { status: 400 })
     }
 
-    // ── 帳號重複檢查 ──
+    // ── 驗證碼檢查 ──
+    const codeRow = await queryOne<{
+      id: string; email: string; code_hash: string; expires_at: string; verified: boolean; attempts: number
+    }>(
+      `SELECT id, email, code_hash, expires_at, verified, attempts
+       FROM email_verification_codes WHERE id = $1`,
+      [codeId],
+    )
+    if (!codeRow) {
+      return NextResponse.json({ error: '驗證碼無效，請重新取得' }, { status: 400 })
+    }
+    if (codeRow.verified) {
+      return NextResponse.json({ error: '驗證碼已使用，請重新取得' }, { status: 400 })
+    }
+    if (new Date(codeRow.expires_at) < new Date()) {
+      return NextResponse.json({ error: '驗證碼已過期，請重新取得' }, { status: 400 })
+    }
+    if (codeRow.attempts >= 5) {
+      await query(`UPDATE email_verification_codes SET verified = true WHERE id = $1`, [codeId])
+      return NextResponse.json({ error: '驗證碼嘗試次數過多，請重新取得' }, { status: 400 })
+    }
+    if (codeRow.email !== email) {
+      return NextResponse.json({ error: 'Email 與驗證碼不符' }, { status: 400 })
+    }
+
+    // 比對 hash
+    const inputHash = createHash('sha256').update(code).digest('hex')
+    if (inputHash !== codeRow.code_hash) {
+      await query(
+        `UPDATE email_verification_codes SET attempts = attempts + 1 WHERE id = $1`,
+        [codeId],
+      )
+      return NextResponse.json({ error: '驗證碼錯誤，請重新輸入' }, { status: 400 })
+    }
+
+    // 標記驗證碼已使用
+    await query(`UPDATE email_verification_codes SET verified = true WHERE id = $1`, [codeId])
+
+    // ── Email 重複檢查 ──
     const existing = await queryOne(
-      `SELECT id FROM admin_users WHERE username = $1`,
-      [username],
+      `SELECT id FROM admin_users WHERE email = $1`,
+      [email],
     )
     if (existing) {
-      return NextResponse.json({ error: '帳號已被使用，請換一個' }, { status: 409 })
+      return NextResponse.json({ error: '此 Email 已註冊，請直接登入' }, { status: 409 })
     }
 
     // ── 建立 tenant ──
-    let slug = toSlug(orgName)
+    let slug = customSlug || toSlug(orgName)
+    // 驗證 slug 格式
+    if (!/^[a-z0-9][a-z0-9-]{1,28}[a-z0-9]$/.test(slug)) {
+      return NextResponse.json({ error: '後台網址只允許小寫英文、數字、連字號，3～30 字元' }, { status: 400 })
+    }
     const slugExists = await queryOne(`SELECT id FROM tenants WHERE slug = $1`, [slug])
     if (slugExists) {
-      slug = `${slug}-${Date.now().toString(36)}`
+      return NextResponse.json({ error: `後台網址 "${slug}" 已被使用，請換一個` }, { status: 409 })
     }
 
     const tenant = await queryOne<{ id: string; slug: string }>(
@@ -64,13 +107,13 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       return NextResponse.json({ error: '建立組織失敗' }, { status: 500 })
     }
 
-    // ── 建立 admin 帳號 ──
+    // ── 建立 admin 帳號（以 email 作為 username） ──
     const passwordHash = await hashPassword(password)
     const newUser = await queryOne<{ id: string }>(
-      `INSERT INTO admin_users (username, password_hash, display_name, role, tenant_id)
-       VALUES ($1, $2, $3, 'admin', $4)
+      `INSERT INTO admin_users (username, password_hash, display_name, email, role, tenant_id)
+       VALUES ($1, $2, $3, $4, 'admin', $5)
        RETURNING id`,
-      [username, passwordHash, displayName, tenant.slug],
+      [email, passwordHash, displayName, email, tenant.slug],
     )
 
     // ── 建立預設 site_settings ──
@@ -89,7 +132,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       name: displayName,
     })
 
-    const response = NextResponse.json({ success: true })
+    const response = NextResponse.json({ success: true, slug: tenant.slug })
     response.cookies.set('admin_session', jwt, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',

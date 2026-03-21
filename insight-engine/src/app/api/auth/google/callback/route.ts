@@ -126,7 +126,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       name: user.display_name,
     })
 
-    const response = NextResponse.redirect(`${baseUrl}/admin`)
+    const response = NextResponse.redirect(`${baseUrl}/admin/${user.tenant_id}`)
     response.cookies.set('admin_session', jwt, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
