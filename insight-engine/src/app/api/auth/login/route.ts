@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { queryOne } from '@/lib/db'
 import { verifyPassword } from '@/lib/auth'
 import { signToken } from '@/lib/jwt'
+import { notifyUserLogin } from '@/lib/lineNotify'
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
   const body = await request.json().catch(() => null)
@@ -39,6 +40,14 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     tid: user.tenant_id ?? 'default',
     role: user.role ?? 'admin',
     name: user.display_name ?? loginId,
+  })
+
+  // LINE Notify 通知
+  notifyUserLogin({
+    method: 'password',
+    identifier: loginId,
+    displayName: user.display_name,
+    tenantId: user.tenant_id,
   })
 
   const response = NextResponse.json({

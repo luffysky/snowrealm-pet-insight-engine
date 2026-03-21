@@ -4,6 +4,7 @@ import { hashPassword } from '@/lib/auth'
 import { signToken } from '@/lib/jwt'
 import { createHash } from 'crypto'
 import { formatPhoneE164 } from '@/lib/sms'
+import { notifyNewRegistration } from '@/lib/lineNotify'
 
 /** 將中文/英文組織名轉成 URL 安全 slug */
 function toSlug(name: string): string {
@@ -135,6 +136,16 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
        ON CONFLICT (tenant_id) DO NOTHING`,
       [tenant.slug, orgName, `${orgName} 問卷系統`],
     )
+
+    // ── LINE Notify 通知管理員 ──
+    notifyNewRegistration({
+      method: phoneE164 ? 'phone' : 'email',
+      email: email || undefined,
+      phone: phoneE164 || undefined,
+      displayName,
+      orgName,
+      slug: tenant.slug,
+    })
 
     // ── 自動登入 → 簽發 JWT ──
     const jwt = await signToken({

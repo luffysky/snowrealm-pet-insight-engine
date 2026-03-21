@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { query, queryOne } from '@/lib/db'
 import { hashPassword } from '@/lib/auth'
 import { signToken } from '@/lib/jwt'
+import { notifyNewRegistration, notifyUserLogin } from '@/lib/lineNotify'
 
 interface LineTokenResponse {
   access_token: string
@@ -107,6 +108,19 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
         role: 'admin',
         display_name: lineProfile.displayName,
       }
+
+      notifyNewRegistration({
+        method: 'line',
+        displayName: lineProfile.displayName,
+        slug: tenant?.slug ?? slug,
+      })
+    } else {
+      notifyUserLogin({
+        method: 'line',
+        identifier: `LINE ${lineProfile.displayName}`,
+        displayName: user.display_name,
+        tenantId: user.tenant_id,
+      })
     }
 
     // 簽發 JWT
