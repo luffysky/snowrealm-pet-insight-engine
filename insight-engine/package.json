@@ -12,6 +12,8 @@
     "deploy:msg": "cd .. && pwsh -File deploy.ps1 -Message"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1014.0",
+    "@aws-sdk/s3-request-presigner": "^3.1014.0",
     "@line/liff": "^2.27.3",
     "@supabase/supabase-js": "^2.99.2",
     "next": "16.1.7",

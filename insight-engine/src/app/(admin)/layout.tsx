@@ -35,6 +35,7 @@ const ALL_NAV_ITEMS = [
   { href: '/admin/line-settings', label: 'LINE 設定' },
   { href: '/admin/notification-styles', label: '通知樣式' },
   { href: '/admin/waitlist', label: '封測名單' },
+  { href: '/admin/site-settings', label: 'Meta / OG' },
 ]
 
 // Desktop 分組下拉
@@ -78,6 +79,7 @@ const NAV_GROUPS: NavGroup[] = [
       { href: '/admin/panel', label: '管理員面板' },
       { href: '/admin/ai-settings', label: 'AI 設定' },
       { href: '/admin/theme-settings', label: '主題設定' },
+      { href: '/admin/site-settings', label: 'Meta / OG' },
       { href: '/admin/utm-links', label: 'UTM 管理' },
       { href: '/admin/webhooks', label: 'Webhook' },
       { href: '/admin/waitlist', label: '封測名單' },
@@ -123,6 +125,7 @@ const MOBILE_GROUPS = [
       { href: '/admin/panel', label: '管理員面板' },
       { href: '/admin/ai-settings', label: 'AI 設定' },
       { href: '/admin/theme-settings', label: '主題設定' },
+      { href: '/admin/site-settings', label: 'Meta / OG' },
       { href: '/admin/utm-links', label: 'UTM 管理' },
       { href: '/admin/webhooks', label: 'Webhook' },
       { href: '/admin/waitlist', label: '封測名單' },
