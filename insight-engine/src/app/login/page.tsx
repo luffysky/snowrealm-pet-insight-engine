@@ -119,6 +119,14 @@ function LoginForm() {
             使用 Google 登入
           </button>
 
+          <button
+            onClick={() => { window.location.href = '/api/auth/line' }}
+            className="w-full flex items-center justify-center gap-2 py-2.5 bg-[#06C755] hover:bg-[#05b54e] text-white font-medium rounded-lg transition-colors cursor-pointer"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 5.82 2 10.5c0 4.21 3.74 7.74 8.79 8.4.34.07.8.22.92.51.11.26.07.66.04.93l-.15.87c-.04.25-.2.97.85.53s5.6-3.3 7.64-5.64C21.97 14.22 22 12.5 22 10.5 22 5.82 17.52 2 12 2z"/></svg>
+            使用 LINE 登入
+          </button>
+
           <p className="text-xs text-slate-500 text-center">
             還沒有帳號？<a href="/register" className="text-cyan-400 hover:underline">免費註冊</a>
           </p>

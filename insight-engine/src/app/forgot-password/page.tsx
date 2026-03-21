@@ -11,6 +11,7 @@ export default function ForgotPasswordPage() {
   const [channel, setChannel] = useState<Channel>('email')
   const [email, setEmail] = useState('')
   const [phone, setPhone] = useState('')
+  const [countryCode, setCountryCode] = useState('+886')
   const [codeId, setCodeId] = useState('')
   const [code, setCode] = useState('')
   const [newPassword, setNewPassword] = useState('')
@@ -41,7 +42,7 @@ export default function ForgotPasswordPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          ...(channel === 'email' ? { email } : { phone }),
+          ...(channel === 'email' ? { email } : { phone: `${countryCode}${phone.replace(/^0+/, '')}` }),
           purpose: 'reset_password',
         }),
       })
@@ -73,7 +74,7 @@ export default function ForgotPasswordPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          ...(channel === 'email' ? { email } : { phone }),
+          ...(channel === 'email' ? { email } : { phone: `${countryCode}${phone.replace(/^0+/, '')}` }),
           codeId, code, newPassword,
         }),
       })
@@ -126,8 +127,26 @@ export default function ForgotPasswordPage() {
               ) : (
                 <div>
                   <label className="block text-sm text-slate-400 mb-1">手機號碼</label>
-                  <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)}
-                    placeholder="0912345678" className={inputCls} autoComplete="tel" />
+                  <div className="flex gap-1">
+                    <select value={countryCode} onChange={(e) => setCountryCode(e.target.value)}
+                      className="bg-slate-900 border border-slate-700 text-white rounded-lg px-2 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500/50 w-[100px]">
+                      <option value="+886">🇹🇼 +886</option>
+                      <option value="+86">🇨🇳 +86</option>
+                      <option value="+81">🇯🇵 +81</option>
+                      <option value="+82">🇰🇷 +82</option>
+                      <option value="+1">🇺🇸 +1</option>
+                      <option value="+44">🇬🇧 +44</option>
+                      <option value="+852">🇭🇰 +852</option>
+                      <option value="+65">🇸🇬 +65</option>
+                      <option value="+60">🇲🇾 +60</option>
+                      <option value="+61">🇦🇺 +61</option>
+                      <option value="+66">🇹🇭 +66</option>
+                      <option value="+63">🇵🇭 +63</option>
+                      <option value="+84">🇻🇳 +84</option>
+                    </select>
+                    <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value.replace(/[^0-9]/g, ''))}
+                      placeholder="912345678" className={`${inputCls} flex-1`} autoComplete="tel" />
+                  </div>
                 </div>
               )}
               {error && <p className="text-sm text-red-400 text-center">{error}</p>}
