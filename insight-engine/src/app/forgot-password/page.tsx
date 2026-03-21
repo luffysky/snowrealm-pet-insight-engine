@@ -4,10 +4,13 @@ import { useState } from 'react'
 import Link from 'next/link'
 
 type Step = 'email' | 'verify' | 'done'
+type Channel = 'email' | 'phone'
 
 export default function ForgotPasswordPage() {
   const [step, setStep] = useState<Step>('email')
+  const [channel, setChannel] = useState<Channel>('email')
   const [email, setEmail] = useState('')
+  const [phone, setPhone] = useState('')
   const [codeId, setCodeId] = useState('')
   const [code, setCode] = useState('')
   const [newPassword, setNewPassword] = useState('')
@@ -26,16 +29,21 @@ export default function ForgotPasswordPage() {
 
   const handleSendCode = async () => {
     setError('')
-    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      setError('請輸入有效的 Email')
-      return
+    if (channel === 'email' && (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))) {
+      setError('請輸入有效的 Email'); return
+    }
+    if (channel === 'phone' && !phone) {
+      setError('請輸入手機號碼'); return
     }
     setLoading(true)
     try {
       const res = await fetch('/api/auth/send-code', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, purpose: 'reset_password' }),
+        body: JSON.stringify({
+          ...(channel === 'email' ? { email } : { phone }),
+          purpose: 'reset_password',
+        }),
       })
       const data = await res.json()
       if (res.ok) {
@@ -64,7 +72,10 @@ export default function ForgotPasswordPage() {
       const res = await fetch('/api/auth/reset-password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, codeId, code, newPassword }),
+        body: JSON.stringify({
+          ...(channel === 'email' ? { email } : { phone }),
+          codeId, code, newPassword,
+        }),
       })
       const data = await res.json()
       if (res.ok) {
@@ -88,7 +99,7 @@ export default function ForgotPasswordPage() {
           <div className="text-center">
             <h1 className="text-2xl font-bold text-white">🔑 忘記密碼</h1>
             <p className="text-sm text-slate-400 mt-2">
-              {step === 'email' && '輸入你的 Email 以接收驗證碼'}
+              {step === 'email' && '選擇 Email 或手機來接收驗證碼'}
               {step === 'verify' && '輸入驗證碼並設定新密碼'}
               {step === 'done' && '密碼已重設成功！'}
             </p>
@@ -96,17 +107,29 @@ export default function ForgotPasswordPage() {
 
           {step === 'email' && (
             <div className="space-y-4">
-              <div>
-                <label className="block text-sm text-slate-400 mb-1">Email</label>
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="your@email.com"
-                  className={inputCls}
-                  autoComplete="email"
-                />
+              <div className="flex gap-2">
+                <button type="button" onClick={() => setChannel('email')}
+                  className={`flex-1 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer ${channel === 'email' ? 'bg-cyan-600 text-white' : 'bg-slate-700 text-slate-400'}`}>
+                  ✉️ Email
+                </button>
+                <button type="button" onClick={() => setChannel('phone')}
+                  className={`flex-1 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer ${channel === 'phone' ? 'bg-cyan-600 text-white' : 'bg-slate-700 text-slate-400'}`}>
+                  📱 手機
+                </button>
               </div>
+              {channel === 'email' ? (
+                <div>
+                  <label className="block text-sm text-slate-400 mb-1">Email</label>
+                  <input type="email" value={email} onChange={(e) => setEmail(e.target.value)}
+                    placeholder="your@email.com" className={inputCls} autoComplete="email" />
+                </div>
+              ) : (
+                <div>
+                  <label className="block text-sm text-slate-400 mb-1">手機號碼</label>
+                  <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)}
+                    placeholder="0912345678" className={inputCls} autoComplete="tel" />
+                </div>
+              )}
               {error && <p className="text-sm text-red-400 text-center">{error}</p>}
               <button
                 onClick={handleSendCode}
@@ -122,7 +145,7 @@ export default function ForgotPasswordPage() {
             <form onSubmit={handleResetPassword} className="space-y-4">
               <div className="text-center">
                 <p className="text-xs text-slate-400">
-                  驗證碼已寄送至 <span className="text-cyan-400 font-medium">{email}</span>
+                  驗證碼已寄送至 <span className="text-cyan-400 font-medium">{channel === 'email' ? email : phone}</span>
                 </p>
               </div>
               <div>

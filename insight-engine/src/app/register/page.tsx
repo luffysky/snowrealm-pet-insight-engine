@@ -8,6 +8,7 @@ type Step = 'form' | 'verify'
 function RegisterForm() {
   const [step, setStep] = useState<Step>('form')
   const [email, setEmail] = useState('')
+  const [phone, setPhone] = useState('')
   const [displayName, setDisplayName] = useState('')
   const [orgName, setOrgName] = useState('')
   const [slug, setSlug] = useState('')
@@ -39,7 +40,11 @@ function RegisterForm() {
       setError('後台網址只允許小寫英文、數字、連字號，3～30 字元')
       return
     }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    if (!email && !phone) {
+      setError('請至少填寫 Email 或手機號碼')
+      return
+    }
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       setError('請輸入有效的 Email')
       return
     }
@@ -57,7 +62,7 @@ function RegisterForm() {
       const res = await fetch('/api/auth/send-code', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, purpose: 'register' }),
+        body: JSON.stringify({ email: email || undefined, phone: phone || undefined, purpose: 'register' }),
       })
       const data = await res.json()
       if (res.ok) {
@@ -72,7 +77,7 @@ function RegisterForm() {
     } finally {
       setLoading(false)
     }
-  }, [email, displayName, orgName, slug, password, confirmPassword])
+  }, [email, phone, displayName, orgName, slug, password, confirmPassword])
 
   // ── Step 2: 重新發送 ──
   const handleResend = useCallback(async () => {
@@ -82,7 +87,7 @@ function RegisterForm() {
       const res = await fetch('/api/auth/send-code', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, purpose: 'register' }),
+        body: JSON.stringify({ email: email || undefined, phone: phone || undefined, purpose: 'register' }),
       })
       const data = await res.json()
       if (res.ok) {
@@ -97,7 +102,7 @@ function RegisterForm() {
     } finally {
       setLoading(false)
     }
-  }, [email])
+  }, [email, phone])
 
   // ── Step 2: 驗證 + 註冊 ──
   async function handleRegister(e: React.FormEvent) {
@@ -113,7 +118,7 @@ function RegisterForm() {
       const res = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password, displayName, orgName, slug, codeId, code }),
+        body: JSON.stringify({ email: email || undefined, phone: phone || undefined, password, displayName, orgName, slug, codeId, code }),
       })
       const data = await res.json()
       if (res.ok) {
@@ -157,7 +162,12 @@ function RegisterForm() {
               <div>
                 <label className="block text-sm text-slate-400 mb-1">Email</label>
                 <input type="email" value={email} onChange={(e) => setEmail(e.target.value)}
-                  placeholder="your@email.com" className={inputCls} autoComplete="email" required />
+                  placeholder="your@email.com" className={inputCls} autoComplete="email" />
+              </div>
+              <div>
+                <label className="block text-sm text-slate-400 mb-1">手機號碼 <span className="text-slate-600">（或填 Email，擇一即可）</span></label>
+                <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)}
+                  placeholder="0912345678" className={inputCls} autoComplete="tel" />
               </div>
               <div>
                 <label className="block text-sm text-slate-400 mb-1">組織 / 品牌名稱</label>
@@ -216,7 +226,7 @@ function RegisterForm() {
             <form onSubmit={handleRegister} className="space-y-4">
               <div className="text-center">
                 <p className="text-sm text-slate-300">
-                  驗證碼已寄送至 <span className="text-cyan-400 font-medium">{email}</span>
+                  驗證碼已寄送至 <span className="text-cyan-400 font-medium">{phone || email}</span>
                 </p>
                 <p className="text-xs text-slate-500 mt-1">驗證碼 10 分鐘內有效</p>
               </div>

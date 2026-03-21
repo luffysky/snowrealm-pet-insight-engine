@@ -6,7 +6,7 @@ import { signToken } from '@/lib/jwt'
 export async function POST(request: NextRequest): Promise<NextResponse> {
   const body = await request.json().catch(() => null)
   if (!body?.username || !body?.password) {
-    return NextResponse.json({ error: '請輸入 Email / 帳號和密碼' }, { status: 400 })
+    return NextResponse.json({ error: '請輸入 Email / 手機 / 帳號和密碼' }, { status: 400 })
   }
 
   const loginId = (body.username as string).trim()
@@ -21,7 +21,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   }>(
     `SELECT id, password_hash, tenant_id, role, display_name
      FROM admin_users
-     WHERE username = $1 OR email = $1`,
+     WHERE username = $1 OR email = $1 OR phone = $1`,
     [loginId],
   )
 

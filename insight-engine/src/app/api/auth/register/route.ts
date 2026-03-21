@@ -3,6 +3,7 @@ import { query, queryOne } from '@/lib/db'
 import { hashPassword } from '@/lib/auth'
 import { signToken } from '@/lib/jwt'
 import { createHash } from 'crypto'
+import { formatPhoneE164 } from '@/lib/sms'
 
 /** 將中文/英文組織名轉成 URL 安全 slug */
 function toSlug(name: string): string {
@@ -17,19 +18,25 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
     const body = await request.json().catch(() => null)
 
-    const email = (body?.email as string)?.trim().toLowerCase()
+    const email = (body?.email as string)?.trim().toLowerCase() || ''
+    const phone = (body?.phone as string)?.trim() || ''
     const password = (body?.password as string)
     const displayName = (body?.displayName as string)?.trim()
     const orgName = (body?.orgName as string)?.trim()
     const customSlug = (body?.slug as string)?.trim().toLowerCase()
     const codeId = (body?.codeId as string)?.trim()
     const code = (body?.code as string)?.trim()
+    const channel = phone ? 'phone' : 'email'
+    const phoneE164 = phone ? formatPhoneE164(phone) : ''
 
     // ── 基本驗證 ──
-    if (!email || !password || !displayName || !orgName || !codeId || !code) {
-      return NextResponse.json({ error: '請填寫完整資料並完成 Email 驗證' }, { status: 400 })
+    if (!password || !displayName || !orgName || !codeId || !code) {
+      return NextResponse.json({ error: '請填寫完整資料並完成驗證' }, { status: 400 })
     }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    if (!email && !phone) {
+      return NextResponse.json({ error: '請填寫 Email 或手機號碼' }, { status: 400 })
+    }
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       return NextResponse.json({ error: '請輸入有效的 Email' }, { status: 400 })
     }
     if (password.length < 6) {
@@ -41,9 +48,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     // ── 驗證碼檢查 ──
     const codeRow = await queryOne<{
-      id: string; email: string; code_hash: string; expires_at: string; verified: boolean; attempts: number
+      id: string; email: string; phone: string; code_hash: string; expires_at: string; verified: boolean; attempts: number
     }>(
-      `SELECT id, email, code_hash, expires_at, verified, attempts
+      `SELECT id, email, phone, code_hash, expires_at, verified, attempts
        FROM email_verification_codes WHERE id = $1`,
       [codeId],
     )
@@ -60,8 +67,11 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       await query(`UPDATE email_verification_codes SET verified = true WHERE id = $1`, [codeId])
       return NextResponse.json({ error: '驗證碼嘗試次數過多，請重新取得' }, { status: 400 })
     }
-    if (codeRow.email !== email) {
+    if (channel === 'email' && codeRow.email !== email) {
       return NextResponse.json({ error: 'Email 與驗證碼不符' }, { status: 400 })
+    }
+    if (channel === 'phone' && codeRow.phone !== phoneE164) {
+      return NextResponse.json({ error: '手機號碼與驗證碼不符' }, { status: 400 })
     }
 
     // 比對 hash
@@ -77,13 +87,14 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     // 標記驗證碼已使用
     await query(`UPDATE email_verification_codes SET verified = true WHERE id = $1`, [codeId])
 
-    // ── Email 重複檢查 ──
-    const existing = await queryOne(
-      `SELECT id FROM admin_users WHERE email = $1`,
-      [email],
-    )
-    if (existing) {
-      return NextResponse.json({ error: '此 Email 已註冊，請直接登入' }, { status: 409 })
+    // ── 重複檢查 ──
+    if (email) {
+      const existing = await queryOne(`SELECT id FROM admin_users WHERE email = $1`, [email])
+      if (existing) return NextResponse.json({ error: '此 Email 已註冊，請直接登入' }, { status: 409 })
+    }
+    if (phoneE164) {
+      const existing = await queryOne(`SELECT id FROM admin_users WHERE phone = $1`, [phoneE164])
+      if (existing) return NextResponse.json({ error: '此手機號碼已註冊，請直接登入' }, { status: 409 })
     }
 
     // ── 建立 tenant ──
@@ -107,13 +118,14 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       return NextResponse.json({ error: '建立組織失敗' }, { status: 500 })
     }
 
-    // ── 建立 admin 帳號（以 email 作為 username） ──
-    const passwordHash = await hashPassword(password)
+    // ── 建立 admin 帳號 ──
+    const pwHash = await hashPassword(password)
+    const username = email || phoneE164
     const newUser = await queryOne<{ id: string }>(
-      `INSERT INTO admin_users (username, password_hash, display_name, email, role, tenant_id)
-       VALUES ($1, $2, $3, $4, 'admin', $5)
+      `INSERT INTO admin_users (username, password_hash, display_name, email, phone, role, tenant_id)
+       VALUES ($1, $2, $3, $4, $5, 'admin', $6)
        RETURNING id`,
-      [email, passwordHash, displayName, email, tenant.slug],
+      [username, pwHash, displayName, email || null, phoneE164 || null, tenant.slug],
     )
 
     // ── 建立預設 site_settings ──
