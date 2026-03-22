@@ -1,0 +1,5 @@
+{
+  "typescript.tsdk": "insight-engine/node_modules/typescript/lib",
+"typescript.enablePromptUseWorkspaceTsdk": true,
+"js/ts.tsdk.path": "insight-engine/node_modules/typescript/lib"
+}

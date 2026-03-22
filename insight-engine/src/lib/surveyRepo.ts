@@ -169,6 +169,25 @@ export async function getSurveyById(id: string): Promise<SurveyRow | null> {
   return queryOne<SurveyRow>(`SELECT * FROM surveys WHERE id = $1`, [id])
 }
 
+/** 刪除問卷（連帶刪除標籤、點擊事件、答案、填答紀錄與題目） */
+export async function deleteSurvey(id: string): Promise<boolean> {
+  const survey = await getSurveyById(id)
+  if (!survey) return false
+
+  const db = require('./db')
+
+  // 若資料庫未設定 ON DELETE CASCADE，手動清除相依聯結資料以防 foreign key 錯誤
+  await db.execute('DELETE FROM user_tags WHERE response_id IN (SELECT id FROM responses WHERE survey_id = $1)', [id])
+  await db.execute('DELETE FROM click_events WHERE response_id IN (SELECT id FROM responses WHERE survey_id = $1)', [id])
+  await db.execute('DELETE FROM answers WHERE response_id IN (SELECT id FROM responses WHERE survey_id = $1)', [id])
+  await db.execute('DELETE FROM responses WHERE survey_id = $1', [id])
+  await db.execute('DELETE FROM questions WHERE survey_id = $1', [id])
+  await db.execute('DELETE FROM theme_settings WHERE survey_slug = $1', [survey.slug])
+  await db.execute('DELETE FROM surveys WHERE id = $1', [id])
+
+  return true
+}
+
 /** 重新排序問卷（更新 display_order） */
 export async function reorderSurveys(orderedIds: string[], tenantId: string): Promise<void> {
   for (let i = 0; i < orderedIds.length; i++) {

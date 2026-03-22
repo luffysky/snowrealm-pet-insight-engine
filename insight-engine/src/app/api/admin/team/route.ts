@@ -26,8 +26,13 @@ export async function GET(request: NextRequest) {
      FROM admin_invites WHERE tenant_id = $1 ORDER BY created_at DESC`,
     [tenantId],
   )
+  // 將 LINE 專用邀請的虛擬 Email 顯示為特殊標籤
+  const mappedInvites = invites.map(inv => ({
+    ...inv,
+    email: inv.email.includes('@invite.local') ? '(LINE 邀請連結)' : inv.email
+  }))
 
-  return NextResponse.json({ members, invites })
+  return NextResponse.json({ members, invites: mappedInvites })
 }
 
 // POST - 建立邀請
@@ -42,37 +47,40 @@ export async function POST(request: NextRequest) {
   const body = await request.json().catch(() => null)
   const email = (body?.email as string)?.trim().toLowerCase()
   const role = (body?.role as string) || 'admin'
+  const isLineInvite = body?.isLineInvite === true
 
-  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    return NextResponse.json({ error: '請輸入有效的 Email' }, { status: 400 })
-  }
-  if (!['admin', 'editor'].includes(role)) {
-    return NextResponse.json({ error: '無效的角色' }, { status: 400 })
-  }
-
-  // 檢查是否已是成員
-  const existing = await queryOne(
-    `SELECT id FROM admin_users WHERE email = $1 AND tenant_id = $2`,
-    [email, tenantId],
-  )
-  if (existing) {
-    return NextResponse.json({ error: '此 Email 已是團隊成員' }, { status: 409 })
+  if (!isLineInvite) {
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return NextResponse.json({ error: '請輸入有效的 Email' }, { status: 400 })
+    }
+    // 檢查是否已是成員
+    const existing = await queryOne(
+      `SELECT id FROM admin_users WHERE email = $1 AND tenant_id = $2`,
+      [email, tenantId],
+    )
+    if (existing) {
+      return NextResponse.json({ error: '此 Email 已是團隊成員' }, { status: 409 })
+    }
   }
 
   // 檢查是否有未過期的邀請
-  const pendingInvite = await queryOne(
-    `SELECT id FROM admin_invites WHERE email = $1 AND tenant_id = $2 AND used = false AND expires_at > NOW()`,
-    [email, tenantId],
-  )
-  if (pendingInvite) {
-    return NextResponse.json({ error: '此 Email 已有待使用的邀請' }, { status: 409 })
+  if (!isLineInvite) {
+    const pendingInvite = await queryOne(
+      `SELECT id FROM admin_invites WHERE email = $1 AND tenant_id = $2 AND used = false AND expires_at > NOW()`,
+      [email, tenantId],
+    )
+    if (pendingInvite) {
+      return NextResponse.json({ error: '此 Email 已有待使用的邀請' }, { status: 409 })
+    }
   }
 
   const token = generateInviteToken()
+  const insertEmail = isLineInvite ? `line_invite_${token.slice(0, 8)}@invite.local` : email
+
   await query(
     `INSERT INTO admin_invites (token, email, tenant_id, role, line_user_id, display_name, expires_at)
      VALUES ($1, $2, $3, $4, '', '', NOW() + INTERVAL '7 days')`,
-    [token, email, tenantId, role],
+    [token, insertEmail, tenantId, role],
   )
 
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || request.nextUrl.origin

@@ -461,7 +461,11 @@ export default function NotificationRulesPage() {
                       </td>
                       <td className="py-2 px-3">
                         <span className="bg-slate-700 px-2 py-0.5 rounded text-xs">
-                          {log.trigger_type === 'rule' ? '規則觸發' : log.trigger_type === 'weekly_report' ? '週報' : '手動'}
+                          {log.trigger_type === 'rule' ? '問卷觸發' : 
+                           log.trigger_type === 'weekly_report' ? '系統週報' : 
+                           log.trigger_type === 'manual' ? '手動推播' : 
+                           log.trigger_type === 'welcome' ? '歡迎訊息' :
+                           log.trigger_type}
                         </span>
                       </td>
                       <td className="py-2 px-3 text-xs">{log.rule_name ?? '-'}</td>

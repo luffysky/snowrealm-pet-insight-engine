@@ -35,11 +35,35 @@ function resolveRoute(
 ): string | null {
   if (!branchConfig) return null
   const branchAnswer = answers.get(branchConfig.branchKey)
-  if (!branchAnswer || typeof branchAnswer !== 'string') return null
-  for (const [route, values] of Object.entries(branchConfig.routes)) {
-    if ((values as string[]).includes(branchAnswer)) return route
+  if (!branchAnswer) return null // 尚未作答
+
+  if (Array.isArray(branchAnswer)) {
+    if (branchAnswer.length === 0) return null
+    
+    // 多選情況：優先走「非 A」的特殊分流
+    for (const ans of branchAnswer) {
+      for (const [route, values] of Object.entries(branchConfig.routes)) {
+        if ((values as string[]).includes(ans) && route !== 'A') {
+          return route
+        }
+      }
+    }
+    // 若沒有非 A 的分流，看有沒有對應到 A
+    for (const ans of branchAnswer) {
+      for (const [route, values] of Object.entries(branchConfig.routes)) {
+        if ((values as string[]).includes(ans)) return route
+      }
+    }
+    return 'A' // fallback
   }
-  return null
+
+  // 單選情況
+  for (const [route, values] of Object.entries(branchConfig.routes)) {
+    if ((values as string[]).includes(branchAnswer as string)) return route
+  }
+  
+  // 已經回答但選項沒有設定到分流表時，一律走原始問卷 A 路徑
+  return 'A'
 }
 
 /** 根據路線過濾有效題目 */

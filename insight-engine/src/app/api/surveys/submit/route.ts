@@ -3,6 +3,8 @@ import { v4 as uuidv4 } from 'uuid'
 import { query, queryOne, execute } from '@/lib/db'
 import { analyzeResponse } from '@/lib/analyzeResponse'
 import { MVP_SURVEY } from '@/lib/surveyConfig'
+import { cookies } from 'next/headers'
+import { verifyToken } from '@/lib/jwt'
 import { fireWebhooks } from '@/lib/webhook'
 import { notifySurveySubmitted } from '@/lib/line'
 import { verifyLineToken } from '@/lib/lineToken'
@@ -43,6 +45,15 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     // 查詢 survey_id
     const surveyId = slugExists?.id ?? null
 
+    // 解析是否登入，如有則紀錄 user_id
+    const cookieStore = await cookies()
+    const token = cookieStore.get('admin_session')?.value
+    let userId: string | null = null
+    if (token) {
+      const payload = await verifyToken(token)
+      if (payload) userId = payload.sub
+    }
+
     if (body.progressResponseId) {
       // 更新既有的 in_progress response → completed
       await query(
@@ -54,6 +65,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
           last_step = $7,
           route = $8,
           tenant_id = $10,
+          user_id = COALESCE(user_id, $11),
           submitted_at = NOW()
          WHERE id = $9`,
         [
@@ -67,13 +79,14 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
           route,
           responseId,
           tenantId,
+          userId,
         ]
       )
     } else {
       const sessionId = uuidv4()
       await query(
-        `INSERT INTO responses (id, session_id, survey_id, status, source, utm_source, utm_medium, utm_campaign, fingerprint, last_step, route, tenant_id, started_at, submitted_at)
-         VALUES ($1, $2, $3, 'completed', $4, $5, $6, $7, $8, $9, $10, $11, NOW(), NOW())`,
+        `INSERT INTO responses (id, session_id, survey_id, status, source, utm_source, utm_medium, utm_campaign, fingerprint, last_step, route, tenant_id, user_id, started_at, submitted_at)
+         VALUES ($1, $2, $3, 'completed', $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW(), NOW())`,
         [
           responseId,
           sessionId,
@@ -86,6 +99,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
           body.answers.length,
           route,
           tenantId,
+          userId,
         ]
       )
     }

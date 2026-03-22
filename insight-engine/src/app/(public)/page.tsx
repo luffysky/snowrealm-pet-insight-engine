@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { HomeNav } from '@/components/public/HomeNav'
 
 const FEATURES = [
   { icon: '📝', title: '智慧問卷建立', desc: '拖拉排序、分流邏輯、AI 出題，3 分鐘完成一份專業問卷' },
@@ -23,22 +24,15 @@ export default function LandingPage() {
     <div className="min-h-screen bg-slate-950 text-white">
       {/* Hero */}
       <header className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-linear-to-br from-cyan-500/10 via-transparent to-purple-500/10" />
+        <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/10 via-transparent to-purple-500/10" />
         <nav className="relative max-w-6xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
           <span className="text-lg font-bold text-white/90">🐾 SnowRealm Insight Engine</span>
-          <div className="flex items-center gap-3">
-            <Link href="/login" className="text-sm text-slate-400 hover:text-white transition-colors">
-              登入
-            </Link>
-            <Link href="/register" className="text-sm px-4 py-2 rounded-full bg-cyan-600 hover:bg-cyan-500 text-white transition-colors">
-              免費註冊
-            </Link>
-          </div>
+          <HomeNav />
         </nav>
 
         <div className="relative max-w-4xl mx-auto px-4 sm:px-6 pt-16 pb-24 text-center">
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight mb-6">
-            <span className="bg-linear-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
               智慧問卷系統
             </span>
             <br />
@@ -52,7 +46,7 @@ export default function LandingPage() {
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link
               href="/register"
-              className="px-8 py-3.5 rounded-full bg-linear-to-r from-cyan-500 to-blue-600 text-white font-medium text-base hover:from-cyan-400 hover:to-blue-500 transition-all shadow-lg shadow-cyan-500/25"
+              className="px-8 py-3.5 rounded-full bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-medium text-base hover:from-cyan-400 hover:to-blue-500 transition-all shadow-lg shadow-cyan-500/25"
             >
               免費建立我的問卷 →
             </Link>
@@ -93,7 +87,7 @@ export default function LandingPage() {
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {STEPS.map((s) => (
               <div key={s.step} className="text-center">
-                <div className="w-12 h-12 rounded-full bg-linear-to-br from-cyan-500/20 to-purple-500/20 border border-cyan-500/30 flex items-center justify-center mx-auto mb-4">
+                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-cyan-500/20 to-purple-500/20 border border-cyan-500/30 flex items-center justify-center mx-auto mb-4">
                   <span className="text-lg font-bold text-cyan-400">{s.step}</span>
                 </div>
                 <h3 className="font-semibold text-white/90 mb-1">{s.title}</h3>
@@ -110,7 +104,7 @@ export default function LandingPage() {
         <p className="text-slate-400 mb-8">現在免費註冊，3 分鐘建立你的第一份問卷</p>
         <Link
           href="/register"
-          className="inline-block px-10 py-4 rounded-full bg-linear-to-r from-cyan-500 to-blue-600 text-white font-medium text-lg hover:from-cyan-400 hover:to-blue-500 transition-all shadow-lg shadow-cyan-500/25"
+          className="inline-block px-10 py-4 rounded-full bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-medium text-lg hover:from-cyan-400 hover:to-blue-500 transition-all shadow-lg shadow-cyan-500/25"
         >
           立即免費開始 →
         </Link>

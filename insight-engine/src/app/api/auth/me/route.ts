@@ -6,6 +6,7 @@ import { queryOne, query } from '@/lib/db'
 interface TenantRow extends Record<string, unknown> {
   slug: string
   name: string
+  admin_title?: string | null
 }
 
 export async function GET(): Promise<NextResponse> {
@@ -27,9 +28,12 @@ export async function GET(): Promise<NextResponse> {
     userName: payload.name,
   }
 
-  // 取得當前租戶名稱
+  // 取得當前租戶名稱與自訂後台名稱
   const tenant = await queryOne<TenantRow>(
-    `SELECT slug, name FROM tenants WHERE slug = $1`,
+    `SELECT t.slug, t.name, s.admin_title 
+     FROM tenants t 
+     LEFT JOIN site_settings s ON t.slug = s.tenant_id 
+     WHERE t.slug = $1`,
     [ctx.tenantId],
   )
 
@@ -47,6 +51,7 @@ export async function GET(): Promise<NextResponse> {
     role: ctx.role,
     tenantId: ctx.tenantId,
     tenantName: tenant?.name ?? ctx.tenantId,
+    adminTitle: tenant?.admin_title || tenant?.name || '🐾 毛行天下後台',
     tenants: tenants.length > 0 ? tenants : undefined,
   })
 }

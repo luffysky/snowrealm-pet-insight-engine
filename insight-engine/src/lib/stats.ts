@@ -77,7 +77,9 @@ export async function getDashboardStats(tenantId?: string, surveyId?: string): P
 }
 
 async function countTotalResponses(tenantId?: string, surveyId?: string): Promise<number> {
-  const { where, params } = buildWhere(tenantId, surveyId)
+  const { conds, params } = buildWhere(tenantId, surveyId)
+  conds.push(`id IN (SELECT response_id FROM answers)`)
+  const where = conds.length > 0 ? `WHERE ${conds.join(' AND ')}` : ''
   const row = await queryOne<{ count: string }>(`SELECT COUNT(*)::text AS count FROM responses ${where}`, params)
   return parseInt(row?.count ?? '0', 10)
 }
@@ -86,6 +88,7 @@ async function countCompletedResponses(tenantId?: string, surveyId?: string): Pr
   const { conds, params, nextIdx } = buildWhere(tenantId, surveyId)
   conds.push(`status = $${nextIdx}`)
   params.push('completed')
+  conds.push(`id IN (SELECT response_id FROM answers)`)
   const row = await queryOne<{ count: string }>(`SELECT COUNT(*)::text AS count FROM responses WHERE ${conds.join(' AND ')}`, params)
   return parseInt(row?.count ?? '0', 10)
 }
@@ -93,6 +96,7 @@ async function countCompletedResponses(tenantId?: string, surveyId?: string): Pr
 async function countTodayResponses(tenantId?: string, surveyId?: string): Promise<number> {
   const { conds, params } = buildWhere(tenantId, surveyId)
   conds.push(`created_at >= CURRENT_DATE`)
+  conds.push(`id IN (SELECT response_id FROM answers)`)
   const row = await queryOne<{ count: string }>(`SELECT COUNT(*)::text AS count FROM responses WHERE ${conds.join(' AND ')}`, params)
   return parseInt(row?.count ?? '0', 10)
 }
@@ -104,7 +108,7 @@ async function getDailyTrend(tenantId?: string, surveyId?: string): Promise<Dail
      FROM generate_series(CURRENT_DATE - ($1 - 1) * INTERVAL '1 day', CURRENT_DATE, '1 day') AS d
      LEFT JOIN (
        SELECT created_at::date AS day, COUNT(*) AS cnt
-       FROM responses WHERE created_at >= CURRENT_DATE - ($1 - 1) * INTERVAL '1 day'${and}
+       FROM responses WHERE created_at >= CURRENT_DATE - ($1 - 1) * INTERVAL '1 day'${and} AND id IN (SELECT response_id FROM answers)
        GROUP BY created_at::date
      ) c ON c.day = d::date ORDER BY d`,
     [TREND_DAYS, ...params]

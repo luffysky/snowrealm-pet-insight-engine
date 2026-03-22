@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { EmojiPicker } from '@/components/admin/EmojiPicker'
 import { AiGeneratePanel } from '@/components/admin/AiGeneratePanel'
+import { AiBasicGeneratePanel, type GeneratedMeta } from '@/components/admin/AiBasicGeneratePanel'
 import { getOptionEmoji } from '@/lib/optionEmoji'
 
 // ===== Types =====
@@ -258,7 +259,13 @@ export default function SurveysAdminPage() {
       {selectedSurvey && (
         <>
           <SurveyEditor survey={selectedSurvey} questions={questions} onUpdate={setSelectedSurvey}
-            onReloadQuestions={() => loadQuestions(selectedSurvey.id)} />
+            onReloadQuestions={() => loadQuestions(selectedSurvey.id)} 
+            onDeleted={async () => {
+              const latest = await loadSurveys();
+              if (latest.length > 0) setSelectedSurvey(latest[0]);
+              else setSelectedSurvey(null);
+            }} 
+          />
           <QuestionList
             surveyId={selectedSurvey.id}
             questions={questions}
@@ -277,14 +284,17 @@ function SurveyEditor({
   questions,
   onUpdate,
   onReloadQuestions,
+  onDeleted,
 }: {
-  survey: SurveyRow
+  survey: SurveyRow & { og_title?: string; og_description?: string; og_image_url?: string }
   questions: QuestionRow[]
   onUpdate: (s: SurveyRow) => void
   onReloadQuestions: () => void
+  onDeleted: () => void
 }) {
-  const [activeTab, setActiveTab] = useState<'basic' | 'branching'>('basic')
+  const [activeTab, setActiveTab] = useState<'basic' | 'branching' | 'og'>('basic')
   const [editing, setEditing] = useState(false)
+  const [showAiGen, setShowAiGen] = useState(false)
   const [form, setForm] = useState(survey)
   const [saving, setSaving] = useState(false)
 
@@ -308,6 +318,9 @@ function SurveyEditor({
         variant_group: form.variant_group || null,
         scheduled_start: form.scheduled_start || null,
         scheduled_end: form.scheduled_end || null,
+        og_title: form.og_title || null,
+        og_description: form.og_description || null,
+        og_image_url: form.og_image_url || null,
       }),
     })
     if (res.ok) {
@@ -316,6 +329,19 @@ function SurveyEditor({
       setEditing(false)
     }
     setSaving(false)
+  }
+
+  const handleDelete = async () => {
+    if (!confirm('⚠️ 確定要刪除這份問卷嗎？\n\n這將會連帶刪除所有題目、填寫記錄與分析資料，動作無法復原！')) {
+      return
+    }
+    const res = await fetch(`/api/admin/surveys/${survey.id}`, { method: 'DELETE' })
+    if (res.ok) {
+      alert('刪除成功')
+      onDeleted()
+    } else {
+      alert('刪除失敗')
+    }
   }
 
   const fields: { key: keyof SurveyRow; label: string; multiline?: boolean }[] = [
@@ -344,11 +370,11 @@ function SurveyEditor({
           >
             {survey.status}
           </span>
-          {activeTab === 'basic' && !editing && (
+          {activeTab !== 'branching' && !editing && (
             <button type="button" onClick={() => setEditing(true)}
               className="text-sm text-t-accent hover:text-t-accent cursor-pointer">編輯</button>
           )}
-          {activeTab === 'basic' && editing && (
+          {activeTab !== 'branching' && editing && (
             <div className="flex gap-2">
               <button type="button" onClick={() => { setEditing(false); setForm(survey) }}
                 className="text-sm text-slate-400 hover:text-white cursor-pointer">取消</button>
@@ -368,18 +394,49 @@ function SurveyEditor({
             activeTab === 'basic'
               ? 'bg-t-accent-bg text-t-accent border border-t-card-border'
               : 'bg-slate-800 text-slate-400 border border-slate-700 hover:text-white'
-          }`}>基本設定</button>
+          }`}>設定</button>
+        <button type="button" onClick={() => setActiveTab('og')}
+          className={`px-3 py-1.5 rounded-lg text-sm transition-colors cursor-pointer ${
+            activeTab === 'og'
+              ? 'bg-t-accent-bg text-t-accent border border-t-card-border'
+              : 'bg-slate-800 text-slate-400 border border-slate-700 hover:text-white'
+          }`}>OG / SEO</button>
         <button type="button" onClick={() => setActiveTab('branching')}
           className={`px-3 py-1.5 rounded-lg text-sm transition-colors cursor-pointer ${
             activeTab === 'branching'
               ? 'bg-t-accent-bg text-t-accent border border-t-card-border'
               : 'bg-slate-800 text-slate-400 border border-slate-700 hover:text-white'
-          }`}>分流設定</button>
+          }`}>分流邏輯</button>
       </div>
 
       {/* Basic settings - editing */}
       {activeTab === 'basic' && editing && (
         <div className="space-y-3">
+          <div className="flex justify-end mb-2">
+            <button type="button" onClick={() => setShowAiGen(true)} className="px-3 py-1.5 bg-cyan-900/40 text-cyan-400 border border-cyan-500/30 hover:bg-cyan-900/60 transition-colors rounded text-sm cursor-pointer">
+              ✨ 讓 AI 幫我想文案
+            </button>
+          </div>
+          {showAiGen && (
+            <AiBasicGeneratePanel 
+              onCancel={() => setShowAiGen(false)} 
+              onDone={(meta: GeneratedMeta) => {
+                setForm(prev => ({
+                  ...prev,
+                  title: meta.title || prev.title,
+                  subtitle: meta.subtitle || prev.subtitle,
+                  cover_title: meta.coverTitle || prev.cover_title,
+                  cover_subtitle: meta.coverSubtitle || prev.cover_subtitle,
+                  done_title: meta.doneTitle || prev.done_title,
+                  done_subtitle: meta.doneSubtitle || prev.done_subtitle,
+                  start_button_text: meta.startButtonText || prev.start_button_text,
+                  og_title: meta.ogTitle || prev.og_title,
+                  og_description: meta.ogDescription || prev.og_description
+                }))
+                setShowAiGen(false)
+              }} 
+            />
+          )}
           <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
             <label className="text-sm text-white/50 sm:w-20">Slug</label>
             <input type="text" value={form.slug}
@@ -424,6 +481,11 @@ function SurveyEditor({
               onChange={(e) => setForm({ ...form, scheduled_end: e.target.value ? new Date(e.target.value).toISOString() : null })}
               className="flex-1 bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-sm text-white/80" />
           </div>
+          <div className="pt-4 mt-4 border-t border-slate-700 flex justify-end">
+             <button type="button" onClick={handleDelete} className="px-4 py-2 bg-red-900/30 text-red-400 hover:bg-red-900/50 hover:text-red-300 rounded-lg text-sm border border-red-500/20 transition-colors cursor-pointer">
+               🗑️ 刪除這份問卷
+             </button>
+          </div>
         </div>
       )}
 
@@ -434,12 +496,81 @@ function SurveyEditor({
           {fields.map((f) => (
             <div key={f.key}>
               <span className="text-white/40">{f.label}：</span>
-              <span className="text-white/70">{String(survey[f.key]).slice(0, 60)}{String(survey[f.key]).length > 60 ? '...' : ''}</span>
+              <span className="text-white/70">{String(survey[f.key] ?? '').slice(0, 60)}{String(survey[f.key] ?? '').length > 60 ? '...' : ''}</span>
             </div>
           ))}
           <div><span className="text-white/40">A/B 群組：</span><span className="text-white/70">{survey.variant_group ?? '—'}</span></div>
           <div><span className="text-white/40">排程開始：</span><span className="text-white/70">{survey.scheduled_start ? new Date(survey.scheduled_start).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' }) : '—'}</span></div>
           <div><span className="text-white/40">排程結束：</span><span className="text-white/70">{survey.scheduled_end ? new Date(survey.scheduled_end).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' }) : '—'}</span></div>
+          <div className="col-span-1 sm:col-span-2 mt-2">
+            <span className="text-white/40 block mb-1">問卷專屬連結：</span>
+            <div className="flex items-center gap-2">
+              <a href={`/${survey.slug}`} target="_blank" rel="noopener noreferrer" className="text-t-accent hover:underline break-all font-mono">
+                {typeof window !== 'undefined' ? window.location.origin : ''}/{survey.slug}
+              </a>
+              <button
+                onClick={() => {
+                  const url = `${typeof window !== 'undefined' ? window.location.origin : ''}/${survey.slug}`;
+                  navigator.clipboard.writeText(url);
+                  alert('🔗 已複製連結');
+                }}
+                className="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded text-xs shrink-0 cursor-pointer"
+              >
+                複製
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* OG Settings - editing */}
+      {activeTab === 'og' && editing && (
+        <div className="space-y-3">
+          <p className="text-xs text-yellow-400/80 mb-2">⚠️ 若留空，則會自動採用網站預設的 Meta 標籤。</p>
+          <div className="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-3">
+            <label className="text-sm text-white/50 sm:w-24 sm:pt-1.5 shrink-0">OG 標題</label>
+            <input type="text" value={form.og_title ?? ''} onChange={(e) => setForm({ ...form, og_title: e.target.value })}
+              placeholder="分享時的標題..." className="flex-1 bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-sm text-white/80" />
+          </div>
+          <div className="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-3">
+            <label className="text-sm text-white/50 sm:w-24 sm:pt-1.5 shrink-0">OG 描述</label>
+            <textarea value={form.og_description ?? ''} onChange={(e) => setForm({ ...form, og_description: e.target.value })}
+              rows={3} placeholder="分享時的描述文字..." className="flex-1 bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-sm text-white/80 resize-none" />
+          </div>
+          <div className="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-3">
+            <label className="text-sm text-white/50 sm:w-24 sm:pt-1.5 shrink-0">OG 圖片 URL</label>
+            <input type="text" value={form.og_image_url ?? ''} onChange={(e) => setForm({ ...form, og_image_url: e.target.value })}
+              placeholder="https://... (分享預覽圖)" className="flex-1 bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-sm text-white/80" />
+          </div>
+        </div>
+      )}
+
+      {/* OG Settings - read-only */}
+      {activeTab === 'og' && !editing && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+          <div className="col-span-1 sm:col-span-2">
+            <span className="text-white/40 block mb-1">OG 標題：</span>
+            <span className="text-white/70">{survey.og_title || <span className="text-white/30 italic">未設定（將使用網站預設）</span>}</span>
+          </div>
+          <div className="col-span-1 sm:col-span-2">
+            <span className="text-white/40 block mb-1">OG 描述：</span>
+            <span className="text-white/70">{survey.og_description || <span className="text-white/30 italic">未設定（將使用網站預設）</span>}</span>
+          </div>
+          <div className="col-span-1 sm:col-span-2">
+            <span className="text-white/40 block mb-1">OG 圖片 URL：</span>
+            {survey.og_image_url ? (
+               <a href={survey.og_image_url} target="_blank" rel="noreferrer" className="text-t-accent hover:underline break-all">
+                 {survey.og_image_url}
+               </a>
+            ) : (
+               <span className="text-white/30 italic">未設定（將使用網站預設）</span>
+            )}
+            {survey.og_image_url && (
+              <div className="mt-2 rounded overflow-hidden max-w-sm border border-slate-700">
+                <img src={survey.og_image_url} alt="OG Preview" className="w-full h-auto" />
+              </div>
+            )}
+          </div>
         </div>
       )}
 

@@ -14,6 +14,7 @@ interface UserInfo {
   tenantId: string
   userName: string
   tenantName?: string
+  adminTitle?: string
   tenants?: { slug: string; name: string }[]
 }
 
@@ -145,6 +146,8 @@ const BASE_MOBILE_GROUPS = [
       { path: '/webhooks', label: 'Webhook' },
       { path: '/waitlist', label: '封測名單' },
       { path: '/team', label: '團隊管理' },
+      { path: '/account', label: '帳號設定' },
+      { path: '/my-responses', label: '我的填答' },
     ],
   },
 ]
@@ -329,7 +332,7 @@ function AdminLayoutInner({
             href={adminPrefix}
             className="text-lg font-bold text-white/90 shrink-0"
           >
-            🐾 毛行天下後台
+            {user?.adminTitle || '🐾 毛行天下後台'}
           </Link>
 
           {/* Desktop nav — 直連 + 分組下拉 */}

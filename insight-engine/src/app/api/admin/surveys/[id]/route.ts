@@ -22,3 +22,20 @@ export async function PATCH(
   const updated = await getSurveyById(id)
   return NextResponse.json(updated)
 }
+
+export async function DELETE(
+  _request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+): Promise<NextResponse> {
+  const { id } = await params
+  
+  // import { deleteSurvey } from '@/lib/surveyRepo'
+  const { deleteSurvey } = await import('@/lib/surveyRepo')
+
+  const success = await deleteSurvey(id)
+  if (!success) {
+    return NextResponse.json({ error: '找不到該問卷或刪除失敗' }, { status: 404 })
+  }
+
+  return NextResponse.json({ ok: true })
+}

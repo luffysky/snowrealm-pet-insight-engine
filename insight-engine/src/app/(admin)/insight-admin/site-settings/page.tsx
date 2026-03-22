@@ -5,6 +5,7 @@ import { useState, useEffect, useRef } from 'react'
 interface SiteSettings {
   site_title: string
   site_description: string
+  admin_title: string
   og_title: string
   og_description: string
   og_image_url: string
@@ -18,7 +19,7 @@ const CARD = 'bg-slate-800/50 border border-slate-700/50'
 
 export default function SiteSettingsPage() {
   const [settings, setSettings] = useState<SiteSettings>({
-    site_title: '', site_description: '', og_title: '', og_description: '',
+    site_title: '', site_description: '', admin_title: '', og_title: '', og_description: '',
     og_image_url: '', og_site_name: '', og_locale: 'zh_TW', twitter_card: 'summary_large_image',
     favicon_url: '',
   })
@@ -36,6 +37,7 @@ export default function SiteSettingsPage() {
         setSettings({
           site_title: data.site_title ?? '',
           site_description: data.site_description ?? '',
+          admin_title: data.admin_title ?? '',
           og_title: data.og_title ?? '',
           og_description: data.og_description ?? '',
           og_image_url: data.og_image_url ?? '',
@@ -107,14 +109,21 @@ export default function SiteSettingsPage() {
 
   return (
     <div className="max-w-3xl mx-auto space-y-8">
-      <h1 className="text-2xl font-bold text-white">網站 Meta / OG 設定</h1>
-      <p className="text-sm text-slate-400">設定網站標題、描述和社群分享時的預覽圖片。修改後會即時反映到公開頁面。</p>
+      <h1 className="text-2xl font-bold text-white">網站基本設定與資源</h1>
+      <p className="text-sm text-slate-400">設定您的後台名稱、問卷的預設 Meta 標籤以及社群分享預覽資源。</p>
+
+      {/* 後台自訂 */}
+      <section className={`${CARD} rounded-xl p-6 space-y-4`}>
+        <h2 className="text-lg font-semibold text-white">後台介面設定</h2>
+        <Field label="後台顯示名稱" value={settings.admin_title} onChange={v => update('admin_title', v)} placeholder="例：🐾 毛行天下後台" />
+      </section>
 
       {/* 基本 Meta */}
       <section className={`${CARD} rounded-xl p-6 space-y-4`}>
-        <h2 className="text-lg font-semibold text-white">基本 Meta 標籤</h2>
-        <Field label="網站標題 (title)" value={settings.site_title} onChange={v => update('site_title', v)} placeholder="我的問卷系統" />
-        <Field label="網站描述 (description)" value={settings.site_description} onChange={v => update('site_description', v)} placeholder="描述你的服務..." textarea />
+        <h2 className="text-lg font-semibold text-white">預設 Meta 標籤</h2>
+        <p className="text-xs text-slate-500 mb-2">當個別問卷未設定專屬 SEO 資料時，將會套用以下全站預設值。</p>
+        <Field label="預設標題 (title)" value={settings.site_title} onChange={v => update('site_title', v)} placeholder="我的問卷系統" />
+        <Field label="預設描述 (description)" value={settings.site_description} onChange={v => update('site_description', v)} placeholder="描述你的服務..." textarea />
       </section>
 
       {/* Open Graph */}

@@ -41,17 +41,18 @@ export async function PUT(request: NextRequest): Promise<NextResponse> {
 
     await query(
       `INSERT INTO site_settings (
-        tenant_id, site_title, site_description, og_title, og_description,
+        tenant_id, site_title, site_description, admin_title, og_title, og_description,
         og_image_url, og_site_name, og_locale, twitter_card, favicon_url, extra_meta, updated_at
-      ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,now())
+      ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,now())
       ON CONFLICT (tenant_id) DO UPDATE SET
-        site_title = $2, site_description = $3, og_title = $4, og_description = $5,
-        og_image_url = $6, og_site_name = $7, og_locale = $8, twitter_card = $9,
-        favicon_url = $10, extra_meta = $11, updated_at = now()`,
+        site_title = $2, site_description = $3, admin_title = $4, og_title = $5, og_description = $6,
+        og_image_url = $7, og_site_name = $8, og_locale = $9, twitter_card = $10,
+        favicon_url = $11, extra_meta = $12, updated_at = now()`,
       [
         tenantId,
         body.site_title ?? '',
         body.site_description ?? '',
+        body.admin_title ?? '',
         body.og_title ?? '',
         body.og_description ?? '',
         body.og_image_url ?? '',

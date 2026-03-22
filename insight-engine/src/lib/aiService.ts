@@ -4,6 +4,10 @@ import { randomUUID } from 'crypto'
 
 const FREE_GENERATE_LIMIT = 1
 const FREE_REGENERATE_LIMIT = 1
+const FREE_META_GENERATE_LIMIT = 1
+const FREE_META_REGENERATE_LIMIT = 1
+
+export type AiAction = 'generate' | 'regenerate' | 'generate_meta' | 'regenerate_meta'
 
 export interface AiKeyResult {
   provider: string
@@ -61,9 +65,11 @@ export function getPlatformKey(): AiKeyResult | null {
 /** 檢查免費額度是否還有 */
 export async function checkFreeQuota(
   tenantId: string,
-  action: 'generate' | 'regenerate'
+  action: AiAction
 ): Promise<boolean> {
-  const limit = action === 'generate' ? FREE_GENERATE_LIMIT : FREE_REGENERATE_LIMIT
+  const limit = action === 'generate' ? FREE_GENERATE_LIMIT : 
+                action === 'regenerate' ? FREE_REGENERATE_LIMIT :
+                action === 'generate_meta' ? FREE_META_GENERATE_LIMIT : FREE_META_REGENERATE_LIMIT
 
   const row = await queryOne<{ count: string }>(
     `SELECT COUNT(*) as count FROM ai_usage_logs
@@ -77,7 +83,7 @@ export async function checkFreeQuota(
 /** 記錄 AI 使用紀錄 */
 export async function logAiUsage(params: {
   tenantId?: string
-  action: 'generate' | 'regenerate'
+  action: AiAction
   keySource: 'platform_key' | 'own_key'
   provider: string
   model: string
@@ -125,10 +131,12 @@ export async function getAiUsageStats(tenantId = 'default') {
     [tenantId]
   )
 
-  const freeRow = await queryOne<{ gen: string; regen: string }>(
+  const freeRow = await queryOne<{ gen: string; regen: string; gen_meta: string; regen_meta: string }>(
     `SELECT
        COUNT(*) FILTER (WHERE action = 'generate' AND is_free = true) as gen,
-       COUNT(*) FILTER (WHERE action = 'regenerate' AND is_free = true) as regen
+       COUNT(*) FILTER (WHERE action = 'regenerate' AND is_free = true) as regen,
+       COUNT(*) FILTER (WHERE action = 'generate_meta' AND is_free = true) as gen_meta,
+       COUNT(*) FILTER (WHERE action = 'regenerate_meta' AND is_free = true) as regen_meta
      FROM ai_usage_logs WHERE tenant_id = $1`,
     [tenantId]
   )
@@ -144,6 +152,8 @@ export async function getAiUsageStats(tenantId = 'default') {
     freeQuota: {
       generate: { used: Number(freeRow?.gen ?? 0), limit: FREE_GENERATE_LIMIT },
       regenerate: { used: Number(freeRow?.regen ?? 0), limit: FREE_REGENERATE_LIMIT },
+      generate_meta: { used: Number(freeRow?.gen_meta ?? 0), limit: FREE_META_GENERATE_LIMIT },
+      regenerate_meta: { used: Number(freeRow?.regen_meta ?? 0), limit: FREE_META_REGENERATE_LIMIT },
     },
   }
 }

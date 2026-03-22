@@ -1,0 +1,66 @@
+import type { Metadata } from 'next'
+import { queryOne } from '@/lib/db'
+
+interface Props {
+  params: Promise<{ slug: string }>
+}
+
+interface SurveyMeta extends Record<string, unknown> {
+  id: string
+  tenant_id: string
+  title: string
+  cover_title: string
+  cover_subtitle: string
+  og_title: string | null
+  og_description: string | null
+  og_image_url: string | null
+}
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { slug } = await params
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://insight.snowrealm.pet'
+
+  const survey = await queryOne<SurveyMeta>(
+    `SELECT id, tenant_id, title, cover_title, cover_subtitle, og_title, og_description, og_image_url FROM surveys WHERE slug = $1 AND status = 'published'`,
+    [slug],
+  )
+
+  if (!survey) {
+    return { title: '問卷不存在' }
+  }
+
+  const ss = await queryOne<Record<string, string>>(
+    `SELECT og_image_url, og_site_name FROM site_settings WHERE tenant_id = $1`,
+    [survey.tenant_id],
+  ).catch(() => null)
+
+  const title = survey.og_title || survey.cover_title || survey.title
+  const description = survey.og_description || survey.cover_subtitle || `${title} — 填寫問卷`
+  const siteName = ss?.og_site_name || 'SnowRealm Insight Engine'
+  const ogImage = survey.og_image_url || ss?.og_image_url || undefined
+
+  return {
+    title,
+    description,
+    metadataBase: new URL(baseUrl),
+    openGraph: {
+      title,
+      description,
+      siteName,
+      locale: 'zh_TW',
+      type: 'website',
+      url: `/survey/${slug}`,
+      ...(ogImage ? { images: [{ url: ogImage, width: 1200, height: 630 }] } : {}),
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+      ...(ogImage ? { images: [ogImage] } : {}),
+    },
+  }
+}
+
+export default function SurveyLayout({ children }: { children: React.ReactNode }) {
+  return <>{children}</>
+}

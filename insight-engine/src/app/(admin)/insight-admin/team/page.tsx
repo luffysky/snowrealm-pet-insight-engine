@@ -49,19 +49,22 @@ export default function TeamPage() {
 
   useEffect(() => { fetchTeam() }, [fetchTeam])
 
-  const handleInvite = async () => {
-    if (!inviteEmail.trim()) return
+  const handleInvite = async (isLine: boolean = false) => {
+    if (!isLine && !inviteEmail.trim()) return
     setInviting(true)
     setError('')
     try {
       const res = await fetch('/api/admin/team', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: inviteEmail, role: inviteRole }),
+        body: JSON.stringify(isLine ? { isLineInvite: true, role: inviteRole } : { email: inviteEmail, role: inviteRole }),
       })
       const data = await res.json()
       if (!res.ok) { setError(data.error || '邀請失敗'); return }
       setInviteResult({ url: data.inviteUrl })
+      if (isLine) {
+        setInviteEmail('') // 清空可能填寫的信箱
+      }
       fetchTeam()
     } catch {
       setError('邀請失敗')
@@ -80,6 +83,11 @@ export default function TeamPage() {
     navigator.clipboard.writeText(text)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
+  }
+
+  const handleLineShare = (url: string) => {
+    const text = `邀請您加入毛行天下後台管理團隊！請點擊以下連結註冊：\n${url}`
+    window.open(`https://line.me/R/msg/text/?${encodeURIComponent(text)}`, '_blank')
   }
 
   if (loading) return <p className="text-slate-400 animate-pulse">載入中…</p>
@@ -153,7 +161,7 @@ export default function TeamPage() {
                 </select>
               </div>
               <button
-                onClick={handleInvite}
+                onClick={() => handleInvite(false)}
                 disabled={inviting || !inviteEmail.trim()}
                 className="px-4 py-2 bg-t-btn hover:bg-t-btn-hover disabled:opacity-50 text-white rounded-lg text-sm font-medium transition cursor-pointer"
               >
