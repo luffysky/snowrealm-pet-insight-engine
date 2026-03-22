@@ -1,21 +1,89 @@
 /**
- * LINE Messaging API 管理員通知模組
+ * LINE Messaging API 管理員通知模組 — Flex Message 版
  *
- * 使用 LINE Messaging API pushMessage 推送通知到管理員的私人 LINE
- *
- * 需要的設定（透過 line-settings 頁面或 .env.local）：
- * - ADMIN_USER_ID：你的 LINE User ID（在 LINE Developers Console 可查到）
- * - INSIGHT_CHANNEL_ACCESS_TOKEN 或 OFFICIAL_CHANNEL_ACCESS_TOKEN
+ * 每種事件有不同的顏色主題和樣式
  */
 
 import { getLineConfig } from '@/lib/lineConfig'
 
 const PUSH_URL = 'https://api.line.me/v2/bot/message/push'
 
-/**
- * 用 LINE Messaging API 推送通知給管理員（非阻塞）
- */
-async function pushToAdmin(message: string): Promise<void> {
+// ━━━━━━━━━━━━━━━━━ 顏色主題 ━━━━━━━━━━━━━━━━━
+
+const THEMES = {
+  email_register:   { color: '#059669', emoji: '📧', label: 'Email 註冊',    headerBg: '#059669' },
+  phone_register:   { color: '#7c3aed', emoji: '📱', label: '手機註冊',      headerBg: '#7c3aed' },
+  google_register:  { color: '#2563eb', emoji: '🔵', label: 'Google 註冊',   headerBg: '#2563eb' },
+  line_register:    { color: '#06C755', emoji: '💚', label: 'LINE 註冊',     headerBg: '#06C755' },
+  password_login:   { color: '#d97706', emoji: '🔑', label: '密碼登入',      headerBg: '#d97706' },
+  google_login:     { color: '#2563eb', emoji: '🔵', label: 'Google 登入',   headerBg: '#2563eb' },
+  line_login:       { color: '#06C755', emoji: '💚', label: 'LINE 登入',     headerBg: '#06C755' },
+} as const
+
+// ━━━━━━━━━━━━━━━━━ Flex Message 構建 ━━━━━━━━━━━━━━━━━
+
+function buildInfoRow(label: string, value: string) {
+  return {
+    type: 'box', layout: 'horizontal', spacing: 'sm',
+    contents: [
+      { type: 'text', text: label, size: 'sm', color: '#8c8c8c', flex: 2 },
+      { type: 'text', text: value, size: 'sm', color: '#333333', flex: 5, wrap: true },
+    ],
+  }
+}
+
+function now() {
+  return new Date().toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' })
+}
+
+interface FlexCard {
+  altText: string
+  headerText: string
+  headerBg: string
+  rows: { label: string; value: string }[]
+}
+
+function buildFlexMessage(card: FlexCard) {
+  return {
+    type: 'flex',
+    altText: card.altText,
+    contents: {
+      type: 'bubble',
+      size: 'kilo',
+      header: {
+        type: 'box', layout: 'vertical',
+        backgroundColor: card.headerBg,
+        paddingAll: '16px',
+        contents: [
+          { type: 'text', text: card.headerText, color: '#ffffff', weight: 'bold', size: 'lg' },
+        ],
+      },
+      body: {
+        type: 'box', layout: 'vertical',
+        spacing: 'md', paddingAll: '16px',
+        contents: [
+          ...card.rows.map(r => buildInfoRow(r.label, r.value)),
+          { type: 'separator', margin: 'md' },
+          buildInfoRow('時間', now()),
+        ],
+      },
+      footer: {
+        type: 'box', layout: 'vertical',
+        paddingAll: '12px',
+        contents: [
+          {
+            type: 'button', style: 'link', height: 'sm',
+            action: { type: 'uri', label: '前往後台 →', uri: 'https://insight.snowrealm.pet/snowrealm-insight-ctrl' },
+          },
+        ],
+      },
+    },
+  }
+}
+
+// ━━━━━━━━━━━━━━━━━ 推送 ━━━━━━━━━━━━━━━━━
+
+async function pushToAdmin(message: Record<string, unknown>): Promise<void> {
   try {
     const adminUserId = await getLineConfig('ADMIN_USER_ID')
     if (!adminUserId) {
@@ -23,7 +91,6 @@ async function pushToAdmin(message: string): Promise<void> {
       return
     }
 
-    // 優先用 Insight 帳號，備援用 Official 帳號
     let token = await getLineConfig('INSIGHT_CHANNEL_ACCESS_TOKEN')
     if (!token) token = await getLineConfig('OFFICIAL_CHANNEL_ACCESS_TOKEN')
     if (!token) {
@@ -39,7 +106,7 @@ async function pushToAdmin(message: string): Promise<void> {
       },
       body: JSON.stringify({
         to: adminUserId,
-        messages: [{ type: 'text', text: message }],
+        messages: [message],
       }),
       signal: AbortSignal.timeout(10000),
     }).catch((err) => {
@@ -50,11 +117,7 @@ async function pushToAdmin(message: string): Promise<void> {
   }
 }
 
-// ━━━━━━━━━━━━━━━━━━ 通知樣板 ━━━━━━━━━━━━━━━━━━
-
-function now() {
-  return new Date().toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' })
-}
+// ━━━━━━━━━━━━━━━━━ 公開 API ━━━━━━━━━━━━━━━━━
 
 /** 新使用者註冊通知 */
 export function notifyNewRegistration(info: {
@@ -65,27 +128,23 @@ export function notifyNewRegistration(info: {
   orgName?: string
   slug?: string
 }) {
-  const methodLabel: Record<string, string> = {
-    email: '📧 Email 註冊',
-    phone: '📱 手機註冊',
-    google: '🔵 Google 註冊',
-    line: '💚 LINE 註冊',
-  }
+  const themeKey = `${info.method}_register` as keyof typeof THEMES
+  const theme = THEMES[themeKey]
 
-  const lines = [
-    '🎉 新使用者註冊！',
-    '━━━━━━━━━━━━━━',
-    `方式：${methodLabel[info.method] || info.method}`,
-  ]
+  const rows: { label: string; value: string }[] = []
+  rows.push({ label: '方式', value: `${theme.emoji} ${theme.label}` })
+  if (info.displayName) rows.push({ label: '姓名', value: info.displayName })
+  if (info.email) rows.push({ label: 'Email', value: info.email })
+  if (info.phone) rows.push({ label: '手機', value: info.phone })
+  if (info.orgName) rows.push({ label: '組織', value: info.orgName })
+  if (info.slug) rows.push({ label: '後台', value: `/insight-admin/${info.slug}` })
 
-  if (info.displayName) lines.push(`姓名：${info.displayName}`)
-  if (info.email) lines.push(`Email：${info.email}`)
-  if (info.phone) lines.push(`手機：${info.phone}`)
-  if (info.orgName) lines.push(`組織：${info.orgName}`)
-  if (info.slug) lines.push(`後台：/insight-admin/${info.slug}`)
-  lines.push(`時間：${now()}`)
-
-  pushToAdmin(lines.join('\n'))
+  pushToAdmin(buildFlexMessage({
+    altText: `🎉 新使用者註冊：${info.displayName || info.email || info.phone || '未知'}`,
+    headerText: `🎉 新使用者註冊`,
+    headerBg: theme.headerBg,
+    rows,
+  }))
 }
 
 /** 使用者登入通知 */
@@ -95,22 +154,19 @@ export function notifyUserLogin(info: {
   displayName?: string
   tenantId?: string
 }) {
-  const methodLabel: Record<string, string> = {
-    password: '🔑 密碼登入',
-    google: '🔵 Google 登入',
-    line: '💚 LINE 登入',
-  }
+  const themeKey = `${info.method}_login` as keyof typeof THEMES
+  const theme = THEMES[themeKey]
 
-  const lines = [
-    '👤 使用者登入',
-    '━━━━━━━━━━━━━━',
-    `方式：${methodLabel[info.method] || info.method}`,
-    `帳號：${info.identifier}`,
-  ]
+  const rows: { label: string; value: string }[] = []
+  rows.push({ label: '方式', value: `${theme.emoji} ${theme.label}` })
+  rows.push({ label: '帳號', value: info.identifier })
+  if (info.displayName) rows.push({ label: '姓名', value: info.displayName })
+  if (info.tenantId) rows.push({ label: '租戶', value: info.tenantId })
 
-  if (info.displayName) lines.push(`姓名：${info.displayName}`)
-  if (info.tenantId) lines.push(`租戶：${info.tenantId}`)
-  lines.push(`時間：${now()}`)
-
-  pushToAdmin(lines.join('\n'))
+  pushToAdmin(buildFlexMessage({
+    altText: `👤 使用者登入：${info.displayName || info.identifier}`,
+    headerText: `👤 使用者登入`,
+    headerBg: theme.headerBg,
+    rows,
+  }))
 }

@@ -1,17 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
 import crypto from 'crypto'
+import { getLineConfig } from '@/lib/lineConfig'
 
 /**
  * SnowRealm Insight Engine 系統專用 LINE Webhook
  * Webhook URL: https://insight.snowrealm.pet/api/line/webhook/insight-engine
  *
- * 環境變數：
- * - LINE_INSIGHT_CHANNEL_SECRET（驗簽用）
- * - LINE_INSIGHT_CHANNEL_ACCESS_TOKEN（回覆用）
+ * 使用 getLineConfig 從 DB / ENV 讀取（跟 official 一致）：
+ * - INSIGHT_CHANNEL_SECRET（驗簽用）
+ * - INSIGHT_CHANNEL_ACCESS_TOKEN（回覆用）
  */
 export async function POST(request: NextRequest): Promise<NextResponse> {
-  const CHANNEL_SECRET = process.env.LINE_INSIGHT_CHANNEL_SECRET ?? ''
-  const CHANNEL_ACCESS_TOKEN = process.env.LINE_INSIGHT_CHANNEL_ACCESS_TOKEN ?? ''
+  const CHANNEL_SECRET = await getLineConfig('INSIGHT_CHANNEL_SECRET') ?? ''
+  const CHANNEL_ACCESS_TOKEN = await getLineConfig('INSIGHT_CHANNEL_ACCESS_TOKEN') ?? ''
 
   if (!CHANNEL_SECRET) {
     console.error('[LINE Insight Engine Webhook] LINE_INSIGHT_CHANNEL_SECRET 未設定')
