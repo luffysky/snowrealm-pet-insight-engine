@@ -14,16 +14,22 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   const CHANNEL_ACCESS_TOKEN = process.env.LINE_INSIGHT_CHANNEL_ACCESS_TOKEN ?? ''
 
   if (!CHANNEL_SECRET) {
+    console.error('[LINE Insight Engine Webhook] LINE_INSIGHT_CHANNEL_SECRET 未設定')
     return NextResponse.json({ error: 'LINE not configured' }, { status: 500 })
   }
 
   // 驗證簽名
   const signature = request.headers.get('x-line-signature')
   if (!signature) {
+    console.warn('[LINE Insight Engine Webhook] Missing x-line-signature header')
     return NextResponse.json({ error: 'Missing signature' }, { status: 400 })
   }
 
   const rawBody = await request.text()
+
+  // Debug log（上線穩定後可移除）
+  console.log('[LINE Insight Engine Webhook] Received request, body length:', rawBody.length)
+
   const hash = crypto
     .createHmac('SHA256', CHANNEL_SECRET)
     .update(rawBody)
@@ -31,11 +37,20 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
   if (hash !== signature) {
     console.warn('[LINE Insight Engine Webhook] Signature mismatch')
+    console.warn('[LINE Insight Engine Webhook] Expected:', hash.slice(0, 10) + '...')
+    console.warn('[LINE Insight Engine Webhook] Got:', signature.slice(0, 10) + '...')
+    console.warn('[LINE Insight Engine Webhook] Secret starts with:', CHANNEL_SECRET.slice(0, 4) + '...')
     return NextResponse.json({ error: 'Invalid signature' }, { status: 403 })
   }
 
+  // LINE Verify 會發空 events 陣列，直接回 200
   const body = JSON.parse(rawBody)
   const events = body.events ?? []
+
+  if (events.length === 0) {
+    console.log('[LINE Insight Engine Webhook] Verify request - OK')
+    return NextResponse.json({ ok: true })
+  }
 
   for (const event of events) {
     const userId = event.source?.userId as string | undefined
