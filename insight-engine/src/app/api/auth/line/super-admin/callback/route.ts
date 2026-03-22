@@ -96,21 +96,32 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
         user.role = 'super_admin'
       }
     } else {
-      // 查找有沒有已存在的 super_admin 帳號可以綁定 line_id
-      const existing = await queryOne<{
+      // 1) 先找既有的 super_admin 帳號
+      let existing = await queryOne<{
         id: string; tenant_id: string; role: string; display_name: string
       }>(
         `SELECT id, tenant_id, role, display_name FROM admin_users WHERE role = 'super_admin' LIMIT 1`,
       )
 
+      // 2) 沒有 super_admin → 找任何一個 admin 帳號升級
+      if (!existing) {
+        existing = await queryOne<{
+          id: string; tenant_id: string; role: string; display_name: string
+        }>(
+          `SELECT id, tenant_id, role, display_name FROM admin_users ORDER BY created_at ASC LIMIT 1`,
+        )
+      }
+
       if (existing) {
+        // 綁定 line_id + 升級為 super_admin
         await queryOne(
-          `UPDATE admin_users SET line_id = $1 WHERE id = $2 RETURNING id`,
+          `UPDATE admin_users SET line_id = $1, role = 'super_admin' WHERE id = $2 RETURNING id`,
           [lineProfile.userId, existing.id],
         )
-        user = existing
+        user = { ...existing, role: 'super_admin' }
+        console.log(`[Super Admin LINE] Bound line_id and promoted to super_admin: ${existing.id}`)
       } else {
-        return NextResponse.redirect(`${baseUrl}/super-login?error=no_super_admin`)
+        return NextResponse.redirect(`${baseUrl}/super-login?error=no_account`)
       }
     }
 
