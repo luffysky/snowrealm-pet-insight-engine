@@ -86,12 +86,10 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
   if (pathname.startsWith('/snowrealm-insight-ctrl')) {
     const auth = await getAuthContext(request)
     if (!auth) {
-      const loginUrl = new URL('/login', request.url)
-      loginUrl.searchParams.set('redirect', pathname)
-      return NextResponse.redirect(loginUrl)
+      return NextResponse.redirect(new URL('/super-login', request.url))
     }
     if (auth.role !== 'super_admin') {
-      return new NextResponse('Forbidden', { status: 403 })
+      return NextResponse.redirect(new URL('/', request.url))
     }
     return NextResponse.next({
       request: { headers: withTenantHeaders(request, auth) },
