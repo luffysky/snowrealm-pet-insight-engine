@@ -182,7 +182,7 @@ export async function deleteSurvey(id: string): Promise<boolean> {
   await db.execute('DELETE FROM answers WHERE response_id IN (SELECT id FROM responses WHERE survey_id = $1)', [id])
   await db.execute('DELETE FROM responses WHERE survey_id = $1', [id])
   await db.execute('DELETE FROM questions WHERE survey_id = $1', [id])
-  await db.execute('DELETE FROM theme_settings WHERE survey_slug = $1', [survey.slug])
+  await db.execute('DELETE FROM survey_theme_settings WHERE survey_slug = $1', [survey.slug])
   await db.execute('DELETE FROM surveys WHERE id = $1', [id])
 
   return true
