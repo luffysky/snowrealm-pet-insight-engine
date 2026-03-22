@@ -1,7 +1,18 @@
 'use client'
 
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react'
-import type { Question, Answer, SubmitSurveyPayload, UtmParams, BranchConfig } from '@/types'
+import type { Question, Answer, SubmitSurveyPayload, UtmParams, BranchConfig, BranchRule } from '@/types'
+
+/** 正規化：將舊版單物件或新版陣列統一轉為 BranchRule[] */
+function normalizeBranchRules(raw: BranchConfig | undefined): BranchRule[] {
+  if (!raw) return []
+  if (Array.isArray(raw)) return raw
+  // 舊版 { branchKey, routes }
+  if (raw.branchKey && raw.routes) {
+    return [{ id: '__legacy__', branchKey: raw.branchKey, routes: raw.routes }]
+  }
+  return []
+}
 
 interface UseSurveyFlowParams {
   questions: Question[]
@@ -28,69 +39,67 @@ interface UseSurveyFlowReturn {
   dismissDuplicate: () => void
 }
 
-/** 根據分流題答案決定路線 */
-function resolveRoute(
-  branchConfig: BranchConfig | undefined,
+/** 根據所有分流規則與已作答，計算出目前活躍的全部路線 */
+function resolveRoutes(
+  rules: BranchRule[],
   answers: Map<string, string | string[]>
-): string | null {
-  if (!branchConfig) return null
-  const branchAnswer = answers.get(branchConfig.branchKey)
-  if (!branchAnswer) return null // 尚未作答
+): Set<string> {
+  const active = new Set<string>()
+  // 預設一律包含主路線 A
+  active.add('A')
 
-  if (Array.isArray(branchAnswer)) {
-    if (branchAnswer.length === 0) return null
-    
-    // 多選情況：優先走「非 A」的特殊分流
-    for (const ans of branchAnswer) {
-      for (const [route, values] of Object.entries(branchConfig.routes)) {
+  for (const rule of rules) {
+    const branchAnswer = answers.get(rule.branchKey)
+    if (!branchAnswer) continue // 尚未作答此分流題
+
+    const ansArr = Array.isArray(branchAnswer) ? branchAnswer : [branchAnswer]
+    if (ansArr.length === 0) continue
+
+    // 優先走非 A 的特殊分流
+    let matched = false
+    for (const ans of ansArr) {
+      for (const [route, values] of Object.entries(rule.routes)) {
         if ((values as string[]).includes(ans) && route !== 'A') {
-          return route
+          active.add(route)
+          matched = true
         }
       }
     }
-    // 若沒有非 A 的分流，看有沒有對應到 A
-    for (const ans of branchAnswer) {
-      for (const [route, values] of Object.entries(branchConfig.routes)) {
-        if ((values as string[]).includes(ans)) return route
-      }
+    // 若此規則所有答案都只對應到 A，則不需要額外添加（A 已在）
+    if (!matched) {
+      // 仍然走 A，不做事
     }
-    return 'A' // fallback
   }
 
-  // 單選情況
-  for (const [route, values] of Object.entries(branchConfig.routes)) {
-    if ((values as string[]).includes(branchAnswer as string)) return route
-  }
-  
-  // 已經回答但選項沒有設定到分流表時，一律走原始問卷 A 路徑
-  return 'A'
+  return active
 }
 
-/** 根據路線過濾有效題目 */
+/** 根據活躍路線過濾有效題目 */
 function filterQuestions(
   questions: Question[],
-  route: string | null,
-  branchConfig: BranchConfig | undefined
+  activeRoutes: Set<string>,
+  rules: BranchRule[]
 ): Question[] {
-  if (!branchConfig) {
+  if (rules.length === 0) {
     // 無分流設定，顯示所有題目
     return questions
   }
 
-  if (!route) {
-    // 尚未決定路線：只顯示共用題目 + 分流題本身
-    // 不預設顯示任何分流的題目，避免誤導
-    return questions.filter((q) => {
-      if (!q.route || q.route === 'all') return true
-      // 分流題 key 本身一定要顯示
-      if (q.key === branchConfig.branchKey) return true
-      // A路線題目在分流前也不顯示（除非沒有其他路線）
-      return false
-    })
-  }
+  const branchKeys = new Set(rules.map(r => r.branchKey))
+  // 尚未有任何分流生效（所有分流題都還沒作答）
+  const hasDecided = activeRoutes.size > 1 // 多於 A 就代表已經有至少一條規則生效
 
-  // 已決定路線
-  return questions.filter((q) => !q.route || q.route === 'all' || q.route === route)
+  return questions.filter((q) => {
+    // 沒有 route 或 route 是 all → 一律顯示
+    if (!q.route || q.route === 'all') return true
+    // 分流題本身一定要顯示
+    if (branchKeys.has(q.key)) return true
+    // 主路線 A 的題目：在還沒有任何分流生效時也顯示
+    if (q.route === 'A') return true
+    // 條件路線的題目：只有當該路線活躍時才顯示
+    if (activeRoutes.has(q.route)) return true
+    return false
+  })
 }
 
 export function useSurveyFlow({
@@ -109,18 +118,20 @@ export function useSurveyFlow({
   const progressIdRef = useRef<string | null>(null)
   const routeRef = useRef<string | null>(null)
 
-  // 計算當前路線與有效題目
-  const currentRoute = useMemo(() => resolveRoute(branchConfig, answers), [branchConfig, answers])
-  const activeQuestions = useMemo(() => filterQuestions(questions, currentRoute, branchConfig), [questions, currentRoute, branchConfig])
-  routeRef.current = currentRoute
+  // 正規化分流規則
+  const branchRules = useMemo(() => normalizeBranchRules(branchConfig), [branchConfig])
+
+  // 計算當前活躍路線集合與有效題目
+  const activeRoutes = useMemo(() => resolveRoutes(branchRules, answers), [branchRules, answers])
+  const activeQuestions = useMemo(() => filterQuestions(questions, activeRoutes, branchRules), [questions, activeRoutes, branchRules])
+  // 送出用的 route 字串：以逗號連接所有活躍路線（排除預設 A）
+  routeRef.current = Array.from(activeRoutes).sort().join(',') || 'A'
 
   // 當路線改變導致題目列表變化時，修正 currentStep 以防跳到不存在的位置
   const prevActiveLen = useRef(activeQuestions.length)
   useEffect(() => {
     if (activeQuestions.length !== prevActiveLen.current) {
-      // 路線決定後題目可能增加（正常）或減少（改答案）
-      // 保持當前 step 不超出範圍
-      setCurrentStep((s) => Math.min(s, activeQuestions.length - 1))
+      setCurrentStep((s) => Math.min(s, Math.max(0, activeQuestions.length - 1)))
       prevActiveLen.current = activeQuestions.length
     }
   }, [activeQuestions.length])
@@ -131,26 +142,30 @@ export function useSurveyFlow({
   const answersRef = useRef(answers)
   answersRef.current = answers
 
-  // 路線變更時清除不屬於新路線的答案（避免舊分流答案殘留）
-  const prevRouteRef = useRef<string | null>(null)
+  // 路線變更時：清除已不再活躍路線上的獨佔題目答案
+  const prevRoutesRef = useRef<Set<string>>(new Set(['A']))
   useEffect(() => {
-    if (currentRoute && prevRouteRef.current && currentRoute !== prevRouteRef.current) {
-      // 找出屬於舊路線（不含 all）的題目 keys
-      const oldRouteKeys = new Set(
+    // 找出上一輪有但這一輪沒有的路線
+    const removedRoutes = new Set<string>()
+    for (const r of prevRoutesRef.current) {
+      if (!activeRoutes.has(r)) removedRoutes.add(r)
+    }
+    if (removedRoutes.size > 0) {
+      const keysToRemove = new Set(
         questions
-          .filter((q) => q.route === prevRouteRef.current)
+          .filter((q) => q.route && removedRoutes.has(q.route))
           .map((q) => q.key)
       )
-      if (oldRouteKeys.size > 0) {
+      if (keysToRemove.size > 0) {
         setAnswers((prev) => {
           const next = new Map(prev)
-          for (const key of oldRouteKeys) next.delete(key)
+          for (const key of keysToRemove) next.delete(key)
           return next
         })
       }
     }
-    prevRouteRef.current = currentRoute
-  }, [currentRoute, questions])
+    prevRoutesRef.current = new Set(activeRoutes)
+  }, [activeRoutes, questions])
 
   // 開始填答時建立 progress 紀錄（漏斗追蹤）
   useEffect(() => {

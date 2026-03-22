@@ -36,13 +36,22 @@ export interface Question {
   narrative?: string
 }
 
-/** 分流規則設定 */
-export interface BranchConfig {
+/** 單一分流規則 */
+export interface BranchRule {
+  /** 唯一識別碼（React key / 拖曳用） */
+  id: string
   /** 分流依據的題目 key（例如 'q1'） */
   branchKey: string
   /** 各路線對應的選項值 */
   routes: Record<string, string[]>
 }
+
+/** 分流規則設定（支援多層）
+ *  - 新版：BranchRule[]（多規則陣列）
+ *  - 舊版相容：{ branchKey, routes }（單規則物件）
+ *  讀取時透過 normalizeBranchRules() 統一轉為 BranchRule[]
+ */
+export type BranchConfig = BranchRule[] | { branchKey: string; routes: Record<string, string[]> }
 
 /** 問卷設定 */
 export interface SurveyConfig {

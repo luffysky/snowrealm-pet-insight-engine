@@ -22,7 +22,7 @@ interface SurveyRow {
   variant_group: string | null
   scheduled_start: string | null
   scheduled_end: string | null
-  branch_config: BranchConfig | string | null
+  branch_config: BranchConfig | BranchRule[] | string | null
   is_primary: boolean
 }
 
@@ -41,10 +41,13 @@ interface QuestionRow {
   narrative: string | null
 }
 
-interface BranchConfig {
+interface BranchRule {
+  id: string
   branchKey: string
   routes: Record<string, string[]>
 }
+
+type BranchConfig = BranchRule[] | { branchKey: string; routes: Record<string, string[]> }
 
 // ===== Main Component =====
 
@@ -619,25 +622,16 @@ function BranchingPanel({
   const [branchSuccess, setBranchSuccess] = useState('')
   const [routeChanges, setRouteChanges] = useState<Record<string, string>>({})
 
-  // Branch config state
-  const savedConfig = normalizeBranchConfig(survey.branch_config)
-  const [branchQuestionKey, setBranchQuestionKey] = useState(savedConfig?.branchKey ?? '')
-  const [answerRoutes, setAnswerRoutes] = useState<Record<string, string>>(() => {
-    if (!savedConfig) return {}
-    const map: Record<string, string> = {}
-    for (const [route, values] of Object.entries(savedConfig.routes)) {
-      for (const v of values) map[v] = route
-    }
-    return map
-  })
+  // Branch rules state — 多規則陣列
+  const savedRules = normalizeBranchRules(survey.branch_config)
+  const [rules, setRules] = useState<BranchRule[]>(savedRules)
   const [branchDirty, setBranchDirty] = useState(false)
   const [editingName, setEditingName] = useState<string | null>(null)
 
   // Questions grouped by route
   const mainQuestions = questions.filter((q) => q.route === 'all' || q.route === 'A' || !q.route)
   const branchQuestions = (route: string) => questions.filter((q) => q.route === route)
-  const branchableQuestions = questions.filter((q) => q.type !== 'text' && (q.route === 'all' || !q.route) && q.options.length > 0)
-  const selectedBranchQuestion = branchableQuestions.find((q) => q.key === branchQuestionKey) ?? null
+  const branchableQuestions = questions.filter((q) => q.type !== 'text' && (q.route === 'all' || !q.route || q.route === 'A') && q.options.length > 0)
 
   // All route keys used in the system
   const allRoutes = existingBranchRoutes.length > 0 ? existingBranchRoutes : []
@@ -652,26 +646,80 @@ function BranchingPanel({
     onReloadQuestions()
   }
 
-  const handleSaveBranchConfig = async () => {
-    if (!branchQuestionKey) { setBranchError('請先選擇分流題目'); return }
-    if (!selectedBranchQuestion) { setBranchError('找不到分流題目'); return }
-    if (!confirm(`確定要儲存分流設定嗎？\n分流題：${branchQuestionKey}\n這會影響前台問卷的分流邏輯。`)) return
+  // 新增一條空規則
+  const handleAddRule = () => {
+    setRules(prev => [...prev, { id: crypto.randomUUID(), branchKey: '', routes: {} }])
+    setBranchDirty(true)
+  }
 
-    const routes: Record<string, string[]> = { A: [] }
-    for (const r of allRoutes) routes[r] = []
+  // 刪除某條規則
+  const handleRemoveRule = (ruleId: string) => {
+    setRules(prev => prev.filter(r => r.id !== ruleId))
+    setBranchDirty(true)
+  }
 
-    for (const option of selectedBranchQuestion.options) {
-      const route = answerRoutes[option.value] ?? 'A'
-      if (!routes[route]) routes[route] = []
-      routes[route].push(option.value)
+  // 更新某條規則的 branchKey
+  const handleRuleBranchKeyChange = (ruleId: string, key: string) => {
+    setRules(prev => prev.map(r => r.id === ruleId ? { ...r, branchKey: key, routes: {} } : r))
+    setBranchDirty(true)
+  }
+
+  // 更新某條規則中某個選項的對應路線
+  const handleRuleAnswerRoute = (ruleId: string, optionValue: string, route: string) => {
+    setRules(prev => prev.map(r => {
+      if (r.id !== ruleId) return r
+      // 先從所有路線移除此 optionValue
+      const newRoutes: Record<string, string[]> = {}
+      for (const [k, vals] of Object.entries(r.routes)) {
+        newRoutes[k] = (vals as string[]).filter(v => v !== optionValue)
+      }
+      // 加入目標路線
+      if (route !== 'A') {
+        if (!newRoutes[route]) newRoutes[route] = []
+        newRoutes[route].push(optionValue)
+      }
+      // 保留 A 路線
+      if (!newRoutes['A']) newRoutes['A'] = []
+      return { ...r, routes: newRoutes }
+    }))
+    setBranchDirty(true)
+  }
+
+  // 取得某規則中某選項目前對應的路線
+  const getOptionRoute = (rule: BranchRule, optionValue: string): string => {
+    for (const [route, values] of Object.entries(rule.routes)) {
+      if ((values as string[]).includes(optionValue)) return route
     }
+    return 'A'
+  }
+
+  const handleSaveBranchConfig = async () => {
+    // 驗證每條規則都要有 branchKey
+    for (const rule of rules) {
+      if (!rule.branchKey) { setBranchError('每條規則都需要選擇分流題目'); return }
+    }
+    if (!confirm(`確定要儲存分流設定嗎？\n共 ${rules.length} 條規則\n這會影響前台問卷的分流邏輯。`)) return
+
+    // 確保每條規則的 routes 都有正確的選項 mapping
+    const finalRules = rules.map(rule => {
+      const q = branchableQuestions.find(q => q.key === rule.branchKey)
+      if (!q) return rule
+      const routes: Record<string, string[]> = { A: [] }
+      for (const r of allRoutes) routes[r] = []
+      for (const opt of q.options) {
+        const targetRoute = getOptionRoute(rule, opt.value)
+        if (!routes[targetRoute]) routes[targetRoute] = []
+        routes[targetRoute].push(opt.value)
+      }
+      return { ...rule, routes }
+    })
 
     setBranchSaving(true); setBranchError('')
     try {
       const res = await fetch(`/api/admin/surveys/${survey.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ branch_config: { branchKey: branchQuestionKey, routes } }),
+        body: JSON.stringify({ branch_config: finalRules }),
       })
       if (!res.ok) { setBranchError('儲存失敗'); return }
       const updated = (await res.json()) as SurveyRow
@@ -728,44 +776,66 @@ function BranchingPanel({
       {/* ===== 主題目 sub-tab ===== */}
       {activeSubTab === 'main' && (
         <div className="space-y-4">
-          {/* Branch question selector + answer mapping */}
-          <div className="bg-slate-800/40 border border-slate-700 rounded-xl p-4 space-y-3">
-            <h3 className="text-sm font-medium text-white/70">分流規則設定</h3>
-
-            <div className="grid grid-cols-1 sm:grid-cols-[100px_1fr] gap-2 sm:items-center">
-              <label className="text-xs text-white/50">分流題</label>
-              <select value={branchQuestionKey}
-                onChange={(e) => { setBranchQuestionKey(e.target.value); setBranchDirty(true); setBranchError('') }}
-                className="bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white/80">
-                <option value="">—— 請選擇 ——</option>
-                {branchableQuestions.map((q) => (
-                  <option key={q.id} value={q.key}>{q.key} — {q.content.slice(0, 50)}</option>
-                ))}
-              </select>
+          {/* 多規則卡片 */}
+          <div className="bg-slate-800/40 border border-slate-700 rounded-xl p-4 space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-medium text-white/70">分流規則設定</h3>
+              <button type="button" onClick={handleAddRule}
+                className="px-3 py-1.5 bg-t-accent-bg text-t-accent border border-t-card-border rounded-lg text-xs transition-colors cursor-pointer hover:opacity-80">
+                ＋ 新增規則
+              </button>
             </div>
 
-            {selectedBranchQuestion && (
-              <div className="space-y-2">
-                <p className="text-xs text-white/50">各答案對應分流：</p>
-                {selectedBranchQuestion.options.map((option) => (
-                  <div key={option.value}
-                    className="grid grid-cols-1 sm:grid-cols-[1fr_160px] gap-2 sm:items-center bg-slate-900/40 border border-slate-700 rounded-lg p-2.5">
-                    <span className="text-sm text-white/80">{option.label}</span>
-                    <select value={answerRoutes[option.value] ?? 'A'}
-                      onChange={(e) => {
-                        setAnswerRoutes((prev) => ({ ...prev, [option.value]: e.target.value }))
-                        setBranchDirty(true)
-                      }}
-                      className="bg-slate-800 border border-slate-600 rounded px-2 py-1.5 text-sm text-white/80">
-                      <option value="A">原始問卷</option>
-                      {allRoutes.map((r) => (
-                        <option key={r} value={r}>{branchNames[r] ?? `分流 ${r}`}</option>
+            {rules.length === 0 && (
+              <p className="text-xs text-white/30 text-center py-4">
+                尚無分流規則。按下「＋ 新增規則」來設定跳題邏輯。
+              </p>
+            )}
+
+            {rules.map((rule, idx) => {
+              const ruleQuestion = branchableQuestions.find(q => q.key === rule.branchKey) ?? null
+              return (
+                <div key={rule.id} className="bg-slate-900/40 border border-slate-700 rounded-xl p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-white/40 font-mono">規則 #{idx + 1}</span>
+                    <button type="button" onClick={() => handleRemoveRule(rule.id)}
+                      className="text-xs text-red-400/60 hover:text-red-300 cursor-pointer">移除</button>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-[80px_1fr] gap-2 sm:items-center">
+                    <label className="text-xs text-white/50">分流題</label>
+                    <select value={rule.branchKey}
+                      onChange={(e) => handleRuleBranchKeyChange(rule.id, e.target.value)}
+                      className="bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white/80">
+                      <option value="">—— 請選擇 ——</option>
+                      {branchableQuestions.map((q) => (
+                        <option key={q.id} value={q.key}>{q.key} — {q.content.slice(0, 50)}</option>
                       ))}
                     </select>
                   </div>
-                ))}
-              </div>
-            )}
+
+                  {ruleQuestion && (
+                    <div className="space-y-2">
+                      <p className="text-xs text-white/50">各答案對應分流：</p>
+                      {ruleQuestion.options.map((option) => (
+                        <div key={option.value}
+                          className="grid grid-cols-1 sm:grid-cols-[1fr_160px] gap-2 sm:items-center bg-slate-800/40 border border-slate-700 rounded-lg p-2.5">
+                          <span className="text-sm text-white/80">{option.label}</span>
+                          <select value={getOptionRoute(rule, option.value)}
+                            onChange={(e) => handleRuleAnswerRoute(rule.id, option.value, e.target.value)}
+                            className="bg-slate-800 border border-slate-600 rounded px-2 py-1.5 text-sm text-white/80">
+                            <option value="A">原始問卷</option>
+                            {allRoutes.map((r) => (
+                              <option key={r} value={r}>{branchNames[r] ?? `分流 ${r}`}</option>
+                            ))}
+                          </select>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )
+            })}
 
             {branchError && <p className="text-sm text-red-400">{branchError}</p>}
             {branchSuccess && <p className="text-sm text-emerald-400">{branchSuccess}</p>}
@@ -860,17 +930,22 @@ function BranchQuestionCard({
   )
 }
 
-function normalizeBranchConfig(raw: BranchConfig | string | null | undefined): BranchConfig | null {
-  if (!raw) return null
+/** 正規化：將舊版單物件、新版陣列、或 JSON 字串統一轉為 BranchRule[] */
+function normalizeBranchRules(raw: BranchConfig | BranchRule[] | string | null | undefined): BranchRule[] {
+  if (!raw) return []
   if (typeof raw === 'string') {
-    try {
-      const parsed = JSON.parse(raw) as BranchConfig
-      if (parsed?.branchKey && parsed?.routes) return parsed
-      return null
-    } catch { return null }
+    try { raw = JSON.parse(raw) } catch { return [] }
   }
-  if (raw.branchKey && raw.routes) return raw
-  return null
+  // 新版陣列
+  if (Array.isArray(raw)) {
+    return (raw as BranchRule[]).filter(r => r.branchKey && r.routes)
+  }
+  // 舊版單物件 { branchKey, routes }
+  const obj = raw as { branchKey?: string; routes?: Record<string, string[]> }
+  if (obj.branchKey && obj.routes) {
+    return [{ id: '__legacy__', branchKey: obj.branchKey, routes: obj.routes }]
+  }
+  return []
 }
 
 // ===== QuestionList =====
