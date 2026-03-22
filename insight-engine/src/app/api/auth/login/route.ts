@@ -13,7 +13,10 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   const loginId = (body.username as string).trim()
   const inviteToken = (body.invite as string)?.trim()
 
-  // 支援 email 或 username 登入
+  // 標準化：若輸入 09xxxxxxxx 格式，轉成 E.164 +886xxxxxxxxx 以對應資料庫
+  const normalizedId = /^09[0-9]{8}$/.test(loginId) ? '+886' + loginId.slice(1) : loginId
+
+  // 支援 email 或 username 登入（同時試原始輸入和標準化後的格式）
   const user = await queryOne<{
     id: string
     password_hash: string
@@ -23,8 +26,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   }>(
     `SELECT id, password_hash, tenant_id, role, display_name
      FROM admin_users
-     WHERE username = $1 OR email = $1 OR phone = $1`,
-    [loginId],
+     WHERE username = $1 OR email = $1 OR phone = $1
+        OR username = $2 OR email = $2 OR phone = $2`,
+    [loginId, normalizedId],
   )
 
   if (!user || !user.password_hash) {

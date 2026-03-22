@@ -29,6 +29,8 @@ interface UserRow {
   id: string
   username: string
   display_name: string | null
+  email: string | null
+  phone: string | null
   role: string
   tenant_id: string
   tenant_name: string
@@ -79,6 +81,8 @@ export async function GET(request: NextRequest) {
           id: u.id,
           username: u.username,
           displayName: u.display_name,
+          email: u.email,
+          phone: u.phone,
           role: u.role,
           tenantId: u.tenant_id,
           tenantName: u.tenant_name,
@@ -95,7 +99,7 @@ export async function GET(request: NextRequest) {
   // 全平台使用者列表
   if (view === 'users') {
     const users = await query<UserRow>(
-      `SELECT u.id, u.username, u.display_name, u.role, u.tenant_id,
+      `SELECT u.id, u.username, u.display_name, u.email, u.phone, u.role, u.tenant_id,
               t.name AS tenant_name, u.created_at,
               (u.google_id IS NOT NULL) AS has_google,
               (u.line_user_id IS NOT NULL) AS has_line
@@ -114,6 +118,8 @@ export async function GET(request: NextRequest) {
           id: u.id,
           username: u.username,
           displayName: u.display_name,
+          email: u.email,
+          phone: u.phone,
           role: u.role,
           tenantId: u.tenant_id,
           tenantName: u.tenant_name,

@@ -6,6 +6,8 @@ interface PlatformUser {
   id: string
   username: string
   displayName: string | null
+  email: string | null
+  phone: string | null
   role: string
   tenantId: string
   tenantName: string
@@ -118,6 +120,7 @@ export default function SuperAdminUsersPage() {
               <tr className="border-b border-slate-800 text-white/40 text-xs">
                 <th className="text-left px-4 py-2">名稱</th>
                 <th className="text-left px-4 py-2">帳號</th>
+                <th className="text-left px-4 py-2">聯絡資訊</th>
                 <th className="text-left px-4 py-2">組織</th>
                 <th className="text-left px-4 py-2">角色</th>
                 <th className="text-left px-4 py-2">登入方式</th>
@@ -130,6 +133,11 @@ export default function SuperAdminUsersPage() {
                 <tr key={u.id} className="border-b border-slate-800/50 last:border-0 hover:bg-slate-800/30">
                   <td className="px-4 py-2.5 text-white/80 font-medium">{u.displayName || '—'}</td>
                   <td className="px-4 py-2.5 text-white/50 font-mono text-xs">{formatUsername(u.username)}</td>
+                  <td className="px-4 py-2.5 text-white/50 text-xs">
+                    {u.email && <span>{u.email}</span>}
+                    {u.phone && <span className="font-mono">{formatUsername(u.phone)}</span>}
+                    {!u.email && !u.phone && <span className="text-white/20">—</span>}
+                  </td>
                   <td className="px-4 py-2.5 text-white/60 text-xs">{u.tenantName}</td>
                   <td className="px-4 py-2.5">
                     <span className={`text-xs px-2 py-0.5 rounded-full ${
