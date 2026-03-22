@@ -174,16 +174,14 @@ export async function deleteSurvey(id: string): Promise<boolean> {
   const survey = await getSurveyById(id)
   if (!survey) return false
 
-  const db = require('./db')
-
   // 若資料庫未設定 ON DELETE CASCADE，手動清除相依聯結資料以防 foreign key 錯誤
-  await db.execute('DELETE FROM user_tags WHERE response_id IN (SELECT id FROM responses WHERE survey_id = $1)', [id])
-  await db.execute('DELETE FROM click_events WHERE response_id IN (SELECT id FROM responses WHERE survey_id = $1)', [id])
-  await db.execute('DELETE FROM answers WHERE response_id IN (SELECT id FROM responses WHERE survey_id = $1)', [id])
-  await db.execute('DELETE FROM responses WHERE survey_id = $1', [id])
-  await db.execute('DELETE FROM questions WHERE survey_id = $1', [id])
-  await db.execute('DELETE FROM survey_theme_settings WHERE survey_slug = $1', [survey.slug])
-  await db.execute('DELETE FROM surveys WHERE id = $1', [id])
+  await execute('DELETE FROM user_tags WHERE response_id IN (SELECT id FROM responses WHERE survey_id = $1)', [id])
+  await execute('DELETE FROM click_events WHERE response_id IN (SELECT id FROM responses WHERE survey_id = $1)', [id])
+  await execute('DELETE FROM answers WHERE response_id IN (SELECT id FROM responses WHERE survey_id = $1)', [id])
+  await execute('DELETE FROM responses WHERE survey_id = $1', [id])
+  await execute('DELETE FROM questions WHERE survey_id = $1', [id])
+  await execute('DELETE FROM survey_theme_settings WHERE survey_slug = $1', [survey.slug])
+  await execute('DELETE FROM surveys WHERE id = $1', [id])
 
   return true
 }
