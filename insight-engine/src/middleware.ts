@@ -33,7 +33,7 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
   const { pathname } = request.nextUrl
 
   // Login / Register / Auth API — 永遠放行
-  if (pathname === '/login' || pathname === '/register' || pathname.startsWith('/api/auth')) {
+  if (pathname === '/login' || pathname === '/register' || pathname === '/super-login' || pathname.startsWith('/api/auth')) {
     return NextResponse.next()
   }
 
