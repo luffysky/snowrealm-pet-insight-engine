@@ -75,7 +75,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     // ★ 核心安全檢查：只允許指定的 LINE User ID
     if (lineProfile.userId !== allowedUserId) {
       console.warn(`[Super Admin LINE] Unauthorized: ${lineProfile.userId} (${lineProfile.displayName})`)
-      return NextResponse.redirect(`${baseUrl}/super-login?error=unauthorized`)
+      return NextResponse.redirect(`${baseUrl}/`)
     }
 
     // 查找或綁定 super_admin 帳號
