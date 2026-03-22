@@ -69,6 +69,18 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 
     const lineProfile: LineProfile = await profileRes.json()
 
+    // 取得暫存的 invite token
+    const inviteToken = request.cookies.get('line_oauth_invite')?.value
+
+    // ── 檢查邀請碼 ──
+    let inviteData: { id: string; tenant_id: string; role: string } | null = null
+    if (inviteToken) {
+      inviteData = await queryOne<{ id: string; tenant_id: string; role: string }>(
+        `SELECT id, tenant_id, role FROM admin_invites WHERE token = $1 AND used = false AND expires_at > NOW()`,
+        [inviteToken]
+      )
+    }
+
     // 查找既有用戶（先查 line_id）
     let user = await queryOne<{
       id: string; tenant_id: string; role: string; display_name: string
@@ -77,42 +89,62 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       [lineProfile.userId],
     )
 
-    if (!user) {
-      // 全新用戶 → 自動註冊（建 tenant + admin user）
-      const slug = `line-${Date.now().toString(36)}`
-      const tenant = await queryOne<{ slug: string }>(
-        `INSERT INTO tenants (name, slug, plan, is_active)
-         VALUES ($1, $2, 'free', true) RETURNING slug`,
-        [lineProfile.displayName, slug],
-      )
+    let finalTenantId = user?.tenant_id || ''
 
+    if (!user) {
+      // 全新用戶
       const pwHash = await hashPassword(lineProfile.userId)
       const username = `line_${lineProfile.userId.slice(-8)}`
 
-      const newUser = await queryOne<{ id: string }>(
-        `INSERT INTO admin_users (username, password_hash, display_name, line_id, role, tenant_id)
-         VALUES ($1, $2, $3, $4, 'admin', $5) RETURNING id`,
-        [username, pwHash, lineProfile.displayName, lineProfile.userId, tenant?.slug ?? slug],
-      )
+      if (inviteData) {
+        // 受邀：不建立新組織，使用邀請的組織
+        finalTenantId = inviteData.tenant_id
+        const newUser = await queryOne<{ id: string }>(
+          `INSERT INTO admin_users (username, password_hash, display_name, line_id, role, tenant_id)
+           VALUES ($1, $2, $3, $4, 'admin', $5) RETURNING id`,
+          [username, pwHash, lineProfile.displayName, lineProfile.userId, finalTenantId],
+        )
+        user = {
+          id: newUser?.id ?? '',
+          tenant_id: finalTenantId,
+          role: 'admin',
+          display_name: lineProfile.displayName,
+        }
+      } else {
+        // 自行註冊：建立新組織 (建 tenant + admin user)
+        const slug = `line-${Date.now().toString(36)}`
+        const tenant = await queryOne<{ slug: string }>(
+          `INSERT INTO tenants (name, slug, plan, is_active)
+           VALUES ($1, $2, 'free', true) RETURNING slug`,
+          [lineProfile.displayName, slug],
+        )
+        finalTenantId = tenant?.slug ?? slug
 
-      // 建立預設 site_settings
-      await query(
-        `INSERT INTO site_settings (tenant_id, site_title, site_description)
-         VALUES ($1, $2, $3) ON CONFLICT (tenant_id) DO NOTHING`,
-        [tenant?.slug ?? slug, lineProfile.displayName, `${lineProfile.displayName} 問卷系統`],
-      )
+        const newUser = await queryOne<{ id: string }>(
+          `INSERT INTO admin_users (username, password_hash, display_name, line_id, role, tenant_id)
+           VALUES ($1, $2, $3, $4, 'admin', $5) RETURNING id`,
+          [username, pwHash, lineProfile.displayName, lineProfile.userId, finalTenantId],
+        )
 
-      user = {
-        id: newUser?.id ?? '',
-        tenant_id: tenant?.slug ?? slug,
-        role: 'admin',
-        display_name: lineProfile.displayName,
+        // 建立預設 site_settings
+        await query(
+          `INSERT INTO site_settings (tenant_id, site_title, site_description)
+           VALUES ($1, $2, $3) ON CONFLICT (tenant_id) DO NOTHING`,
+          [finalTenantId, lineProfile.displayName, `${lineProfile.displayName} 問卷系統`],
+        )
+
+        user = {
+          id: newUser?.id ?? '',
+          tenant_id: finalTenantId,
+          role: 'admin',
+          display_name: lineProfile.displayName,
+        }
       }
-
+      
       notifyNewRegistration({
         method: 'line',
         displayName: lineProfile.displayName,
-        slug: tenant?.slug ?? slug,
+        slug: finalTenantId,
       })
     } else {
       notifyUserLogin({
@@ -123,15 +155,42 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       })
     }
 
+    // ── 寫入 tenant_users 與 更新邀請碼狀態 ──
+    if (inviteData) {
+      await query(
+        `INSERT INTO tenant_users (tenant_id, user_id, role) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING`,
+        [inviteData.tenant_id, user.id, inviteData.role]
+      )
+      await query(`UPDATE admin_invites SET used = true WHERE id = $1`, [inviteData.id])
+    } else if (finalTenantId) {
+      // 給自行建立組織的人也新增一份 tenant_users 映射
+      await query(
+        `INSERT INTO tenant_users (tenant_id, user_id, role) VALUES ($1, $2, 'admin') ON CONFLICT DO NOTHING`,
+        [finalTenantId, user.id]
+      )
+    }
+
+    // ── 獲取該用戶所有已授權的租戶列表 ──
+    const tenantRows = await query<{ tenant_id: string; role: string }>(
+      `SELECT tenant_id, role FROM tenant_users WHERE user_id = $1`,
+      [user.id]
+    )
+    const tenants = tenantRows.map(r => ({ tid: r.tenant_id, role: r.role }))
+    if (tenants.length === 0 && user.tenant_id) {
+      tenants.push({ tid: user.tenant_id, role: user.role })
+    }
+    const defaultTid = tenants.length > 0 ? tenants[0].tid : 'default'
+
     // 簽發 JWT
     const jwt = await signToken({
       sub: user.id,
-      tid: user.tenant_id,
-      role: user.role,
+      tenants,
+      tid: defaultTid,
+      role: tenants[0]?.role || user.role,
       name: user.display_name,
     })
 
-    const response = NextResponse.redirect(`${baseUrl}/insight-admin/${user.tenant_id}`)
+    const response = NextResponse.redirect(`${baseUrl}/insight-admin/${defaultTid}`)
     response.cookies.set('admin_session', jwt, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
@@ -139,8 +198,9 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       maxAge: 60 * 60 * 24,
       path: '/',
     })
-    // 清除 state cookie
+    // 清除 state 與 invite cookie
     response.cookies.delete('line_oauth_state')
+    response.cookies.delete('line_oauth_invite')
     return response
   } catch (err) {
     console.error('[LINE OAuth Callback Error]', err)

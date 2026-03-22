@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { queryOne } from '@/lib/db'
+import { query, queryOne } from '@/lib/db'
 import { verifyPassword } from '@/lib/auth'
 import { signToken } from '@/lib/jwt'
 import { notifyUserLogin } from '@/lib/lineNotify'
@@ -11,6 +11,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   }
 
   const loginId = (body.username as string).trim()
+  const inviteToken = (body.invite as string)?.trim()
 
   // 支援 email 或 username 登入
   const user = await queryOne<{
@@ -35,10 +36,39 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: '帳號或密碼錯誤' }, { status: 401 })
   }
 
+  // 1. 若有攜帶邀請碼，則直接綁定新租戶權限
+  if (inviteToken) {
+    const invite = await queryOne<{ id: string; tenant_id: string; role: string }>(
+      `SELECT id, tenant_id, role FROM admin_invites WHERE token = $1 AND used = false AND expires_at > NOW()`,
+      [inviteToken]
+    )
+    if (invite) {
+      await query(
+        `INSERT INTO tenant_users (tenant_id, user_id, role) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING`,
+        [invite.tenant_id, user.id, invite.role]
+      )
+      await query(`UPDATE admin_invites SET used = true WHERE id = $1`, [invite.id])
+    }
+  }
+
+  // 2. 獲取該用戶所有已授權的租戶列表
+  const tenantRows = await query<{ tenant_id: string; role: string }>(
+    `SELECT tenant_id, role FROM tenant_users WHERE user_id = $1`,
+    [user.id]
+  )
+  const tenants = tenantRows.map((r: any) => ({ tid: r.tenant_id, role: r.role }))
+  // Fallback: 若資料庫還未建立或剛轉換，保留原 admin_users 身上的權限
+  if (tenants.length === 0 && user.tenant_id) {
+    tenants.push({ tid: user.tenant_id, role: user.role })
+  }
+
+  const defaultTid = tenants.length > 0 ? tenants[0].tid : 'default'
+
   const token = await signToken({
     sub: user.id,
-    tid: user.tenant_id ?? 'default',
-    role: user.role ?? 'admin',
+    tenants,
+    tid: defaultTid,
+    role: tenants.length > 0 ? tenants[0].role : 'admin',
     name: user.display_name ?? loginId,
   })
 
@@ -47,13 +77,14 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     method: 'password',
     identifier: loginId,
     displayName: user.display_name,
-    tenantId: user.tenant_id,
+    tenantId: defaultTid,
   })
 
+  // 以用戶擁有的第一個（或最近一個）tenant 作為預設跳轉的 slug
   const response = NextResponse.json({
     success: true,
-    slug: user.tenant_id,
-    user: { id: user.id, role: user.role, tenantId: user.tenant_id },
+    slug: defaultTid,
+    user: { id: user.id, role: tenants[0]?.role || user.role, tenantId: defaultTid, tenants },
   })
   response.cookies.set('admin_session', token, {
     httpOnly: true,

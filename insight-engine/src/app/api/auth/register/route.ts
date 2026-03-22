@@ -27,12 +27,16 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     const customSlug = (body?.slug as string)?.trim().toLowerCase()
     const codeId = (body?.codeId as string)?.trim()
     const code = (body?.code as string)?.trim()
+    const inviteToken = (body?.invite as string)?.trim()
     const channel = phone ? 'phone' : 'email'
     const phoneE164 = phone ? formatPhoneE164(phone) : ''
 
     // ── 基本驗證 ──
-    if (!password || !displayName || !orgName || !codeId || !code) {
+    if (!password || !displayName || !codeId || !code) {
       return NextResponse.json({ error: '請填寫完整資料並完成驗證' }, { status: 400 })
+    }
+    if (!inviteToken && !orgName) {
+      return NextResponse.json({ error: '自行註冊請填寫組織名稱' }, { status: 400 })
     }
     if (!email && !phone) {
       return NextResponse.json({ error: '請填寫 Email 或手機號碼' }, { status: 400 })
@@ -43,7 +47,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     if (password.length < 6) {
       return NextResponse.json({ error: '密碼至少 6 個字元' }, { status: 400 })
     }
-    if (orgName.length > 100) {
+    if (orgName && orgName.length > 100) {
       return NextResponse.json({ error: '組織名稱不能超過 100 字' }, { status: 400 })
     }
 
@@ -97,26 +101,46 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       const existing = await queryOne(`SELECT id FROM admin_users WHERE phone = $1`, [phoneE164])
       if (existing) return NextResponse.json({ error: '此手機號碼已註冊，請直接登入' }, { status: 409 })
     }
-
-    // ── 建立 tenant ──
-    let slug = customSlug || toSlug(orgName)
-    // 驗證 slug 格式
-    if (!/^[a-z0-9][a-z0-9-]{1,28}[a-z0-9]$/.test(slug)) {
-      return NextResponse.json({ error: '後台網址只允許小寫英文、數字、連字號，3～30 字元' }, { status: 400 })
+    // ── 檢查邀請碼 ──
+    let inviteData: { id: string; tenant_id: string; role: string } | null = null
+    if (inviteToken) {
+      inviteData = await queryOne<{ id: string; tenant_id: string; role: string }>(
+        `SELECT id, tenant_id, role FROM admin_invites WHERE token = $1 AND used = false AND expires_at > NOW()`,
+        [inviteToken]
+      )
+      if (!inviteData) {
+        return NextResponse.json({ error: '邀請連結無效或已過期' }, { status: 400 })
+      }
     }
-    const slugExists = await queryOne(`SELECT id FROM tenants WHERE slug = $1`, [slug])
-    if (slugExists) {
-      return NextResponse.json({ error: `後台網址 "${slug}" 已被使用，請換一個` }, { status: 409 })
-    }
 
-    const tenant = await queryOne<{ id: string; slug: string }>(
-      `INSERT INTO tenants (name, slug, plan, is_active)
-       VALUES ($1, $2, 'free', true)
-       RETURNING id, slug`,
-      [orgName, slug],
-    )
-    if (!tenant) {
-      return NextResponse.json({ error: '建立組織失敗' }, { status: 500 })
+    let finalTenantId = ''
+    let finalOrgName = orgName
+
+    if (inviteData) {
+      finalTenantId = inviteData.tenant_id
+      const ten = await queryOne<{ name: string }>(`SELECT name FROM tenants WHERE slug = $1`, [finalTenantId])
+      finalOrgName = ten?.name || orgName
+    } else {
+      // ── 自己註冊：建立 tenant ──
+      let slug = customSlug || toSlug(orgName)
+      if (!/^[a-z0-9][a-z0-9-]{1,28}[a-z0-9]$/.test(slug)) {
+        return NextResponse.json({ error: '後台網址只允許小寫英文、數字、連字號，3～30 字元' }, { status: 400 })
+      }
+      const slugExists = await queryOne(`SELECT id FROM tenants WHERE slug = $1`, [slug])
+      if (slugExists) return NextResponse.json({ error: `後台網址 "${slug}" 已被使用，請換一個` }, { status: 409 })
+  
+      const tenant = await queryOne<{ id: string; slug: string }>(
+        `INSERT INTO tenants (name, slug, plan, is_active) VALUES ($1, $2, 'free', true) RETURNING id, slug`,
+        [orgName, slug],
+      )
+      if (!tenant) return NextResponse.json({ error: '建立組織失敗' }, { status: 500 })
+      finalTenantId = tenant.slug
+
+      // 建立預設 site_settings
+      await query(
+        `INSERT INTO site_settings (tenant_id, site_title, site_description) VALUES ($1, $2, $3) ON CONFLICT (tenant_id) DO NOTHING`,
+        [finalTenantId, orgName, `${orgName} 問卷系統`],
+      )
     }
 
     // ── 建立 admin 帳號 ──
@@ -126,16 +150,19 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       `INSERT INTO admin_users (username, password_hash, display_name, email, phone, role, tenant_id)
        VALUES ($1, $2, $3, $4, $5, 'admin', $6)
        RETURNING id`,
-      [username, pwHash, displayName, email || null, phoneE164 || null, tenant.slug],
+      [username, pwHash, displayName, email || null, phoneE164 || null, finalTenantId],
     )
 
-    // ── 建立預設 site_settings ──
+    // ── 建立租戶與使用者的關聯 (tenant_users) ──
+    const finalRole = inviteData ? inviteData.role : 'admin'
     await query(
-      `INSERT INTO site_settings (tenant_id, site_title, site_description)
-       VALUES ($1, $2, $3)
-       ON CONFLICT (tenant_id) DO NOTHING`,
-      [tenant.slug, orgName, `${orgName} 問卷系統`],
+      `INSERT INTO tenant_users (tenant_id, user_id, role) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING`,
+      [finalTenantId, newUser?.id, finalRole]
     )
+
+    if (inviteData) {
+      await query(`UPDATE admin_invites SET used = true WHERE id = $1`, [inviteData.id])
+    }
 
     // ── LINE Notify 通知管理員 ──
     notifyNewRegistration({
@@ -143,19 +170,20 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       email: email || undefined,
       phone: phoneE164 || undefined,
       displayName,
-      orgName,
-      slug: tenant.slug,
+      orgName: finalOrgName,
+      slug: finalTenantId,
     })
 
     // ── 自動登入 → 簽發 JWT ──
     const jwt = await signToken({
       sub: newUser?.id ?? '',
-      tid: tenant.slug,
-      role: 'admin',
+      tid: finalTenantId, // fallback
+      tenants: [{ tid: finalTenantId, role: finalRole }],
+      role: finalRole, // fallback
       name: displayName,
     })
 
-    const response = NextResponse.json({ success: true, slug: tenant.slug })
+    const response = NextResponse.json({ success: true, slug: finalTenantId })
     response.cookies.set('admin_session', jwt, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',

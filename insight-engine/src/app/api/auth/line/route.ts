@@ -26,6 +26,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 
   // CSRF 防護
   const state = crypto.randomUUID()
+  const inviteToken = request.nextUrl.searchParams.get('invite')
 
   const params = new URLSearchParams({
     response_type: 'code',
@@ -45,6 +46,15 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     maxAge: 600, // 10 分鐘
     path: '/',
   })
+
+  if (inviteToken) {
+    response.cookies.set('line_oauth_invite', inviteToken, {
+      httpOnly: true,
+      sameSite: 'lax',
+      maxAge: 600,
+      path: '/',
+    })
+  }
 
   return response
 }

@@ -160,13 +160,23 @@ export default function TeamPage() {
                   <option value="editor">編輯者</option>
                 </select>
               </div>
-              <button
-                onClick={() => handleInvite(false)}
-                disabled={inviting || !inviteEmail.trim()}
-                className="px-4 py-2 bg-t-btn hover:bg-t-btn-hover disabled:opacity-50 text-white rounded-lg text-sm font-medium transition cursor-pointer"
-              >
-                {inviting ? '產生中...' : '產生邀請連結'}
-              </button>
+              <div className="flex flex-col gap-2">
+                <button
+                  onClick={() => handleInvite(false)}
+                  disabled={inviting || !inviteEmail.trim()}
+                  className="px-4 py-2 bg-t-btn hover:bg-t-btn-hover disabled:opacity-50 text-white rounded-lg text-sm font-medium transition cursor-pointer whitespace-nowrap"
+                >
+                  {inviting ? '產生中...' : '產生 Email 專屬邀請連結'}
+                </button>
+                <div className="text-center text-xs text-slate-500">或</div>
+                <button
+                  onClick={() => handleInvite(true)}
+                  disabled={inviting}
+                  className="px-4 py-2 border border-slate-600 hover:bg-slate-700 disabled:opacity-50 text-white rounded-lg text-sm font-medium transition cursor-pointer whitespace-nowrap"
+                >
+                  {inviting ? '產生中...' : '產生通用邀請連結 (無需 Email)'}
+                </button>
+              </div>
             </div>
           )}
         </div>

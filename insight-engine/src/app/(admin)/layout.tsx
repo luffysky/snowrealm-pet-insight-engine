@@ -357,7 +357,7 @@ function AdminLayoutInner({
 
           {/* User info + tenant switcher + logout */}
           <div className="hidden lg:flex items-center gap-3 ml-auto">
-            {user && isSuperAdmin && user.tenants && user.tenants.length > 1 && (
+            {user && user.tenants && user.tenants.length > 1 && (
               <div className="relative" ref={tenantRef}>
                 <button
                   onClick={() => setTenantDropOpen(!tenantDropOpen)}
@@ -465,12 +465,29 @@ function AdminLayoutInner({
               ))}
               {/* Mobile user info */}
               {user && (
-                <div className="border-t border-slate-800 pt-3 px-3 flex items-center justify-between">
-                  <div className="text-xs text-slate-500">
-                    {user.userName} <span className="text-slate-600">({user.role})</span>
-                    {user.tenantName && <span className="ml-2 text-slate-600">• {user.tenantName}</span>}
+                <div className="border-t border-slate-800 pt-3 flex flex-col gap-2 relative pb-3">
+                  {user.tenants && user.tenants.length > 1 && (
+                    <div className="px-3">
+                      <select
+                        value={user.tenantId}
+                        onChange={(e) => handleSwitchTenant(e.target.value)}
+                        className="w-full bg-slate-800 border border-slate-700 text-slate-300 rounded-lg px-3 py-2 text-sm"
+                      >
+                        {user.tenants.map(t => (
+                          <option key={t.slug} value={t.slug}>{t.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+                  <div className="px-3 flex items-center justify-between">
+                    <div className="text-xs text-slate-500">
+                      {user.userName} <span className="text-slate-600">({user.role})</span>
+                      {(!user.tenants || user.tenants.length <= 1) && user.tenantName && (
+                        <span className="ml-2 text-slate-600">• {user.tenantName}</span>
+                      )}
+                    </div>
+                    <button onClick={handleLogout} className="text-xs text-slate-500 hover:text-red-400 cursor-pointer">登出</button>
                   </div>
-                  <button onClick={handleLogout} className="text-xs text-slate-500 hover:text-red-400 cursor-pointer">登出</button>
                 </div>
               )}
             </div>

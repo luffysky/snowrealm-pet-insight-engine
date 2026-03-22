@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server'
 import { query, queryOne } from '@/lib/db'
-import { getLineConfig } from '@/lib/lineConfig'
 import { getTenantContext } from '@/lib/tenant'
+
+export const dynamic = 'force-dynamic'
 
 export async function GET(): Promise<NextResponse> {
   try {
@@ -37,13 +38,33 @@ export async function GET(): Promise<NextResponse> {
       query<{ type: string; status: string; created_at: string }>(
         `SELECT trigger_type as type, status, created_at FROM notification_logs WHERE tenant_id = $1 ORDER BY created_at DESC FETCH FIRST 5 ROWS ONLY`, [tenantId]
       ),
-      queryOne<{ size: string }>(
-        "SELECT pg_size_pretty(pg_database_size(current_database())) as size"
+      queryOne<{ total_rows: string }>(
+        `SELECT (
+          (SELECT count(*) FROM surveys WHERE tenant_id = $1) +
+          (SELECT count(*) FROM responses WHERE tenant_id = $1) +
+          (SELECT count(*) FROM line_users WHERE tenant_id = $1) +
+          (SELECT count(*) FROM notification_logs WHERE tenant_id = $1)
+        )::text AS total_rows`, [tenantId]
       ),
       query<{ id: string; username: string; display_name: string | null; role: string; created_at: string; line_user_id: string | null }>(
         'SELECT id, username, display_name, role, created_at, line_user_id FROM admin_users WHERE tenant_id = $1 ORDER BY created_at ASC', [tenantId]
       ),
     ])
+
+    // 用記錄數概算該租戶的資料量（每筆記錄約 0.5 KB）
+    const totalRows = Number(dbSize?.total_rows ?? 0)
+    const estimatedSizeKB = totalRows * 0.5
+    const sizeLabel = estimatedSizeKB > 1024
+      ? `${(estimatedSizeKB / 1024).toFixed(1)} MB`
+      : `${Math.round(estimatedSizeKB)} KB`
+
+    // 只查該租戶自己有沒有在 DB 設過 LINE（不 fallback 到全域 env）
+    const tenantLineOfficial = await queryOne<{ id: string }>(
+      `SELECT id FROM line_configs WHERE tenant_id = $1 AND config_key = 'OFFICIAL_CHANNEL_ACCESS_TOKEN'`, [tenantId]
+    )
+    const tenantLineInsight = await queryOne<{ id: string }>(
+      `SELECT id FROM line_configs WHERE tenant_id = $1 AND config_key = 'INSIGHT_CHANNEL_ACCESS_TOKEN'`, [tenantId]
+    )
 
     return NextResponse.json({
       tables: {
@@ -67,15 +88,15 @@ export async function GET(): Promise<NextResponse> {
         createdAt: u.created_at,
         hasLine: !!u.line_user_id,
       })),
-      dbSize: dbSize?.size ?? 'N/A',
+      dbSize: sizeLabel,
       env: {
-        hasLineOfficial: !!(await getLineConfig('OFFICIAL_CHANNEL_ACCESS_TOKEN', tenantId)),
-        hasLineInsight: !!(await getLineConfig('INSIGHT_CHANNEL_ACCESS_TOKEN', tenantId)),
+        hasLineOfficial: !!tenantLineOfficial,
+        hasLineInsight: !!tenantLineInsight,
         hasLiff: !!process.env.NEXT_PUBLIC_LIFF_ID,
         hasOpenAI: !!process.env.OPENAI_API_KEY,
         hasDbUrl: !!process.env.DATABASE_URL,
         nodeEnv: process.env.NODE_ENV,
-        baseUrl: process.env.NEXT_PUBLIC_BASE_URL ?? 'N/A',
+        baseUrl: `${process.env.NEXT_PUBLIC_BASE_URL ?? ''}/insight-admin/${tenantId}`,
       },
       serverTime: new Date().toISOString(),
     })

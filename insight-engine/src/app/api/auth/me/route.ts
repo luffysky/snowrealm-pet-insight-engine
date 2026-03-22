@@ -37,11 +37,17 @@ export async function GET(): Promise<NextResponse> {
     [ctx.tenantId],
   )
 
-  // super_admin 可取得所有租戶列表
+  // super_admin 可取得所有租戶列表；一般管理員從 tenant_users 查出自己授權的租戶
   let tenants: TenantRow[] = []
   if (ctx.role === 'super_admin') {
     tenants = await query<TenantRow>(
       `SELECT slug, name FROM tenants WHERE is_active = true ORDER BY name`,
+    )
+  } else {
+    // 直接查 DB（不依賴 JWT 裡可能不存在的 tenants 欄位）
+    tenants = await query<TenantRow>(
+      `SELECT t.slug, t.name FROM tenant_users tu JOIN tenants t ON tu.tenant_id = t.slug WHERE tu.user_id = $1 ORDER BY t.name`,
+      [ctx.userId]
     )
   }
 

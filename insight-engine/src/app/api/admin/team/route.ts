@@ -29,7 +29,8 @@ export async function GET(request: NextRequest) {
   // 將 LINE 專用邀請的虛擬 Email 顯示為特殊標籤
   const mappedInvites = invites.map(inv => ({
     ...inv,
-    email: inv.email.includes('@invite.local') ? '(LINE 邀請連結)' : inv.email
+    // 加上空值保護，避免 inv.email 為 null 時報錯（強制觸發重新編譯）
+    email: !inv.email ? '(通用邀請連結)' : inv.email.includes('@invite.local') ? '(LINE 邀請連結)' : inv.email
   }))
 
   return NextResponse.json({ members, invites: mappedInvites })

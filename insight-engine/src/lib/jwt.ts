@@ -28,9 +28,10 @@ function base64urlDecode(str: string): Uint8Array {
 
 export interface TokenPayload {
   sub: string   // admin_user.id
-  tid: string   // tenant slug
-  role: string  // super_admin | admin | editor | viewer
   name: string  // display_name
+  tenants?: { tid: string; role: string }[] // 多租戶權限名單
+  tid?: string   // 舊版相容 tenant slug
+  role?: string  // 舊版相容 super_admin | admin | editor | viewer
   exp: number   // expiry (unix seconds)
 }
 

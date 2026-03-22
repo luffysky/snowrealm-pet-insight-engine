@@ -110,7 +110,11 @@ export default function AdminPanelPage() {
   }
 
   useEffect(() => {
-    fetch('/api/admin/system')
+    fetch('/api/admin/system', {
+      headers: {
+        'x-request-tenant-id': slug
+      }
+    })
       .then((r) => r.json())
       .then((data) => {
         if (data.error) throw new Error(data.error)
