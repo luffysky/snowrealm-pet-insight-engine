@@ -84,14 +84,18 @@ export default function AdminPanelPage() {
   const [copied, setCopied] = useState(false)
 
   const handleInvite = async () => {
-    if (!inviteEmail.trim()) return
+    // 若無 Email 則判定為通用連結 (isLineInvite: true)
+    const isLineInvite = !inviteEmail.trim()
     setInviting(true)
     setInviteError('')
     try {
       const res = await fetch('/api/admin/team', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: inviteEmail, role: inviteRole }),
+        headers: { 
+          'Content-Type': 'application/json',
+          'x-request-tenant-id': slug
+        },
+        body: JSON.stringify({ email: inviteEmail.trim() || undefined, role: inviteRole, isLineInvite }),
       })
       const data = await res.json()
       if (!res.ok) { setInviteError(data.error || '邀請失敗'); return }
@@ -305,7 +309,7 @@ export default function AdminPanelPage() {
                       type="email"
                       value={inviteEmail}
                       onChange={(e) => setInviteEmail(e.target.value)}
-                      placeholder="member@example.com"
+                      placeholder="(非必填) member@example.com"
                       className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white text-sm focus:border-t-accent-border focus:outline-none placeholder:text-slate-600"
                     />
                   </div>
@@ -324,10 +328,10 @@ export default function AdminPanelPage() {
                 {inviteError && <p className="text-sm text-red-400">{inviteError}</p>}
                 <button
                   onClick={handleInvite}
-                  disabled={inviting || !inviteEmail.trim()}
+                  disabled={inviting}
                   className="px-4 py-2 bg-t-btn hover:bg-t-btn-hover disabled:bg-slate-700 disabled:text-slate-500 text-white rounded-lg text-sm font-medium transition-colors cursor-pointer"
                 >
-                  {inviting ? '邀請中...' : '發送邀請'}
+                  {inviting ? '處理中...' : (inviteEmail.trim() ? '發送邀請' : '產生通用連結')}
                 </button>
               </div>
             )}
