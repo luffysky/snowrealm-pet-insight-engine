@@ -72,17 +72,21 @@ export async function GET(request: NextRequest) {
     ])
 
     return NextResponse.json({
-      users: (users ?? []).map(u => ({
-        id: u.id,
-        username: u.username,
-        displayName: u.display_name,
-        role: u.role,
-        tenantId: u.tenant_id,
-        tenantName: u.tenant_name,
-        createdAt: u.created_at,
-        authProvider: u.has_google ? 'google' : 'email',
-        hasLine: u.has_line,
-      })),
+      users: (users ?? []).map(u => {
+        const isPhone = /^\+[0-9]{7,15}$/.test(u.username)
+        const authProvider = u.has_google ? 'google' : isPhone ? 'phone' : 'email'
+        return {
+          id: u.id,
+          username: u.username,
+          displayName: u.display_name,
+          role: u.role,
+          tenantId: u.tenant_id,
+          tenantName: u.tenant_name,
+          createdAt: u.created_at,
+          authProvider,
+          hasLine: u.has_line,
+        }
+      }),
       surveyCount: Number(surveyCount?.[0]?.count ?? 0),
       responseCount: Number(responseCount?.[0]?.count ?? 0),
     })
@@ -102,17 +106,22 @@ export async function GET(request: NextRequest) {
     )
 
     return NextResponse.json({
-      users: (users ?? []).map(u => ({
-        id: u.id,
-        username: u.username,
-        displayName: u.display_name,
-        role: u.role,
-        tenantId: u.tenant_id,
-        tenantName: u.tenant_name,
-        createdAt: u.created_at,
-        authProvider: u.has_google ? 'google' : 'email',
-        hasLine: u.has_line,
-      })),
+      users: (users ?? []).map(u => {
+        // 判斷 authProvider：Google > 手機（E.164） > Email
+        const isPhone = /^\+[0-9]{7,15}$/.test(u.username)
+        const authProvider = u.has_google ? 'google' : isPhone ? 'phone' : 'email'
+        return {
+          id: u.id,
+          username: u.username,
+          displayName: u.display_name,
+          role: u.role,
+          tenantId: u.tenant_id,
+          tenantName: u.tenant_name,
+          createdAt: u.created_at,
+          authProvider,
+          hasLine: u.has_line,
+        }
+      }),
     })
   }
 

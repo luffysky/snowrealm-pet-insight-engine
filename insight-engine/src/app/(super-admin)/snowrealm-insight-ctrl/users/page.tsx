@@ -20,8 +20,18 @@ function formatTime(iso: string) {
 
 const AUTH_LABELS: Record<string, string> = {
   email: '📧 Email',
+  phone: '📱 手機',
   google: '🔷 Google',
   line: '💬 LINE',
+}
+
+/** 將 E.164 格式的手機號碼轉回居民易讀格式（以台灣為例） */
+function formatUsername(username: string): string {
+  // E.164 格式: +886xxxxxxxxx → 09xxxxxxxx
+  if (/^\+886[0-9]{9}$/.test(username)) {
+    return '0' + username.slice(4)
+  }
+  return username
 }
 
 export default function SuperAdminUsersPage() {
@@ -119,7 +129,7 @@ export default function SuperAdminUsersPage() {
               {filteredUsers.map(u => (
                 <tr key={u.id} className="border-b border-slate-800/50 last:border-0 hover:bg-slate-800/30">
                   <td className="px-4 py-2.5 text-white/80 font-medium">{u.displayName || '—'}</td>
-                  <td className="px-4 py-2.5 text-white/50 font-mono text-xs">{u.username}</td>
+                  <td className="px-4 py-2.5 text-white/50 font-mono text-xs">{formatUsername(u.username)}</td>
                   <td className="px-4 py-2.5 text-white/60 text-xs">{u.tenantName}</td>
                   <td className="px-4 py-2.5">
                     <span className={`text-xs px-2 py-0.5 rounded-full ${
