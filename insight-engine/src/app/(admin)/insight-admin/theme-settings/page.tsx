@@ -144,7 +144,7 @@ export default function ThemeSettingsPage() {
                   : 'bg-white/2 border-white/5 opacity-60'
               }`}
             >
-              <div className="flex items-start justify-between mb-4">
+              <div className="flex flex-col sm:flex-row items-start sm:justify-between gap-3 mb-4">
                 <div className="flex items-center gap-3">
                   <span className="text-3xl">{t.icon}</span>
                   <div>

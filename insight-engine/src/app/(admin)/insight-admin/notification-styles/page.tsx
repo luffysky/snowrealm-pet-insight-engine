@@ -87,7 +87,7 @@ export default function NotificationStylesPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-1">
         <h1 className="text-2xl font-bold text-white">LINE 通知樣式</h1>
         <p className="text-sm text-slate-400">管理各類 LINE Flex Message 的顏色、文字與按鈕</p>
       </div>

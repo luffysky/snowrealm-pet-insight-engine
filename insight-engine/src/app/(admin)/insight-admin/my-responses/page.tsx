@@ -56,10 +56,10 @@ export default function MyResponsesPage() {
       ) : (
         <div className="space-y-3">
           {responses.map(r => (
-            <div key={r.id} className="bg-t-card-bg border border-t-card-border rounded-xl p-4 flex items-center justify-between">
+            <div key={r.id} className="bg-t-card-bg border border-t-card-border rounded-xl p-4 flex flex-wrap items-center justify-between gap-3">
               <div>
                 <p className="text-white font-medium">{r.surveyTitle}</p>
-                <div className="flex items-center gap-3 mt-1 text-xs text-white/40">
+                <div className="flex flex-wrap items-center gap-3 mt-1 text-xs text-white/40">
                   <span className={`px-2 py-0.5 rounded-full ${
                     r.status === 'completed' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-amber-500/20 text-amber-400'
                   }`}>

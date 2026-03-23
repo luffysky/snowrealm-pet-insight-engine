@@ -298,7 +298,7 @@ function DoneContent({ config }: { config: SurveyConfig }) {
           {gameStats && (
             <div className="space-y-2">
               <p className={`text-xs ${stepTextClass[theme]} opacity-40`}>{tc.statsLabel}</p>
-              <div className="grid grid-cols-3 gap-3 max-w-sm mx-auto">
+              <div className="grid grid-cols-3 gap-2 sm:gap-3 max-w-sm mx-auto">
                 <StatCard label={statLabel(theme, 'level')} value={`LV.${level}`} icon={statIcon(theme, 'level')} theme={theme} />
                 <StatCard label={statLabel(theme, 'xp')} value={`${totalXp} XP`} icon={statIcon(theme, 'xp')} theme={theme} />
                 <StatCard label={statLabel(theme, 'achieve')} value={`${milestoneCount}`} icon={statIcon(theme, 'achieve')} theme={theme} />

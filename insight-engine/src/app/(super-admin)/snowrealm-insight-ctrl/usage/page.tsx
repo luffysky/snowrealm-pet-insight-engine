@@ -60,7 +60,7 @@ export default function SuperAdminUsagePage() {
       <h1 className="text-2xl font-bold text-white">📈 用量追蹤</h1>
 
       {/* 30 天綜合 KPI */}
-      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
         {[
           { label: '30 天回覆', value: totalResponses30d, color: 'text-emerald-400' },
           { label: '30 天註冊', value: totalRegistrations30d, color: 'text-blue-400' },

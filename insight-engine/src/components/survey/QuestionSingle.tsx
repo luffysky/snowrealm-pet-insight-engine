@@ -54,7 +54,7 @@ export function QuestionSingle({
 
       {/* 選項 — Grid 或 List */}
       {useGrid ? (
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {options.map((option, idx) => {
             const isSelected = selectedValue === option.value
             const isFlipping = flippedCard === option.value

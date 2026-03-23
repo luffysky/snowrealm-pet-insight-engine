@@ -136,55 +136,61 @@ export default function LineSettingsPage() {
                 <div className="space-y-3">
                   {items.map((item) => (
                     <div key={item.key} className="flex flex-col gap-2">
-                      <div className="flex items-center gap-3">
-                        <span className="text-sm text-white/50 w-36 shrink-0">{item.label}</span>
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+                        <span className="text-sm text-white/50 sm:w-36 sm:shrink-0">{item.label}</span>
                         <SourceBadge source={item.source} />
 
                         {editingKey === item.key ? (
-                          <div className="flex-1 flex gap-2">
+                          <div className="flex-1 w-full min-w-0 flex flex-col gap-2 sm:flex-row sm:items-center">
                             <input
                               type={item.isSecret ? 'password' : 'text'}
                               value={editValue}
                               onChange={(e) => setEditValue(e.target.value)}
                               placeholder={item.isSecret ? '輸入新的值（明文不會傳至前端）' : '輸入值'}
                               autoComplete="off"
-                              className="flex-1 px-3 py-1.5 bg-slate-800 border border-slate-600 rounded-lg text-sm text-white/80"
+                              className="w-full min-w-0 flex-1 px-3 py-1.5 bg-slate-800 border border-slate-600 rounded-lg text-sm text-white/80"
                             />
-                            <button type="button" onClick={() => handleSave(item.key)} disabled={saving}
-                              className="px-3 py-1.5 bg-t-btn hover:bg-t-btn-hover disabled:opacity-40 text-white rounded-lg text-sm cursor-pointer">
-                              {saving ? '...' : '儲存'}
-                            </button>
-                            <button type="button" onClick={() => { setEditingKey(null); setEditValue('') }}
-                              className="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded-lg text-sm cursor-pointer">
-                              取消
-                            </button>
+                            <div className="flex gap-2 shrink-0">
+                              <button type="button" onClick={() => handleSave(item.key)} disabled={saving}
+                                className="px-3 py-1.5 bg-t-btn hover:bg-t-btn-hover disabled:opacity-40 text-white rounded-lg text-sm cursor-pointer">
+                                {saving ? '...' : '儲存'}
+                              </button>
+                              <button type="button" onClick={() => { setEditingKey(null); setEditValue('') }}
+                                className="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded-lg text-sm cursor-pointer">
+                                取消
+                              </button>
+                            </div>
                           </div>
                         ) : (
-                          <div className="flex-1 flex items-center gap-2">
-                            <span className="text-sm text-white/60 font-mono truncate max-w-xs">
-                              {item.source === 'none'
-                                ? '—'
-                                : item.isSecret && !showValue[item.key]
-                                  ? '••••••••'
-                                  : item.maskedValue ?? '—'
-                              }
-                            </span>
-                            {item.isSecret && item.source !== 'none' && (
-                              <button type="button" onClick={() => setShowValue((prev) => ({ ...prev, [item.key]: !prev[item.key] }))}
-                                className="text-xs text-slate-500 hover:text-slate-300 cursor-pointer">
-                                {showValue[item.key] ? '🙈' : '👁'}
+                          <div className="flex-1 w-full min-w-0 flex flex-col gap-2 sm:flex-row sm:items-center">
+                            <div className="flex items-center gap-2 min-w-0 flex-1">
+                              <span className="text-sm text-white/60 font-mono truncate min-w-0 flex-1 sm:max-w-xs">
+                                {item.source === 'none'
+                                  ? '—'
+                                  : item.isSecret && !showValue[item.key]
+                                    ? '••••••••'
+                                    : item.maskedValue ?? '—'
+                                }
+                              </span>
+                              {item.isSecret && item.source !== 'none' && (
+                                <button type="button" onClick={() => setShowValue((prev) => ({ ...prev, [item.key]: !prev[item.key] }))}
+                                  className="text-xs text-slate-500 hover:text-slate-300 cursor-pointer shrink-0">
+                                  {showValue[item.key] ? '🙈' : '👁'}
+                                </button>
+                              )}
+                            </div>
+                            <div className="flex flex-wrap gap-2 shrink-0 sm:ml-auto">
+                              <button type="button" onClick={() => { setEditingKey(item.key); setEditValue('') }}
+                                className="text-xs text-t-accent hover:text-t-accent cursor-pointer">
+                                {item.source === 'none' ? '設定' : '修改'}
                               </button>
-                            )}
-                            <button type="button" onClick={() => { setEditingKey(item.key); setEditValue('') }}
-                              className="text-xs text-t-accent hover:text-t-accent cursor-pointer ml-auto">
-                              {item.source === 'none' ? '設定' : '修改'}
-                            </button>
-                            {item.source === 'db' && (
-                              <button type="button" onClick={() => handleDelete(item.key)}
-                                className="text-xs text-red-400 hover:text-red-300 cursor-pointer">
-                                刪除
-                              </button>
-                            )}
+                              {item.source === 'db' && (
+                                <button type="button" onClick={() => handleDelete(item.key)}
+                                  className="text-xs text-red-400 hover:text-red-300 cursor-pointer">
+                                  刪除
+                                </button>
+                              )}
+                            </div>
                           </div>
                         )}
                       </div>

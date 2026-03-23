@@ -58,7 +58,7 @@ export default function SuperAdminDashboard() {
       {stats.topFeatures.length > 0 && (
         <section>
           <h2 className="text-lg font-semibold text-white/90 mb-3">📈 功能使用排行</h2>
-          <div className="bg-slate-900/60 border border-slate-800 rounded-xl overflow-hidden">
+          <div className="bg-slate-900/60 border border-slate-800 rounded-xl overflow-hidden overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-slate-800 text-white/40 text-xs">

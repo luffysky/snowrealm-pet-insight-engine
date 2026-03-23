@@ -52,7 +52,7 @@ export function QuestionMultiple({
       </div>
 
       {useGrid ? (
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {options.map((option, idx) => {
             const isSelected = selectedValues.includes(option.value)
             const isDisabled = !isSelected && isAtLimit

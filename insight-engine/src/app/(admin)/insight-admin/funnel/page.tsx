@@ -41,6 +41,7 @@ export default function FunnelPage() {
       : d.questionContent,
     fullLabel: d.questionContent,
     dropOffRate: d.dropOffRate,
+    isHotspot: d.isHotspot,
   }))
 
   return (
@@ -85,7 +86,10 @@ export default function FunnelPage() {
               {chartData.map((entry, index) => (
                 <Cell
                   key={index}
-                  fill={`rgba(59, 130, 246, ${0.3 + (entry.reached / maxReached) * 0.7})`}
+                  fill={entry.isHotspot
+                    ? '#f87171'
+                    : `rgba(59, 130, 246, ${0.3 + (entry.reached / maxReached) * 0.7})`
+                  }
                 />
               ))}
             </Bar>
@@ -109,13 +113,21 @@ export default function FunnelPage() {
           </thead>
           <tbody className="text-slate-300">
             {data.map((d) => (
-              <tr key={d.step} className="border-b border-t-card-border hover:bg-slate-800/50">
-                <td className="py-2 px-3 font-mono">Q{d.step + 1}</td>
+              <tr
+                key={d.step}
+                className={`border-b border-t-card-border hover:bg-slate-800/50 ${
+                  d.isHotspot ? 'bg-red-500/5' : ''
+                }`}
+              >
+                <td className="py-2 px-3 font-mono flex items-center gap-1.5">
+                  {d.isHotspot && <span title="棄卷熱點">🔥</span>}
+                  Q{d.step + 1}
+                </td>
                 <td className="py-2 px-3 max-w-xs truncate">{d.questionContent}</td>
                 <td className="py-2 px-3 text-right">{d.reached}</td>
                 <td className="py-2 px-3 text-right">{d.dropOff}</td>
                 <td className="py-2 px-3 text-right">
-                  <span className={d.dropOffRate > 0.3 ? 'text-red-400 font-semibold' : ''}>
+                  <span className={d.isHotspot ? 'text-red-400 font-semibold' : ''}>
                     {(d.dropOffRate * 100).toFixed(1)}%
                   </span>
                 </td>

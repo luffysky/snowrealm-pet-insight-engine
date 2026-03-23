@@ -169,7 +169,7 @@ export default function AiSettingsPage() {
       {stats && (
         <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-4">
           <h3 className="text-sm font-medium text-slate-300 mb-3">📊 免費額度</h3>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="bg-t-card-bg rounded-lg p-3">
               <p className="text-xs text-slate-500">AI 生成問卷</p>
               <p className="text-lg font-bold text-white">
@@ -334,7 +334,7 @@ export default function AiSettingsPage() {
           ) : (
             configs.map((c) => (
               <div key={c.id} className="bg-slate-800/50 border border-slate-700 rounded-xl p-4">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-wrap items-center justify-between gap-3">
                   <div className="flex items-center gap-3">
                     <span className="text-xl">
                       {PROVIDERS.find((p) => p.value === c.provider)?.icon ?? '🔌'}
@@ -356,7 +356,7 @@ export default function AiSettingsPage() {
                       </p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     <button
                       onClick={() => handleVerify(c.id)}
                       disabled={verifying === c.id}

@@ -132,7 +132,7 @@ export default function SiteSettingsPage() {
         <Field label="OG 標題" value={settings.og_title} onChange={v => update('og_title', v)} placeholder="留空則使用網站標題" />
         <Field label="OG 描述" value={settings.og_description} onChange={v => update('og_description', v)} placeholder="留空則使用網站描述" textarea />
         <Field label="OG 網站名稱" value={settings.og_site_name} onChange={v => update('og_site_name', v)} placeholder="SnowRealm Insight Engine" />
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Field label="Locale" value={settings.og_locale} onChange={v => update('og_locale', v)} placeholder="zh_TW" />
           <div>
             <label className="block text-sm text-slate-400 mb-1">Twitter Card</label>

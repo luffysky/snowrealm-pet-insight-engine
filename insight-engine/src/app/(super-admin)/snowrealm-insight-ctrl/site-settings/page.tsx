@@ -97,7 +97,7 @@ export default function SuperAdminSiteSettingsPage() {
   const inputCls = 'w-full bg-slate-950 border border-slate-700 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500 placeholder:text-slate-600'
 
   return (
-    <div className="max-w-3xl space-y-8">
+    <div className="max-w-3xl mx-auto space-y-8">
       <div>
         <h1 className="text-2xl font-bold text-white">🌐 首頁 Meta / OG / SEO</h1>
         <p className="text-sm text-white/40 mt-1">設定平台首頁的標題、描述和社群分享預覽。儲存後下次頁面載入即生效。</p>
@@ -127,7 +127,7 @@ export default function SuperAdminSiteSettingsPage() {
           <label className="block text-sm text-white/50 mb-1">OG 描述（留空使用網站描述）</label>
           <textarea value={settings.og_description} onChange={e => update('og_description', e.target.value)} placeholder="分享時的描述" rows={2} className={inputCls} />
         </div>
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm text-white/50 mb-1">OG 網站名稱</label>
             <input type="text" value={settings.og_site_name} onChange={e => update('og_site_name', e.target.value)} placeholder="SnowRealm Insight Engine" className={inputCls} />

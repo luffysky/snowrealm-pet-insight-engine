@@ -18,45 +18,45 @@ export const THEME_LIST: { value: SurveyTheme; label: string; icon: string; desc
 // === Shell (最外層背景) ===
 export const shellClass: Record<SurveyTheme, string> = {
   default:
-    'min-h-screen bg-linear-to-br from-slate-950 via-indigo-950 to-purple-950 flex items-center justify-center px-4 py-8',
+    'min-h-dvh bg-linear-to-br from-slate-950 via-indigo-950 to-purple-950 flex items-center justify-center px-4 py-8',
   game:
-    'min-h-screen bg-[#1a1a2e] flex items-center justify-center px-4 py-8 theme-game-bg',
+    'min-h-dvh bg-[#1a1a2e] flex items-center justify-center px-4 py-8 theme-game-bg',
   cyber:
-    'min-h-screen bg-[#0a0a1a] flex items-center justify-center px-4 py-8 theme-cyber-bg',
+    'min-h-dvh bg-[#0a0a1a] flex items-center justify-center px-4 py-8 theme-cyber-bg',
   ancient:
-    'min-h-screen bg-[#1a1510] flex items-center justify-center px-4 py-8 theme-ancient-bg',
+    'min-h-dvh bg-[#1a1510] flex items-center justify-center px-4 py-8 theme-ancient-bg',
   sakura:
-    'min-h-screen bg-[#1a0f18] flex items-center justify-center px-4 py-8 theme-sakura-bg',
+    'min-h-dvh bg-[#1a0f18] flex items-center justify-center px-4 py-8 theme-sakura-bg',
   ocean:
-    'min-h-screen bg-[#060d1a] flex items-center justify-center px-4 py-8 theme-ocean-bg',
+    'min-h-dvh bg-[#060d1a] flex items-center justify-center px-4 py-8 theme-ocean-bg',
   forest:
-    'min-h-screen bg-[#0a1208] flex items-center justify-center px-4 py-8 theme-forest-bg',
+    'min-h-dvh bg-[#0a1208] flex items-center justify-center px-4 py-8 theme-forest-bg',
   candy:
-    'min-h-screen bg-[#1a0e20] flex items-center justify-center px-4 py-8 theme-candy-bg',
+    'min-h-dvh bg-[#1a0e20] flex items-center justify-center px-4 py-8 theme-candy-bg',
   noir:
-    'min-h-screen bg-[#0a0a0a] flex items-center justify-center px-4 py-8 theme-noir-bg',
+    'min-h-dvh bg-[#0a0a0a] flex items-center justify-center px-4 py-8 theme-noir-bg',
 }
 
 // === Card (問卷卡片) ===
 export const cardClass: Record<SurveyTheme, string> = {
   default:
-    'bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-8 shadow-2xl shadow-purple-500/5',
+    'bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-5 sm:p-8 shadow-2xl shadow-purple-500/5',
   game:
-    'theme-game-card rounded-2xl p-8',
+    'theme-game-card rounded-2xl p-5 sm:p-8',
   cyber:
-    'theme-cyber-card rounded-3xl p-8',
+    'theme-cyber-card rounded-3xl p-5 sm:p-8',
   ancient:
-    'theme-ancient-card rounded-2xl p-8',
+    'theme-ancient-card rounded-2xl p-5 sm:p-8',
   sakura:
-    'theme-sakura-card rounded-3xl p-8',
+    'theme-sakura-card rounded-3xl p-5 sm:p-8',
   ocean:
-    'theme-ocean-card rounded-3xl p-8',
+    'theme-ocean-card rounded-3xl p-5 sm:p-8',
   forest:
-    'theme-forest-card rounded-2xl p-8',
+    'theme-forest-card rounded-2xl p-5 sm:p-8',
   candy:
-    'theme-candy-card rounded-[28px] p-8',
+    'theme-candy-card rounded-[28px] p-5 sm:p-8',
   noir:
-    'theme-noir-card rounded-xl p-8',
+    'theme-noir-card rounded-xl p-5 sm:p-8',
 }
 
 // === Progress bar ===

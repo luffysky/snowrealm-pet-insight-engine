@@ -187,7 +187,7 @@ export default function TemplatesPage() {
       )}
 
       {/* 分類過濾 */}
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2">
         <button
           onClick={() => setFilterCategory('')}
           className={`px-3 py-1 rounded text-xs ${!filterCategory ? 'bg-t-btn text-white' : 'bg-slate-800 text-slate-400 hover:text-white'}`}

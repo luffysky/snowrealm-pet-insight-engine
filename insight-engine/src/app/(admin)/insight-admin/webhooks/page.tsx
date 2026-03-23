@@ -147,7 +147,7 @@ export default function WebhooksPage() {
               ))}
             </select>
           </div>
-          <div className="flex-1 min-w-[300px]">
+          <div className="min-w-0 w-full sm:min-w-[300px]">
             <label className="block text-sm text-slate-400 mb-1">Webhook URL（HTTPS only）</label>
             <input
               type="url"

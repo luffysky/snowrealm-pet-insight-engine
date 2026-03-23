@@ -138,7 +138,7 @@ export default function TeamPage() {
               </p>
             </div>
           ) : (
-            <div className="flex items-end gap-3">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-end gap-3">
               <div className="flex-1">
                 <label className="block text-sm text-slate-400 mb-1">Email</label>
                 <input

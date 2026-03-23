@@ -140,7 +140,7 @@ export default function TagRulesPage() {
             placeholder="搜尋 question_key 或 tag_key..."
             value={filter}
             onChange={(e) => setFilter(e.target.value)}
-            className="bg-slate-800 text-white border border-slate-700 rounded-lg px-3 py-1.5 text-sm w-64"
+            className="bg-slate-800 text-white border border-slate-700 rounded-lg px-3 py-1.5 text-sm w-full sm:w-64"
           />
           <button
             onClick={() => setShowAdd(!showAdd)}
@@ -230,13 +230,13 @@ export default function TagRulesPage() {
         Object.entries(grouped)
           .sort(([a], [b]) => a.localeCompare(b))
           .map(([qKey, items]) => (
-            <div key={qKey} className="bg-slate-800/50 border border-slate-700/50 rounded-2xl overflow-hidden">
+            <div key={qKey} className="bg-slate-800/50 border border-slate-700/50 rounded-2xl overflow-x-auto">
               <div className="px-4 py-3 bg-slate-800/80 border-b border-slate-700/50">
                 <h3 className="text-sm font-medium text-t-accent">{qKey}</h3>
               </div>
               <div className="divide-y divide-slate-700/40">
                 {items.map((rule) => (
-                  <div key={rule.id} className={`px-4 py-3 text-sm flex items-center gap-3 ${!rule.is_active ? 'opacity-40' : ''}`}>
+                  <div key={rule.id} className={`px-4 py-3 text-sm flex items-center gap-3 ${editId !== rule.id ? 'flex-wrap' : ''} ${!rule.is_active ? 'opacity-40' : ''}`}>
                     {editId === rule.id ? (
                       // 編輯模式
                       <div className="flex-1 grid grid-cols-2 md:grid-cols-6 gap-2">

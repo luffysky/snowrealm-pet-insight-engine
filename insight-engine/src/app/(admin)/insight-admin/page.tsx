@@ -8,6 +8,28 @@ import SummaryButton from '@/components/admin/SummaryButton'
 import { useAdminSurvey } from '@/components/admin/AdminSurveyContext'
 import type { DashboardStats, ResponseListItem } from '@/types'
 
+function formatCompletionTime(seconds: number): string {
+  if (seconds <= 0) return '—'
+  const min = Math.floor(seconds / 60)
+  const sec = Math.round(seconds % 60)
+  if (min === 0) return `${sec} 秒`
+  return `${min} 分 ${sec} 秒`
+}
+
+function getQualityLabel(score: number): string {
+  if (score >= 80) return '優良'
+  if (score >= 60) return '良好'
+  if (score >= 40) return '普通'
+  return '待改善'
+}
+
+const QUALITY_COLOR: Record<string, string> = {
+  '優良': 'text-emerald-400',
+  '良好': 'text-cyan-400',
+  '普通': 'text-amber-400',
+  '待改善': 'text-red-400',
+}
+
 export default function AdminDashboardPage() {
   const { selectedSurveyId } = useAdminSurvey()
   const [stats, setStats] = useState<DashboardStats | null>(null)
@@ -58,6 +80,17 @@ export default function AdminDashboardPage() {
       ? ((highEmotionCount / stats.totalResponses) * 100).toFixed(1)
       : '0'
 
+  const qualityLabel = getQualityLabel(stats.responseQuality?.score ?? 0)
+  const qualityIssues = stats.responseQuality?.issues
+  const qualitySubtitle = qualityIssues
+    ? `空白 ${qualityIssues.emptyTextAnswers} · 過短 ${qualityIssues.shortAnswers} · 同答案 ${qualityIssues.samePattern}`
+    : undefined
+
+  const velocityData = (stats.responseVelocity ?? []).map((v) => ({
+    label: v.bucket,
+    count: v.count,
+  }))
+
   return (
     <div className="space-y-8">
       <h1 className="text-2xl font-bold text-white">Dashboard</h1>
@@ -65,8 +98,8 @@ export default function AdminDashboardPage() {
       {/* 自動摘要 */}
       <SummaryButton surveyId={selectedSurveyId} />
 
-      {/* KPI 卡片 */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* KPI 卡片 — 第一排 */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         <StatCard title="總填寫數" value={stats.totalResponses} />
         <StatCard
           title="完成率"
@@ -74,6 +107,26 @@ export default function AdminDashboardPage() {
           subtitle={`${stats.completedResponses} 份完成`}
         />
         <StatCard title="今日新增" value={stats.todayResponses} />
+      </div>
+
+      {/* KPI 卡片 — 第二排 */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <StatCard
+          title="平均填答時間"
+          value={formatCompletionTime(stats.avgCompletionTime ?? 0)}
+        />
+        <div className="bg-t-card-bg border border-t-card-border rounded-2xl p-6">
+          <p className="text-sm text-slate-400 mb-1">數據品質</p>
+          <div className="flex items-baseline gap-2">
+            <p className="text-3xl font-bold text-t-accent">{stats.responseQuality?.score ?? 0}</p>
+            <span className={`text-sm font-medium ${QUALITY_COLOR[qualityLabel] ?? 'text-slate-400'}`}>
+              {qualityLabel}
+            </span>
+          </div>
+          {qualitySubtitle && (
+            <p className="text-xs text-slate-500 mt-1">{qualitySubtitle}</p>
+          )}
+        </div>
         <StatCard
           title="高情感比例"
           value={`${highEmotionRate}%`}
@@ -84,8 +137,11 @@ export default function AdminDashboardPage() {
       {/* 趨勢圖 */}
       <LineChartBlock title="最近 7 天填寫趨勢" data={stats.dailyTrend} />
 
-      {/* 功能偏好 + 情感分佈 */}
+      {/* 回覆速度 + 功能偏好 + 情感分佈 */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {velocityData.length > 0 && (
+          <BarChartBlock title="回覆速度分佈" data={velocityData} />
+        )}
         <BarChartBlock
           title="功能偏好 Top 5"
           data={stats.topFeatures.map((f) => ({
@@ -93,6 +149,8 @@ export default function AdminDashboardPage() {
             count: f.count,
           }))}
         />
+      </div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <PieChartBlock title="情感等級分佈" data={emotionData} />
       </div>
 

@@ -114,7 +114,7 @@ export default function LandingPage() {
       <footer className="border-t border-slate-800/50 py-8">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-slate-500">
           <span>© 2026 SnowRealm Insight Engine</span>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4 flex-wrap justify-center">
             <Link href="/privacy" className="hover:text-white transition-colors">隱私權政策</Link>
             <Link href="/terms" className="hover:text-white transition-colors">使用者條款</Link>
             <Link href="/cookies" className="hover:text-white transition-colors">Cookie 政策</Link>
