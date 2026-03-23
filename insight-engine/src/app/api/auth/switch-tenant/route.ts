@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getTenantContext } from '@/lib/tenant'
+import { getTenantContext, type Role } from '@/lib/tenant'
 import { queryOne } from '@/lib/db'
 import { signToken } from '@/lib/jwt'
 
@@ -19,7 +19,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   }
 
   // super_admin 可切換到任何 active 租戶；一般使用者必須在 tenant_users 有權限
-  let tenantRole = ctx.role
+  let tenantRole: Role = ctx.role
   if (ctx.role === 'super_admin') {
     const tenant = await queryOne<{ slug: string; name: string; is_active: boolean } & Record<string, unknown>>(
       `SELECT slug, name, is_active FROM tenants WHERE slug = $1`, [targetSlug],
@@ -35,7 +35,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     if (!tu) {
       return NextResponse.json({ error: '您沒有該組織的權限' }, { status: 403 })
     }
-    tenantRole = tu.role
+    tenantRole = tu.role as Role
   }
 
   const token = await signToken({

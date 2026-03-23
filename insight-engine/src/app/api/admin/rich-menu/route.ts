@@ -225,10 +225,11 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         const { richMenuId: newId } = await createRes.json() as { richMenuId: string }
 
         const imgBuf = await generateMenuImage(resolvedButtons, 2500, 1686)
+        // fetch BodyInit 不接受 Node Buffer（Zeabur/TS 嚴格編譯會報錯）
         const uploadRes = await fetch(`https://api-data.line.me/v2/bot/richmenu/${newId}/content`, {
           method: 'POST',
           headers: { Authorization: `Bearer ${createToken}`, 'Content-Type': 'image/png' },
-          body: imgBuf,
+          body: new Uint8Array(imgBuf),
           signal: AbortSignal.timeout(30000),
         })
         if (!uploadRes.ok) {

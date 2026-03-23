@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useRef, useCallback } from 'react'
+import { Suspense, useEffect, useState, useRef, useCallback } from 'react'
 import { useSearchParams } from 'next/navigation'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -291,7 +291,7 @@ const FEATURE_ROWS: { key: keyof PlanFeatures; label: string }[] = [
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
-export default function SubscriptionPage() {
+function SubscriptionPageInner() {
   const searchParams = useSearchParams()
   const [data, setData] = useState<SubscriptionData | null>(null)
   const [loading, setLoading] = useState(true)
@@ -427,6 +427,14 @@ export default function SubscriptionPage() {
         />
       )}
     </div>
+  )
+}
+
+export default function SubscriptionPage() {
+  return (
+    <Suspense fallback={<p className="text-slate-400 animate-pulse">載入中…</p>}>
+      <SubscriptionPageInner />
+    </Suspense>
   )
 }
 
