@@ -246,9 +246,11 @@ function buildQuestionMessage(row: QuestionRow, step: number, total: number): Li
 }
 
 function buildCompletionMessage(): LineTextMessage {
+  const extra = process.env.BOT_COMPLETION_MESSAGE || ''
+  const base = '🎉 感謝你的填寫！\n\n你的回覆已成功送出，我們會認真閱讀每一份答覆 💛'
   return {
     type: 'text',
-    text: '🎉 感謝你的填寫！\n\n你的回覆已成功送出，我們會認真閱讀每一份答覆 💛\n\n期待讓毛孩的足跡被好好記住 🐾',
+    text: extra ? `${base}\n\n${extra}` : base,
   }
 }
 

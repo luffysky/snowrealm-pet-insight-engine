@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(wc -l /d/SnowRealmRebirth/snowrealm-insight-engine/insight-engine/src/lib/*.ts)",
+      "Bash(npx tsc:*)",
+      "Bash(npm run:*)",
+      "Bash(pwsh -File deploy.ps1 \"feat\\(support\\): LINE 客服工單整合 + U.9 解耦寵物硬編碼\")"
+    ]
+  }
+}

@@ -11,6 +11,11 @@ import {
   abandonSession,
   type LineTextMessage,
 } from '@/lib/lineBotEngine'
+import {
+  getOpenTicketByLineUser,
+  startSupportTicket,
+  appendSupportMessage,
+} from '@/lib/supportEngine'
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://insight.snowrealm.pet'
 /** 主問卷 / Rich Menu「填問卷」對應的租戶 slug；預設毛行天下租戶（勿用不存在的 `default` 以免問卷路徑 404） */
@@ -102,6 +107,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
 const ABANDON_KEYWORD = /^離開$/
 const START_SURVEY_KEYWORD = /^LINE填答$/
+const SUPPORT_KEYWORD = /客服|幫助|問題|投訴|反映|help|support/i
 
 async function handleTextMessage(text: string, userId?: string): Promise<LineTextMessage[]> {
   if (!userId) return await getAutoReply(text, userId)
@@ -111,21 +117,34 @@ async function handleTextMessage(text: string, userId?: string): Promise<LineTex
     const session = await getActiveSession(userId)
     if (session) {
       await abandonSession(session.id)
-      return [{ type: 'text', text: '已結束填答，感謝你的時間 🐾\n\n隨時輸入「LINE填答」可重新開始' }]
+      return [{ type: 'text', text: '已結束填答，感謝你的時間 👋\n\n隨時輸入「LINE填答」可重新開始' }]
     }
     return await getAutoReply(text, userId)
   }
 
-  // 優先偵測「LINE填答」關鍵字（啟動新 session）
+  // 偵測「LINE填答」關鍵字（啟動新 session）
   if (START_SURVEY_KEYWORD.test(text)) {
     return startSurveySession(userId)
   }
 
-  // 若有進行中的 session → 進入填答流程
+  // 若有進行中的填答 session → 進入填答流程
   const session = await getActiveSession(userId)
   if (session) return processUserAnswer(session, text)
 
-  // 無 session → 一般關鍵字自動回覆
+  // 偵測客服關鍵字 → 建立客服工單
+  if (SUPPORT_KEYWORD.test(text)) {
+    return startSupportTicket(userId, text, DEFAULT_TENANT)
+  }
+
+  // 若有開放中的客服工單 → 追加訊息（靜默接收）
+  const openTicket = await getOpenTicketByLineUser(userId, DEFAULT_TENANT)
+  if (openTicket) {
+    const displayName = openTicket.line_display_name ?? userId
+    await appendSupportMessage(openTicket.id, userId, displayName, text)
+    return []
+  }
+
+  // 一般關鍵字自動回覆
   return await getAutoReply(text, userId)
 }
 

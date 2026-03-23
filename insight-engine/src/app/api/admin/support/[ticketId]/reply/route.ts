@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { queryOne, execute } from '@/lib/db'
 import { requireRole } from '@/lib/tenant'
+import { sendAdminReplyToCustomer } from '@/lib/supportEngine'
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
@@ -67,6 +68,9 @@ export async function POST(
       `UPDATE support_tickets SET ${updateParts.join(', ')} WHERE id = $1`,
       [ticketId]
     )
+
+    // 非阻塞：透過 LINE Official push 給顧客
+    void sendAdminReplyToCustomer(ticketId, content)
 
     return NextResponse.json(message, { status: 201 })
   } catch (error) {

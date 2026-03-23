@@ -522,6 +522,137 @@ CREATE INDEX idx_line_sessions_survey ON line_survey_sessions (survey_id);
 
 ---
 
+## Cursor IDE 完成紀錄（2026-03-24）
+
+### ✅ 已由 Cursor 完成的項目
+
+#### 安全性修復（implementation-plan P0）
+- `superAdminAuth.ts` — super_admin 驗證抽成共用模組 ✅
+- `rateLimit.ts` — 記憶體內限流（IP-based, 60 req/min） ✅
+- `auditLog.ts` — 操作審計紀錄（actor, action, target, IP） ✅
+- `middleware.ts` — `/api/super-admin/*` 攔截 + rate limiting + 角色檢查 ✅
+- `super-admin/support/route.ts` — 認證修復 ✅
+- `system/route.ts` — LINE 狀態改用 `getLineConfig()` fallback ENV ✅
+
+#### RBAC 權限（implementation-plan P1）
+- `tenant.ts` 新增 `requireRole()` 函式 ✅
+- 22/39 個 admin API route 已加入 requireRole ✅
+- **⚠️ 仍有 17 個 route 未加 requireRole（見下方待修清單）**
+
+#### 訂閱系統 + 藍新金流（implementation-plan P2）
+- `planLimits.ts` — 方案定義 + 額度檢查函式 ✅
+- `newebpay.ts` — AES 加解密 + 訂單生成 ✅
+- `payment/create`、`payment/notify`、`payment/return` 三支路由 ✅
+- `subscription/page.tsx` — 訂閱管理頁面（561 行）✅
+- **⚠️ 方案額度未在關鍵提交點強制執行（見下方待修清單）**
+
+#### 客服系統
+- `support/route.ts` — 工單 API（CRUD + 模板）✅
+- `support/[ticketId]/route.ts` + `reply/route.ts` ✅
+- `support/page.tsx` — 後台客服中心（883 行）✅
+- `super-admin/support/route.ts` — 跨租戶客服管理 ✅
+
+#### 總後台強化
+- `analytics/` — 平台分析儀表板 ✅
+- `audit/` — 操作審計紀錄頁面 ✅
+- `health/` — 系統健康狀態 ✅
+- `users/` — 使用者管理 ✅
+
+#### 新題型
+- `QuestionRating.tsx`（星星評分）✅
+- `QuestionScale.tsx`（滑桿量表）✅
+- `QuestionDate.tsx`（日期選擇）✅
+- `QuestionFileUpload.tsx`（檔案上傳）✅
+- `types/survey.ts` QuestionType 擴展 ✅
+
+#### LINE 整合文件
+- `line-official-vs-insight.md` — 兩個 Bot 的分工、Webhook 設定完整說明 ✅
+
+---
+
+### 🔴 關鍵待修：安全性與計費漏洞
+
+> 這些是上線前必修的安全性問題，優先級高於所有新功能。
+
+#### CRITICAL-1：17 個 Admin API 缺少 RBAC 角色檢查
+
+以下 route 只驗「有登入」，不驗角色（viewer 可以執行 admin 操作）：
+
+```
+缺少 requireRole 的 route：
+  ab/route.ts
+  account/route.ts
+  ai-usage/route.ts
+  crosstab/route.ts
+  delete-account/route.ts
+  export/route.ts
+  funnel/route.ts
+  my-responses/route.ts
+  notification-logs/route.ts
+  questions/route.ts（注意：questions/[qid] 已加）
+  responses/route.ts
+  stats/route.ts
+  subscription/route.ts
+  summary/route.ts
+  system/route.ts
+  tags/route.ts
+  utm/route.ts
+
+修復方式：
+  每個 route 的 GET handler 加入：
+    const ctx = await requireRole('viewer')  // 讀取操作至少 viewer
+    if (ctx instanceof NextResponse) return ctx
+
+  POST/PATCH/DELETE handler 加入：
+    const ctx = await requireRole('admin')   // 寫入操作需要 admin
+    if (ctx instanceof NextResponse) return ctx
+
+  特殊：delete-account 應該用 requireRole('admin')
+  特殊：subscription 的 POST（升級方案）應該用 requireRole('admin')
+```
+
+#### CRITICAL-2：方案額度未在關鍵點強制執行
+
+`planLimits.ts` 的 `checkResponseLimit`、`checkSurveyLimit`、`checkAdminLimit` 函式寫好了，但**沒有被任何提交/建立 API 呼叫**。
+
+```
+需要加入額度檢查的位置：
+
+1. src/app/api/surveys/submit/route.ts
+   → 提交前呼叫 checkResponseLimit(tenantId)
+   → 超過上限回傳 { error: '本月回覆數已達方案上限', upgrade: true }
+
+2. src/app/api/admin/surveys/route.ts（POST 建立問卷）
+   → 呼叫 checkSurveyLimit(tenantId)
+   → 超過回傳 { error: '問卷數已達方案上限' }
+
+3. src/app/api/admin/team/route.ts（POST 邀請成員）
+   → 呼叫 checkAdminLimit(tenantId)
+   → 超過回傳 { error: '管理員人數已達方案上限' }
+
+4. src/app/api/admin/ai-generate/route.ts
+   → 每日 AI 用量檢查（需新增 checkAiDailyLimit 函式）
+   → 或修改現有的 checkFreeQuota 加入方案判斷
+
+5. src/app/api/admin/webhooks/route.ts（POST 建立 webhook）
+   → 檢查 webhook 數量 vs 方案上限
+```
+
+#### CRITICAL-3：藍新金流回呼安全性
+
+```
+檢查：src/app/api/payment/notify/route.ts
+
+確認以下事項：
+1. 驗證藍新回傳的 CheckCode / TradeInfo 簽章
+2. 驗證 MerchantID 是否是自己的
+3. 驗證金額是否與預期一致（防止金額竄改）
+4. 冪等性：同一筆 trade_no 重複回呼不會重複升級
+5. 日誌：所有金流回呼都要寫入 payment_logs
+```
+
+---
+
 ## 當前開發重點（Phase 2）— 智慧分析 + LINE Bot 強化 + 自動化
 
 ### 開發優先順序
@@ -1620,38 +1751,38 @@ AI Prompt 核心：
 ### 建議開發順序
 
 ```
-═══ Phase 2：修復 + 分析 + LINE Bot ═══
+═══ 立即：安全性 + 計費漏洞修復 ═══
 
-第 1 天：P-URGENT U.3（服務狀態紅燈 — system/route.ts 改用 getLineConfig）
-         P-URGENT U.7（毛行天下重複 — 查 DB 去重）
-         P-URGENT U.6（連結 404 — 確認 Sidebar 連結帶 slug）
+第 1 天：CRITICAL-1（17 個 admin API 加 requireRole — 批量作業，每個 route 加 2-3 行）
+         CRITICAL-2（5 個提交點加入方案額度檢查）
+         CRITICAL-3（藍新金流回呼簽章驗證）
 
-第 2 天：P-URGENT U.1（權限隔離 — auth/me 的 super_admin 租戶列表）
-         P-URGENT U.2（AI 額度顯示 — 確認前端計算邏輯）
-         P0 全部（Dashboard 整合新指標 / AI 對話寫入 DB / 洞察報告選擇器）
+═══ Phase 2：分析 + LINE Bot ═══
 
-第 3-4 天：P-URGENT U.9（解耦毛行天下硬編碼 — tenantBranding.ts + site_settings）
-           P-URGENT U.8（客服系統 — supportEngine.ts + LINE 整合 + 後台頁面）
-
-第 5-6 天：P1.1 開放題情感分析（sentimentAnalysis.ts + Batch 打包）
-第 7 天：   P2.1 管理員 LINE 數據查詢 Bot（lineAdminBot.ts）
-第 8-9 天：P2.2 LINE Bot 體驗優化（Quick Reply + 進度條 + session 清理 cron）
-第 10 天：  P1.2 PDF 報告匯出
-第 11 天：  P2.3 Rich Menu 智慧切換
+第 2-3 天：P1.1 開放題情感分析（sentimentAnalysis.ts + Batch 打包）
+第 4 天：   P2.1 管理員 LINE 數據查詢 Bot（lineAdminBot.ts）
+第 5-6 天：P2.2 LINE Bot 體驗優化（Quick Reply + 進度條 + session 清理 cron）
+第 7 天：   P1.2 PDF 報告匯出
+第 8 天：   P2.3 Rich Menu 智慧切換
+第 9 天：   U.9 解耦毛行天下硬編碼（tenantBranding.ts）
 
 ═══ Phase 3：護城河 + Story × Data ═══
 
-第 12-13 天：3.1 自動化觸發引擎（automationEngine.ts + automation_rules 表）
-第 14 天：   3.2 行業分析模板（industryTemplates.ts）
-第 15-16 天：3.3 Rule Engine API（/api/ai/rules + /api/ai/validate + api_keys 表）
-第 17-19 天：3.4.1 Story Card（storyCardEngine.ts + StoryCard.tsx + 完成頁整合 + 分享按鈕）★
-第 20 天：   3.4.1 公開故事卡片頁 + OG Meta + PNG 生成
-第 21-22 天：3.4.3 Story Wall（storyWallEngine.ts + 公開頁 + 管理端審核）
-第 23-24 天：3.4.2 Story Insight AI 故事洞察報告（storyEngine.ts + 故事模式 tab）
-第 25-26 天：3.5 免費試用機制（trialEngine.ts + upgrade 頁面 + middleware 降級檢查）
-第 27 天：   3.5 AI 主動推送（weekly-report 加 AI 摘要 + ai-alerts cron）
+第 10-11 天：3.1 自動化觸發引擎（automationEngine.ts + automation_rules 表）
+第 12 天：   3.2 行業分析模板（industryTemplates.ts）
+第 13-14 天：3.3 Rule Engine API（/api/ai/rules + /api/ai/validate + api_keys 表）
+第 15-17 天：3.4.1 Story Card（storyCardEngine.ts + StoryCard.tsx + 完成頁 + 分享按鈕）★
+第 18 天：   3.4.1 公開故事卡片頁 + OG Meta + PNG 生成
+第 19-20 天：3.4.3 Story Wall（storyWallEngine.ts + 公開頁 + 管理端審核）
+第 21-22 天：3.4.2 Story Insight AI 故事洞察報告（storyEngine.ts + 故事模式 tab）
+第 23-24 天：3.5 免費試用機制（trialEngine.ts + upgrade 頁面 + middleware）
+第 25 天：   3.5 AI 主動推送（weekly-report AI 摘要 + ai-alerts cron）
 
-★ = 最高 ROI，Story Card 是整個傳播飛輪的起點
+★ = 最高 ROI，Story Card 是傳播飛輪的起點
+
+備註：implementation-plan.md 中的 P0-P4 大部分已由 Cursor 完成，
+      剩餘的 CRITICAL 1-3 是漏掉的安全性強制執行。
+      P5（新題型）已完成。P6（問卷連結格式）和 P7（額外功能）排到 Phase 4。
 ```
 
 ---
