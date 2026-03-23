@@ -20,7 +20,7 @@ interface UserInfo {
 
 /** 已知的 admin 子頁面路徑（與 middleware 保持一致，用來區分 tenant slug） */
 const KNOWN_ADMIN_PAGES = new Set([
-  'ab', 'account', 'ai-settings', 'broadcast', 'crosstab', 'funnel', 'line-settings',
+  'ab', 'account', 'ai-settings', 'broadcast', 'crosstab', 'funnel', 'insight', 'line-settings',
   'my-responses', 'notification-rules', 'notification-styles', 'panel', 'rich-menu',
   'site-settings', 'surveys', 'tag-rules', 'tags', 'team', 'templates', 'tenants',
   'theme-settings', 'utm', 'utm-links', 'waitlist', 'webhooks', 'responses',
@@ -74,6 +74,7 @@ const BASE_NAV_GROUPS = [
       { path: '/tag-rules', label: '標籤規則' },
       { path: '/utm', label: '來源分析' },
       { path: '/ab', label: 'A/B 比較' },
+      { path: '/insight', label: '🔍 AI 洞察報告' },
     ],
   },
   {
@@ -122,6 +123,7 @@ const BASE_MOBILE_GROUPS = [
       { path: '/tag-rules', label: '標籤規則' },
       { path: '/utm', label: '來源分析' },
       { path: '/ab', label: 'A/B 比較' },
+      { path: '/insight', label: 'AI 洞察報告' },
     ],
   },
   {

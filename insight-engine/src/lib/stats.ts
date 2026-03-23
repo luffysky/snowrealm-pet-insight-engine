@@ -11,6 +11,8 @@ import type {
   PaginatedResponse,
   UtmAnalytics,
   UtmSourceStats,
+  ResponseVelocityItem,
+  ResponseQuality,
 } from '@/types'
 import { MVP_SURVEY } from './surveyConfig'
 import { getQuestionsBySlug, getQuestionsBySurveyId, getPrimarySurveySlug, toQuestion } from './surveyRepo'
@@ -53,6 +55,9 @@ export async function getDashboardStats(tenantId?: string, surveyId?: string): P
     dailyTrend,
     topFeatures,
     emotionDistribution,
+    avgCompletionTime,
+    responseVelocity,
+    responseQuality,
   ] = await Promise.all([
     countTotalResponses(tenantId, surveyId),
     countCompletedResponses(tenantId, surveyId),
@@ -60,6 +65,9 @@ export async function getDashboardStats(tenantId?: string, surveyId?: string): P
     getDailyTrend(tenantId, surveyId),
     getTopFeatures(tenantId, surveyId),
     getEmotionDistribution(tenantId, surveyId),
+    getAvgCompletionTime(tenantId, surveyId),
+    getResponseVelocity(tenantId, surveyId),
+    getResponseQuality(tenantId, surveyId),
   ])
 
   const completionRate =
@@ -73,6 +81,9 @@ export async function getDashboardStats(tenantId?: string, surveyId?: string): P
     dailyTrend,
     topFeatures,
     emotionDistribution,
+    avgCompletionTime,
+    responseVelocity,
+    responseQuality,
   }
 }
 
@@ -173,6 +184,7 @@ export interface FunnelStep {
   reached: number
   dropOff: number
   dropOffRate: number
+  isHotspot: boolean
 }
 
 export async function getFunnelStats(tenantId?: string, surveyId?: string, route?: string): Promise<FunnelStep[]> {
@@ -220,6 +232,7 @@ export async function getFunnelStats(tenantId?: string, surveyId?: string, route
       reached,
       dropOff,
       dropOffRate,
+      isHotspot: dropOffRate > 0.2,
     }
   })
 }
@@ -722,4 +735,117 @@ function escapeCsv(value: string): string {
     return `"${value.replace(/"/g, '""')}"`
   }
   return value
+}
+
+// ===== 平均填答時間 =====
+
+export async function getAvgCompletionTime(tenantId?: string, surveyId?: string): Promise<number> {
+  const { conds, params } = buildWhere(tenantId, surveyId)
+  conds.push(`status = 'completed'`)
+  conds.push(`submitted_at IS NOT NULL`)
+  const where = `WHERE ${conds.join(' AND ')}`
+
+  const row = await queryOne<{ avg_seconds: string | null }>(
+    `SELECT AVG(EXTRACT(EPOCH FROM (submitted_at - created_at)))::float::text AS avg_seconds
+     FROM responses ${where}`,
+    params
+  )
+  return parseFloat(row?.avg_seconds ?? '0') || 0
+}
+
+// ===== 回覆速度曲線 =====
+
+export async function getResponseVelocity(tenantId?: string, surveyId?: string): Promise<ResponseVelocityItem[]> {
+  const { conds, params } = buildWhere(tenantId, surveyId)
+  conds.push(`status = 'completed'`)
+  conds.push(`submitted_at IS NOT NULL`)
+  const where = `WHERE ${conds.join(' AND ')}`
+
+  const rows = await query<{ bucket: string; count: string }>(
+    `SELECT
+       CASE
+         WHEN EXTRACT(EPOCH FROM (submitted_at - created_at)) < 3600   THEN '0-1h'
+         WHEN EXTRACT(EPOCH FROM (submitted_at - created_at)) < 21600  THEN '1-6h'
+         WHEN EXTRACT(EPOCH FROM (submitted_at - created_at)) < 86400  THEN '6-24h'
+         ELSE '24h+'
+       END AS bucket,
+       COUNT(*)::text AS count
+     FROM responses ${where}
+     GROUP BY bucket`,
+    params
+  )
+
+  const countMap = new Map(rows.map((r) => [r.bucket, parseInt(r.count, 10)]))
+  return ['0-1h', '1-6h', '6-24h', '24h+'].map((bucket) => ({
+    bucket,
+    count: countMap.get(bucket) ?? 0,
+  }))
+}
+
+// ===== 數據品質分數 =====
+
+export async function getResponseQuality(tenantId?: string, surveyId?: string): Promise<ResponseQuality> {
+  const { conds, params } = buildWhere(tenantId, surveyId)
+  conds.push(`status = 'completed'`)
+  const where = conds.length ? `WHERE ${conds.join(' AND ')}` : ''
+
+  const completedRows = await query<{ id: string }>(
+    `SELECT id FROM responses ${where}`,
+    params
+  )
+  const totalCompleted = completedRows.length
+
+  if (totalCompleted === 0) {
+    return { score: 100, totalCompleted: 0, issues: { shortAnswers: 0, emptyTextAnswers: 0, samePattern: 0 } }
+  }
+
+  const responseIds = completedRows.map((r) => r.id)
+  const answers = await query<{ response_id: string; question_key: string; value: unknown }>(
+    `SELECT response_id, question_key, value FROM answers WHERE response_id = ANY($1)`,
+    [responseIds]
+  )
+
+  // 按 response 分組
+  const answersByResponse = new Map<string, { questionKey: string; value: unknown }[]>()
+  for (const a of answers) {
+    const existing = answersByResponse.get(a.response_id) ?? []
+    existing.push({ questionKey: a.question_key, value: a.value })
+    answersByResponse.set(a.response_id, existing)
+  }
+
+  let shortAnswers = 0
+  let emptyTextAnswers = 0
+  let samePattern = 0
+
+  for (const responseAnswers of answersByResponse.values()) {
+    const textAnswers = responseAnswers.filter((a) => typeof a.value === 'string')
+    const choiceAnswers = responseAnswers.filter((a) => typeof a.value !== 'string')
+
+    // 開放題空白
+    const hasEmpty = textAnswers.some(
+      (a) => typeof a.value === 'string' && a.value.trim().length === 0
+    )
+    if (hasEmpty) emptyTextAnswers++
+
+    // 文字回覆過短（非空但 < 10 字元）
+    const hasShort = textAnswers.some(
+      (a) => typeof a.value === 'string' && a.value.trim().length > 0 && a.value.trim().length < 10
+    )
+    if (hasShort) shortAnswers++
+
+    // 同答案模式：選擇題 3 題以上全部選同一個值
+    if (choiceAnswers.length >= 3) {
+      const normalize = (v: unknown): string =>
+        Array.isArray(v) ? JSON.stringify([...v].sort()) : String(v ?? '')
+      const uniqueValues = new Set(choiceAnswers.map((a) => normalize(a.value)))
+      if (uniqueValues.size === 1) samePattern++
+    }
+  }
+
+  const emptyRate = emptyTextAnswers / totalCompleted
+  const shortRate = shortAnswers / totalCompleted
+  const sameRate = samePattern / totalCompleted
+  const score = Math.max(0, Math.round(100 - emptyRate * 40 - shortRate * 30 - sameRate * 30))
+
+  return { score, totalCompleted, issues: { shortAnswers, emptyTextAnswers, samePattern } }
 }

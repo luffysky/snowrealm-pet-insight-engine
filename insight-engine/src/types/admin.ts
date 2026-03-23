@@ -11,6 +11,26 @@ export interface DashboardStats {
   dailyTrend: DailyTrendItem[]
   topFeatures: FeatureCount[]
   emotionDistribution: TagDistribution[]
+  avgCompletionTime: number
+  responseVelocity: ResponseVelocityItem[]
+  responseQuality: ResponseQuality
+}
+
+/** 回覆速度分佈 */
+export interface ResponseVelocityItem {
+  bucket: string  // '0-1h' | '1-6h' | '6-24h' | '24h+'
+  count: number
+}
+
+/** 數據品質分析 */
+export interface ResponseQuality {
+  score: number           // 0–100
+  totalCompleted: number
+  issues: {
+    shortAnswers: number       // 文字回覆過短（< 10 字元）
+    emptyTextAnswers: number   // 開放題空白
+    samePattern: number        // 選擇題全部相同選項
+  }
 }
 
 /** 每日趨勢 */

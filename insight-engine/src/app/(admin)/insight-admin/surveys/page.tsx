@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from 'react'
 import { EmojiPicker } from '@/components/admin/EmojiPicker'
 import { AiGeneratePanel } from '@/components/admin/AiGeneratePanel'
 import { AiBasicGeneratePanel, type GeneratedMeta } from '@/components/admin/AiBasicGeneratePanel'
+import { AiSurveyChat } from '@/components/admin/AiSurveyChat'
 import { getOptionEmoji } from '@/lib/optionEmoji'
 
 // ===== Types =====
@@ -58,6 +59,7 @@ export default function SurveysAdminPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [showCreate, setShowCreate] = useState(false)
+  const [showAiChat, setShowAiChat] = useState(false)
   const [newTitle, setNewTitle] = useState('')
   const [newSlug, setNewSlug] = useState('')
   const [creating, setCreating] = useState(false)
@@ -100,13 +102,22 @@ export default function SurveysAdminPage() {
     <div className="space-y-8">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <h1 className="text-2xl font-bold text-white/90">問卷管理</h1>
-        <button
-          type="button"
-          onClick={() => { setShowCreate(true); setCreateError('') }}
-          className="px-4 py-2 bg-t-btn hover:bg-t-btn-hover text-white rounded-lg text-sm transition-colors cursor-pointer"
-        >
-          ＋ 新增問卷
-        </button>
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={() => { setShowAiChat((v) => !v); setShowCreate(false) }}
+            className="px-4 py-2 bg-linear-to-r from-cyan-700 to-blue-700 hover:from-cyan-600 hover:to-blue-600 text-white rounded-lg text-sm transition-all cursor-pointer"
+          >
+            ✨ AI 對話建立
+          </button>
+          <button
+            type="button"
+            onClick={() => { setShowCreate(true); setShowAiChat(false); setCreateError('') }}
+            className="px-4 py-2 bg-t-btn hover:bg-t-btn-hover text-white rounded-lg text-sm transition-colors cursor-pointer"
+          >
+            ＋ 新增問卷
+          </button>
+        </div>
       </div>
 
       {/* Create survey form */}
@@ -184,6 +195,19 @@ export default function SurveysAdminPage() {
             </button>
           </div>
         </div>
+      )}
+
+      {/* AI 對話建立 */}
+      {showAiChat && (
+        <AiSurveyChat
+          onCancel={() => setShowAiChat(false)}
+          onDone={async (surveyId) => {
+            setShowAiChat(false)
+            const updated = await loadSurveys()
+            const found = updated.find((s) => s.id === surveyId)
+            if (found) setSelectedSurvey(found)
+          }}
+        />
       )}
 
       {/* Survey selector - drag to reorder */}

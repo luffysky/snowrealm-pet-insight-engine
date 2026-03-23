@@ -3,6 +3,13 @@ import crypto from 'crypto'
 import { execute } from '@/lib/db'
 import { createLineToken } from '@/lib/lineToken'
 import { getLineConfig } from '@/lib/lineConfig'
+import {
+  getActiveSession,
+  startSurveySession,
+  processUserAnswer,
+  abandonSession,
+  type LineTextMessage,
+} from '@/lib/lineBotEngine'
 
 const SURVEY_URL = process.env.NEXT_PUBLIC_BASE_URL
   ? `${process.env.NEXT_PUBLIC_BASE_URL}/`
@@ -47,7 +54,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       const text = (event.message.text as string).trim()
       const replyToken = event.replyToken as string
       const userId = event.source?.userId as string | undefined
-      const reply = getAutoReply(text, userId)
+
+      const reply = await handleTextMessage(text, userId)
       await replyMessage(replyToken, reply, CHANNEL_ACCESS_TOKEN)
     }
 
@@ -88,6 +96,37 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   return NextResponse.json({ ok: true })
 }
 
+// ----- 對話式填答狀態機入口 -----
+
+const ABANDON_KEYWORD = /^離開$/
+const START_SURVEY_KEYWORD = /^LINE填答$/
+
+async function handleTextMessage(text: string, userId?: string): Promise<LineTextMessage[]> {
+  if (!userId) return getAutoReply(text, userId)
+
+  // 優先偵測「離開」關鍵字
+  if (ABANDON_KEYWORD.test(text)) {
+    const session = await getActiveSession(userId)
+    if (session) {
+      await abandonSession(session.id)
+      return [{ type: 'text', text: '已結束填答，感謝你的時間 🐾\n\n隨時輸入「LINE填答」可重新開始' }]
+    }
+    return getAutoReply(text, userId)
+  }
+
+  // 優先偵測「LINE填答」關鍵字（啟動新 session）
+  if (START_SURVEY_KEYWORD.test(text)) {
+    return startSurveySession(userId)
+  }
+
+  // 若有進行中的 session → 進入填答流程
+  const session = await getActiveSession(userId)
+  if (session) return processUserAnswer(session, text)
+
+  // 無 session → 一般關鍵字自動回覆
+  return getAutoReply(text, userId)
+}
+
 // ----- 關鍵字自動回覆邏輯 -----
 
 /** 產生問卷連結（帶 LINE 身份簽名 + utm） */
@@ -100,11 +139,6 @@ function buildSurveyLink(userId?: string): string {
   return `${base}?${params.toString()}`
 }
 
-interface LineTextMessage {
-  type: 'text'
-  text: string
-}
-
 function getAutoReply(text: string, userId?: string): LineTextMessage[] {
   const surveyLink = buildSurveyLink(userId)
 
@@ -113,7 +147,7 @@ function getAutoReply(text: string, userId?: string): LineTextMessage[] {
     return [
       {
         type: 'text',
-        text: `📋 毛行天下 MVP 問卷\n\n花 2 分鐘填寫，幫助我們打造更好的寵物紀錄平台！\n\n👉 ${surveyLink}`,
+        text: `📋 毛行天下 MVP 問卷\n\n花 2 分鐘填寫，幫助我們打造更好的寵物紀錄平台！\n\n👉 網頁版：${surveyLink}\n\n💬 LINE 對話填答：輸入「LINE填答」即可直接在這裡填寫`,
       },
     ]
   }
@@ -192,7 +226,7 @@ function getAutoReply(text: string, userId?: string): LineTextMessage[] {
   return [
     {
       type: 'text',
-      text: '嗨～我是毛行天下小助手 🐾\n\n你可以輸入：\n📋「問卷」— 填寫問卷\n🎉「封測」— 加入封測名單\n🐾「毛行天下」— 了解我們\n🌐「官網」— 前往官網\n📢「最新消息」— 查看動態\n💬「聯絡我們」— 聯繫方式',
+      text: '嗨～我是毛行天下小助手 🐾\n\n你可以輸入：\n📋「問卷」— 填寫問卷\n💬「LINE填答」— 直接在 LINE 填寫問卷\n🎉「封測」— 加入封測名單\n🐾「毛行天下」— 了解我們\n🌐「官網」— 前往官網\n📢「最新消息」— 查看動態\n🆘「聯絡我們」— 聯繫方式',
     },
   ]
 }
