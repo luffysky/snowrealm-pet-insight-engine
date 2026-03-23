@@ -89,6 +89,11 @@ ALTER TABLE answers ENABLE ROW LEVEL SECURITY;
 ALTER TABLE user_tags ENABLE ROW LEVEL SECURITY;
 
 -- 允許匿名用戶 insert（前端提交問卷）
+-- 重跑腳本時先刪除既有 policy，避免 already exists
+DROP POLICY IF EXISTS "Allow anonymous insert on responses" ON responses;
+DROP POLICY IF EXISTS "Allow anonymous insert on answers" ON answers;
+DROP POLICY IF EXISTS "Allow anonymous insert on user_tags" ON user_tags;
+
 CREATE POLICY "Allow anonymous insert on responses"
   ON responses FOR INSERT
   TO anon

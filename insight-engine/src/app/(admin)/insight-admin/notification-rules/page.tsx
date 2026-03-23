@@ -2,6 +2,13 @@
 
 import { useEffect, useState, useCallback } from 'react'
 
+const NOTIFY_EVENTS = [
+  { key: 'notify_registration', label: '新使用者註冊', desc: '有人註冊新帳號時通知' },
+  { key: 'notify_login', label: '使用者登入', desc: '管理員登入時通知' },
+  { key: 'notify_survey_complete', label: '問卷完成', desc: '有人填完問卷時通知' },
+  { key: 'notify_weekly_report', label: '每週報表', desc: '每週自動寄送數據摘要' },
+]
+
 interface NotificationRule {
   id: string
   name: string
@@ -50,18 +57,60 @@ const OPERATORS = [
 export default function NotificationRulesPage() {
   const [rules, setRules] = useState<NotificationRule[]>([])
   const [logs, setLogs] = useState<NotificationLog[]>([])
-  const [tab, setTab] = useState<'rules' | 'logs'>('rules')
+  const [tab, setTab] = useState<'prefs' | 'rules' | 'logs'>('prefs')
   const [loading, setLoading] = useState(true)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editForm, setEditForm] = useState<Partial<NotificationRule>>({})
   const [showAddForm, setShowAddForm] = useState(false)
 
-  // 二次確認 Modal
+  const [prefs, setPrefs] = useState<Record<string, boolean>>({})
+  const [prefsLoading, setPrefsLoading] = useState(true)
+  const [prefsSaving, setPrefsSaving] = useState(false)
+
   const [confirmAction, setConfirmAction] = useState<{
     title: string
     message: string
     onConfirm: () => void
   } | null>(null)
+
+  const fetchPrefs = useCallback(async () => {
+    setPrefsLoading(true)
+    try {
+      const res = await fetch('/api/admin/site-settings')
+      if (res.ok) {
+        const data = await res.json()
+        const meta = data.extra_meta || {}
+        const p: Record<string, boolean> = {}
+        for (const e of NOTIFY_EVENTS) {
+          p[e.key] = meta[e.key] !== false
+        }
+        setPrefs(p)
+      }
+    } catch { /* ignore */ }
+    setPrefsLoading(false)
+  }, [])
+
+  async function togglePref(key: string) {
+    const newVal = !prefs[key]
+    setPrefs(prev => ({ ...prev, [key]: newVal }))
+    setPrefsSaving(true)
+    try {
+      const res = await fetch('/api/admin/site-settings')
+      if (res.ok) {
+        const data = await res.json()
+        const meta = data.extra_meta || {}
+        meta[key] = newVal
+        await fetch('/api/admin/site-settings', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ extra_meta: meta }),
+        })
+      }
+    } catch { /* ignore */ }
+    setPrefsSaving(false)
+  }
+
+  useEffect(() => { fetchPrefs() }, [fetchPrefs])
 
   const fetchRules = useCallback(async () => {
     setLoading(true)
@@ -183,26 +232,54 @@ export default function NotificationRulesPage() {
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-        <h1 className="text-2xl font-bold text-white">通知規則</h1>
+        <h1 className="text-2xl font-bold text-white">通知設定</h1>
         <div className="flex gap-2">
-          <button
-            onClick={() => setTab('rules')}
-            className={`px-4 py-2 rounded text-sm font-medium transition-colors ${
-              tab === 'rules' ? 'bg-t-btn text-white' : 'bg-slate-800 text-slate-400 hover:text-white'
-            }`}
-          >
-            規則管理
-          </button>
-          <button
-            onClick={() => setTab('logs')}
-            className={`px-4 py-2 rounded text-sm font-medium transition-colors ${
-              tab === 'logs' ? 'bg-t-btn text-white' : 'bg-slate-800 text-slate-400 hover:text-white'
-            }`}
-          >
-            發送記錄
-          </button>
+          {(['prefs', 'rules', 'logs'] as const).map((t) => (
+            <button
+              key={t}
+              onClick={() => setTab(t)}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer ${
+                tab === t ? 'bg-t-btn text-white' : 'bg-slate-800 text-slate-400 hover:text-white'
+              }`}
+            >
+              {t === 'prefs' ? '通知偏好' : t === 'rules' ? '規則管理' : '發送記錄'}
+            </button>
+          ))}
         </div>
       </div>
+
+      {tab === 'prefs' && (
+        <section className="space-y-3">
+          {prefsLoading ? (
+            <p className="text-slate-400 animate-pulse">載入中…</p>
+          ) : (
+            NOTIFY_EVENTS.map((ev) => (
+              <div
+                key={ev.key}
+                className="bg-t-card-bg border border-t-card-border rounded-xl p-4 flex items-center justify-between"
+              >
+                <div>
+                  <p className="text-white font-medium text-sm">{ev.label}</p>
+                  <p className="text-xs text-slate-500">{ev.desc}</p>
+                </div>
+                <button
+                  onClick={() => togglePref(ev.key)}
+                  disabled={prefsSaving}
+                  className={`relative w-11 h-6 rounded-full transition-colors cursor-pointer ${
+                    prefs[ev.key] ? 'bg-emerald-500' : 'bg-slate-600'
+                  }`}
+                >
+                  <span
+                    className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white transition-transform ${
+                      prefs[ev.key] ? 'translate-x-5' : 'translate-x-0'
+                    }`}
+                  />
+                </button>
+              </div>
+            ))
+          )}
+        </section>
+      )}
 
       {tab === 'rules' && (
         <>

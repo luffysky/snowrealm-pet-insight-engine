@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { queryOne, execute } from '@/lib/db'
-import { getTenantContext } from '@/lib/tenant'
+import { getTenantContext, requireRole } from '@/lib/tenant'
 import type { SurveyTheme, ThemeIntensity } from '@/types'
 
 const VALID_THEMES: SurveyTheme[] = ['default', 'game', 'cyber', 'ancient', 'sakura', 'ocean', 'forest', 'candy', 'noir']
@@ -47,7 +47,9 @@ export async function GET(request: Request) {
 
 /** POST — 建立/更新主題設定 */
 export async function POST(request: Request) {
-  const { tenantId } = await getTenantContext()
+  const roleCheck = await requireRole('admin')
+  if (roleCheck instanceof NextResponse) return roleCheck
+  const { tenantId } = roleCheck
 
   const body = await request.json()
   const { surveySlug, defaultTheme, availableThemes, allowUserChoice, themeIntensity } = body

@@ -86,7 +86,7 @@ export default function TeamPage() {
   }
 
   const handleLineShare = (url: string) => {
-    const text = `邀請您加入毛行天下後台管理團隊！請點擊以下連結註冊：\n${url}`
+    const text = `邀請您加入管理團隊！請點擊以下連結註冊：\n${url}`
     window.open(`https://line.me/R/msg/text/?${encodeURIComponent(text)}`, '_blank')
   }
 

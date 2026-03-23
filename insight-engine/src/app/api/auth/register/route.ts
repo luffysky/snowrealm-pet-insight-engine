@@ -128,6 +128,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       }
       const slugExists = await queryOne(`SELECT id FROM tenants WHERE slug = $1`, [slug])
       if (slugExists) return NextResponse.json({ error: `後台網址 "${slug}" 已被使用，請換一個` }, { status: 409 })
+
+      const nameExists = await queryOne(`SELECT id FROM tenants WHERE LOWER(name) = LOWER($1)`, [orgName])
+      if (nameExists) return NextResponse.json({ error: `組織名稱「${orgName}」已被使用，請更換名稱或聯繫管理員` }, { status: 409 })
   
       const tenant = await queryOne<{ id: string; slug: string }>(
         `INSERT INTO tenants (name, slug, plan, is_active) VALUES ($1, $2, 'free', true) RETURNING id, slug`,

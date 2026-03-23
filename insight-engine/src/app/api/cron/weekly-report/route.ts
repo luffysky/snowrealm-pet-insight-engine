@@ -56,7 +56,7 @@ export async function GET(): Promise<NextResponse> {
 
     const flexMessage = {
       type: 'flex',
-      altText: `${hEmoji} 毛行天下週報 ${period}`,
+      altText: `${hEmoji} 問卷週報 ${period}`,
       contents: {
         type: 'bubble',
         size: 'mega',

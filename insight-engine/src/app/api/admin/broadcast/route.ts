@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { broadcastMessage } from '@/lib/line'
 import { query, execute } from '@/lib/db'
 import { getLineConfig } from '@/lib/lineConfig'
-import { getTenantContext } from '@/lib/tenant'
+import { getTenantContext, requireRole } from '@/lib/tenant'
 
 /** GET /api/admin/broadcast?logs=1 — 推播紀錄 */
 export async function GET(): Promise<NextResponse> {
@@ -19,6 +19,10 @@ export async function GET(): Promise<NextResponse> {
  * body: { text, tagFilter?: { key, value } }
  */
 export async function POST(req: NextRequest): Promise<NextResponse> {
+  const roleCheck = await requireRole('admin')
+  if (roleCheck instanceof NextResponse) return roleCheck
+  const { tenantId } = roleCheck
+
   const body = await req.json() as {
     text?: string
     tagFilter?: { key: string; value: string }
@@ -29,8 +33,6 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   if (!text) {
     return NextResponse.json({ error: '訊息不可為空' }, { status: 400 })
   }
-
-  const { tenantId } = await getTenantContext()
 
   // 排程推播：寫入 broadcast_logs 等待 cron 執行
   if (body.scheduledAt) {

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { query, queryOne, execute } from '@/lib/db'
-import { getTenantContext } from '@/lib/tenant'
+import { getTenantContext, requireRole } from '@/lib/tenant'
 
 interface TenantRow extends Record<string, unknown> {
   id: string
@@ -27,12 +27,10 @@ export async function GET(): Promise<NextResponse> {
   return NextResponse.json({ tenants })
 }
 
-/** POST — 建立新租戶（僅 super_admin） */
+/** POST — 建立新租戶 */
 export async function POST(request: NextRequest): Promise<NextResponse> {
-  const ctx = await getTenantContext()
-  if (ctx.role !== 'super_admin') {
-    return NextResponse.json({ error: '權限不足' }, { status: 403 })
-  }
+  const roleCheck = await requireRole('admin')
+  if (roleCheck instanceof NextResponse) return roleCheck
 
   const body = await request.json().catch(() => null)
   const name = (body?.name as string)?.trim()
@@ -62,12 +60,10 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   return NextResponse.json({ tenant }, { status: 201 })
 }
 
-/** PATCH — 更新租戶（僅 super_admin） */
+/** PATCH — 更新租戶 */
 export async function PATCH(request: NextRequest): Promise<NextResponse> {
-  const ctx = await getTenantContext()
-  if (ctx.role !== 'super_admin') {
-    return NextResponse.json({ error: '權限不足' }, { status: 403 })
-  }
+  const roleCheck = await requireRole('admin')
+  if (roleCheck instanceof NextResponse) return roleCheck
 
   const body = await request.json().catch(() => null)
   const slug = body?.slug as string
@@ -99,12 +95,10 @@ export async function PATCH(request: NextRequest): Promise<NextResponse> {
   return NextResponse.json({ ok: true, affected })
 }
 
-/** DELETE — 停用租戶（僅 super_admin，不真正刪除） */
+/** DELETE — 停用租戶（不真正刪除） */
 export async function DELETE(request: NextRequest): Promise<NextResponse> {
-  const ctx = await getTenantContext()
-  if (ctx.role !== 'super_admin') {
-    return NextResponse.json({ error: '權限不足' }, { status: 403 })
-  }
+  const roleCheck = await requireRole('admin')
+  if (roleCheck instanceof NextResponse) return roleCheck
 
   const { searchParams } = new URL(request.url)
   const slug = searchParams.get('slug')

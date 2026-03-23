@@ -14,6 +14,7 @@ interface PlatformUser {
   createdAt: string
   authProvider: string
   hasLine: boolean
+  platformUnlimited?: boolean
 }
 
 function formatTime(iso: string) {
@@ -42,6 +43,7 @@ export default function SuperAdminUsersPage() {
   const [error, setError] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
   const [filterProvider, setFilterProvider] = useState<string>('all')
+  const [togglingId, setTogglingId] = useState<string | null>(null)
 
   useEffect(() => {
     fetch('/api/super-admin/tenants?view=users')
@@ -53,6 +55,28 @@ export default function SuperAdminUsersPage() {
       .catch(e => setError(e.message))
       .finally(() => setLoading(false))
   }, [])
+
+  async function togglePlatformPartner(u: PlatformUser, enabled: boolean) {
+    const label = `${u.displayName || u.username}（${enabled ? '開啟' : '關閉'}平台合作夥伴）`
+    if (!window.confirm(`確定要${enabled ? '開啟' : '關閉'}「${label}」？\n\n僅該帳號生效；同組織其他人不受影響。${enabled ? '\n\n開啟後該帳號使用平台 AI Key 時不套用免費次數上限。' : ''}`)) {
+      return
+    }
+    setTogglingId(u.id)
+    try {
+      const res = await fetch('/api/super-admin/users/platform-unlimited', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: u.id, enabled }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(data.error || '更新失敗')
+      setUsers(prev => prev.map(x => x.id === u.id ? { ...x, platformUnlimited: enabled } : x))
+    } catch (e) {
+      alert(e instanceof Error ? e.message : '更新失敗')
+    } finally {
+      setTogglingId(null)
+    }
+  }
 
   const filteredUsers = users.filter(u => {
     const matchesSearch = !searchQuery || 
@@ -75,6 +99,15 @@ export default function SuperAdminUsersPage() {
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold text-white">👤 全平台使用者</h1>
+
+      <div id="platform-partner" className="bg-amber-500/10 border border-amber-500/25 rounded-xl p-4 text-sm text-amber-100/85">
+        <p className="font-medium text-amber-200">🤝 平台合作夥伴（後門權限）</p>
+        <ul className="mt-2 list-disc list-inside space-y-1 text-amber-100/70">
+          <li>僅對<strong>你勾選的那一個帳號</strong>生效，不會讓整個租戶或全站解鎖。</li>
+          <li>目前實作：<strong>使用平台 AI Key 時略過免費次數上限</strong>（仍會寫入使用紀錄）。</li>
+          <li>請在資料庫執行 migration <code className="text-amber-200/90">migration_phase26_platform_unlimited.sql</code> 後再使用開關。</li>
+        </ul>
+      </div>
 
       {/* 統計卡片 */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -115,7 +148,7 @@ export default function SuperAdminUsersPage() {
       {/* 使用者表格 */}
       <div className="bg-slate-900/60 border border-slate-800 rounded-xl overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm min-w-[800px]">
+          <table className="w-full text-sm min-w-[920px]">
             <thead>
               <tr className="border-b border-slate-800 text-white/40 text-xs">
                 <th className="text-left px-4 py-2">名稱</th>
@@ -126,6 +159,7 @@ export default function SuperAdminUsersPage() {
                 <th className="text-left px-4 py-2">登入方式</th>
                 <th className="text-left px-4 py-2">LINE</th>
                 <th className="text-left px-4 py-2">註冊時間</th>
+                <th className="text-left px-4 py-2">合作夥伴</th>
               </tr>
             </thead>
             <tbody>
@@ -157,6 +191,20 @@ export default function SuperAdminUsersPage() {
                       : <span className="text-white/20 text-xs">—</span>}
                   </td>
                   <td className="px-4 py-2.5 text-white/40 text-xs">{formatTime(u.createdAt)}</td>
+                  <td className="px-4 py-2.5">
+                    <button
+                      type="button"
+                      disabled={togglingId === u.id}
+                      onClick={() => togglePlatformPartner(u, !u.platformUnlimited)}
+                      className={`text-xs px-2.5 py-1 rounded-lg font-medium transition-colors cursor-pointer disabled:opacity-50 ${
+                        u.platformUnlimited
+                          ? 'bg-amber-500/25 text-amber-300 hover:bg-amber-500/35'
+                          : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                      }`}
+                    >
+                      {togglingId === u.id ? '…' : u.platformUnlimited ? '已開啟 · 關閉' : '開啟'}
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>

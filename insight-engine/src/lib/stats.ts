@@ -314,7 +314,7 @@ export async function generateSummary(tenantId?: string, surveyId?: string): Pro
   const funnel = await getFunnelStats(tenantId, surveyId)
 
   const lines: string[] = []
-  lines.push(`📊 毛行天下問卷摘要報告`)
+  lines.push(`📊 問卷摘要報告`)
   lines.push(`產出時間：${new Date().toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' })}`)
   lines.push('')
   lines.push(`📋 基本數據`)
@@ -350,7 +350,7 @@ export async function generateSummary(tenantId?: string, surveyId?: string): Pro
     lines.push('')
   }
 
-  lines.push(`— 毛行天下 Insight Engine 自動產出`)
+  lines.push(`— Insight Engine 自動產出`)
 
   return lines.join('\n')
 }

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useAdminSurvey } from '@/components/admin/AdminSurveyContext'
 import type { InsightReport, InsightHighlight, InsightRecommendation } from '@/lib/insightEngine'
 
@@ -87,6 +87,38 @@ export default function InsightPage() {
   const [meta, setMeta] = useState<ReportMeta | null>(null)
   const [generating, setGenerating] = useState(false)
   const [error, setError] = useState('')
+  const [history, setHistory] = useState<Array<{ id: string; report: InsightReport; meta: ReportMeta; created_at: string }>>([])
+  const [historyLoading, setHistoryLoading] = useState(false)
+
+  const fetchHistory = useCallback(async () => {
+    if (!selectedSurveyId) return
+    setHistoryLoading(true)
+    try {
+      const res = await fetch(`/api/admin/ai-insight?surveyId=${selectedSurveyId}`)
+      const data = await res.json() as { data?: Array<{ id: string; report: InsightReport; meta: ReportMeta; created_at: string }> }
+      setHistory(data.data ?? [])
+    } catch {
+      setHistory([])
+    } finally {
+      setHistoryLoading(false)
+    }
+  }, [selectedSurveyId])
+
+  useEffect(() => {
+    setReport(null)
+    setMeta(null)
+    setHistory([])
+    fetchHistory()
+  }, [fetchHistory])
+
+  async function handleDeleteReport(reportId: string) {
+    try {
+      await fetch(`/api/admin/ai-insight?id=${reportId}`, { method: 'DELETE' })
+      await fetchHistory()
+    } catch {
+      /* silent */
+    }
+  }
 
   async function handleGenerate() {
     if (!selectedSurveyId || generating) return
@@ -109,6 +141,7 @@ export default function InsightPage() {
 
       setReport(data.report ?? null)
       setMeta(data.meta ?? null)
+      await fetchHistory()
     } catch {
       setError('網路錯誤，請稍後再試')
     } finally {
@@ -221,6 +254,55 @@ export default function InsightPage() {
           )}
         </div>
       )}
+
+      {/* History */}
+      <div className="bg-t-card-bg border border-t-card-border rounded-2xl p-6 space-y-4">
+        <h2 className="text-base font-semibold text-white/80">📋 歷史報告</h2>
+
+        {historyLoading && (
+          <div className="text-sm text-slate-400 animate-pulse">載入中...</div>
+        )}
+
+        {!historyLoading && history.length === 0 && (
+          <p className="text-sm text-slate-500">尚無歷史報告</p>
+        )}
+
+        {!historyLoading && history.length > 0 && (
+          <div className="space-y-2">
+            {history.map((item) => (
+              <div
+                key={item.id}
+                className="flex items-center justify-between gap-3 border border-slate-700 bg-slate-800/40 rounded-xl px-4 py-3 hover:border-violet-500/40 transition-colors"
+              >
+                <button
+                  type="button"
+                  className="flex-1 text-left cursor-pointer"
+                  onClick={() => {
+                    setReport(item.report)
+                    setMeta(item.meta)
+                  }}
+                >
+                  <span className="text-sm text-white/80">
+                    {new Date(item.created_at).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' })}
+                  </span>
+                  <span className="ml-3 text-xs text-slate-500">
+                    {item.meta?.provider}/{item.meta?.model}
+                    {item.meta?.keySource === 'platform_key' ? '（免費額度）' : ''}
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleDeleteReport(item.id)}
+                  className="text-xs text-red-400/60 hover:text-red-400 transition-colors cursor-pointer px-2 py-1"
+                  title="刪除此報告"
+                >
+                  刪除
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   )
 }

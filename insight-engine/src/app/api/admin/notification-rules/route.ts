@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { query, queryOne, execute } from '@/lib/db'
-import { getTenantContext } from '@/lib/tenant'
+import { getTenantContext, requireRole } from '@/lib/tenant'
 
 interface NotificationRuleRow {
   id: string
@@ -27,6 +27,8 @@ export async function GET(): Promise<NextResponse> {
 
 // POST /api/admin/notification-rules
 export async function POST(request: NextRequest): Promise<NextResponse> {
+  const roleCheck = await requireRole('editor')
+  if (roleCheck instanceof NextResponse) return roleCheck
   const body = await request.json()
   const { name, condition_type, condition_config, action_type, message_template, survey_id } = body
 
@@ -51,7 +53,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       JSON.stringify(condition_config ?? {}),
       action_type,
       message_template ?? '',
-      (await getTenantContext()).tenantId,
+      roleCheck.tenantId,
     ]
   )
 
@@ -60,6 +62,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
 // PUT /api/admin/notification-rules
 export async function PUT(request: NextRequest): Promise<NextResponse> {
+  const roleCheck = await requireRole('editor')
+  if (roleCheck instanceof NextResponse) return roleCheck
   const body = await request.json()
   const { id, name, condition_type, condition_config, action_type, message_template, is_active, survey_id } = body
 
@@ -100,6 +104,8 @@ export async function PUT(request: NextRequest): Promise<NextResponse> {
 
 // DELETE /api/admin/notification-rules
 export async function DELETE(request: NextRequest): Promise<NextResponse> {
+  const roleCheck = await requireRole('editor')
+  if (roleCheck instanceof NextResponse) return roleCheck
   const { searchParams } = new URL(request.url)
   const id = searchParams.get('id')
 

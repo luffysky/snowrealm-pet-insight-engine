@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server'
 import { query, queryOne } from '@/lib/db'
 import { getTenantContext } from '@/lib/tenant'
+import { getLineConfig } from '@/lib/lineConfig'
+import { getActiveAiKey } from '@/lib/aiService'
 
 export const dynamic = 'force-dynamic'
 
@@ -58,13 +60,11 @@ export async function GET(): Promise<NextResponse> {
       ? `${(estimatedSizeKB / 1024).toFixed(1)} MB`
       : `${Math.round(estimatedSizeKB)} KB`
 
-    // 只查該租戶自己有沒有在 DB 設過 LINE（不 fallback 到全域 env）
-    const tenantLineOfficial = await queryOne<{ id: string }>(
-      `SELECT id FROM line_configs WHERE tenant_id = $1 AND config_key = 'OFFICIAL_CHANNEL_ACCESS_TOKEN'`, [tenantId]
-    )
-    const tenantLineInsight = await queryOne<{ id: string }>(
-      `SELECT id FROM line_configs WHERE tenant_id = $1 AND config_key = 'INSIGHT_CHANNEL_ACCESS_TOKEN'`, [tenantId]
-    )
+    const [officialToken, insightToken, aiKey] = await Promise.all([
+      getLineConfig('OFFICIAL_CHANNEL_ACCESS_TOKEN', tenantId),
+      getLineConfig('INSIGHT_CHANNEL_ACCESS_TOKEN', tenantId),
+      getActiveAiKey(tenantId),
+    ])
 
     return NextResponse.json({
       tables: {
@@ -90,10 +90,10 @@ export async function GET(): Promise<NextResponse> {
       })),
       dbSize: sizeLabel,
       env: {
-        hasLineOfficial: !!tenantLineOfficial,
-        hasLineInsight: !!tenantLineInsight,
+        hasLineOfficial: !!officialToken,
+        hasLineInsight: !!insightToken,
         hasLiff: !!process.env.NEXT_PUBLIC_LIFF_ID,
-        hasOpenAI: !!process.env.OPENAI_API_KEY,
+        hasOpenAI: !!process.env.OPENAI_API_KEY || !!aiKey,
         hasDbUrl: !!process.env.DATABASE_URL,
         nodeEnv: process.env.NODE_ENV,
         baseUrl: `${process.env.NEXT_PUBLIC_BASE_URL ?? ''}/insight-admin/${tenantId}`,

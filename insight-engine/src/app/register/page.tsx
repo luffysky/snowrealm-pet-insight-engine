@@ -204,7 +204,7 @@ function RegisterForm() {
                   <div>
                     <label className="block text-sm text-slate-400 mb-1">組織 / 品牌名稱</label>
                     <input type="text" value={orgName} onChange={(e) => setOrgName(e.target.value)}
-                      placeholder="例如：毛行天下、我的公司" className={inputCls} required />
+                      placeholder="例如：我的品牌、我的公司" className={inputCls} required />
                   </div>
                   <div>
                     <label className="block text-sm text-slate-400 mb-1">後台網址</label>

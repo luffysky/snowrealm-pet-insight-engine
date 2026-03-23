@@ -99,7 +99,7 @@ export default function PrivacyPage() {
             </ul>
             <p className="mt-3">
               如需行使上述權利，請透過電子郵件聯繫我們：
-              <a href="mailto:support@snowrealm.pet" className="text-cyan-400 hover:underline">support@snowrealm.pet</a>
+              <a href="mailto:service@snowrealm.pet" className="text-cyan-400 hover:underline">service@snowrealm.pet</a>
             </p>
           </section>
 
@@ -134,7 +134,7 @@ export default function PrivacyPage() {
               如有關於隱私權政策的任何疑問，請聯繫：
             </p>
             <ul className="list-disc list-inside space-y-1 text-white/60 mt-2">
-              <li>Email：<a href="mailto:support@snowrealm.pet" className="text-cyan-400 hover:underline">support@snowrealm.pet</a></li>
+              <li>Email：<a href="mailto:service@snowrealm.pet" className="text-cyan-400 hover:underline">service@snowrealm.pet</a></li>
               <li>營運團隊：SnowRealm</li>
             </ul>
           </section>

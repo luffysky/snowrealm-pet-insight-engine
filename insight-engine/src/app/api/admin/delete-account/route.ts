@@ -19,7 +19,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: '請輸入密碼並確認刪除' }, { status: 400 })
     }
 
-    // 取得使用者資料
     const user = await queryOne<{ id: string; password_hash: string; tenant_id: string }>(
       `SELECT id, password_hash, tenant_id FROM admin_users WHERE id = $1`,
       [payload.sub]
@@ -28,15 +27,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: '找不到帳號或此帳號使用第三方登入' }, { status: 400 })
     }
 
-    // 驗證密碼
     const valid = await verifyPassword(password, user.password_hash)
     if (!valid) {
       return NextResponse.json({ error: '密碼不正確' }, { status: 400 })
     }
 
-    // 檢查是否為唯一管理員
     const adminCount = await queryOne<{ count: string }>(
-      `SELECT COUNT(*)::text AS count FROM admin_users WHERE tenant_id = $1`,
+      `SELECT COUNT(*)::text AS count FROM admin_users WHERE tenant_id = $1 AND deleted_at IS NULL`,
       [user.tenant_id]
     )
     if (Number(adminCount?.count ?? 0) <= 1) {
@@ -46,11 +43,17 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // 刪除帳號
-    await query(`DELETE FROM admin_users WHERE id = $1`, [user.id])
+    // 軟刪除：標記 deleted_at，30 天後由 cron 真正清除
+    await query(
+      `UPDATE admin_users SET deleted_at = NOW(), display_name = display_name || ' [已刪除]' WHERE id = $1`,
+      [user.id]
+    )
+    await query(`DELETE FROM tenant_users WHERE user_id = $1`, [user.id])
 
-    // 清除 session cookie
-    const response = NextResponse.json({ success: true })
+    const response = NextResponse.json({
+      success: true,
+      message: '帳號已標記刪除，30 天內可聯繫管理員恢復。',
+    })
     response.cookies.set('admin_session', '', { maxAge: 0, path: '/' })
     return response
   } catch (err) {

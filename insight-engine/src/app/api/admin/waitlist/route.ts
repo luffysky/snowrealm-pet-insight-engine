@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { query, queryOne } from '@/lib/db'
 import { v4 as uuidv4 } from 'uuid'
-import { getTenantContext } from '@/lib/tenant'
+import { getTenantContext, requireRole } from '@/lib/tenant'
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
@@ -41,6 +41,10 @@ export async function GET(): Promise<NextResponse> {
 
 /** 新增封測名單 */
 export async function POST(request: NextRequest): Promise<NextResponse> {
+  const roleCheck = await requireRole('admin')
+  if (roleCheck instanceof NextResponse) return roleCheck
+  const { tenantId } = roleCheck
+
   try {
     const body = await request.json()
     const email = (body.email ?? '').trim().toLowerCase()
@@ -58,8 +62,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     const nickname = (body.nickname ?? '').trim().slice(0, 50)
     const contactInfo = (body.contact_info ?? '').trim().slice(0, 100)
     const source = (body.source ?? 'admin').trim().slice(0, 50)
-
-    const { tenantId } = await getTenantContext()
     await query(
       'INSERT INTO waitlist (id, email, nickname, contact_info, source, tenant_id) VALUES ($1, $2, $3, $4, $5, $6)',
       [uuidv4(), email, nickname, contactInfo, source, tenantId]
@@ -123,6 +125,9 @@ export async function PUT(request: NextRequest): Promise<NextResponse> {
 
 /** 刪除封測名單（支援批次） */
 export async function DELETE(request: NextRequest): Promise<NextResponse> {
+  const roleCheck = await requireRole('admin')
+  if (roleCheck instanceof NextResponse) return roleCheck
+
   try {
     const body = await request.json()
     const ids: string[] = Array.isArray(body.ids) ? body.ids : body.id ? [body.id] : []

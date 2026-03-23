@@ -102,7 +102,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     // 加好友 → 歡迎訊息
     if (event.type === 'follow' && event.replyToken) {
-      await replyMessage(event.replyToken, '👋 歡迎！這是毛行天下問卷系統的管理帳號。\n\n輸入口令即可取得註冊連結，成為管理員 📋', CHANNEL_ACCESS_TOKEN)
+      await replyMessage(event.replyToken, '👋 歡迎！這是問卷系統的管理帳號。\n\n輸入口令即可取得註冊連結，成為管理員 📋', CHANNEL_ACCESS_TOKEN)
     }
 
     // 取消追蹤 → 停用管理員

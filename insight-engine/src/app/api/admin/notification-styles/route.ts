@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { query } from '@/lib/db'
 import { invalidateStyleCache } from '@/lib/lineStyles'
-import { getTenantContext } from '@/lib/tenant'
+import { getTenantContext, requireRole } from '@/lib/tenant'
 
 const COLOR_REGEX = /^#[0-9a-fA-F]{6}$/
 
@@ -19,6 +19,8 @@ export async function GET(): Promise<NextResponse> {
 }
 
 export async function PUT(request: NextRequest): Promise<NextResponse> {
+  const roleCheck = await requireRole('editor')
+  if (roleCheck instanceof NextResponse) return roleCheck
   try {
     const body = await request.json() as {
       id?: string

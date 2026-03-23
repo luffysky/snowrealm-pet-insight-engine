@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getActiveAiKey, getPlatformKey, checkFreeQuota, logAiUsage, AiAction } from '@/lib/aiService'
-import { getTenantContext } from '@/lib/tenant'
+import { requireRole } from '@/lib/tenant'
 
 interface GenerateMetaRequest {
   topic: string
@@ -124,13 +124,15 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
   const effectiveAction = action ?? 'generate_meta'
 
-  const { tenantId } = await getTenantContext()
+  const roleCheck = await requireRole('editor')
+  if (roleCheck instanceof NextResponse) return roleCheck
+  const { tenantId, userId } = roleCheck
 
   let aiKey = await getActiveAiKey(tenantId)
   let isFree = false
 
   if (!aiKey) {
-    const hasFree = await checkFreeQuota(tenantId, effectiveAction)
+    const hasFree = await checkFreeQuota(tenantId, effectiveAction, userId)
     if (!hasFree) {
       return NextResponse.json(
         { error: '免費額度已用完，請在 AI 設定中新增自己的 API Key' },

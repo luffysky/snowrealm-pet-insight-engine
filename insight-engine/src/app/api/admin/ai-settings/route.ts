@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { query, queryOne, execute } from '@/lib/db'
 import { encryptApiKey, decryptApiKey, maskApiKey } from '@/lib/aiCrypto'
 import { randomUUID } from 'crypto'
-import { getTenantContext } from '@/lib/tenant'
+import { getTenantContext, requireRole } from '@/lib/tenant'
 
 // ===== GET: 列出所有 AI provider configs（不回傳明文 key） =====
 export async function GET(): Promise<NextResponse> {
@@ -45,7 +45,9 @@ export async function GET(): Promise<NextResponse> {
 
 // ===== POST: 新增或更新 AI provider config =====
 export async function POST(request: NextRequest): Promise<NextResponse> {
-  const { tenantId } = await getTenantContext()
+  const roleCheck = await requireRole('admin')
+  if (roleCheck instanceof NextResponse) return roleCheck
+  const { tenantId } = roleCheck
   const body = await request.json()
   const { provider, displayName, apiKey, defaultModel, isPrimary } = body as {
     provider?: string
@@ -110,7 +112,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
 // ===== DELETE: 刪除 AI provider config =====
 export async function DELETE(request: NextRequest): Promise<NextResponse> {
-  const { tenantId } = await getTenantContext()
+  const roleCheck = await requireRole('admin')
+  if (roleCheck instanceof NextResponse) return roleCheck
+  const { tenantId } = roleCheck
   const { searchParams } = new URL(request.url)
   const id = searchParams.get('id')
 
@@ -132,6 +136,10 @@ export async function DELETE(request: NextRequest): Promise<NextResponse> {
 
 // ===== PATCH: 驗證 API Key 是否有效 =====
 export async function PATCH(request: NextRequest): Promise<NextResponse> {
+  const roleCheck = await requireRole('admin')
+  if (roleCheck instanceof NextResponse) return roleCheck
+  const { tenantId } = roleCheck
+
   const body = await request.json()
   const { id, action } = body as { id?: string; action?: string }
 
@@ -149,7 +157,7 @@ export async function PATCH(request: NextRequest): Promise<NextResponse> {
     }>(
       `SELECT provider, encrypted_api_key, encryption_iv, encryption_tag
        FROM ai_provider_configs WHERE id = $1 AND tenant_id = $2`,
-      [id, (await getTenantContext()).tenantId]
+      [id, tenantId]
     )
 
     if (!row || !row.encrypted_api_key) {
@@ -213,9 +221,8 @@ export async function PATCH(request: NextRequest): Promise<NextResponse> {
   }
 
   if (action === 'set-primary') {
-    const { tenantId: tid } = await getTenantContext()
     await execute(
-      `UPDATE ai_provider_configs SET is_primary = false WHERE tenant_id = $1`, [tid]
+      `UPDATE ai_provider_configs SET is_primary = false WHERE tenant_id = $1`, [tenantId]
     )
     await execute(
       `UPDATE ai_provider_configs SET is_primary = true, updated_at = NOW() WHERE id = $1`,

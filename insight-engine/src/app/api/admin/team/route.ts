@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { query, queryOne } from '@/lib/db'
 import { generateInviteToken } from '@/lib/auth'
+import { requireRole } from '@/lib/tenant'
 
 // GET - 列出該 tenant 的所有管理員 + 待使用邀請
 export async function GET(request: NextRequest) {
@@ -38,12 +39,9 @@ export async function GET(request: NextRequest) {
 
 // POST - 建立邀請
 export async function POST(request: NextRequest) {
-  const tenantId = request.headers.get('x-tenant-id')
-  const userRole = request.headers.get('x-user-role')
-  if (!tenantId) return NextResponse.json({ error: '未授權' }, { status: 401 })
-  if (userRole !== 'admin' && userRole !== 'super_admin') {
-    return NextResponse.json({ error: '權限不足' }, { status: 403 })
-  }
+  const roleCheck = await requireRole('admin')
+  if (roleCheck instanceof NextResponse) return roleCheck
+  const { tenantId } = roleCheck
 
   const body = await request.json().catch(() => null)
   const email = (body?.email as string)?.trim().toLowerCase()
@@ -92,12 +90,9 @@ export async function POST(request: NextRequest) {
 
 // DELETE - 撤銷邀請
 export async function DELETE(request: NextRequest) {
-  const tenantId = request.headers.get('x-tenant-id')
-  const userRole = request.headers.get('x-user-role')
-  if (!tenantId) return NextResponse.json({ error: '未授權' }, { status: 401 })
-  if (userRole !== 'admin' && userRole !== 'super_admin') {
-    return NextResponse.json({ error: '權限不足' }, { status: 403 })
-  }
+  const roleCheck = await requireRole('admin')
+  if (roleCheck instanceof NextResponse) return roleCheck
+  const { tenantId } = roleCheck
 
   const { searchParams } = new URL(request.url)
   const inviteId = searchParams.get('id')

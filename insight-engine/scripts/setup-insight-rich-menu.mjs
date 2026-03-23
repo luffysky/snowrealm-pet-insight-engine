@@ -1,3 +1,5 @@
+import './load-dotenv.mjs'
+
 /**
  * 問卷帳號 LINE Rich Menu 建立腳本
  * 用法：node scripts/setup-insight-rich-menu.mjs
@@ -18,8 +20,30 @@ if (!TOKEN) {
   process.exit(1)
 }
 
-const BASE = process.env.NEXT_PUBLIC_BASE_URL || 'https://insight.snowrealm.pet'
-const ADMIN = `${BASE}/admin`
+const BASE = (process.env.NEXT_PUBLIC_BASE_URL || 'https://insight.snowrealm.pet').replace(/\/$/, '')
+/**
+ * 足跡／問卷 LINE 帳號 Rich Menu 專用（可與官方帳號分開設定）
+ * 優先讀 RICH_MENU_INSIGHT_*，再退回共用變數，避免兩個帳號搶同一組 slug。
+ */
+const ADMIN_TENANT =
+  process.env.RICH_MENU_INSIGHT_ADMIN_TENANT_SLUG?.trim()
+  || process.env.RICH_MENU_ADMIN_TENANT_SLUG?.trim()
+  || process.env.DEFAULT_TENANT_SLUG?.trim()
+  || 'maoxingtianxia'
+const ADMIN = `${BASE}/insight-admin/${ADMIN_TENANT}`
+const EXTERNAL = '#openExternalBrowser=1'
+const SURVEY_TENANT =
+  process.env.RICH_MENU_INSIGHT_SURVEY_TENANT_SLUG?.trim()
+  || process.env.RICH_MENU_SURVEY_TENANT_SLUG?.trim()
+  || ADMIN_TENANT
+const SURVEY_SLUG =
+  process.env.RICH_MENU_INSIGHT_SURVEY_SLUG?.trim()
+  || process.env.RICH_MENU_SURVEY_SLUG?.trim()
+  || (SURVEY_TENANT === 'maoxingtianxia' ? 'maoxingtianxia-mvp-survey' : '')
+const FILL_SURVEY_URL =
+  process.env.NEXT_PUBLIC_RICH_MENU_INSIGHT_SURVEY_URL?.trim()
+  || process.env.NEXT_PUBLIC_RICH_MENU_SURVEY_URL?.trim()
+  || (SURVEY_SLUG ? `${BASE}/${SURVEY_TENANT}/${SURVEY_SLUG}` : `${BASE}/`)
 
 const headers = {
   Authorization: `Bearer ${TOKEN}`,
@@ -27,6 +51,13 @@ const headers = {
 }
 
 async function main() {
+  console.log('📎 後台網址前綴:', ADMIN, `(租戶 slug: ${ADMIN_TENANT})`)
+  console.log(
+    '📎 填寫問卷:',
+    FILL_SURVEY_URL,
+    SURVEY_SLUG ? `(slug: ${SURVEY_SLUG})` : '⚠️ 未設 slug 且非 maoxingtianxia 預設，目前為首頁',
+  )
+  console.log('   足跡帳號專用：RICH_MENU_INSIGHT_ADMIN_TENANT_SLUG、RICH_MENU_INSIGHT_SURVEY_SLUG 或 NEXT_PUBLIC_RICH_MENU_INSIGHT_SURVEY_URL')
   // Step 0: 清除舊的預設 Rich Menu
   console.log('🧹 清除問卷帳號舊的預設 Rich Menu...')
   await fetch('https://api.line.me/v2/bot/user/all/richmenu', {
@@ -47,28 +78,28 @@ async function main() {
       // Row 1
       {
         bounds: { x: 0, y: 0, width: colW, height: rowH },
-        action: { type: 'uri', label: '數據總覽', uri: ADMIN },
+        action: { type: 'uri', label: '數據總覽', uri: `${ADMIN}${EXTERNAL}` },
       },
       {
         bounds: { x: colW, y: 0, width: colW, height: rowH },
-        action: { type: 'uri', label: '填答列表', uri: `${ADMIN}/responses` },
+        action: { type: 'uri', label: '填答列表', uri: `${ADMIN}/responses${EXTERNAL}` },
       },
       {
         bounds: { x: colW * 2, y: 0, width: 2500 - colW * 2, height: rowH },
-        action: { type: 'uri', label: '標籤分析', uri: `${ADMIN}/tags` },
+        action: { type: 'uri', label: '標籤分析', uri: `${ADMIN}/tags${EXTERNAL}` },
       },
       // Row 2
       {
         bounds: { x: 0, y: rowH, width: colW, height: 1686 - rowH },
-        action: { type: 'uri', label: '問卷管理', uri: `${ADMIN}/surveys` },
+        action: { type: 'uri', label: '問卷管理', uri: `${ADMIN}/surveys${EXTERNAL}` },
       },
       {
         bounds: { x: colW, y: rowH, width: colW, height: 1686 - rowH },
-        action: { type: 'uri', label: '漏斗分析', uri: `${ADMIN}/funnel` },
+        action: { type: 'uri', label: '漏斗分析', uri: `${ADMIN}/funnel${EXTERNAL}` },
       },
       {
         bounds: { x: colW * 2, y: rowH, width: 2500 - colW * 2, height: 1686 - rowH },
-        action: { type: 'uri', label: '填寫問卷', uri: BASE },
+        action: { type: 'uri', label: '填寫問卷', uri: `${FILL_SURVEY_URL}${EXTERNAL}` },
       },
     ],
   }

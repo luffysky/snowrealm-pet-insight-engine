@@ -7,7 +7,7 @@ import {
   LINE_CONFIG_KEYS,
   type LineConfigKey,
 } from '@/lib/lineConfig'
-import { getTenantContext } from '@/lib/tenant'
+import { getTenantContext, requireRole } from '@/lib/tenant'
 
 // ===== GET: 列出所有 LINE 設定（敏感值遮罩，前端安全） =====
 export async function GET(): Promise<NextResponse> {
@@ -18,6 +18,10 @@ export async function GET(): Promise<NextResponse> {
 
 // ===== POST: 新增或更新 LINE 設定 =====
 export async function POST(request: NextRequest): Promise<NextResponse> {
+  const roleCheck = await requireRole('admin')
+  if (roleCheck instanceof NextResponse) return roleCheck
+  const { tenantId } = roleCheck
+
   const body = await request.json()
   const { key, value } = body as { key?: string; value?: string }
 
@@ -28,8 +32,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   if (!(key in LINE_CONFIG_KEYS)) {
     return NextResponse.json({ error: '無效的 config key' }, { status: 400 })
   }
-
-  const { tenantId } = await getTenantContext()
   await saveLineConfig(key as LineConfigKey, value, tenantId)
   return NextResponse.json({ success: true })
 }
@@ -53,6 +55,10 @@ export async function DELETE(request: NextRequest): Promise<NextResponse> {
 
 // ===== PATCH: 測試 LINE API 連線 =====
 export async function PATCH(request: NextRequest): Promise<NextResponse> {
+  const roleCheck = await requireRole('admin')
+  if (roleCheck instanceof NextResponse) return roleCheck
+  const { tenantId } = roleCheck
+
   const body = await request.json()
   const { channel } = body as { channel?: 'insight' | 'official' }
 
@@ -60,6 +66,6 @@ export async function PATCH(request: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: '無效的 channel（insight / official）' }, { status: 400 })
   }
 
-  const result = await testLineConnection(channel, (await getTenantContext()).tenantId)
+  const result = await testLineConnection(channel, tenantId)
   return NextResponse.json(result)
 }

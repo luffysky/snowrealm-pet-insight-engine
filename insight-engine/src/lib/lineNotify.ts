@@ -5,8 +5,24 @@
  */
 
 import { getLineConfig } from '@/lib/lineConfig'
+import { queryOne } from '@/lib/db'
 
 const PUSH_URL = 'https://api.line.me/v2/bot/message/push'
+
+export type NotifyEvent = 'registration' | 'login' | 'survey_complete' | 'weekly_report'
+
+async function isNotifyEnabled(event: NotifyEvent, tenantId?: string): Promise<boolean> {
+  if (!tenantId) return true
+  try {
+    const row = await queryOne<{ extra_meta: Record<string, unknown> | null }>(
+      `SELECT extra_meta FROM site_settings WHERE tenant_id = $1`, [tenantId],
+    )
+    const prefs = row?.extra_meta as Record<string, unknown> | null
+    if (!prefs) return true
+    const key = `notify_${event}`
+    return prefs[key] !== false
+  } catch { return true }
+}
 
 // ━━━━━━━━━━━━━━━━━ 顏色主題 ━━━━━━━━━━━━━━━━━
 
@@ -73,7 +89,7 @@ function buildFlexMessage(card: FlexCard) {
         contents: [
           {
             type: 'button', style: 'link', height: 'sm',
-            action: { type: 'uri', label: '前往後台 →', uri: 'https://insight.snowrealm.pet/snowrealm-insight-ctrl' },
+            action: { type: 'uri', label: '前往後台 →', uri: `${process.env.NEXT_PUBLIC_BASE_URL || 'https://insight.snowrealm.pet'}/snowrealm-insight-ctrl` },
           },
         ],
       },
@@ -120,14 +136,17 @@ async function pushToAdmin(message: Record<string, unknown>): Promise<void> {
 // ━━━━━━━━━━━━━━━━━ 公開 API ━━━━━━━━━━━━━━━━━
 
 /** 新使用者註冊通知 */
-export function notifyNewRegistration(info: {
+export async function notifyNewRegistration(info: {
   method: 'email' | 'phone' | 'google' | 'line'
   email?: string
   phone?: string
   displayName?: string
   orgName?: string
   slug?: string
+  tenantId?: string
 }) {
+  if (!await isNotifyEnabled('registration', info.tenantId)) return
+
   const themeKey = `${info.method}_register` as keyof typeof THEMES
   const theme = THEMES[themeKey]
 
@@ -148,12 +167,14 @@ export function notifyNewRegistration(info: {
 }
 
 /** 使用者登入通知 */
-export function notifyUserLogin(info: {
+export async function notifyUserLogin(info: {
   method: 'password' | 'google' | 'line'
   identifier: string
   displayName?: string
   tenantId?: string
 }) {
+  if (!await isNotifyEnabled('login', info.tenantId)) return
+
   const themeKey = `${info.method}_login` as keyof typeof THEMES
   const theme = THEMES[themeKey]
 

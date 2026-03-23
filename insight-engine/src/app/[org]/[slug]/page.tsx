@@ -24,11 +24,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://insight.snowrealm.pet'
 
   const survey = await queryOne<SurveyMeta>(
-    `SELECT id, tenant_id, title, cover_title, cover_subtitle, og_title, og_description, og_image_url FROM surveys WHERE slug = $1 AND status = 'published'`,
-    [slug],
+    `SELECT id, tenant_id, title, cover_title, cover_subtitle, og_title, og_description, og_image_url FROM surveys WHERE tenant_id = $1 AND slug = $2 AND status = 'published'`,
+    [org, slug],
   )
 
-  if (!survey || survey.tenant_id !== org) {
+  if (!survey) {
     return { title: '問卷不存在' }
   }
 
@@ -72,12 +72,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function OrgSurveyPage({ params }: Props) {
   const { org, slug } = await params
 
-  const survey = await queryOne<{ id: string; tenant_id: string }>(
-    `SELECT id, tenant_id FROM surveys WHERE slug = $1 AND status = 'published'`,
-    [slug],
+  const survey = await queryOne<{ id: string }>(
+    `SELECT id FROM surveys WHERE tenant_id = $1 AND slug = $2 AND status = 'published'`,
+    [org, slug],
   )
 
-  if (!survey || survey.tenant_id !== org) {
+  if (!survey) {
     notFound()
   }
 

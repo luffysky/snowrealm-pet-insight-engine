@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { query, queryOne, execute } from '@/lib/db'
-import { getTenantContext } from '@/lib/tenant'
+import { getTenantContext, requireRole } from '@/lib/tenant'
 
 interface WebhookRow extends Record<string, unknown> {
   id: string
@@ -24,6 +24,9 @@ export async function GET(): Promise<NextResponse> {
 }
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
+  const roleCheck = await requireRole('admin')
+  if (roleCheck instanceof NextResponse) return roleCheck
+
   try {
     const body = await request.json()
     const { event_type, url } = body
@@ -50,7 +53,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       )
     }
 
-    const { tenantId } = await getTenantContext()
+    const { tenantId } = roleCheck
     const row = await queryOne<WebhookRow>(
       `INSERT INTO webhook_configs (id, event_type, url, active, tenant_id)
        VALUES (uuid_generate_v4(), $1, $2, true, $3)
@@ -65,6 +68,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 }
 
 export async function DELETE(request: NextRequest): Promise<NextResponse> {
+  const roleCheck = await requireRole('admin')
+  if (roleCheck instanceof NextResponse) return roleCheck
+
   try {
     const { searchParams } = request.nextUrl
     const id = searchParams.get('id')
@@ -79,6 +85,9 @@ export async function DELETE(request: NextRequest): Promise<NextResponse> {
 }
 
 export async function PATCH(request: NextRequest): Promise<NextResponse> {
+  const roleCheck = await requireRole('admin')
+  if (roleCheck instanceof NextResponse) return roleCheck
+
   try {
     const body = await request.json()
     const { id, active } = body

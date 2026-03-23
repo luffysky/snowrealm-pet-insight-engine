@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getActiveAiKey, getPlatformKey, logAiUsage } from '@/lib/aiService'
-import { getTenantContext } from '@/lib/tenant'
+import { requireRole } from '@/lib/tenant'
 import { SURVEY_CHAT_SYSTEM_PROMPT } from '@/lib/aiSurveyPrompt'
 
 interface ChatMessage {
@@ -95,11 +95,12 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: '訊息不能為空' }, { status: 400 })
   }
 
-  const { tenantId } = await getTenantContext()
+  const roleCheck = await requireRole('editor')
+  if (roleCheck instanceof NextResponse) return roleCheck
+  const { tenantId } = roleCheck
 
-  // 優先使用租戶自己的 key，否則使用平台 key（對話生成不限制免費額度）
   let aiKey = await getActiveAiKey(tenantId)
-  let isFree = false
+  const isUsingPlatformKey = !aiKey
 
   if (!aiKey) {
     aiKey = getPlatformKey()
@@ -109,7 +110,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         { status: 402 }
       )
     }
-    isFree = true
   }
 
   try {
@@ -124,13 +124,13 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     await logAiUsage({
       tenantId,
-      action: 'generate',
-      keySource: aiKey.keySource,
+      action: 'chat',
+      keySource: isUsingPlatformKey ? 'platform_key' : aiKey.keySource,
       provider: aiKey.provider,
       model: aiKey.model,
       promptTokens: result.promptTokens,
       completionTokens: result.completionTokens,
-      isFree,
+      isFree: false,
     })
 
     return NextResponse.json({

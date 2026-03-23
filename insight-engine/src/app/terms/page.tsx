@@ -151,7 +151,7 @@ export default function TermsPage() {
               如有任何關於使用條款的疑問，請聯繫：
             </p>
             <ul className="list-disc list-inside space-y-1 text-white/60 mt-2">
-              <li>Email：<a href="mailto:support@snowrealm.pet" className="text-cyan-400 hover:underline">support@snowrealm.pet</a></li>
+              <li>Email：<a href="mailto:service@snowrealm.pet" className="text-cyan-400 hover:underline">service@snowrealm.pet</a></li>
               <li>營運團隊：SnowRealm</li>
             </ul>
           </section>

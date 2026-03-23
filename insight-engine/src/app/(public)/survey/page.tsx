@@ -11,6 +11,10 @@ import {
   QuestionMultiple,
   QuestionText,
 } from '@/components/survey'
+import { QuestionRating } from '@/components/survey/QuestionRating'
+import { QuestionScale } from '@/components/survey/QuestionScale'
+import { QuestionDate } from '@/components/survey/QuestionDate'
+import { QuestionFileUpload } from '@/components/survey/QuestionFileUpload'
 import { ThemeProvider, useTheme } from '@/components/survey/ThemeContext'
 import { ThemeProgress } from '@/components/survey/theme/ThemeProgress'
 import { ThemeMilestone } from '@/components/survey/theme/ThemeMilestone'
@@ -173,7 +177,7 @@ function SurveyFlow({
 
   const currentAnswer = answers.get(currentQuestion.key)
   const isMultipleOrText =
-    currentQuestion.type === 'multiple' || currentQuestion.type === 'text'
+    currentQuestion.type !== 'single'
 
   const canProceed = currentQuestion.isRequired
     ? currentAnswer !== undefined &&
@@ -242,6 +246,46 @@ function SurveyFlow({
                     value={(currentAnswer as string) ?? ''}
                     onChange={handleTextChange}
                     isRequired={currentQuestion.isRequired}
+                  />
+                )}
+
+                {currentQuestion.type === 'rating' && (
+                  <QuestionRating
+                    content={currentQuestion.content}
+                    value={currentAnswer ? Number(currentAnswer) : null}
+                    onChange={(v) => handleTextChange(String(v))}
+                    max={currentQuestion.max ?? 5}
+                  />
+                )}
+
+                {currentQuestion.type === 'scale' && (
+                  <QuestionScale
+                    content={currentQuestion.content}
+                    value={currentAnswer ? Number(currentAnswer) : null}
+                    onChange={(v) => handleTextChange(String(v))}
+                    min={currentQuestion.min ?? 1}
+                    max={currentQuestion.max ?? 10}
+                    step={currentQuestion.step ?? 1}
+                  />
+                )}
+
+                {currentQuestion.type === 'date' && (
+                  <QuestionDate
+                    content={currentQuestion.content}
+                    value={(currentAnswer as string) ?? ''}
+                    onChange={handleTextChange}
+                    isRequired={currentQuestion.isRequired}
+                  />
+                )}
+
+                {currentQuestion.type === 'file_upload' && (
+                  <QuestionFileUpload
+                    content={currentQuestion.content}
+                    value={(currentAnswer as string) ?? ''}
+                    onChange={handleTextChange}
+                    isRequired={currentQuestion.isRequired}
+                    acceptedFileTypes={currentQuestion.acceptedFileTypes}
+                    maxFileSize={currentQuestion.maxFileSize}
                   />
                 )}
 

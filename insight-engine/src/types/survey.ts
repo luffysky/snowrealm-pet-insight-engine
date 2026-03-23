@@ -1,7 +1,7 @@
 // ===== 問卷系統型別定義 =====
 
 /** 題目類型 */
-export type QuestionType = 'single' | 'multiple' | 'text'
+export type QuestionType = 'single' | 'multiple' | 'text' | 'rating' | 'scale' | 'date' | 'file_upload'
 
 /** 問卷狀態 */
 export type SurveyStatus = 'draft' | 'published' | 'archived'
@@ -34,6 +34,16 @@ export interface Question {
   emoji?: string
   /** 場景敘事文字 */
   narrative?: string
+  /** rating/scale 的最小值 */
+  min?: number
+  /** rating/scale 的最大值 */
+  max?: number
+  /** scale 的步進值 */
+  step?: number
+  /** file_upload 允許的 MIME types */
+  acceptedFileTypes?: string[]
+  /** file_upload 最大檔案大小 (MB) */
+  maxFileSize?: number
 }
 
 /** 單一分流規則 */

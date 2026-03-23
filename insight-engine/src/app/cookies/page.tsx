@@ -134,7 +134,7 @@ export default function CookiesPage() {
             <h2 className="text-lg font-semibold text-white mb-3">7. 聯絡方式</h2>
             <p>如有關於 Cookie 的任何疑問，請聯繫：</p>
             <ul className="list-disc list-inside space-y-1 text-white/60 mt-2">
-              <li>Email：<a href="mailto:support@snowrealm.pet" className="text-cyan-400 hover:underline">support@snowrealm.pet</a></li>
+              <li>Email：<a href="mailto:service@snowrealm.pet" className="text-cyan-400 hover:underline">service@snowrealm.pet</a></li>
               <li>營運團隊：SnowRealm</li>
             </ul>
           </section>

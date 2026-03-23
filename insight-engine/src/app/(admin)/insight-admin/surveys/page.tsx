@@ -25,6 +25,7 @@ interface SurveyRow {
   scheduled_end: string | null
   branch_config: BranchConfig | BranchRule[] | string | null
   is_primary: boolean
+  tenant_id: string
 }
 
 interface QuestionRow {
@@ -532,12 +533,12 @@ function SurveyEditor({
           <div className="col-span-1 sm:col-span-2 mt-2">
             <span className="text-white/40 block mb-1">問卷專屬連結：</span>
             <div className="flex items-center gap-2">
-              <a href={`/${survey.slug}`} target="_blank" rel="noopener noreferrer" className="text-t-accent hover:underline break-all font-mono">
-                {typeof window !== 'undefined' ? window.location.origin : ''}/{survey.slug}
+              <a href={`/${survey.tenant_id}/${survey.slug}`} target="_blank" rel="noopener noreferrer" className="text-t-accent hover:underline break-all font-mono">
+                {typeof window !== 'undefined' ? window.location.origin : ''}/{survey.tenant_id}/{survey.slug}
               </a>
               <button
                 onClick={() => {
-                  const url = `${typeof window !== 'undefined' ? window.location.origin : ''}/${survey.slug}`;
+                  const url = `${typeof window !== 'undefined' ? window.location.origin : ''}/${survey.tenant_id}/${survey.slug}`;
                   navigator.clipboard.writeText(url);
                   alert('🔗 已複製連結');
                 }}
@@ -932,6 +933,10 @@ function BranchQuestionCard({
           <span className={`text-xs px-1.5 py-0.5 rounded ${
             question.type === 'single' ? 'bg-blue-500/20 text-blue-400'
             : question.type === 'multiple' ? 'bg-purple-500/20 text-purple-400'
+            : question.type === 'rating' ? 'bg-amber-500/20 text-amber-400'
+            : question.type === 'scale' ? 'bg-teal-500/20 text-teal-400'
+            : question.type === 'date' ? 'bg-cyan-500/20 text-cyan-400'
+            : question.type === 'file_upload' ? 'bg-rose-500/20 text-rose-400'
             : 'bg-emerald-500/20 text-emerald-400'
           }`}>{question.type}</span>
           {question.is_required && <span className="text-xs text-red-400/60">必填</span>}
@@ -1080,7 +1085,15 @@ function QuestionList({
                           ? 'bg-blue-500/20 text-blue-400'
                           : q.type === 'multiple'
                             ? 'bg-purple-500/20 text-purple-400'
-                            : 'bg-emerald-500/20 text-emerald-400'
+                            : q.type === 'rating'
+                              ? 'bg-amber-500/20 text-amber-400'
+                              : q.type === 'scale'
+                                ? 'bg-teal-500/20 text-teal-400'
+                                : q.type === 'date'
+                                  ? 'bg-cyan-500/20 text-cyan-400'
+                                  : q.type === 'file_upload'
+                                    ? 'bg-rose-500/20 text-rose-400'
+                                    : 'bg-emerald-500/20 text-emerald-400'
                       }`}
                     >
                       {q.type}
@@ -1373,6 +1386,10 @@ function QuestionFormFields({
           <option value="single">single</option>
           <option value="multiple">multiple</option>
           <option value="text">text</option>
+          <option value="rating">rating</option>
+          <option value="scale">scale</option>
+          <option value="date">date</option>
+          <option value="file_upload">file_upload</option>
         </select>
 
         <label className="text-xs text-white/40">題目</label>

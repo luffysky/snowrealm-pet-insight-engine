@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { listSurveys, createSurvey, setPrimarySurvey, reorderSurveys } from '@/lib/surveyRepo'
-import { getTenantContext } from '@/lib/tenant'
+import { getTenantContext, requireRole } from '@/lib/tenant'
 
 export async function GET(): Promise<NextResponse> {
   const { tenantId } = await getTenantContext()
@@ -9,7 +9,9 @@ export async function GET(): Promise<NextResponse> {
 }
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
-  const { tenantId } = await getTenantContext()
+  const roleCheck = await requireRole('editor')
+  if (roleCheck instanceof NextResponse) return roleCheck
+  const { tenantId } = roleCheck
   const body = await req.json() as { title?: string; slug?: string }
   const title = body.title?.trim()
   const slug = body.slug?.trim()
@@ -36,7 +38,9 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
 /** PATCH /api/admin/surveys — 設定主問卷 */
 export async function PATCH(req: NextRequest): Promise<NextResponse> {
-  const { tenantId } = await getTenantContext()
+  const roleCheck = await requireRole('editor')
+  if (roleCheck instanceof NextResponse) return roleCheck
+  const { tenantId } = roleCheck
   const body = await req.json() as { action?: string; surveyId?: string; orderedIds?: string[] }
 
   if (body.action === 'set-primary' && body.surveyId) {

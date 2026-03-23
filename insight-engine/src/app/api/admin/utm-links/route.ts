@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { query, queryOne, execute } from '@/lib/db'
-import { getTenantContext } from '@/lib/tenant'
+import { getTenantContext, requireRole } from '@/lib/tenant'
 
 interface UtmLinkRow {
   id: string
@@ -34,6 +34,8 @@ export async function GET(): Promise<NextResponse> {
 
 // POST /api/admin/utm-links
 export async function POST(request: NextRequest): Promise<NextResponse> {
+  const roleCheck = await requireRole('editor')
+  if (roleCheck instanceof NextResponse) return roleCheck
   const body = await request.json()
   const { name, base_url, utm_source, utm_medium, utm_campaign } = body
 
@@ -50,7 +52,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
   const fullUrl = buildFullUrl(base_url, utm_source ?? '', utm_medium ?? '', utm_campaign ?? '')
 
-  const { tenantId } = await getTenantContext()
+  const { tenantId } = roleCheck
   const row = await queryOne<UtmLinkRow>(
     `INSERT INTO utm_links (name, base_url, utm_source, utm_medium, utm_campaign, full_url, tenant_id)
      VALUES ($1, $2, $3, $4, $5, $6, $7)
@@ -63,6 +65,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
 // DELETE /api/admin/utm-links
 export async function DELETE(request: NextRequest): Promise<NextResponse> {
+  const roleCheck = await requireRole('editor')
+  if (roleCheck instanceof NextResponse) return roleCheck
   const { searchParams } = new URL(request.url)
   const id = searchParams.get('id')
   if (!id) return NextResponse.json({ error: '缺少 id' }, { status: 400 })

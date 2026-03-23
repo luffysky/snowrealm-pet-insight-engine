@@ -37,7 +37,7 @@ export function DownloadAnswers() {
 
     const lines: string[] = [
       '═══════════════════════════════════════',
-      '  毛行天下 · 問卷回答紀錄',
+      '  問卷回答紀錄',
       '═══════════════════════════════════════',
       '',
       `填答時間：${dateStr}`,
@@ -67,8 +67,8 @@ export function DownloadAnswers() {
       lines.push('')
     })
 
-    lines.push('感謝你完成毛行天下問卷 🐾')
-    lines.push('https://snowrealm.pet')
+    lines.push('感謝你完成問卷！')
+    lines.push(process.env.NEXT_PUBLIC_SITE_URL || 'https://snowrealm.pet')
 
     const text = lines.join('\r\n')
     const blob = new Blob([new Uint8Array([0xEF, 0xBB, 0xBF]), text], {
@@ -78,7 +78,7 @@ export function DownloadAnswers() {
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `毛行天下_問卷回答紀錄_${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}.txt`
+    a.download = `問卷回答紀錄_${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}.txt`
     document.body.appendChild(a)
     a.click()
     document.body.removeChild(a)

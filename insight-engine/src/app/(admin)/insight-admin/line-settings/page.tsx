@@ -18,10 +18,24 @@ const GROUP_META = {
   admin: { emoji: '👤', title: '管理員設定', desc: '' },
 } as const
 
-function SourceBadge({ source }: { source: string }) {
-  if (source === 'db') return <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400">DB</span>
+const EXAMPLE_FORMAT: Record<string, string> = {
+  INSIGHT_CHANNEL_ACCESS_TOKEN: 'Bearer xxxxxxxxxx...xxxxxxxxxx',
+  INSIGHT_CHANNEL_SECRET: 'abcdef0123456789abcdef012345',
+  INSIGHT_CHANNEL_ID: '1234567890',
+  INSIGHT_LINE_ID: '@your-bot-id',
+  OFFICIAL_CHANNEL_ACCESS_TOKEN: 'Bearer xxxxxxxxxx...xxxxxxxxxx',
+  OFFICIAL_CHANNEL_SECRET: 'abcdef0123456789abcdef012345',
+  OFFICIAL_CHANNEL_ID: '1234567890',
+  OFFICIAL_LINE_ID: '@your-bot-id',
+  ADMIN_USER_ID: 'U1a2b3c4d5e6f7890abcdef01234',
+}
+
+function SourceBadge({ source, verified }: { source: string; verified?: boolean | null }) {
+  if (verified === true) return <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400">✓ 已驗證</span>
+  if (verified === false) return <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-red-500/20 text-red-400">✗ 驗證失敗</span>
+  if (source === 'db') return <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-cyan-500/20 text-cyan-400">DB</span>
   if (source === 'env') return <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-400">ENV</span>
-  return <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-red-500/20 text-red-400">未設定</span>
+  return <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-slate-500/20 text-slate-400">未設定</span>
 }
 
 export default function LineSettingsPage() {
@@ -134,68 +148,75 @@ export default function LineSettingsPage() {
                 )}
 
                 <div className="space-y-3">
-                  {items.map((item) => (
-                    <div key={item.key} className="flex flex-col gap-2">
-                      <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
-                        <span className="text-sm text-white/50 sm:w-36 sm:shrink-0">{item.label}</span>
-                        <SourceBadge source={item.source} />
+                  {items.map((item) => {
+                    const isTokenKey = item.key.endsWith('CHANNEL_ACCESS_TOKEN')
+                    const channelForKey = item.key.startsWith('INSIGHT_') ? 'insight' : item.key.startsWith('OFFICIAL_') ? 'official' : null
+                    const channelResult = channelForKey ? testResult[channelForKey] : null
+                    const verified = isTokenKey && channelResult ? channelResult.ok : null
 
-                        {editingKey === item.key ? (
-                          <div className="flex-1 w-full min-w-0 flex flex-col gap-2 sm:flex-row sm:items-center">
-                            <input
-                              type={item.isSecret ? 'password' : 'text'}
-                              value={editValue}
-                              onChange={(e) => setEditValue(e.target.value)}
-                              placeholder={item.isSecret ? '輸入新的值（明文不會傳至前端）' : '輸入值'}
-                              autoComplete="off"
-                              className="w-full min-w-0 flex-1 px-3 py-1.5 bg-slate-800 border border-slate-600 rounded-lg text-sm text-white/80"
-                            />
-                            <div className="flex gap-2 shrink-0">
-                              <button type="button" onClick={() => handleSave(item.key)} disabled={saving}
-                                className="px-3 py-1.5 bg-t-btn hover:bg-t-btn-hover disabled:opacity-40 text-white rounded-lg text-sm cursor-pointer">
-                                {saving ? '...' : '儲存'}
-                              </button>
-                              <button type="button" onClick={() => { setEditingKey(null); setEditValue('') }}
-                                className="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded-lg text-sm cursor-pointer">
-                                取消
-                              </button>
-                            </div>
-                          </div>
-                        ) : (
-                          <div className="flex-1 w-full min-w-0 flex flex-col gap-2 sm:flex-row sm:items-center">
-                            <div className="flex items-center gap-2 min-w-0 flex-1">
-                              <span className="text-sm text-white/60 font-mono truncate min-w-0 flex-1 sm:max-w-xs">
-                                {item.source === 'none'
-                                  ? '—'
-                                  : item.isSecret && !showValue[item.key]
-                                    ? '••••••••'
-                                    : item.maskedValue ?? '—'
-                                }
-                              </span>
-                              {item.isSecret && item.source !== 'none' && (
-                                <button type="button" onClick={() => setShowValue((prev) => ({ ...prev, [item.key]: !prev[item.key] }))}
-                                  className="text-xs text-slate-500 hover:text-slate-300 cursor-pointer shrink-0">
-                                  {showValue[item.key] ? '🙈' : '👁'}
+                    return (
+                      <div key={item.key} className="flex flex-col gap-2">
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+                          <span className="text-sm text-white/50 sm:w-36 sm:shrink-0">{item.label}</span>
+                          <SourceBadge source={item.source} verified={item.source !== 'none' ? verified : null} />
+
+                          {editingKey === item.key ? (
+                            <div className="flex-1 w-full min-w-0 flex flex-col gap-2 sm:flex-row sm:items-center">
+                              <input
+                                type={item.isSecret ? 'password' : 'text'}
+                                value={editValue}
+                                onChange={(e) => setEditValue(e.target.value)}
+                                placeholder={EXAMPLE_FORMAT[item.key] || '輸入值'}
+                                autoComplete="off"
+                                className="w-full min-w-0 flex-1 px-3 py-1.5 bg-slate-800 border border-slate-600 rounded-lg text-sm text-white/80 placeholder:text-slate-600"
+                              />
+                              <div className="flex gap-2 shrink-0">
+                                <button type="button" onClick={() => handleSave(item.key)} disabled={saving}
+                                  className="px-3 py-1.5 bg-t-btn hover:bg-t-btn-hover disabled:opacity-40 text-white rounded-lg text-sm cursor-pointer">
+                                  {saving ? '...' : '儲存'}
                                 </button>
-                              )}
-                            </div>
-                            <div className="flex flex-wrap gap-2 shrink-0 sm:ml-auto">
-                              <button type="button" onClick={() => { setEditingKey(item.key); setEditValue('') }}
-                                className="text-xs text-t-accent hover:text-t-accent cursor-pointer">
-                                {item.source === 'none' ? '設定' : '修改'}
-                              </button>
-                              {item.source === 'db' && (
-                                <button type="button" onClick={() => handleDelete(item.key)}
-                                  className="text-xs text-red-400 hover:text-red-300 cursor-pointer">
-                                  刪除
+                                <button type="button" onClick={() => { setEditingKey(null); setEditValue('') }}
+                                  className="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded-lg text-sm cursor-pointer">
+                                  取消
                                 </button>
-                              )}
+                              </div>
                             </div>
-                          </div>
-                        )}
+                          ) : (
+                            <div className="flex-1 w-full min-w-0 flex flex-col gap-2 sm:flex-row sm:items-center">
+                              <div className="flex items-center gap-2 min-w-0 flex-1">
+                                <span className={`text-sm font-mono truncate min-w-0 flex-1 sm:max-w-xs ${item.source === 'none' ? 'text-slate-600 italic' : 'text-white/60'}`}>
+                                  {item.source === 'none'
+                                    ? EXAMPLE_FORMAT[item.key] || '尚未設定'
+                                    : item.isSecret && !showValue[item.key]
+                                      ? '••••••••'
+                                      : item.maskedValue ?? '—'
+                                  }
+                                </span>
+                                {item.isSecret && item.source !== 'none' && (
+                                  <button type="button" onClick={() => setShowValue((prev) => ({ ...prev, [item.key]: !prev[item.key] }))}
+                                    className="text-xs text-slate-500 hover:text-slate-300 cursor-pointer shrink-0">
+                                    {showValue[item.key] ? '🙈' : '👁'}
+                                  </button>
+                                )}
+                              </div>
+                              <div className="flex flex-wrap gap-2 shrink-0 sm:ml-auto">
+                                <button type="button" onClick={() => { setEditingKey(item.key); setEditValue('') }}
+                                  className="text-xs text-t-accent hover:text-t-accent cursor-pointer">
+                                  {item.source === 'none' ? '設定' : '修改'}
+                                </button>
+                                {item.source === 'db' && (
+                                  <button type="button" onClick={() => handleDelete(item.key)}
+                                    className="text-xs text-red-400 hover:text-red-300 cursor-pointer">
+                                    刪除
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    )
+                  })}
                 </div>
               </section>
             )
@@ -203,9 +224,10 @@ export default function LineSettingsPage() {
 
           <div className="bg-slate-800/30 border border-slate-700/30 rounded-xl p-4 text-sm text-slate-500 space-y-1">
             <p>ℹ️ <strong className="text-slate-400">來源說明</strong></p>
-            <p><span className="text-emerald-400">DB</span> = 已在後台設定（加密儲存）&nbsp;&nbsp;
-              <span className="text-amber-400">ENV</span> = 使用環境變數備援&nbsp;&nbsp;
-              <span className="text-red-400">未設定</span> = 尚無值</p>
+            <p><span className="text-emerald-400">✓ 已驗證</span> = 測試連線成功&nbsp;&nbsp;
+              <span className="text-cyan-400">DB</span> = 已在後台設定（加密儲存）&nbsp;&nbsp;
+              <span className="text-amber-400">ENV</span> = 使用環境變數&nbsp;&nbsp;
+              <span className="text-slate-400">未設定</span> = 灰色為範例格式</p>
             <p className="text-slate-600">敏感值（Token / Secret）以 AES-256-GCM 加密存儲，前端只顯示遮罩值</p>
           </div>
         </div>

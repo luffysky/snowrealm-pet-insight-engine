@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { verifyToken, type TokenPayload } from '@/lib/jwt'
+import { checkRateLimit } from '@/lib/rateLimit'
 
 /** 解析 JWT 認證，回傳 payload 或 null */
 async function getAuthContext(request: NextRequest): Promise<TokenPayload | null> {
@@ -34,9 +35,9 @@ function withTenantHeaders(request: NextRequest, auth: TokenPayload, access: { t
 
 /** 已知的 admin 子頁面路徑（用來區分 tenant slug） */
 const KNOWN_ADMIN_PAGES = new Set([
-  'ab', 'ai-settings', 'broadcast', 'crosstab', 'funnel', 'insight', 'line-settings',
-  'notification-rules', 'notification-styles', 'panel', 'rich-menu',
-  'site-settings', 'surveys', 'tag-rules', 'tags', 'templates', 'tenants',
+  'ab', 'account', 'ai-settings', 'broadcast', 'crosstab', 'export', 'funnel', 'insight', 'line-settings',
+  'my-responses', 'notification-rules', 'notification-styles', 'panel', 'rich-menu',
+  'site-settings', 'subscription', 'support', 'surveys', 'tag-rules', 'tags', 'team', 'templates', 'tenants',
   'theme-settings', 'utm', 'utm-links', 'waitlist', 'webhooks', 'responses',
 ])
 
@@ -122,9 +123,43 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
     })
   }
 
+  // Super Admin API /api/super-admin/...
+  if (pathname.startsWith('/api/super-admin')) {
+    const clientIp = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
+      || request.headers.get('x-real-ip')
+      || 'unknown'
+    const rl = checkRateLimit(`super-admin:${clientIp}`, 60, 60_000)
+    if (!rl.allowed) {
+      return NextResponse.json(
+        { error: '請求過於頻繁，請稍後再試' },
+        { status: 429, headers: { 'Retry-After': String(Math.ceil((rl.resetAt - Date.now()) / 1000)) } }
+      )
+    }
+    const auth = await getAuthContext(request)
+    if (!auth) {
+      return NextResponse.json({ error: '未授權' }, { status: 401 })
+    }
+    const tenants = auth.tenants || (auth.tid ? [{ tid: auth.tid, role: auth.role || 'admin' }] : [])
+    const isSuper = tenants.some(t => t.role === 'super_admin') || auth.role === 'super_admin'
+    if (!isSuper) {
+      return NextResponse.json({ error: '權限不足：僅 super_admin 可存取' }, { status: 403 })
+    }
+    return NextResponse.next({
+      request: {
+        headers: (() => {
+          const headers = new Headers(request.headers)
+          headers.set('x-user-id', auth.sub)
+          headers.set('x-user-role', 'super_admin')
+          headers.set('x-user-name', encodeURIComponent(auth.name))
+          return headers
+        })(),
+      },
+    })
+  }
+
   return NextResponse.next()
 }
 
 export const config = {
-  matcher: ['/insight-admin/:path*', '/insight-admin', '/api/admin/:path*', '/login', '/register', '/snowrealm-insight-ctrl/:path*', '/snowrealm-insight-ctrl'],
+  matcher: ['/insight-admin/:path*', '/insight-admin', '/api/admin/:path*', '/api/super-admin/:path*', '/login', '/register', '/snowrealm-insight-ctrl/:path*', '/snowrealm-insight-ctrl'],
 }

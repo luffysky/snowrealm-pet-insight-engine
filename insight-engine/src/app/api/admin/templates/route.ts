@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { query, queryOne, execute } from '@/lib/db'
-import { getTenantContext } from '@/lib/tenant'
+import { getTenantContext, requireRole } from '@/lib/tenant'
 
 interface TemplateRow {
   id: string
@@ -26,6 +26,8 @@ export async function GET(): Promise<NextResponse> {
 
 // POST /api/admin/templates
 export async function POST(request: NextRequest): Promise<NextResponse> {
+  const roleCheck = await requireRole('editor')
+  if (roleCheck instanceof NextResponse) return roleCheck
   const body = await request.json()
   const { name, type, content, flex_json, category } = body
 
@@ -40,7 +42,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     `INSERT INTO message_templates (name, type, content, flex_json, category, tenant_id)
      VALUES ($1, $2, $3, $4, $5, $6)
      RETURNING *`,
-    [name, type, content ?? '', flex_json ? JSON.stringify(flex_json) : null, category ?? 'general', (await getTenantContext()).tenantId]
+    [name, type, content ?? '', flex_json ? JSON.stringify(flex_json) : null, category ?? 'general', roleCheck.tenantId]
   )
 
   return NextResponse.json(row, { status: 201 })
@@ -48,6 +50,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
 // PUT /api/admin/templates
 export async function PUT(request: NextRequest): Promise<NextResponse> {
+  const roleCheck = await requireRole('editor')
+  if (roleCheck instanceof NextResponse) return roleCheck
   const body = await request.json()
   const { id, name, type, content, flex_json, category, is_active } = body
 
@@ -83,6 +87,8 @@ export async function PUT(request: NextRequest): Promise<NextResponse> {
 
 // DELETE /api/admin/templates
 export async function DELETE(request: NextRequest): Promise<NextResponse> {
+  const roleCheck = await requireRole('editor')
+  if (roleCheck instanceof NextResponse) return roleCheck
   const { searchParams } = new URL(request.url)
   const id = searchParams.get('id')
   if (!id) return NextResponse.json({ error: '缺少 id' }, { status: 400 })

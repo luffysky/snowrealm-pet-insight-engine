@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { query, execute } from '@/lib/db'
-import { getTenantContext } from '@/lib/tenant'
+import { getTenantContext, requireRole } from '@/lib/tenant'
 
 interface TagRuleRow {
   [key: string]: unknown
@@ -38,6 +38,9 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
 
 /** POST /api/admin/tag-rules — 新增規則 */
 export async function POST(req: NextRequest): Promise<NextResponse> {
+  const roleCheck = await requireRole('editor')
+  if (roleCheck instanceof NextResponse) return roleCheck
+  const { tenantId } = roleCheck
   const body = await req.json() as {
     surveyId: string
     questionKey: string
@@ -68,7 +71,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       body.tagKey.trim(),
       body.tagValue.trim(),
       body.priority ?? 0,
-      (await getTenantContext()).tenantId,
+      tenantId,
     ]
   )
 
@@ -77,6 +80,8 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
 /** PUT /api/admin/tag-rules — 更新規則 */
 export async function PUT(req: NextRequest): Promise<NextResponse> {
+  const roleCheck = await requireRole('editor')
+  if (roleCheck instanceof NextResponse) return roleCheck
   const body = await req.json() as {
     id: string
     questionKey?: string
@@ -129,6 +134,8 @@ export async function PUT(req: NextRequest): Promise<NextResponse> {
 
 /** DELETE /api/admin/tag-rules — 刪除規則 */
 export async function DELETE(req: NextRequest): Promise<NextResponse> {
+  const roleCheck = await requireRole('editor')
+  if (roleCheck instanceof NextResponse) return roleCheck
   const id = req.nextUrl.searchParams.get('id')
   if (!id) {
     return NextResponse.json({ error: '缺少規則 ID' }, { status: 400 })

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { verifyToken } from '@/lib/jwt'
 import { queryOne, query } from '@/lib/db'
+import { isUserPlatformUnlimited } from '@/lib/platformUnlimited'
 
 interface TenantRow extends Record<string, unknown> {
   slug: string
@@ -37,19 +38,13 @@ export async function GET(): Promise<NextResponse> {
     [ctx.tenantId],
   )
 
-  // super_admin 可取得所有租戶列表；一般管理員從 tenant_users 查出自己授權的租戶
-  let tenants: TenantRow[] = []
-  if (ctx.role === 'super_admin') {
+    let tenants: TenantRow[] = []
     tenants = await query<TenantRow>(
-      `SELECT slug, name FROM tenants WHERE is_active = true ORDER BY name`,
-    )
-  } else {
-    // 直接查 DB（不依賴 JWT 裡可能不存在的 tenants 欄位）
-    tenants = await query<TenantRow>(
-      `SELECT t.slug, t.name FROM tenant_users tu JOIN tenants t ON tu.tenant_id = t.slug WHERE tu.user_id = $1 ORDER BY t.name`,
+      `SELECT t.slug, t.name FROM tenant_users tu JOIN tenants t ON tu.tenant_id = t.slug WHERE tu.user_id = $1 AND t.is_active = true ORDER BY t.name`,
       [ctx.userId]
     )
-  }
+
+  const platformPartner = await isUserPlatformUnlimited(ctx.userId)
 
   return NextResponse.json({
     userId: ctx.userId,
@@ -57,7 +52,8 @@ export async function GET(): Promise<NextResponse> {
     role: ctx.role,
     tenantId: ctx.tenantId,
     tenantName: tenant?.name ?? ctx.tenantId,
-    adminTitle: tenant?.admin_title || tenant?.name || '🐾 毛行天下後台',
+    adminTitle: tenant?.admin_title || tenant?.name || '管理後台',
     tenants: tenants.length > 0 ? tenants : undefined,
+    platformPartner,
   })
 }

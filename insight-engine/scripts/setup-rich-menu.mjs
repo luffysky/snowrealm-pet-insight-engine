@@ -1,3 +1,5 @@
+import './load-dotenv.mjs'
+
 /**
  * LINE Rich Menu 建立腳本（6 格版本）
  * 用法：node scripts/setup-rich-menu.mjs
@@ -15,9 +17,19 @@ if (!TOKEN) {
   process.exit(1)
 }
 
-const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://localhost:3000'
-const SURVEY_URL = `${BASE_URL}/`
-const IG_URL = 'https://www.instagram.com/snowrealm.pet?igsh=Y2x1cTRiM3N3NGpw'
+const BASE_URL = (process.env.NEXT_PUBLIC_BASE_URL || 'https://insight.snowrealm.pet').replace(/\/$/, '')
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://snowrealm.pet'
+const IG_URL = process.env.NEXT_PUBLIC_IG_URL || ''
+/** 與 official webhook 的 DEFAULT_TENANT_SLUG 一致；Rich Menu「填問卷」要指到真正問卷頁 */
+const SURVEY_TENANT = process.env.DEFAULT_TENANT_SLUG || process.env.RICH_MENU_SURVEY_TENANT_SLUG || 'maoxingtianxia'
+/** 未設 env 時，與 supabase/migration_phase6.sql seed 的 MVP 問卷 slug 一致，避免誤連到首頁 */
+const SURVEY_SLUG =
+  (process.env.RICH_MENU_SURVEY_SLUG || '').trim()
+  || (SURVEY_TENANT === 'maoxingtianxia' ? 'maoxingtianxia-mvp-survey' : '')
+const SURVEY_URL = process.env.NEXT_PUBLIC_RICH_MENU_SURVEY_URL
+  || (SURVEY_SLUG ? `${BASE_URL}/${SURVEY_TENANT}/${SURVEY_SLUG}` : `${BASE_URL}/`)
+/** LINE 內建瀏覽器易造成 Cookie 問題；後台與問卷建議用外開瀏覽器 */
+const EXTERNAL = '#openExternalBrowser=1'
 
 const headers = {
   Authorization: `Bearer ${TOKEN}`,
@@ -25,6 +37,8 @@ const headers = {
 }
 
 async function main() {
+  console.log('📎 Rich Menu 填問卷網址:', SURVEY_URL)
+  console.log('   （若 404 請在 .env 設定 RICH_MENU_SURVEY_SLUG=問卷slug 或 NEXT_PUBLIC_RICH_MENU_SURVEY_URL=完整網址）')
   // Step 0: 先刪除既有的預設 Rich Menu（避免衝突）
   console.log('🧹 清除舊的預設 Rich Menu...')
   await fetch('https://api.line.me/v2/bot/user/all/richmenu', {
@@ -39,13 +53,13 @@ async function main() {
   const richMenu = {
     size: { width: 2500, height: 1686 },
     selected: true,
-    name: '毛行天下選單 v2',
-    chatBarText: '🐾 打開選單',
+    name: 'Official Rich Menu v2',
+    chatBarText: '📋 打開選單',
     areas: [
       // Row 1
       {
         bounds: { x: 0, y: 0, width: colW, height: rowH },
-        action: { type: 'uri', label: '填問卷', uri: SURVEY_URL },
+        action: { type: 'uri', label: '填問卷', uri: `${SURVEY_URL}${EXTERNAL}` },
       },
       {
         bounds: { x: colW, y: 0, width: colW, height: rowH },
@@ -53,12 +67,14 @@ async function main() {
       },
       {
         bounds: { x: colW * 2, y: 0, width: 2500 - colW * 2, height: rowH },
-        action: { type: 'uri', label: 'Instagram', uri: IG_URL },
+        action: IG_URL
+          ? { type: 'uri', label: 'Instagram', uri: `${IG_URL}${EXTERNAL}` }
+          : { type: 'message', label: '關於我們', text: '介紹' },
       },
       // Row 2
       {
         bounds: { x: 0, y: rowH, width: colW, height: 1686 - rowH },
-        action: { type: 'uri', label: '官網', uri: 'https://snowrealm.pet' },
+        action: { type: 'uri', label: '官網', uri: `${SITE_URL.replace(/\/$/, '')}${EXTERNAL}` },
       },
       {
         bounds: { x: colW, y: rowH, width: colW, height: 1686 - rowH },

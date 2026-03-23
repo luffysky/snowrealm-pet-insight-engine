@@ -3,17 +3,14 @@ import { getTenantContext } from '@/lib/tenant'
 import { queryOne } from '@/lib/db'
 import { signToken } from '@/lib/jwt'
 
-interface TenantRow extends Record<string, unknown> {
+interface TenantUserRow extends Record<string, unknown> {
   slug: string
   name: string
-  is_active: boolean
+  role: string
 }
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
   const ctx = await getTenantContext()
-  if (ctx.role !== 'super_admin') {
-    return NextResponse.json({ error: '僅 super_admin 可切換租戶' }, { status: 403 })
-  }
 
   const body = await request.json().catch(() => null)
   const targetSlug = body?.tenantId as string
@@ -21,26 +18,36 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: '請指定 tenantId' }, { status: 400 })
   }
 
-  const tenant = await queryOne<TenantRow>(
-    `SELECT slug, name, is_active FROM tenants WHERE slug = $1`,
-    [targetSlug],
-  )
-  if (!tenant || !tenant.is_active) {
-    return NextResponse.json({ error: '租戶不存在或已停用' }, { status: 404 })
+  // super_admin 可切換到任何 active 租戶；一般使用者必須在 tenant_users 有權限
+  let tenantRole = ctx.role
+  if (ctx.role === 'super_admin') {
+    const tenant = await queryOne<{ slug: string; name: string; is_active: boolean } & Record<string, unknown>>(
+      `SELECT slug, name, is_active FROM tenants WHERE slug = $1`, [targetSlug],
+    )
+    if (!tenant || !tenant.is_active) {
+      return NextResponse.json({ error: '租戶不存在或已停用' }, { status: 404 })
+    }
+  } else {
+    const tu = await queryOne<TenantUserRow>(
+      `SELECT t.slug, t.name, tu.role FROM tenant_users tu JOIN tenants t ON tu.tenant_id = t.slug WHERE tu.user_id = $1 AND t.slug = $2 AND t.is_active = true`,
+      [ctx.userId, targetSlug],
+    )
+    if (!tu) {
+      return NextResponse.json({ error: '您沒有該組織的權限' }, { status: 403 })
+    }
+    tenantRole = tu.role
   }
 
-  // 簽發新 JWT 帶新 tenantId
   const token = await signToken({
     sub: ctx.userId,
-    tid: tenant.slug,
-    role: ctx.role,
+    tid: targetSlug,
+    role: tenantRole,
     name: ctx.userName,
   })
 
   const response = NextResponse.json({
     success: true,
-    tenantId: tenant.slug,
-    tenantName: tenant.name,
+    tenantId: targetSlug,
   })
   response.cookies.set('admin_session', token, {
     httpOnly: true,

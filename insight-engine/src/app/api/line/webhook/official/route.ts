@@ -3,6 +3,7 @@ import crypto from 'crypto'
 import { execute } from '@/lib/db'
 import { createLineToken } from '@/lib/lineToken'
 import { getLineConfig } from '@/lib/lineConfig'
+import { getPrimarySurveySlug } from '@/lib/surveyRepo'
 import {
   getActiveSession,
   startSurveySession,
@@ -11,12 +12,13 @@ import {
   type LineTextMessage,
 } from '@/lib/lineBotEngine'
 
-const SURVEY_URL = process.env.NEXT_PUBLIC_BASE_URL
-  ? `${process.env.NEXT_PUBLIC_BASE_URL}/`
-  : 'https://insight.snowrealm.pet/'
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://insight.snowrealm.pet'
+/** 主問卷 / Rich Menu「填問卷」對應的租戶 slug；預設毛行天下租戶（勿用不存在的 `default` 以免問卷路徑 404） */
+const DEFAULT_TENANT = process.env.DEFAULT_TENANT_SLUG || 'maoxingtianxia'
 
-const SITE_URL = 'https://snowrealm.pet'
-const IG_URL = 'https://www.instagram.com/snowrealm.pet?igsh=Y2x1cTRiM3N3NGpw'
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://snowrealm.pet'
+const IG_URL = process.env.NEXT_PUBLIC_IG_URL || ''
+const BRAND_NAME = process.env.NEXT_PUBLIC_BRAND_NAME || '問卷系統'
 
 /**
  * LINE Official Account Webhook
@@ -77,7 +79,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       await replyMessage(replyToken, [
         {
           type: 'text',
-          text: '🐾 歡迎來到毛行天下！\n\n我們正在打造一個留下寵物足跡的平台。\n\n輸入「問卷」即可填寫，幫我們更了解你的需求 💛',
+          text: `歡迎加入 ${BRAND_NAME}！\n\n輸入「問卷」即可填寫，幫我們更了解你的需求 💛`,
         },
       ], CHANNEL_ACCESS_TOKEN)
     }
@@ -102,7 +104,7 @@ const ABANDON_KEYWORD = /^離開$/
 const START_SURVEY_KEYWORD = /^LINE填答$/
 
 async function handleTextMessage(text: string, userId?: string): Promise<LineTextMessage[]> {
-  if (!userId) return getAutoReply(text, userId)
+  if (!userId) return await getAutoReply(text, userId)
 
   // 優先偵測「離開」關鍵字
   if (ABANDON_KEYWORD.test(text)) {
@@ -111,7 +113,7 @@ async function handleTextMessage(text: string, userId?: string): Promise<LineTex
       await abandonSession(session.id)
       return [{ type: 'text', text: '已結束填答，感謝你的時間 🐾\n\n隨時輸入「LINE填答」可重新開始' }]
     }
-    return getAutoReply(text, userId)
+    return await getAutoReply(text, userId)
   }
 
   // 優先偵測「LINE填答」關鍵字（啟動新 session）
@@ -124,35 +126,35 @@ async function handleTextMessage(text: string, userId?: string): Promise<LineTex
   if (session) return processUserAnswer(session, text)
 
   // 無 session → 一般關鍵字自動回覆
-  return getAutoReply(text, userId)
+  return await getAutoReply(text, userId)
 }
 
 // ----- 關鍵字自動回覆邏輯 -----
 
-/** 產生問卷連結（帶 LINE 身份簽名 + utm） */
-function buildSurveyLink(userId?: string): string {
-  const base = SURVEY_URL
+/** 產生問卷連結（帶 LINE 身份簽名 + utm），格式 /{org}/{survey-slug} */
+async function buildSurveyLink(userId?: string): Promise<string> {
+  const tenantSlug = DEFAULT_TENANT
+  const surveySlug = await getPrimarySurveySlug(tenantSlug)
+  const path = surveySlug ? `/${tenantSlug}/${surveySlug}` : '/'
   const params = new URLSearchParams({ utm_source: 'line', utm_medium: 'chat' })
   if (userId) {
     params.set('lt', createLineToken(userId))
   }
-  return `${base}?${params.toString()}`
+  return `${BASE_URL}${path}?${params.toString()}`
 }
 
-function getAutoReply(text: string, userId?: string): LineTextMessage[] {
-  const surveyLink = buildSurveyLink(userId)
+async function getAutoReply(text: string, userId?: string): Promise<LineTextMessage[]> {
+  const surveyLink = await buildSurveyLink(userId)
 
-  // 問卷相關
   if (/問卷|填問卷|survey/i.test(text)) {
     return [
       {
         type: 'text',
-        text: `📋 毛行天下 MVP 問卷\n\n花 2 分鐘填寫，幫助我們打造更好的寵物紀錄平台！\n\n👉 網頁版：${surveyLink}\n\n💬 LINE 對話填答：輸入「LINE填答」即可直接在這裡填寫`,
+        text: `📋 問卷調查\n\n花 2 分鐘填寫，讓我們更了解你的需求！\n\n👉 網頁版：${surveyLink}\n\n💬 LINE 對話填答：輸入「LINE填答」即可直接在這裡填寫`,
       },
     ]
   }
 
-  // 封測 / 名單
   if (/封測|內測|名單|waitlist/i.test(text)) {
     return [
       {
@@ -162,27 +164,15 @@ function getAutoReply(text: string, userId?: string): LineTextMessage[] {
     ]
   }
 
-  // 關於毛行天下
-  if (/毛行天下|你是誰|介紹/i.test(text)) {
+  if (/你是誰|介紹|關於/i.test(text)) {
     return [
       {
         type: 'text',
-        text: '🐾 毛行天下 SnowRealm\n\n我們想做的，不只是紀錄，而是讓那些重要的存在，不那麼容易被時間沖淡。\n\n一個真正能留下寵物足跡的地方。',
+        text: `🐾 ${BRAND_NAME}\n\n歡迎使用我們的服務！輸入「問卷」可以填寫問卷，讓我們更了解你的需求。`,
       },
     ]
   }
 
-  // 寵物 / 紀錄 / 回憶
-  if (/寵物|毛小孩|毛孩|狗|貓|紀錄|回憶|足跡/i.test(text)) {
-    return [
-      {
-        type: 'text',
-        text: '🐾 毛行天下想幫你留下毛孩最珍貴的足跡\n\n我們正在打造一個寵物紀錄平台，讓那些日常的美好不會被遺忘。\n\n📋 填問卷讓我們更了解你 → 輸入「問卷」',
-      },
-    ]
-  }
-
-  // 功能 / 下載
   if (/功能|下載|app|平台|什麼時候/i.test(text)) {
     return [
       {
@@ -192,41 +182,38 @@ function getAutoReply(text: string, userId?: string): LineTextMessage[] {
     ]
   }
 
-  // 官網 (Rich Menu 觸發)
   if (/官網|網站|website/i.test(text)) {
     return [
       {
         type: 'text',
-        text: `🌐 毛行天下官網\n\n👉 ${SITE_URL}\n\n歡迎隨時來逛逛 🐾`,
+        text: `🌐 官方網站\n\n👉 ${SITE_URL}\n\n歡迎隨時來逛逛！`,
       },
     ]
   }
 
-  // 最新消息 (Rich Menu 觸發)
   if (/最新消息|新聞|news|更新/i.test(text)) {
     return [
       {
         type: 'text',
-        text: '📢 最新消息\n\n🐾 毛行天下目前正在進行 MVP 問卷調查\n📋 歡迎填寫問卷，幫助我們打造更好的產品！\n🎉 填完問卷可加入封測名單\n\n我們會在有新消息時推播通知你 💛',
+        text: '📢 最新消息\n\n目前正在進行問卷調查\n📋 歡迎填寫問卷，幫助我們打造更好的產品！\n🎉 填完問卷可加入封測名單\n\n我們會在有新消息時推播通知你 💛',
       },
     ]
   }
 
-  // 聯絡我們 (Rich Menu 觸發)
   if (/聯絡|聯繫|contact|客服|問題|幫助|help/i.test(text)) {
+    const igLine = IG_URL ? `\n\n📸 Instagram：${IG_URL}` : ''
     return [
       {
         type: 'text',
-        text: `💬 聯絡毛行天下\n\n📸 Instagram：${IG_URL}\n\n有任何問題歡迎直接留言，我們會盡快回覆你！🐾`,
+        text: `💬 聯絡我們${igLine}\n\n有任何問題歡迎直接留言，我們會盡快回覆你！`,
       },
     ]
   }
 
-  // 預設回覆 — 引導訊息
   return [
     {
       type: 'text',
-      text: '嗨～我是毛行天下小助手 🐾\n\n你可以輸入：\n📋「問卷」— 填寫問卷\n💬「LINE填答」— 直接在 LINE 填寫問卷\n🎉「封測」— 加入封測名單\n🐾「毛行天下」— 了解我們\n🌐「官網」— 前往官網\n📢「最新消息」— 查看動態\n🆘「聯絡我們」— 聯繫方式',
+      text: `嗨～歡迎使用 ${BRAND_NAME} 🐾\n\n你可以輸入：\n📋「問卷」— 填寫問卷\n💬「LINE填答」— 直接在 LINE 填寫問卷\n🎉「封測」— 加入封測名單\n🌐「官網」— 前往官網\n📢「最新消息」— 查看動態\n🆘「聯絡我們」— 聯繫方式`,
     },
   ]
 }
@@ -239,7 +226,12 @@ async function replyMessage(
   accessToken?: string
 ): Promise<void> {
   const token = accessToken || await getLineConfig('OFFICIAL_CHANNEL_ACCESS_TOKEN') || ''
-  if (!token) return
+  if (!token) {
+    console.error(
+      '[LINE Official Reply] 略過回覆：未設定 OFFICIAL Channel Access Token（請檢查 DB line_configs 或 LINE_OFFICIAL_CHANNEL_ACCESS_TOKEN）',
+    )
+    return
+  }
 
   try {
     const res = await fetch('https://api.line.me/v2/bot/message/reply', {

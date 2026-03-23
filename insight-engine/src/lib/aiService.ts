@@ -1,5 +1,6 @@
 import { queryOne, query, execute } from '@/lib/db'
 import { decryptApiKey } from '@/lib/aiCrypto'
+import { isUserPlatformUnlimited } from '@/lib/platformUnlimited'
 import { randomUUID } from 'crypto'
 
 const FREE_GENERATE_LIMIT = 1
@@ -7,7 +8,7 @@ const FREE_REGENERATE_LIMIT = 1
 const FREE_META_GENERATE_LIMIT = 1
 const FREE_META_REGENERATE_LIMIT = 1
 
-export type AiAction = 'generate' | 'regenerate' | 'generate_meta' | 'regenerate_meta'
+export type AiAction = 'generate' | 'regenerate' | 'generate_meta' | 'regenerate_meta' | 'chat'
 
 export interface AiKeyResult {
   provider: string
@@ -62,11 +63,16 @@ export function getPlatformKey(): AiKeyResult | null {
   }
 }
 
-/** 檢查免費額度是否還有 */
+/** 檢查免費額度是否還有（platform 合作夥伴帳號一律視為通過，僅影響該 userId） */
 export async function checkFreeQuota(
   tenantId: string,
-  action: AiAction
+  action: AiAction,
+  actingUserId?: string | null
 ): Promise<boolean> {
+  if (actingUserId && (await isUserPlatformUnlimited(actingUserId))) {
+    return true
+  }
+
   const limit = action === 'generate' ? FREE_GENERATE_LIMIT : 
                 action === 'regenerate' ? FREE_REGENERATE_LIMIT :
                 action === 'generate_meta' ? FREE_META_GENERATE_LIMIT : FREE_META_REGENERATE_LIMIT

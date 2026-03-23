@@ -1,17 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { uploadToR2 } from '@/lib/r2'
 import { query } from '@/lib/db'
+import { requireRole } from '@/lib/tenant'
 
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/svg+xml']
 const MAX_SIZE = 10 * 1024 * 1024 // 10 MB
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
+  const roleCheck = await requireRole('editor')
+  if (roleCheck instanceof NextResponse) return roleCheck
   try {
-    const tenantId = request.headers.get('x-tenant-id')
-    const userId = request.headers.get('x-user-id')
-    if (!tenantId) {
-      return NextResponse.json({ error: '未授權' }, { status: 401 })
-    }
+    const { tenantId, userId } = roleCheck
 
     const formData = await request.formData()
     const file = formData.get('file') as File | null

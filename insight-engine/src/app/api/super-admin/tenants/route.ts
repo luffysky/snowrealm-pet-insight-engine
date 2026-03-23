@@ -37,6 +37,7 @@ interface UserRow {
   created_at: string
   has_google: boolean
   has_line: boolean
+  platform_unlimited: boolean
 }
 
 export async function GET(request: NextRequest) {
@@ -53,13 +54,14 @@ export async function GET(request: NextRequest) {
   if (view === 'tenant-detail' && tenantSlug) {
     const [users, surveyCount, responseCount] = await Promise.all([
       query<UserRow>(
-        `SELECT u.id, u.username, u.display_name, u.role, u.tenant_id,
+        `SELECT u.id, u.username, u.display_name, u.email, u.phone, u.role, u.tenant_id,
                 t.name AS tenant_name, u.created_at,
                 (u.google_id IS NOT NULL) AS has_google,
-                (u.line_user_id IS NOT NULL) AS has_line
+                (u.line_user_id IS NOT NULL) AS has_line,
+                COALESCE(u.platform_unlimited, FALSE) AS platform_unlimited
          FROM admin_users u
          LEFT JOIN tenants t ON t.slug = u.tenant_id
-         WHERE u.tenant_id = $1
+         WHERE u.tenant_id = $1 AND u.deleted_at IS NULL
          ORDER BY u.created_at DESC`,
         [tenantSlug]
       ),
@@ -89,6 +91,7 @@ export async function GET(request: NextRequest) {
           createdAt: u.created_at,
           authProvider,
           hasLine: u.has_line,
+          platformUnlimited: Boolean(u.platform_unlimited),
         }
       }),
       surveyCount: Number(surveyCount?.[0]?.count ?? 0),
@@ -102,9 +105,11 @@ export async function GET(request: NextRequest) {
       `SELECT u.id, u.username, u.display_name, u.email, u.phone, u.role, u.tenant_id,
               t.name AS tenant_name, u.created_at,
               (u.google_id IS NOT NULL) AS has_google,
-              (u.line_user_id IS NOT NULL) AS has_line
+              (u.line_user_id IS NOT NULL) AS has_line,
+              COALESCE(u.platform_unlimited, FALSE) AS platform_unlimited
        FROM admin_users u
        LEFT JOIN tenants t ON t.slug = u.tenant_id
+       WHERE u.deleted_at IS NULL
        ORDER BY u.created_at DESC
        LIMIT 200`
     )
@@ -126,6 +131,7 @@ export async function GET(request: NextRequest) {
           createdAt: u.created_at,
           authProvider,
           hasLine: u.has_line,
+          platformUnlimited: Boolean(u.platform_unlimited),
         }
       }),
     })

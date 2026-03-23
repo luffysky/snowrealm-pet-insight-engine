@@ -20,6 +20,7 @@ interface UsageStats {
     generate: { used: number; limit: number }
     regenerate: { used: number; limit: number }
   }
+  platformPartner?: boolean
 }
 
 const PROVIDERS = [
@@ -165,6 +166,17 @@ export default function AiSettingsPage() {
         )}
       </div>
 
+      {/* 平台合作夥伴（僅總後台對你的帳號開啟；同組織其他人仍受額度限制） */}
+      {stats?.platformPartner && (
+        <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-4 text-sm text-amber-100/90">
+          <p className="font-medium text-amber-200">🤝 平台合作夥伴權限（僅限本帳號）</p>
+          <p className="mt-1 text-amber-100/70">
+            使用平台提供的 AI Key 時，系統<strong>不會</strong>因免費次數上限而擋下你的請求；用量仍會入帳供營運參考。
+            同租戶其他管理員／編輯者<strong>不會</strong>自動獲得此權限。
+          </p>
+        </div>
+      )}
+
       {/* 免費額度狀態 */}
       {stats && (
         <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-4">
@@ -173,24 +185,37 @@ export default function AiSettingsPage() {
             <div className="bg-t-card-bg rounded-lg p-3">
               <p className="text-xs text-slate-500">AI 生成問卷</p>
               <p className="text-lg font-bold text-white">
-                {stats.freeQuota.generate.used} / {stats.freeQuota.generate.limit}
-                <span className="text-xs text-slate-400 ml-2">
-                  {stats.freeQuota.generate.used >= stats.freeQuota.generate.limit ? '已用完' : '可用'}
-                </span>
+                {stats.platformPartner ? (
+                  <>略過上限檢查（本帳號）</>
+                ) : (
+                  <>
+                    剩餘 {Math.max(0, stats.freeQuota.generate.limit - stats.freeQuota.generate.used)} 次
+                    <span className="text-xs text-slate-500 ml-2 font-normal">
+                      （已用 {stats.freeQuota.generate.used} / {stats.freeQuota.generate.limit}）
+                    </span>
+                  </>
+                )}
               </p>
             </div>
             <div className="bg-t-card-bg rounded-lg p-3">
               <p className="text-xs text-slate-500">AI 重新生成</p>
               <p className="text-lg font-bold text-white">
-                {stats.freeQuota.regenerate.used} / {stats.freeQuota.regenerate.limit}
-                <span className="text-xs text-slate-400 ml-2">
-                  {stats.freeQuota.regenerate.used >= stats.freeQuota.regenerate.limit ? '已用完' : '可用'}
-                </span>
+                {stats.platformPartner ? (
+                  <>略過上限檢查（本帳號）</>
+                ) : (
+                  <>
+                    剩餘 {Math.max(0, stats.freeQuota.regenerate.limit - stats.freeQuota.regenerate.used)} 次
+                    <span className="text-xs text-slate-500 ml-2 font-normal">
+                      （已用 {stats.freeQuota.regenerate.used} / {stats.freeQuota.regenerate.limit}）
+                    </span>
+                  </>
+                )}
               </p>
             </div>
           </div>
           <p className="text-xs text-slate-500 mt-2">
             💡 免費額度使用平台 Key（GPT-4o-mini）。用完後需設定自己的 API Key 才能繼續使用。
+            {stats.platformPartner && ' 你的帳號為合作夥伴：平台 Key 不套用上述次數上限。'}
           </p>
         </div>
       )}

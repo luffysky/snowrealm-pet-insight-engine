@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { queryOne, query } from '@/lib/db'
+import { requireRole } from '@/lib/tenant'
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
   const tenantId = request.headers.get('x-tenant-id')
@@ -29,12 +30,9 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 }
 
 export async function PUT(request: NextRequest): Promise<NextResponse> {
-  const tenantId = request.headers.get('x-tenant-id')
-  const role = request.headers.get('x-user-role')
-  if (!tenantId) return NextResponse.json({ error: '未授權' }, { status: 401 })
-  if (role !== 'admin' && role !== 'super_admin') {
-    return NextResponse.json({ error: '權限不足' }, { status: 403 })
-  }
+  const roleCheck = await requireRole('admin')
+  if (roleCheck instanceof NextResponse) return roleCheck
+  const { tenantId } = roleCheck
 
   try {
     const body = await request.json()

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getSurveyById, updateSurvey } from '@/lib/surveyRepo'
+import { requireRole } from '@/lib/tenant'
 
 export async function GET(
   _request: NextRequest,
@@ -15,6 +16,8 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ): Promise<NextResponse> {
+  const roleCheck = await requireRole('editor')
+  if (roleCheck instanceof NextResponse) return roleCheck
   const { id } = await params
   const body = await request.json()
   const affected = await updateSurvey(id, body)
@@ -27,6 +30,8 @@ export async function DELETE(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ): Promise<NextResponse> {
+  const roleCheck = await requireRole('editor')
+  if (roleCheck instanceof NextResponse) return roleCheck
   const { id } = await params
   
   // import { deleteSurvey } from '@/lib/surveyRepo'

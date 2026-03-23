@@ -69,7 +69,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     if (event.type === 'message' && event.message?.type === 'text' && event.replyToken) {
       await replyMessage(
         event.replyToken,
-        '📊 SnowRealm Insight Engine 通知帳號\n\n此帳號用於接收系統通知（註冊、登入等）。\n\n🌐 管理後台：https://insight.snowrealm.pet',
+        `📊 SnowRealm Insight Engine 通知帳號\n\n此帳號用於接收系統通知（註冊、登入等）。\n\n🌐 管理後台：${process.env.NEXT_PUBLIC_BASE_URL || 'https://insight.snowrealm.pet'}`,
         CHANNEL_ACCESS_TOKEN,
       )
     }

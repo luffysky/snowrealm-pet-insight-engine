@@ -35,7 +35,13 @@ export default function SuperAdminDashboard() {
 
   return (
     <div className="space-y-8">
-      <h1 className="text-2xl font-bold text-white">平台總覽</h1>
+      <div>
+        <h1 className="text-2xl font-bold text-white">平台總覽</h1>
+        <p className="text-xs text-slate-500 mt-2 max-w-3xl leading-relaxed">
+          若頂部選單只有 6 項、看不到「客服工單／操作審計／系統健康／分析儀表板」，代表線上環境尚未部署目前 repo 最新版，與帳號「特殊權限」無關——總後台僅需{' '}
+          <code className="text-cyan-400/90">admin_users.role = super_admin</code>。部署最新建置後重新整理即可。
+        </p>
+      </div>
 
       {/* KPI 卡片 */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
