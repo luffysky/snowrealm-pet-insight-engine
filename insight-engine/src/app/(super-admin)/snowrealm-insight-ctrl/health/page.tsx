@@ -6,6 +6,7 @@ interface HealthData {
   dbSizeBytes: number
   tableCounts: Record<string, number>
   envStatus: Record<string, boolean>
+  envLegend?: string[]
   checkedAt: string
 }
 
@@ -129,6 +130,16 @@ export default function HealthPage() {
             ))}
           </div>
         </div>
+        {data.envLegend && data.envLegend.length > 0 && (
+          <div className="mt-3 space-y-1.5 text-xs text-white/45 px-1">
+            <p className="font-medium text-white/55">說明</p>
+            <ul className="list-disc pl-4 space-y-1">
+              {data.envLegend.map((line, i) => (
+                <li key={i}>{line}</li>
+              ))}
+            </ul>
+          </div>
+        )}
       </section>
     </div>
   )

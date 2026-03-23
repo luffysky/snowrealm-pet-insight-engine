@@ -1,8 +1,9 @@
 import { createCipheriv, createDecipheriv, createHash } from 'crypto'
 
-const MERCHANT_ID = process.env.MIG_MERCHANT_ID || ''
-const HASH_KEY = process.env.MIG_HASH_KEY || ''
-const HASH_IV = process.env.MIG_HASH_IV || ''
+/** 藍新 MPG 商店代號／HashKey／HashIV — 支援 MIG_*（程式慣用）或 NEWEBPAY_*（文件慣用） */
+const MERCHANT_ID = process.env.MIG_MERCHANT_ID || process.env.NEWEBPAY_MERCHANT_ID || ''
+const HASH_KEY = process.env.MIG_HASH_KEY || process.env.NEWEBPAY_HASH_KEY || ''
+const HASH_IV = process.env.MIG_HASH_IV || process.env.NEWEBPAY_HASH_IV || ''
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://insight.snowrealm.pet'
 
 const NEWEBPAY_API = 'https://core.newebpay.com/MPG/mpg_gateway'

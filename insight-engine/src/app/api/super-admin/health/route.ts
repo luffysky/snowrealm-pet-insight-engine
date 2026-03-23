@@ -28,6 +28,11 @@ const ENV_KEYS = [
   'SUPER_ADMIN_LINE_USER_ID',
 ] as const
 
+function envNonEmpty(key: string): boolean {
+  const v = process.env[key]
+  return typeof v === 'string' && v.trim().length > 0
+}
+
 export async function GET(request: NextRequest) {
   const token = request.cookies.get('admin_session')?.value
   if (!token) return NextResponse.json({ error: '未授權' }, { status: 401 })
@@ -57,15 +62,36 @@ export async function GET(request: NextRequest) {
       tableCounts[row.relname] = Number(row.n_live_tup)
     }
 
+    const hasOpenAiEnv = envNonEmpty('OPENAI_API_KEY')
+    const hasOpenAiDb = !!(await queryOne<{ ok: string }>(
+      `SELECT '1' AS ok FROM ai_provider_configs
+       WHERE encrypted_api_key IS NOT NULL AND length(trim(encrypted_api_key)) > 0 LIMIT 1`,
+    ))
+
+    const hasNewebMerchant =
+      envNonEmpty('MIG_MERCHANT_ID') || envNonEmpty('NEWEBPAY_MERCHANT_ID')
+
     const envStatus: Record<string, boolean> = {}
     for (const key of ENV_KEYS) {
-      envStatus[key] = !!process.env[key]
+      envStatus[key] = envNonEmpty(key)
     }
+    // 與實際功能對齊：避免「已設定卻顯示未設定」
+    envStatus.OPENAI_API_KEY = hasOpenAiEnv || hasOpenAiDb
+    envStatus.MIG_MERCHANT_ID = hasNewebMerchant
+    envStatus.SUPER_ADMIN_LINE_USER_ID =
+      envNonEmpty('SUPER_ADMIN_LINE_USER_ID') || envNonEmpty('LINE_YOUR_USER_ID')
+    envStatus.NEXT_PUBLIC_LIFF_ID = envNonEmpty('NEXT_PUBLIC_LIFF_ID')
 
     return NextResponse.json({
       dbSizeBytes: Number(dbSizeResult?.db_size ?? 0),
       tableCounts,
       envStatus,
+      envLegend: [
+        'OPENAI_API_KEY：後台「AI 設定」已儲存任一租戶的 Key 時，亦顯示為已設定。',
+        'MIG_MERCHANT_ID：與 NEWEBPAY_MERCHANT_ID 擇一即可（藍新商店代號）。',
+        'SUPER_ADMIN_LINE_USER_ID：與 LINE_YOUR_USER_ID 擇一即可（總後台 LINE 登入白名單）。',
+        '變數若在平台新增後未重建，請重新部署或重啟服務，讓執行中的 Node 讀到新環境變數。',
+      ],
       checkedAt: new Date().toISOString(),
     })
   } catch (e) {
