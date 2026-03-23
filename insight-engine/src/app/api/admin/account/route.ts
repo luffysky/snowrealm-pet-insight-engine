@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { queryOne } from '@/lib/db'
 import { getTenantContext } from '@/lib/tenant'
+import { isUserPlatformUnlimited } from '@/lib/platformUnlimited'
 import { hashPassword, verifyPassword } from '@/lib/auth'
 
 interface UserRow extends Record<string, unknown> {
@@ -21,6 +22,8 @@ export async function GET(): Promise<NextResponse> {
   )
   if (!user) return NextResponse.json({ error: '找不到帳號' }, { status: 404 })
 
+  const platformPartner = await isUserPlatformUnlimited(ctx.userId)
+
   return NextResponse.json({
     id: user.id,
     username: user.username,
@@ -29,6 +32,7 @@ export async function GET(): Promise<NextResponse> {
     phone: user.phone,
     role: user.role,
     createdAt: user.created_at,
+    platformPartner,
   })
 }
 

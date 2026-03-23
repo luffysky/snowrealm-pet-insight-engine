@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { PLATFORM_PARTNER_BADGE, PLATFORM_PARTNER_BADGE_SHORT } from '@/lib/platformPartnerUi'
 
 interface TenantUser {
   id: string
@@ -13,6 +14,7 @@ interface TenantUser {
   createdAt: string
   authProvider: string
   hasLine: boolean
+  platformUnlimited?: boolean
 }
 
 interface TenantInfo {
@@ -25,6 +27,8 @@ interface TenantInfo {
   responseCount: number
   aiUsageCount: number
   notificationCount: number
+  /** 該租戶內至少有一位 admin_users.platform_unlimited */
+  hasPlatformPartner?: boolean
 }
 
 function formatTime(iso: string) {
@@ -103,6 +107,9 @@ export default function SuperAdminTenantsPage() {
         <h1 className="text-2xl font-bold text-white">🏢 租戶管理</h1>
         <span className="text-xs text-white/30">共 {tenants.length} 個租戶</span>
       </div>
+      <p className="text-xs text-white/40">
+        若組織內有人員在「使用者」頁開啟{PLATFORM_PARTNER_BADGE_SHORT}，此處會同步顯示 <span className="text-amber-400/90">{PLATFORM_PARTNER_BADGE_SHORT}</span> 標記。
+      </p>
 
       {/* 搜尋 */}
       <input
@@ -124,7 +131,7 @@ export default function SuperAdminTenantsPage() {
             >
               <div className="flex items-center gap-4">
                 <div className="text-left">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <span className="text-white font-medium">{tenant.name}</span>
                     <span className={`text-xs px-2 py-0.5 rounded-full ${
                       tenant.plan === 'free' ? 'bg-slate-700 text-slate-300'
@@ -133,6 +140,14 @@ export default function SuperAdminTenantsPage() {
                     }`}>
                       {tenant.plan}
                     </span>
+                    {tenant.hasPlatformPartner && (
+                      <span
+                        className="text-xs px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/35"
+                        title="此組織內至少有一位平台禮遇帳號（與使用者頁「合作夥伴」同步）"
+                      >
+                        {PLATFORM_PARTNER_BADGE_SHORT}
+                      </span>
+                    )}
                   </div>
                   <p className="text-xs text-white/40 font-mono mt-0.5">{tenant.slug}</p>
                 </div>
@@ -207,6 +222,7 @@ export default function SuperAdminTenantsPage() {
                             <th className="text-left py-2 px-2">角色</th>
                             <th className="text-left py-2 px-2">登入方式</th>
                             <th className="text-left py-2 px-2">LINE</th>
+                            <th className="text-left py-2 px-2">禮遇</th>
                             <th className="text-left py-2 px-2">註冊時間</th>
                           </tr>
                         </thead>
@@ -231,6 +247,15 @@ export default function SuperAdminTenantsPage() {
                                 {u.hasLine
                                   ? <span className="text-green-400">✓</span>
                                   : <span className="text-white/20">—</span>}
+                              </td>
+                              <td className="py-2 px-2">
+                                {u.platformUnlimited ? (
+                                  <span className="text-amber-400/95 text-[10px] font-medium" title={PLATFORM_PARTNER_BADGE}>
+                                    {PLATFORM_PARTNER_BADGE_SHORT}
+                                  </span>
+                                ) : (
+                                  <span className="text-white/20">—</span>
+                                )}
                               </td>
                               <td className="py-2 px-2 text-white/40">{formatDate(u.createdAt)}</td>
                             </tr>

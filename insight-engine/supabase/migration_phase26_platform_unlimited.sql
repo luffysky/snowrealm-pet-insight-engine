@@ -6,4 +6,4 @@ ALTER TABLE admin_users ADD COLUMN IF NOT EXISTS platform_unlimited_by UUID REFE
 CREATE INDEX IF NOT EXISTS idx_admin_users_platform_unlimited
   ON admin_users (platform_unlimited) WHERE platform_unlimited = TRUE;
 
-COMMENT ON COLUMN admin_users.platform_unlimited IS 'true 時：該帳號使用平台 AI Key 不套用免費額度上限（僅本人請求）';
+COMMENT ON COLUMN admin_users.platform_unlimited IS 'true 時：平台禮遇帳號—訂閱 API 顯示無上限、使用平台 AI Key 不套用免費額度（僅本人請求）；租戶管理列表會顯示禮遇標記';

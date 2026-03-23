@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
+import { PLATFORM_PARTNER_BADGE } from '@/lib/platformPartnerUi'
 
 interface Profile {
   id: string
@@ -11,6 +12,7 @@ interface Profile {
   phone: string | null
   role: string
   createdAt: string
+  platformPartner?: boolean
 }
 
 export default function AccountSettingsPage() {
@@ -136,7 +138,22 @@ export default function AccountSettingsPage() {
 
   return (
     <div className="max-w-2xl mx-auto space-y-8">
-      <h1 className="text-2xl font-bold text-white">⚙️ 帳號設定</h1>
+      <div className="flex flex-wrap items-center gap-3">
+        <h1 className="text-2xl font-bold text-white">⚙️ 帳號設定</h1>
+        {profile.platformPartner && (
+          <span
+            className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/35"
+            title="由平台開通之禮遇帳號：本人操作不套用一般方案額度。"
+          >
+            {PLATFORM_PARTNER_BADGE}
+          </span>
+        )}
+      </div>
+      {profile.platformPartner && (
+        <p className="text-xs text-amber-200/75 -mt-4 bg-amber-500/10 border border-amber-500/20 rounded-lg px-3 py-2">
+          您的帳號為平台合作禮遇身份：使用平台 AI 與訂閱／用量顯示將以無上限計；此權限僅限您本人操作，同組織其他成員仍依租戶方案。
+        </p>
+      )}
 
       {/* 個人資料 */}
       <section className="bg-t-card-bg border border-t-card-border rounded-xl p-6 space-y-4">

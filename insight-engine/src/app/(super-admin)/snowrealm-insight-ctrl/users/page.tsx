@@ -58,7 +58,7 @@ export default function SuperAdminUsersPage() {
 
   async function togglePlatformPartner(u: PlatformUser, enabled: boolean) {
     const label = `${u.displayName || u.username}（${enabled ? '開啟' : '關閉'}平台合作夥伴）`
-    if (!window.confirm(`確定要${enabled ? '開啟' : '關閉'}「${label}」？\n\n僅該帳號生效；同組織其他人不受影響。${enabled ? '\n\n開啟後該帳號使用平台 AI Key 時不套用免費次數上限。' : ''}`)) {
+    if (!window.confirm(`確定要${enabled ? '開啟' : '關閉'}「${label}」？\n\n僅該帳號生效；同組織其他人不受影響。${enabled ? '\n\n開啟後：訂閱頁顯示無上限、平台 AI 免費額度不限制；租戶列表會顯示禮遇標記。' : ''}`)) {
       return
     }
     setTogglingId(u.id)
@@ -101,11 +101,12 @@ export default function SuperAdminUsersPage() {
       <h1 className="text-2xl font-bold text-white">👤 全平台使用者</h1>
 
       <div id="platform-partner" className="bg-amber-500/10 border border-amber-500/25 rounded-xl p-4 text-sm text-amber-100/85">
-        <p className="font-medium text-amber-200">🤝 平台合作夥伴（後門權限）</p>
+        <p className="font-medium text-amber-200">🌟 平台禮遇／合作夥伴</p>
         <ul className="mt-2 list-disc list-inside space-y-1 text-amber-100/70">
-          <li>僅對<strong>你勾選的那一個帳號</strong>生效，不會讓整個租戶或全站解鎖。</li>
-          <li>目前實作：<strong>使用平台 AI Key 時略過免費次數上限</strong>（仍會寫入使用紀錄）。</li>
-          <li>請在資料庫執行 migration <code className="text-amber-200/90">migration_phase26_platform_unlimited.sql</code> 後再使用開關。</li>
+          <li>僅對<strong>你開啟的那一個帳號</strong>生效；同組織其他人仍依租戶方案。</li>
+          <li>效果：<strong>訂閱頁顯示無上限</strong>、<strong>平台 AI Key 免費額度不限制</strong>（仍會寫入用量紀錄）。</li>
+          <li><strong>租戶管理</strong>會同步顯示「禮遇」標記（該組織內至少有一位禮遇帳號時）。</li>
+          <li>請先執行 migration <code className="text-amber-200/90">migration_phase26_platform_unlimited.sql</code>。</li>
         </ul>
       </div>
 
@@ -159,7 +160,7 @@ export default function SuperAdminUsersPage() {
                 <th className="text-left px-4 py-2">登入方式</th>
                 <th className="text-left px-4 py-2">LINE</th>
                 <th className="text-left px-4 py-2">註冊時間</th>
-                <th className="text-left px-4 py-2">合作夥伴</th>
+                <th className="text-left px-4 py-2" title="平台禮遇：訂閱顯示無上限 + AI 免費額度不限制（僅該帳號）">禮遇</th>
               </tr>
             </thead>
             <tbody>

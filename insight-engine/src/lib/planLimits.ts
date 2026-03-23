@@ -7,6 +7,19 @@ export const PLAN_LIMITS = {
   enterprise: { responses: -1,    surveys: -1, admins: -1, aiDaily: -1, webhooks: -1, name: '企業版',   price: 0 },
 } as const
 
+/**
+ * 總後台「平台禮遇／合作夥伴」帳號：本人操作時視為無上限（與 enterprise 數值一致，名稱獨立）
+ */
+export const PLATFORM_PARTNER_EFFECTIVE_LIMITS = {
+  responses: -1,
+  surveys: -1,
+  admins: -1,
+  aiDaily: -1,
+  webhooks: -1,
+  name: '平台禮遇',
+  price: 0,
+} as const
+
 export type PlanKey = keyof typeof PLAN_LIMITS
 
 export interface TenantPlan {

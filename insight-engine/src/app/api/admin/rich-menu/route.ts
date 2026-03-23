@@ -137,7 +137,19 @@ export async function GET(): Promise<NextResponse> {
       defaultId = data.richMenuId ?? null
     }
 
-    return NextResponse.json({ menus, defaultId })
+    return NextResponse.json({
+      menus,
+      defaultId,
+      /** 供後台編輯器載入：佔位符於 resolveUrl 替換 */
+      presets: TEMPLATE_PRESETS,
+      placeholders: [
+        '{PUBLIC_SURVEY_URL}',
+        '{ADMIN_URL}',
+        '{SITE_URL}',
+        '{IG_URL}',
+        '{BASE_URL}',
+      ],
+    })
   } catch (err) {
     console.error('[rich-menu] GET error:', err)
     return NextResponse.json({ error: String(err) }, { status: 500 })
@@ -162,6 +174,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     channel?: 'official' | 'insight'
     buttons?: MenuButton[]
     chatBarText?: string
+    /** 自訂選單名稱（LINE 後台顯示） */
+    menuName?: string
   }
 
   try {
@@ -186,7 +200,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         const menuDef = {
           size: { width: 2500, height: 1686 },
           selected: true,
-          name: preset?.name || 'Custom Menu',
+          name: (body.menuName?.trim() || preset?.name || 'Custom Menu').slice(0, 120),
           chatBarText: body.chatBarText || preset?.chatBarText || '📋 打開選單',
           areas: resolvedButtons.map((btn, idx) => {
             const row = Math.floor(idx / 3)

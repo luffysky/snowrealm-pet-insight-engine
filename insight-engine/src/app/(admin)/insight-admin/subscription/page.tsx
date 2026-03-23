@@ -332,9 +332,9 @@ function SubscriptionPageInner() {
 
       {data.platformPartner && (
         <div className="bg-amber-500/10 border border-amber-500/25 rounded-xl p-4 text-sm text-amber-100/85">
-          <span className="font-medium text-amber-200">🤝 平台合作夥伴（本帳號）</span>
+          <span className="font-medium text-amber-200">🌟 平台禮遇（本帳號）</span>
           <p className="mt-1 text-amber-100/70">
-            下方方案與用量仍顯示租戶整體狀態；你本人使用平台 AI Key 時已略過免費次數上限（不影響同組織其他人）。
+            此頁方案名稱與用量上限已依禮遇身份顯示為<strong className="text-amber-200/90">無上限</strong>（僅你本人）；租戶實際訂閱方案不變，同組織其他人仍依原方案。使用平台 AI Key 時亦略過免費次數上限。
           </p>
         </div>
       )}

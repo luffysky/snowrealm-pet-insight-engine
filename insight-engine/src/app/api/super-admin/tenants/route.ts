@@ -138,13 +138,19 @@ export async function GET(request: NextRequest) {
   }
 
   // 預設：全部租戶列表（含用量統計）
-  const tenants = await query<TenantRow>(
+  const tenants = await query<
+    TenantRow & { has_platform_partner: boolean }
+  >(
     `SELECT t.slug, t.name, t.plan, t.created_at,
             (SELECT COUNT(*) FROM admin_users u WHERE u.tenant_id = t.slug)::text AS user_count,
             (SELECT COUNT(*) FROM surveys s WHERE s.tenant_id = t.slug)::text AS survey_count,
             (SELECT COUNT(*) FROM responses r WHERE r.tenant_id = t.slug)::text AS response_count,
             COALESCE((SELECT COUNT(*) FROM ai_usage_logs a WHERE a.tenant_id = t.slug)::text, '0') AS ai_usage_count,
-            COALESCE((SELECT COUNT(*) FROM notification_logs n WHERE n.tenant_id = t.slug)::text, '0') AS notification_count
+            COALESCE((SELECT COUNT(*) FROM notification_logs n WHERE n.tenant_id = t.slug)::text, '0') AS notification_count,
+            EXISTS (
+              SELECT 1 FROM admin_users u2
+              WHERE u2.tenant_id = t.slug AND u2.deleted_at IS NULL AND COALESCE(u2.platform_unlimited, FALSE)
+            ) AS has_platform_partner
      FROM tenants t
      ORDER BY t.created_at DESC`
   )
@@ -160,6 +166,7 @@ export async function GET(request: NextRequest) {
       responseCount: Number(t.response_count),
       aiUsageCount: Number(t.ai_usage_count),
       notificationCount: Number(t.notification_count),
+      hasPlatformPartner: Boolean(t.has_platform_partner),
     })),
   })
 }

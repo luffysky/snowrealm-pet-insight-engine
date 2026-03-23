@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { getTenantContext } from '@/lib/tenant'
 import { query, queryOne } from '@/lib/db'
-import { getTenantPlan, getPlanLimits, PLAN_LIMITS } from '@/lib/planLimits'
+import { getTenantPlan, getPlanLimits, PLAN_LIMITS, PLATFORM_PARTNER_EFFECTIVE_LIMITS } from '@/lib/planLimits'
 import { isUserPlatformUnlimited } from '@/lib/platformUnlimited'
 
 export const dynamic = 'force-dynamic'
@@ -16,7 +16,9 @@ export async function GET(): Promise<NextResponse> {
     const platformPartner = await isUserPlatformUnlimited(userId)
 
     const plan = await getTenantPlan(tenantId)
-    const limits = getPlanLimits(plan.plan)
+    const limits = platformPartner
+      ? PLATFORM_PARTNER_EFFECTIVE_LIMITS
+      : getPlanLimits(plan.plan)
 
     const [responseCount, surveyCount, adminCount, aiTodayCount] = await Promise.all([
       queryOne<CountRow>(
