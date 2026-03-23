@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { queryOne } from '@/lib/db'
+import { toAbsoluteOgImageUrl } from '@/lib/ogUrls'
 import { OrgSurveyClient } from './OrgSurveyClient'
 
 interface Props {
@@ -41,26 +42,30 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const title = survey.og_title || survey.cover_title || survey.title
   const description = survey.og_description || survey.cover_subtitle || `${title} — 填寫問卷`
   const siteName = ss?.og_site_name || 'SnowRealm Insight Engine'
-  const ogImage = survey.og_image_url || ss?.og_image_url || undefined
+  const ogImageRaw = survey.og_image_url || ss?.og_image_url || undefined
+  const ogImageAbs = toAbsoluteOgImageUrl(ogImageRaw ?? null, baseUrl)
+  const canonicalPath = `/${org}/${slug}`
+  const canonicalUrl = new URL(canonicalPath, baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`).href
 
   return {
     title,
     description,
     metadataBase: new URL(baseUrl),
+    alternates: { canonical: canonicalUrl },
     openGraph: {
       title,
       description,
       siteName,
       locale: 'zh_TW',
       type: 'website',
-      url: `/${org}/${slug}`,
-      ...(ogImage ? { images: [{ url: ogImage, width: 1200, height: 630 }] } : {}),
+      url: canonicalUrl,
+      ...(ogImageAbs ? { images: [{ url: ogImageAbs, width: 1200, height: 630 }] } : {}),
     },
     twitter: {
       card: 'summary_large_image',
       title,
       description,
-      ...(ogImage ? { images: [ogImage] } : {}),
+      ...(ogImageAbs ? { images: [ogImageAbs] } : {}),
     },
   }
 }

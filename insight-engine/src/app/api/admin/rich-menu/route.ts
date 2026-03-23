@@ -4,9 +4,18 @@ import { getTenantContext, requireRole } from '@/lib/tenant'
 import { getPrimarySurveySlug } from '@/lib/surveyRepo'
 import sharp from 'sharp'
 
-const TOKEN = async (tenantId?: string) => await getLineConfig('OFFICIAL_CHANNEL_ACCESS_TOKEN', tenantId) ?? ''
-
 const LINE_API = 'https://api.line.me/v2/bot'
+
+/** Rich Menu API 用：依 Channel 取 Access Token（官方帳號 vs Insight／問卷機器人各一組） */
+async function getChannelAccessToken(
+  tenantId: string,
+  channel: 'official' | 'insight',
+): Promise<string> {
+  if (channel === 'insight') {
+    return (await getLineConfig('INSIGHT_CHANNEL_ACCESS_TOKEN', tenantId)) ?? ''
+  }
+  return (await getLineConfig('OFFICIAL_CHANNEL_ACCESS_TOKEN', tenantId)) ?? ''
+}
 
 interface RichMenuItem {
   richMenuId: string
@@ -109,13 +118,19 @@ function generateMenuImage(buttons: MenuButton[], width: number, height: number)
 }
 
 /**
- * GET /api/admin/rich-menu
- * 列出所有 Rich Menu + 目前預設
+ * GET /api/admin/rich-menu?channel=official|insight
+ * 列出該 Messaging API Channel 的 Rich Menu + 目前預設（每個 Bot 各自一組）
  */
-export async function GET(): Promise<NextResponse> {
+export async function GET(request: NextRequest): Promise<NextResponse> {
   const { tenantId } = await getTenantContext()
-  const token = await TOKEN(tenantId)
-  if (!token) return NextResponse.json({ error: 'Missing LINE token' }, { status: 500 })
+  const ch = request.nextUrl.searchParams.get('channel') === 'insight' ? 'insight' : 'official'
+  const token = await getChannelAccessToken(tenantId, ch)
+  if (!token) {
+    return NextResponse.json(
+      { error: ch === 'insight' ? '缺少 Insight Channel Access Token' : '缺少 Official Channel Access Token' },
+      { status: 500 },
+    )
+  }
 
   try {
     // 取得所有 Rich Menu
@@ -140,6 +155,7 @@ export async function GET(): Promise<NextResponse> {
     return NextResponse.json({
       menus,
       defaultId,
+      channel: ch,
       /** 供後台編輯器載入：佔位符於 resolveUrl 替換 */
       presets: TEMPLATE_PRESETS,
       placeholders: [
@@ -164,8 +180,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   const roleCheck = await requireRole('admin')
   if (roleCheck instanceof NextResponse) return roleCheck
   const { tenantId } = roleCheck
-  const token = await TOKEN(tenantId)
-  if (!token) return NextResponse.json({ error: 'Missing LINE token' }, { status: 500 })
 
   const body = await request.json() as {
     action: string
@@ -176,6 +190,16 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     chatBarText?: string
     /** 自訂選單名稱（LINE 後台顯示） */
     menuName?: string
+  }
+
+  /** 列表／設預設／刪除 所操作的 Bot（與建立時 channel 一致） */
+  const listChannel: 'official' | 'insight' = body.channel === 'insight' ? 'insight' : 'official'
+  const token = await getChannelAccessToken(tenantId, listChannel)
+  if (!token && body.action !== 'create') {
+    return NextResponse.json(
+      { error: listChannel === 'insight' ? '缺少 Insight Channel Access Token' : '缺少 Official Channel Access Token' },
+      { status: 500 },
+    )
   }
 
   try {
@@ -219,11 +243,13 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
           }),
         }
 
-        // If using insight channel instead of official
-        let createToken = token
-        if (body.channel === 'insight') {
-          createToken = await getLineConfig('INSIGHT_CHANNEL_ACCESS_TOKEN', tenantId) ?? ''
-          if (!createToken) return NextResponse.json({ error: 'Missing Insight LINE token' }, { status: 500 })
+        const createChannel: 'official' | 'insight' = body.channel === 'insight' ? 'insight' : 'official'
+        const createToken = await getChannelAccessToken(tenantId, createChannel)
+        if (!createToken) {
+          return NextResponse.json(
+            { error: createChannel === 'insight' ? '缺少 Insight Channel Access Token' : '缺少 Official Channel Access Token' },
+            { status: 500 },
+          )
         }
 
         const createRes = await fetch(`${LINE_API}/richmenu`, {

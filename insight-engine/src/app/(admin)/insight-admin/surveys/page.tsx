@@ -51,6 +51,14 @@ interface BranchRule {
 
 type BranchConfig = BranchRule[] | { branchKey: string; routes: Record<string, string[]> }
 
+/** 問卷 status → 後台顯示（對外可見性） */
+function surveyVisibilityLabel(status: string): string {
+  if (status === 'published') return '公開'
+  if (status === 'draft') return '不公開'
+  if (status === 'archived') return '已封存'
+  return status
+}
+
 // ===== Main Component =====
 
 export default function SurveysAdminPage() {
@@ -125,6 +133,11 @@ export default function SurveysAdminPage() {
       {showCreate && (
         <div className="bg-slate-800 border border-slate-700 rounded-xl p-6 space-y-4">
           <h2 className="text-lg font-semibold text-white/90">建立新問卷</h2>
+          <p className="text-xs text-slate-400 leading-relaxed">
+            建立後狀態為 <span className="text-emerald-400/90">published</span>，公開連結{' '}
+            <code className="text-slate-300">/{'{租戶}'}/{'{slug}'}</code> 即可填寫。若暫不要上線，請在問卷設定改為{' '}
+            <span className="text-amber-400/90">draft</span>。
+          </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm text-slate-400 mb-1">問卷標題</label>
@@ -325,8 +338,56 @@ function SurveyEditor({
   const [showAiGen, setShowAiGen] = useState(false)
   const [form, setForm] = useState(survey)
   const [saving, setSaving] = useState(false)
+  const [ogUploading, setOgUploading] = useState(false)
 
   useEffect(() => { setForm(survey) }, [survey])
+
+  const publicSurveyUrl =
+    typeof window !== 'undefined'
+      ? `${window.location.origin}/${survey.tenant_id}/${survey.slug}`
+      : ''
+
+  const handleOgImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setOgUploading(true)
+    try {
+      const fd = new FormData()
+      fd.append('file', file)
+      fd.append('folder', 'survey-og')
+      const up = await fetch('/api/admin/upload', { method: 'POST', body: fd })
+      const data = (await up.json()) as { url?: string; error?: string }
+      if (!up.ok || !data.url) {
+        alert(data.error || '上傳失敗')
+        return
+      }
+      const patchRes = await fetch(`/api/admin/surveys/${survey.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          og_image_url: data.url,
+        }),
+      })
+      if (!patchRes.ok) {
+        setForm((prev) => ({ ...prev, og_image_url: data.url }))
+        alert('圖片已上傳，但寫入問卷失敗，請按「儲存」再試')
+        return
+      }
+      const updated = (await patchRes.json()) as SurveyRow & {
+        og_title?: string
+        og_description?: string
+        og_image_url?: string
+      }
+      onUpdate(updated)
+      setForm(updated)
+      alert('OG 圖片已更新並儲存')
+    } catch {
+      alert('上傳失敗')
+    } finally {
+      setOgUploading(false)
+      e.target.value = ''
+    }
+  }
 
   const handleSave = async () => {
     setSaving(true)
@@ -395,8 +456,9 @@ function SurveyEditor({
                   ? 'bg-yellow-500/20 text-yellow-400'
                   : 'bg-slate-500/20 text-slate-400'
             }`}
+            title={`資料庫狀態：${survey.status}`}
           >
-            {survey.status}
+            {surveyVisibilityLabel(survey.status)}
           </span>
           {activeTab !== 'branching' && !editing && (
             <button type="button" onClick={() => setEditing(true)}
@@ -465,20 +527,50 @@ function SurveyEditor({
               }} 
             />
           )}
+          <div className="rounded-xl border border-slate-600/80 bg-slate-900/40 p-4 space-y-3">
+            <div>
+              <p className="text-sm font-semibold text-white/90">對外可見性</p>
+              <p className="text-xs text-slate-500 mt-1">
+                每份問卷獨立設定。選「不公開」時，公開網址（格式 <span className="font-mono text-slate-400">/租戶代碼/slug</span>
+                ）會回傳 404。
+              </p>
+            </div>
+            <div className="space-y-2">
+              {(
+                [
+                  { value: 'published' as const, title: '公開', desc: '任何人可用問卷連結填寫（status = published）' },
+                  { value: 'draft' as const, title: '不公開', desc: '僅後台管理，對外連結無法開啟（status = draft）' },
+                  { value: 'archived' as const, title: '已封存', desc: '已下架，不建議再分享（status = archived）' },
+                ] as const
+              ).map((opt) => (
+                <label
+                  key={opt.value}
+                  className={`flex gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
+                    form.status === opt.value
+                      ? 'border-cyan-500/50 bg-cyan-950/25'
+                      : 'border-slate-700 hover:border-slate-600 bg-slate-900/20'
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="survey-visibility"
+                    className="mt-1 accent-cyan-500"
+                    checked={form.status === opt.value}
+                    onChange={() => setForm({ ...form, status: opt.value })}
+                  />
+                  <div>
+                    <span className="text-sm text-white/90 font-medium">{opt.title}</span>
+                    <p className="text-xs text-slate-500 mt-0.5">{opt.desc}</p>
+                  </div>
+                </label>
+              ))}
+            </div>
+          </div>
           <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
             <label className="text-sm text-white/50 sm:w-20">Slug</label>
             <input type="text" value={form.slug}
               onChange={(e) => setForm({ ...form, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '') })}
               className="flex-1 bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-sm text-white/80 font-mono" />
-          </div>
-          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
-            <label className="text-sm text-white/50 sm:w-20">狀態</label>
-            <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })}
-              className="bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-sm text-white/80">
-              <option value="draft">draft</option>
-              <option value="published">published</option>
-              <option value="archived">archived</option>
-            </select>
           </div>
           {fields.map((f) => (
             <div key={f.key} className="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-3">
@@ -520,6 +612,21 @@ function SurveyEditor({
       {/* Basic settings - read-only */}
       {activeTab === 'basic' && !editing && (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+          <div className="col-span-1 sm:col-span-2 flex flex-wrap items-baseline gap-2">
+            <span className="text-white/40">對外可見性：</span>
+            <span
+              className={
+                survey.status === 'published'
+                  ? 'text-emerald-400 font-medium'
+                  : survey.status === 'draft'
+                    ? 'text-amber-400 font-medium'
+                    : 'text-slate-400 font-medium'
+              }
+            >
+              {surveyVisibilityLabel(survey.status)}
+            </span>
+            <span className="text-[10px] text-slate-600 font-mono">({survey.status})</span>
+          </div>
           <div><span className="text-white/40">Slug：</span><span className="text-white/70 font-mono">{survey.slug}</span></div>
           {fields.map((f) => (
             <div key={f.key}>
@@ -532,15 +639,32 @@ function SurveyEditor({
           <div><span className="text-white/40">排程結束：</span><span className="text-white/70">{survey.scheduled_end ? new Date(survey.scheduled_end).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' }) : '—'}</span></div>
           <div className="col-span-1 sm:col-span-2 mt-2">
             <span className="text-white/40 block mb-1">問卷專屬連結：</span>
+            {survey.status !== 'published' && (
+              <p className="text-xs text-amber-400/90 mb-2 rounded-lg border border-amber-500/25 bg-amber-500/10 px-3 py-2">
+                目前為 <strong className="font-semibold">{surveyVisibilityLabel(survey.status)}</strong>（{survey.status}），公開網址會顯示
+                404。請至「編輯」→「對外可見性」改為<strong className="font-semibold">公開</strong>後再分享。
+              </p>
+            )}
             <div className="flex items-center gap-2">
-              <a href={`/${survey.tenant_id}/${survey.slug}`} target="_blank" rel="noopener noreferrer" className="text-t-accent hover:underline break-all font-mono">
+              <a
+                href={`/${survey.tenant_id}/${survey.slug}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={`break-all font-mono hover:underline ${
+                  survey.status === 'published' ? 'text-t-accent' : 'text-slate-500 pointer-events-none'
+                }`}
+                aria-disabled={survey.status !== 'published'}
+                onClick={(e) => {
+                  if (survey.status !== 'published') e.preventDefault()
+                }}
+              >
                 {typeof window !== 'undefined' ? window.location.origin : ''}/{survey.tenant_id}/{survey.slug}
               </a>
               <button
                 onClick={() => {
                   const url = `${typeof window !== 'undefined' ? window.location.origin : ''}/${survey.tenant_id}/${survey.slug}`;
                   navigator.clipboard.writeText(url);
-                  alert('🔗 已複製連結');
+                  alert(survey.status === 'published' ? '🔗 已複製連結' : '已複製網址（若為草稿，對外仍為 404，請先發布）');
                 }}
                 className="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded text-xs shrink-0 cursor-pointer"
               >
@@ -554,7 +678,24 @@ function SurveyEditor({
       {/* OG Settings - editing */}
       {activeTab === 'og' && editing && (
         <div className="space-y-3">
-          <p className="text-xs text-yellow-400/80 mb-2">⚠️ 若留空，則會自動採用網站預設的 Meta 標籤。</p>
+          <p className="text-xs text-yellow-400/80 mb-2">
+            ⚠️ 若留空，則會自動採用網站預設的 Meta 標籤。公開問卷頁會輸出 Open Graph / Twitter Card（伺服端
+            <code className="mx-0.5 text-slate-300">generateMetadata</code>）。
+          </p>
+          <p className="text-[11px] text-slate-500 leading-relaxed">
+            正式環境請確認 <code className="text-slate-400">NEXT_PUBLIC_BASE_URL</code> 與實際網域一致，分享預覽與 canonical
+            網址才會正確。圖片建議可公開存取的 HTTPS 網址（上傳至 R2 後會自動符合）。
+          </p>
+          {publicSurveyUrl && survey.status === 'published' && (
+            <a
+              href={`https://developers.facebook.com/tools/debug/?q=${encodeURIComponent(publicSurveyUrl)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex text-xs text-cyan-400 hover:text-cyan-300 underline underline-offset-2"
+            >
+              用 Facebook 分享除錯工具檢查此問卷頁
+            </a>
+          )}
           <div className="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-3">
             <label className="text-sm text-white/50 sm:w-24 sm:pt-1.5 shrink-0">OG 標題</label>
             <input type="text" value={form.og_title ?? ''} onChange={(e) => setForm({ ...form, og_title: e.target.value })}
@@ -565,10 +706,19 @@ function SurveyEditor({
             <textarea value={form.og_description ?? ''} onChange={(e) => setForm({ ...form, og_description: e.target.value })}
               rows={3} placeholder="分享時的描述文字..." className="flex-1 bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-sm text-white/80 resize-none" />
           </div>
-          <div className="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-3">
-            <label className="text-sm text-white/50 sm:w-24 sm:pt-1.5 shrink-0">OG 圖片 URL</label>
-            <input type="text" value={form.og_image_url ?? ''} onChange={(e) => setForm({ ...form, og_image_url: e.target.value })}
-              placeholder="https://... (分享預覽圖)" className="flex-1 bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-sm text-white/80" />
+          <div className="flex flex-col gap-2 sm:gap-3">
+            <label className="text-sm text-white/50 sm:w-24 shrink-0">OG 圖片</label>
+            <div className="flex flex-col gap-2 flex-1 min-w-0">
+              <div className="flex flex-wrap items-center gap-2">
+                <label className="px-3 py-1.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs cursor-pointer border border-slate-600">
+                  <input type="file" accept="image/jpeg,image/png,image/webp,image/gif,image/svg+xml" className="hidden" onChange={handleOgImageUpload} disabled={ogUploading} />
+                  {ogUploading ? '上傳中…' : '📤 上傳圖片'}
+                </label>
+                <span className="text-[10px] text-slate-500">走 /api/admin/upload（R2），資料夾 survey-og</span>
+              </div>
+              <input type="text" value={form.og_image_url ?? ''} onChange={(e) => setForm({ ...form, og_image_url: e.target.value })}
+                placeholder="或貼上圖片 HTTPS 網址…" className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-sm text-white/80" />
+            </div>
           </div>
         </div>
       )}
@@ -576,6 +726,18 @@ function SurveyEditor({
       {/* OG Settings - read-only */}
       {activeTab === 'og' && !editing && (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+          {publicSurveyUrl && survey.status === 'published' && (
+            <div className="col-span-1 sm:col-span-2">
+              <a
+                href={`https://developers.facebook.com/tools/debug/?q=${encodeURIComponent(publicSurveyUrl)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs text-cyan-400 hover:text-cyan-300 underline underline-offset-2"
+              >
+                Facebook 分享除錯工具（檢查此問卷頁 OG 是否被抓到）
+              </a>
+            </div>
+          )}
           <div className="col-span-1 sm:col-span-2">
             <span className="text-white/40 block mb-1">OG 標題：</span>
             <span className="text-white/70">{survey.og_title || <span className="text-white/30 italic">未設定（將使用網站預設）</span>}</span>

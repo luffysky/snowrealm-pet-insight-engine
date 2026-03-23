@@ -268,7 +268,12 @@ function SetupGuide() {
         <h2 className="text-lg font-semibold text-t-accent">📖 串接 LINE 功能教學</h2>
         <p className="text-sm text-slate-300 leading-relaxed">
           要在本系統使用 LINE 推播、自動回覆、問卷提醒等功能，您需要先到 LINE 開發者後台建立自己的 Channel，
-          然後將取得的金鑰填入左邊的「環境設定」分頁。完成後系統就能透過您的 LINE 帳號發送訊息。
+          然後將取得的金鑰填入左邊的「環境設定」分頁，並在 <strong className="text-white/90">Messaging API</strong> 設定
+          Webhook URL 且 Verify 成功。完成後系統才能收事件、發訊息。
+        </p>
+        <p className="text-xs text-slate-500">
+          更完整的「官方帳號 vs Insight、Rich Menu、Webhook 是否互斥」說明見專案{' '}
+          <code className="text-slate-400">docs/line-official-vs-insight.md</code>。
         </p>
         <div className="bg-slate-900/50 rounded-lg p-3 text-sm text-slate-400 space-y-1">
           <p>💡 <strong className="text-slate-300">需要的東西</strong></p>
@@ -380,8 +385,11 @@ function SetupGuide() {
             <li>點「Verify」→ 顯示 <code className="bg-slate-700 px-1 rounded text-green-300">Success</code> 即成功</li>
           </ol>
         </div>
-        <div className="bg-amber-900/20 border border-amber-700/30 rounded-lg p-3 text-sm text-amber-300">
-          ⚠️ 如果只用一個 LINE 帳號，只需設定「官方帳號」的 Webhook URL 即可
+        <div className="bg-amber-900/20 border border-amber-700/30 rounded-lg p-3 text-sm text-amber-300 space-y-2">
+          <p>⚠️ 若只有 <strong>一個</strong> Messaging API Channel：通常只填 <strong>Official</strong> 金鑰，且 Webhook 只設 <code className="bg-black/30 px-1 rounded">/api/line/webhook/official</code> 即可。</p>
+          <p className="text-amber-200/90">
+            重點：<strong>每一個 Channel 只能填一個 Webhook</strong>。事件只會送到該 URL，不會同時送兩邊；改成我們的網址後，同一 Channel 上<strong>舊的第三方服務就不會再收到事件</strong>（除非改用第二個 Channel）。
+          </p>
         </div>
       </section>
 
@@ -444,6 +452,18 @@ function SetupGuide() {
           <div>
             <p className="text-sm font-medium text-white/80">Q：可以用現有的 LINE 官方帳號嗎？</p>
             <p className="text-sm text-slate-400 mt-1">A：可以！只要在 LINE Developers Console 把它連結到 Messaging API 即可。但要注意 Webhook URL 只能設一個，如果其他服務也在用要先確認。</p>
+          </div>
+          <div>
+            <p className="text-sm font-medium text-white/80">Q：Token 貼到你們後台，LINE Developers 就自動完成了嗎？</p>
+            <p className="text-sm text-slate-400 mt-1">
+              A：<strong>不會。</strong>後台只儲存金鑰供我們伺服器呼叫 LINE API 與驗簽。您仍須在 <strong>同一個 Channel</strong> 的 Messaging API 頁面手動貼上 Webhook、開啟 Use webhook，並看到 Verify 成功。
+            </p>
+          </div>
+          <div>
+            <p className="text-sm font-medium text-white/80">Q：Rich Menu 只能預設一個？官方跟後台都要怎麼辦？</p>
+            <p className="text-sm text-slate-400 mt-1">
+              A：對<strong>同一個 Bot（同一個 Channel）</strong>，全體使用者的預設 Rich Menu 同一時間只有一個。若需要「給顧客的選單」和「給管理員的選單」並存，請使用<strong>兩個</strong> Messaging API Channel（Official + Insight），在 Rich Menu 頁用分頁分別管理。詳見 <code className="text-slate-500">docs/line-official-vs-insight.md</code>。
+            </p>
           </div>
         </div>
       </section>

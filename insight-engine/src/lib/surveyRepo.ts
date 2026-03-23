@@ -155,9 +155,11 @@ export async function createSurvey(data: {
   slug: string
   tenantId?: string
 }): Promise<SurveyRow> {
+  // 預設 published：公開路徑 /{tenant}/{slug} 與 GET /api/surveys/[slug] 皆只開放已發布問卷。
+  // 若需先隱藏，請在後台將狀態改為 draft。
   const row = await queryOne<SurveyRow>(
     `INSERT INTO surveys (id, title, slug, status, subtitle, cover_title, cover_subtitle, start_button_text, done_title, done_subtitle, tenant_id)
-     VALUES (gen_random_uuid(), $1, $2, 'draft', '', $1, '', '開始填寫', '感謝您的填寫！', '您的回覆已成功送出', $3)
+     VALUES (gen_random_uuid(), $1, $2, 'published', '', $1, '', '開始填寫', '感謝您的填寫！', '您的回覆已成功送出', $3)
      RETURNING *`,
     [data.title, data.slug, data.tenantId ?? 'default']
   )
@@ -244,6 +246,9 @@ export async function updateSurvey(
     scheduled_start: string | null
     scheduled_end: string | null
     branch_config: Record<string, unknown> | null
+    og_title: string | null
+    og_description: string | null
+    og_image_url: string | null
   }>
 ): Promise<number> {
   const allowed = [
@@ -252,6 +257,7 @@ export async function updateSurvey(
     'done_title', 'done_subtitle',
     'variant_group', 'scheduled_start', 'scheduled_end',
     'branch_config',
+    'og_title', 'og_description', 'og_image_url',
   ]
   const sets: string[] = []
   const params: unknown[] = []

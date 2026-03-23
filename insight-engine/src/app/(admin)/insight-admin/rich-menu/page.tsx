@@ -1,6 +1,8 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useMemo } from 'react'
+import { HexColorPicker } from 'react-colorful'
+import './rich-menu-colorful.css'
 
 interface RichMenu {
   richMenuId: string
@@ -36,6 +38,220 @@ const CLI_SNIPPET = `# 在專案 insight-engine 目錄執行（本機）
 node scripts/setup-rich-menu.mjs
 node scripts/setup-insight-rich-menu.mjs`
 
+const FORM_INPUT_SM =
+  'w-full px-2 py-1.5 bg-slate-900 border border-slate-600 rounded text-white text-xs focus:border-t-accent-border focus:outline-none'
+const FORM_LABEL_SM = 'block text-[10px] text-slate-500 mb-0.5'
+
+/** 官方／後台模板常用色 + 中性色，一鍵套用 */
+const RICH_MENU_COLOR_SWATCHES = [
+  '#0e7990',
+  '#047e57',
+  '#7e22ce',
+  '#075985',
+  '#b45309',
+  '#be123c',
+  '#1e3a5f',
+  '#2d4a3e',
+  '#4a2d5e',
+  '#3d2d1e',
+  '#1e3d4a',
+  '#0f172a',
+  '#334155',
+  '#64748b',
+  '#f59e0b',
+  '#ec4899',
+  '#22d3ee',
+  '#a78bfa',
+]
+
+function normalizeHex6(raw: string): string | null {
+  let s = raw.trim()
+  if (!s) return null
+  if (!s.startsWith('#')) s = `#${s}`
+  const m3 = /^#([0-9a-fA-F]{3})$/.exec(s)
+  if (m3) {
+    const [a, b, c] = m3[1].split('')
+    s = `#${a}${a}${b}${b}${c}${c}`
+  }
+  if (/^#[0-9a-fA-F]{6}$/.test(s)) return s.toLowerCase()
+  return null
+}
+
+function hexForNativeColorInput(raw: string): string {
+  return normalizeHex6(raw) ?? '#475569'
+}
+
+function hexToRgb(hex: string): { r: number; g: number; b: number } | null {
+  const n = normalizeHex6(hex)
+  if (!n) return null
+  const x = parseInt(n.slice(1), 16)
+  return { r: (x >> 16) & 255, g: (x >> 8) & 255, b: x & 255 }
+}
+
+function RichMenuColorPicker({
+  value,
+  onChange,
+}: {
+  value: string
+  onChange: (hex: string) => void
+}) {
+  const valid = useMemo(() => normalizeHex6(value), [value])
+  const pickerValue = hexForNativeColorInput(value)
+  const rgb = useMemo(() => (valid ? hexToRgb(valid) : null), [valid])
+
+  const [advancedOpen, setAdvancedOpen] = useState(true)
+  const [hasEyeDropper, setHasEyeDropper] = useState(false)
+  const [copiedHex, setCopiedHex] = useState(false)
+
+  useEffect(() => {
+    setHasEyeDropper(typeof window !== 'undefined' && 'EyeDropper' in window)
+  }, [])
+
+  const copyHex = useCallback(async () => {
+    if (!valid) return
+    try {
+      await navigator.clipboard.writeText(valid)
+      setCopiedHex(true)
+      window.setTimeout(() => setCopiedHex(false), 1600)
+    } catch {
+      /* ignore */
+    }
+  }, [valid])
+
+  const pickFromScreen = useCallback(async () => {
+    if (typeof window === 'undefined') return
+    const Ctor = (
+      window as unknown as {
+        EyeDropper?: new () => { open: () => Promise<{ sRGBHex: string }> }
+      }
+    ).EyeDropper
+    if (!Ctor) return
+    try {
+      const d = new Ctor()
+      const { sRGBHex } = await d.open()
+      onChange(sRGBHex.toLowerCase())
+    } catch {
+      /* 使用者取消或權限 */
+    }
+  }, [onChange])
+
+  return (
+    <div className="rounded-lg border border-slate-600/80 bg-slate-950/40 p-2 space-y-2">
+      <div className="flex items-center gap-2">
+        <div
+          className="h-10 w-10 shrink-0 rounded-lg border border-white/10 shadow-[inset_0_2px_8px_rgba(0,0,0,0.35)] ring-1 ring-white/5"
+          style={{ backgroundColor: valid ?? 'transparent' }}
+          title={valid ? `預覽 ${valid}` : '無效色碼'}
+        />
+        <label className="relative h-9 w-11 shrink-0 cursor-pointer overflow-hidden rounded-lg border border-slate-500/60 bg-slate-800 shadow-inner hover:border-cyan-500/40 transition-colors">
+          <span className="sr-only">系統色盤</span>
+          <input
+            type="color"
+            value={pickerValue}
+            onChange={(e) => onChange(e.target.value.toLowerCase())}
+            className="absolute inset-0 h-[200%] w-[200%] -translate-x-1/4 -translate-y-1/4 cursor-pointer border-0 bg-transparent p-0"
+            title="開啟系統色盤"
+          />
+        </label>
+        <div className="min-w-0 flex-1 space-y-0.5">
+          <input
+            type="text"
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            className={`${FORM_INPUT_SM} font-mono tracking-wide`}
+            placeholder="#0e7990"
+            spellCheck={false}
+            autoComplete="off"
+          />
+          {valid ? (
+            <p className="text-[10px] text-slate-500 font-mono truncate">{valid}</p>
+          ) : value.trim() ? (
+            <p className="text-[10px] text-amber-400/90">格式需為 #RGB 或 #RRGGBB</p>
+          ) : null}
+        </div>
+      </div>
+
+      <div className="border-t border-slate-700/50 pt-2">
+        <button
+          type="button"
+          onClick={() => setAdvancedOpen((o) => !o)}
+          className="flex w-full items-center justify-between gap-2 rounded-md px-1 py-0.5 text-left text-[10px] font-medium text-slate-400 transition-colors hover:bg-slate-800/60 hover:text-slate-200"
+        >
+          <span>進階取色（飽和度／色相）</span>
+          <span className="shrink-0 text-slate-500 tabular-nums" aria-hidden>
+            {advancedOpen ? '▼' : '▶'}
+          </span>
+        </button>
+        {advancedOpen ? (
+          <div className="rm-colorful-wrap mt-2 space-y-2 rounded-md border border-slate-700/40 bg-slate-900/50 p-2">
+            <HexColorPicker
+              color={pickerValue}
+              onChange={(c) => onChange(c.toLowerCase())}
+              className="!w-full max-w-none"
+            />
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <p className="text-[10px] font-mono text-slate-400 tabular-nums">
+                {rgb ? (
+                  <>
+                    RGB <span className="text-slate-300">{rgb.r}</span>
+                    <span className="text-slate-600"> · </span>
+                    <span className="text-slate-300">{rgb.g}</span>
+                    <span className="text-slate-600"> · </span>
+                    <span className="text-slate-300">{rgb.b}</span>
+                  </>
+                ) : (
+                  <span className="text-slate-600">RGB —</span>
+                )}
+              </p>
+              <div className="flex flex-wrap gap-1">
+                <button
+                  type="button"
+                  onClick={copyHex}
+                  disabled={!valid}
+                  className="rounded-md border border-slate-600 bg-slate-800/80 px-2 py-1 text-[10px] text-slate-200 transition-colors hover:border-cyan-500/40 hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  {copiedHex ? '已複製' : '複製 Hex'}
+                </button>
+                {hasEyeDropper ? (
+                  <button
+                    type="button"
+                    onClick={pickFromScreen}
+                    className="rounded-md border border-slate-600 bg-slate-800/80 px-2 py-1 text-[10px] text-slate-200 transition-colors hover:border-violet-400/40 hover:bg-slate-800"
+                    title="從螢幕取色（Chrome／Edge 等）"
+                  >
+                    滴管取色
+                  </button>
+                ) : null}
+              </div>
+            </div>
+            <p className="text-[9px] leading-snug text-slate-600">
+              滴管需瀏覽器支援且多為 HTTPS；與上方系統色盤、Hex 欄位即時同步。
+            </p>
+          </div>
+        ) : null}
+      </div>
+
+      <div>
+        <p className="text-[9px] uppercase tracking-wider text-slate-500 mb-1.5">快捷色</p>
+        <div className="flex flex-wrap gap-1.5">
+          {RICH_MENU_COLOR_SWATCHES.map((c) => (
+            <button
+              key={c}
+              type="button"
+              title={c}
+              onClick={() => onChange(c)}
+              className={`h-7 w-7 shrink-0 rounded-lg border transition-all hover:scale-110 hover:z-10 focus:outline-none focus:ring-2 focus:ring-cyan-400/50 cursor-pointer ${
+                normalizeHex6(value) === c ? 'border-cyan-400 ring-1 ring-cyan-400/40' : 'border-white/15'
+              }`}
+              style={{ backgroundColor: c }}
+            />
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function RichMenuPage() {
   const [menus, setMenus] = useState<RichMenu[]>([])
   const [defaultId, setDefaultId] = useState<string | null>(null)
@@ -45,6 +261,9 @@ export default function RichMenuPage() {
   const [actionLoading, setActionLoading] = useState(false)
   const [creating, setCreating] = useState(false)
   const [createMsg, setCreateMsg] = useState<{ ok: boolean; text: string } | null>(null)
+
+  /** 下方「現有選單」列表要看的 Bot（與 LINE 後台兩個 Channel 對應） */
+  const [listChannel, setListChannel] = useState<'official' | 'insight'>('official')
 
   const [editorBase, setEditorBase] = useState<'official' | 'admin'>('official')
   const [editorChannel, setEditorChannel] = useState<'official' | 'insight'>('official')
@@ -76,7 +295,7 @@ export default function RichMenuPage() {
   const fetchMenus = useCallback(async () => {
     setLoading(true)
     try {
-      const res = await fetch('/api/admin/rich-menu')
+      const res = await fetch(`/api/admin/rich-menu?channel=${listChannel}`)
       if (res.ok) {
         const data = await res.json()
         setMenus(data.menus ?? [])
@@ -88,7 +307,7 @@ export default function RichMenuPage() {
       /* ignore */
     }
     setLoading(false)
-  }, [])
+  }, [listChannel])
 
   useEffect(() => {
     fetchMenus()
@@ -104,7 +323,7 @@ export default function RichMenuPage() {
     await fetch('/api/admin/rich-menu', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action, richMenuId }),
+      body: JSON.stringify({ action, richMenuId, channel: listChannel }),
     })
     await fetchMenus()
     setActionLoading(false)
@@ -122,8 +341,8 @@ export default function RichMenuPage() {
       })
       const data = await res.json()
       if (res.ok) {
+        setListChannel(channel)
         setCreateMsg({ ok: true, text: `建立成功！已設為預設選單 (${data.richMenuId})` })
-        fetchMenus()
       } else {
         setCreateMsg({ ok: false, text: data.error || '建立失敗' })
       }
@@ -166,8 +385,8 @@ export default function RichMenuPage() {
       })
       const data = await res.json()
       if (res.ok) {
+        setListChannel(editorChannel)
         setCreateMsg({ ok: true, text: `已依編輯內容建立並設為預設 (${data.richMenuId})` })
-        fetchMenus()
       } else {
         setCreateMsg({ ok: false, text: data.error || '建立失敗' })
       }
@@ -192,9 +411,8 @@ export default function RichMenuPage() {
     }
   }
 
-  const inputCls =
-    'w-full px-2 py-1.5 bg-slate-900 border border-slate-600 rounded text-white text-xs focus:border-t-accent-border focus:outline-none'
-  const labelCls = 'block text-[10px] text-slate-500 mb-0.5'
+  const inputCls = FORM_INPUT_SM
+  const labelCls = FORM_LABEL_SM
 
   return (
     <div className="space-y-6">
@@ -345,16 +563,11 @@ export default function RichMenuPage() {
                   <option value="message">傳送文字 (message)</option>
                 </select>
               </div>
-              <div className="md:col-span-3">
-                <label className={labelCls}>底色 (#hex)</label>
-                <input
-                  type="text"
-                  value={btn.bg}
-                  onChange={(e) => updateButton(i, { bg: e.target.value })}
-                  className={inputCls}
-                />
-              </div>
               <div className="md:col-span-4">
+                <label className={labelCls}>底色</label>
+                <RichMenuColorPicker value={btn.bg} onChange={(bg) => updateButton(i, { bg })} />
+              </div>
+              <div className="md:col-span-3">
                 <label className={labelCls}>
                   {btn.actionType === 'uri' ? '網址或佔位符' : '訊息內容'}
                 </label>
@@ -417,8 +630,30 @@ export default function RichMenuPage() {
 
       {/* 現有選單列表 */}
       <section className="space-y-3">
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-white/90">現有選單</h2>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-wrap items-center gap-2">
+            <h2 className="text-lg font-semibold text-white/90">現有選單</h2>
+            <div className="flex rounded-lg border border-slate-600 overflow-hidden text-xs">
+              <button
+                type="button"
+                onClick={() => setListChannel('official')}
+                className={`px-3 py-1.5 transition-colors cursor-pointer ${
+                  listChannel === 'official' ? 'bg-cyan-900/40 text-cyan-300' : 'bg-slate-800 text-slate-400 hover:text-white'
+                }`}
+              >
+                Official 官方帳號
+              </button>
+              <button
+                type="button"
+                onClick={() => setListChannel('insight')}
+                className={`px-3 py-1.5 transition-colors cursor-pointer border-l border-slate-600 ${
+                  listChannel === 'insight' ? 'bg-violet-900/40 text-violet-300' : 'bg-slate-800 text-slate-400 hover:text-white'
+                }`}
+              >
+                Insight 問卷／通知
+              </button>
+            </div>
+          </div>
           {defaultId && (
             <button
               type="button"
@@ -435,6 +670,31 @@ export default function RichMenuPage() {
               取消預設
             </button>
           )}
+        </div>
+
+        <div className="rounded-lg border border-slate-700/80 bg-slate-900/35 px-3 py-2.5 text-xs text-slate-400 leading-relaxed">
+          <p className="font-medium text-slate-300 mb-1.5">能編輯嗎？CRUD 與 LINE 限制</p>
+          <p className="text-slate-500 mb-2 pl-4 border-l-2 border-slate-600">
+            <strong className="text-slate-400">預設選單</strong>：LINE 規則是「<strong>每一個</strong> Messaging API Channel（Bot）同一時間只能有{' '}
+            <strong>一個</strong>套用到<strong>全部好友</strong>的預設 Rich Menu」。若你同時有 <strong>Official</strong> 與{' '}
+            <strong>Insight</strong> 兩個 Channel，可<strong>各自</strong>建立一個預設選單——請用上方分頁切換查看／管理。
+          </p>
+          <ul className="list-disc pl-4 space-y-1">
+            <li>
+              <strong className="text-slate-300">讀取（R）</strong>：下方列表為<strong>目前分頁所選 Bot</strong>在 LINE 的 Rich Menu。
+            </li>
+            <li>
+              <strong className="text-slate-300">建立（C）</strong>：用上方「模板」或「進階」上傳圖並建立，會產生新的{' '}
+              <span className="font-mono text-slate-500">richMenuId</span>。
+            </li>
+            <li>
+              <strong className="text-slate-300">更新（U）</strong>：LINE Messaging API{' '}
+              <strong>不支援</strong>修改既有同一個 ID 的圖或按鈕區塊。要改內容＝建立新版 →「設為預設」→ 再「刪除」舊版（或本機腳本）。
+            </li>
+            <li>
+              <strong className="text-slate-300">刪除（D）</strong>：各卡片上的「刪除」按鈕。
+            </li>
+          </ul>
         </div>
 
         {loading ? (

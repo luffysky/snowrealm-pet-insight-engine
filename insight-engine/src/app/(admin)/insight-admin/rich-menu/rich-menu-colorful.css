@@ -1,0 +1,24 @@
+/* react-colorful：Rich Menu 編輯器深色區塊內的尺寸與圓角 */
+.rm-colorful-wrap .react-colorful {
+  width: 100%;
+  height: 140px;
+}
+
+.rm-colorful-wrap .react-colorful__saturation {
+  border-radius: 0.5rem;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+}
+
+.rm-colorful-wrap .react-colorful__hue {
+  height: 12px;
+  border-radius: 9999px;
+  margin-top: 0.5rem;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+
+.rm-colorful-wrap .react-colorful__pointer {
+  width: 16px;
+  height: 16px;
+  border: 2px solid #fff;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.45);
+}
