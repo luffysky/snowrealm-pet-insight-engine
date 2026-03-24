@@ -9,6 +9,7 @@ import { getPrimarySurveySlug } from '@/lib/surveyRepo'
 import { analyzeResponse } from '@/lib/analyzeResponse'
 import { MVP_SURVEY_SLUG } from '@/constants'
 import { getTenantBranding } from '@/lib/tenantBranding'
+import { switchUserRichMenu } from '@/lib/lineNotify'
 
 // ===== 型別 =====
 
@@ -148,6 +149,9 @@ async function finalizeSession(session: LineSurveySession, totalSteps: number): 
      WHERE id = $3`,
     [totalSteps, session.route === 'all' ? null : session.route, session.responseId]
   )
+
+  // 非阻塞：Rich Menu 切換（填完問卷後切換到「查結果」選單）
+  switchUserRichMenu(session.lineUserId, session.tenantId).catch(() => {})
 
   // 非阻塞：打標籤
   const answerRows = await query<{ question_key: string; value: string | string[] }>(
