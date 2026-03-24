@@ -1,7 +1,7 @@
 # CLAUDE.md — SnowRealm Insight Engine
 
 > 本文件供 Claude Code 讀取，讓 AI 完全理解專案結構後直接開始寫 code。
-> 最後更新：2026-03-23
+> 最後更新：2026-03-24
 
 ---
 
@@ -72,11 +72,15 @@ insight-engine/
 │   │   │   │   ├── utm-links/        # UTM 連結
 │   │   │   │   ├── webhooks/         # Webhook 設定
 │   │   │   │   ├── theme-settings/   # 主題設定
-│   │   │   │   ├── site-settings/    # Meta/OG 設定
+│   │   │   │   ├── site-settings/    # Meta/OG + LINE Bot 文案設定
 │   │   │   │   ├── panel/           # 管理員面板
 │   │   │   │   ├── team/            # 團隊管理
 │   │   │   │   ├── tenants/          # 租戶管理
 │   │   │   │   ├── waitlist/         # 封測名單
+│   │   │   │   ├── support/          # 客服中心（LINE 工單）
+│   │   │   │   ├── insight/          # AI 洞察報告（數據 + 故事模式）
+│   │   │   │   ├── upgrade/          # 升級引導頁（試用到期）
+│   │   │   │   ├── api-keys/         # API Key 管理（Rule Engine）
 │   │   │   │   └── account/          # 帳號設定
 │   │   │   └── layout.tsx            # Admin layout（Sidebar + 3D 背景）
 │   │   ├── (public)/                 # Landing Page + 問卷填答
@@ -117,7 +121,14 @@ insight-engine/
 │   │   │   │   ├── upload/
 │   │   │   │   ├── my-responses/
 │   │   │   │   ├── system/
-│   │   │   │   └── delete-account/
+│   │   │   │   ├── delete-account/
+│   │   │   │   ├── ai-sentiment/    # 開放題情感分析
+│   │   │   │   ├── ai-insight/      # AI 洞察報告
+│   │   │   │   ├── ai-story/        # AI 故事洞察報告
+│   │   │   │   ├── api-keys/        # API Key CRUD（外部開發者）
+│   │   │   │   ├── support/         # 客服工單 API
+│   │   │   │   ├── story-wall/      # 故事牆管理（審核/置頂）
+│   │   │   │   └── trial-status/    # 試用期狀態
 │   │   │   ├── auth/                # 認證
 │   │   │   │   ├── login/          # 帳密登入
 │   │   │   │   ├── register/       # 註冊（含邀請碼）
@@ -131,7 +142,8 @@ insight-engine/
 │   │   │   ├── cron/               # 排程任務
 │   │   │   │   ├── broadcast/      # 定時推播
 │   │   │   │   ├── remind/         # 填答提醒
-│   │   │   │   └── weekly-report/  # 週報
+│   │   │   │   ├── weekly-report/  # 週報
+│   │   │   │   └── cleanup-sessions/ # 清理過期 LINE 填答 session
 │   │   │   ├── line/               # LINE Webhook
 │   │   │   │   ├── webhook/        # Insight Bot（管理員口令註冊）
 │   │   │   │   │   ├── route.ts    # 管理員 Bot
@@ -147,8 +159,23 @@ insight-engine/
 │   │   │   │   ├── click/          # POST 點擊追蹤
 │   │   │   │   └── theme/          # GET 主題
 │   │   │   ├── primary-survey/     # 主問卷查詢
+│   │   │   ├── story-card/         # 公開故事卡片 API
+│   │   │   │   └── [responseId]/
+│   │   │   ├── story-wall/         # 公開故事牆 API
+│   │   │   │   └── [surveySlug]/
+│   │   │   ├── ai/                 # Rule Engine（外部 API Key 認證）
+│   │   │   │   ├── rules/          # GET 問卷標籤規則
+│   │   │   │   └── validate/       # POST 驗證問卷 JSON
+│   │   │   ├── payment/            # 藍新金流
+│   │   │   │   ├── create/
+│   │   │   │   ├── notify/         # 回呼（簽章+冪等+金額驗證）
+│   │   │   │   └── return/
 │   │   │   ├── super-admin/        # Super Admin API
 │   │   │   └── waitlist/           # 封測報名
+│   │   ├── story/                  # 公開故事卡片頁
+│   │   │   └── [responseId]/
+│   │   ├── story-wall/             # 公開故事牆頁
+│   │   │   └── [surveySlug]/
 │   │   ├── [org]/                  # 組織動態路由
 │   │   ├── login/                  # 登入頁
 │   │   ├── register/               # 註冊頁
@@ -181,25 +208,43 @@ insight-engine/
 │   │   ├── analyzeResponse.ts     # 回覆分析
 │   │   ├── stats.ts               # ★ 統計引擎（dashboard/漏斗/交叉/標籤/UTM/CSV）
 │   │   ├── surveyRepo.ts          # ★ 問卷 DB 操作（CRUD + 分流 + A/B）
-│   │   ├── surveyConfig.ts        # 問卷靜態設定（MVP_SURVEY）
+│   │   ├── surveyConfig.ts        # 問卷靜態設定（MVP_SURVEY fallback）
 │   │   ├── themes.ts              # 9 種主題定義
 │   │   ├── line.ts                # LINE Messaging API 封裝
-│   │   ├── lineConfig.ts          # LINE 設定管理（從 DB 讀取）
-│   │   ├── lineNotify.ts          # LINE 通知發送
+│   │   ├── lineConfig.ts          # LINE 設定管理（從 DB 讀取，fallback ENV）
+│   │   ├── lineNotify.ts          # LINE 通知發送 + switchUserRichMenu
 │   │   ├── lineStyles.ts          # LINE Flex Message 樣式
 │   │   ├── lineToken.ts           # LINE 身份 Token（HMAC 簽名）
+│   │   ├── lineBotEngine.ts       # LINE 對話式填答狀態機（Quick Reply + tenantBranding）
+│   │   ├── lineAdminBot.ts        # LINE 管理員數據查詢 Bot（今日報告/漏斗/標籤）
 │   │   ├── notificationEngine.ts  # 通知觸發引擎
 │   │   ├── webhook.ts             # Webhook 發送
 │   │   ├── db.ts                  # PostgreSQL 連線池（pg Pool）
 │   │   ├── auth.ts                # 認證工具（密碼雜湊、邀請碼）
 │   │   ├── jwt.ts                 # JWT 簽發/驗證（jose）
-│   │   ├── tenant.ts              # 租戶 context（從 request header 讀取）
+│   │   ├── tenant.ts              # 租戶 context + requireRole RBAC
+│   │   ├── tenantBranding.ts      # 租戶 LINE Bot 文案（從 site_settings 讀取）
+│   │   ├── planLimits.ts          # 方案限制定義 + checkResponseLimit/SurveyLimit/AdminLimit
+│   │   ├── platformUnlimited.ts   # 平台禮遇帳號判斷
+│   │   ├── ruleEngine.ts          # Rule Engine：API Key 管理 + 問卷規則查詢
+│   │   ├── automationEngine.ts    # 自動化觸發引擎（回覆數達標/排程/關鍵字）
+│   │   ├── trialEngine.ts         # 免費試用期狀態管理
+│   │   ├── sentimentAnalysis.ts   # 開放題情感分析（批次 AI）
+│   │   ├── insightEngine.ts       # AI 洞察報告生成
+│   │   ├── storyEngine.ts         # AI 故事洞察報告（故事優先敘事）
+│   │   ├── storyCardEngine.ts     # 個人故事卡片（純計算，無 AI）
+│   │   ├── storyWallEngine.ts     # 故事牆資料查詢 + 管理
+│   │   ├── supportEngine.ts       # 客服工單引擎（LINE 雙向）
 │   │   ├── email.ts               # Email 發送
 │   │   ├── sms.ts                 # 簡訊發送（AWS SNS）
 │   │   ├── r2.ts                  # Cloudflare R2 / S3 儲存
 │   │   ├── fingerprint.ts         # 填答指紋
 │   │   ├── optionEmoji.ts         # 選項 Emoji 對應
 │   │   ├── personalityAnalyzer.ts # 人格分析
+│   │   ├── auditLog.ts            # 操作審計紀錄
+│   │   ├── rateLimit.ts           # 記憶體內 IP 限流
+│   │   ├── superAdminAuth.ts      # Super Admin JWT 驗證
+│   │   ├── newebpay.ts            # 藍新金流 AES 加解密 + 訂單生成
 │   │   ├── supabase.ts            # Supabase client
 │   │   └── supabaseAdmin.ts       # Supabase admin client
 │   ├── types/
@@ -306,8 +351,14 @@ interface DashboardStats {
 | `tenant_users` | 租戶用戶關聯 | user_id, tenant_id, role |
 | `templates` | 訊息模板 | |
 | `utm_links` | UTM 連結 | |
-| `site_settings` | 站台設定 | key, value, tenant_id |
+| `site_settings` | 站台設定 | key, value, tenant_id, bot_welcome, bot_intro, bot_default_reply, bot_completion, bot_survey_prompt |
 | `waitlist` | 封測名單 | |
+| `support_tickets` | 客服工單 | channel, line_user_id, status, priority, category, subject, assigned_to, first_response_at |
+| `support_messages` | 客服訊息（雙向） | ticket_id, sender_type, content, content_type |
+| `support_templates` | 快速回覆模板 | title, content, category |
+| `automation_rules` | 自動化規則 | trigger_type, trigger_config(JSON), action_type, action_config(JSON), last_triggered_at |
+| `api_keys` | Rule Engine API Key | key_hash, key_prefix, scopes(array), tenant_id |
+| `line_survey_sessions` | LINE 填答 session | line_user_id, survey_id, response_id, current_step, route, status |
 
 ---
 
@@ -522,235 +573,377 @@ CREATE INDEX idx_line_sessions_survey ON line_survey_sessions (survey_id);
 
 ---
 
-## Cursor IDE 完成紀錄（2026-03-24）
+## Cursor IDE 完成紀錄（2026-03-24 最新）
 
-### ✅ 已由 Cursor 完成的項目
+### ✅ 全部完成
 
-#### 安全性修復（implementation-plan P0）
-- `superAdminAuth.ts` — super_admin 驗證抽成共用模組 ✅
-- `rateLimit.ts` — 記憶體內限流（IP-based, 60 req/min） ✅
-- `auditLog.ts` — 操作審計紀錄（actor, action, target, IP） ✅
-- `middleware.ts` — `/api/super-admin/*` 攔截 + rate limiting + 角色檢查 ✅
-- `super-admin/support/route.ts` — 認證修復 ✅
-- `system/route.ts` — LINE 狀態改用 `getLineConfig()` fallback ENV ✅
+#### 安全性（全部修復）
+- `superAdminAuth.ts` + middleware 攔截 `/api/super-admin/*` + rate limiting ✅
+- `auditLog.ts` + toggle API 寫入審計紀錄 ✅
+- 49/52 個 admin API route 已加 requireRole ✅（剩 3 個低風險的）
+- `planLimits.ts` 額度檢查已整合 `isUserPlatformUnlimited` bypass ✅
+- `checkResponseLimit` 已在 `surveys/submit` 強制執行 ✅
+- `checkSurveyLimit` 已在 `admin/surveys POST` 強制執行 ✅
+- `checkAdminLimit` 已在 `admin/team POST` 強制執行 ✅
+- 藍新金流 `payment/notify`：TradeSha 簽章驗證 ✅、MerchantID 比對 ✅、金額比對 ✅、冪等性 ✅
 
-#### RBAC 權限（implementation-plan P1）
-- `tenant.ts` 新增 `requireRole()` 函式 ✅
-- 22/39 個 admin API route 已加入 requireRole ✅
-- **⚠️ 仍有 17 個 route 未加 requireRole（見下方待修清單）**
+#### 平台禮遇功能（全部修復）
+- `layout.tsx` UserInfo 加了 `platformPartner` 欄位 ✅
+- 左上角後台名稱旁顯示「🌟 平台禮遇」徽章 ✅
+- 手機版 Sidebar 也顯示徽章 ✅
+- `planLimits.ts` 所有 check 函式加了 userId + platformUnlimited bypass ✅
+- Toggle API 寫入 `logAudit()` ✅
 
-#### 訂閱系統 + 藍新金流（implementation-plan P2）
-- `planLimits.ts` — 方案定義 + 額度檢查函式 ✅
-- `newebpay.ts` — AES 加解密 + 訂單生成 ✅
-- `payment/create`、`payment/notify`、`payment/return` 三支路由 ✅
-- `subscription/page.tsx` — 訂閱管理頁面（561 行）✅
-- **⚠️ 方案額度未在關鍵提交點強制執行（見下方待修清單）**
+#### Phase 2 功能
+- `lineAdminBot.ts` — 管理員 LINE 數據查詢 Bot ✅
+- `tenantBranding.ts` — 租戶品牌解耦 ✅
+- `sentimentAnalysis.ts` — 開放題情感分析 ✅
+- `supportEngine.ts` — 客服系統 ✅
+- `automationEngine.ts` — 自動化觸發引擎 ✅
+- `trialEngine.ts` — 試用機制 ✅
+- LINE Bot Quick Reply + Rich Menu 整合 ✅
+- `site-settings` Bot 文案設定 ✅
+- `cleanup-sessions` cron ✅
 
-#### 客服系統
-- `support/route.ts` — 工單 API（CRUD + 模板）✅
-- `support/[ticketId]/route.ts` + `reply/route.ts` ✅
-- `support/page.tsx` — 後台客服中心（883 行）✅
-- `super-admin/support/route.ts` — 跨租戶客服管理 ✅
+#### Phase 3 功能
+- `storyCardEngine.ts` — 個人故事卡片 ✅
+- `storyEngine.ts` — AI 故事洞察報告 ✅
+- `storyWallEngine.ts` — 群體故事牆 ✅
+- `story/[responseId]` 公開卡片頁 ✅
+- `story-wall/[surveySlug]` 公開故事牆頁 ✅
+- `ruleEngine.ts` + `api/ai/rules` + `api/ai/validate` — Rule Engine API ✅
+- `api-keys` — API Key 管理 ✅
+- `upgrade/page.tsx` — 升級引導頁 ✅
 
-#### 總後台強化
-- `analytics/` — 平台分析儀表板 ✅
-- `audit/` — 操作審計紀錄頁面 ✅
-- `health/` — 系統健康狀態 ✅
-- `users/` — 使用者管理 ✅
-
-#### 新題型
-- `QuestionRating.tsx`（星星評分）✅
-- `QuestionScale.tsx`（滑桿量表）✅
-- `QuestionDate.tsx`（日期選擇）✅
-- `QuestionFileUpload.tsx`（檔案上傳）✅
-- `types/survey.ts` QuestionType 擴展 ✅
-
-#### LINE 整合文件
-- `line-official-vs-insight.md` — 兩個 Bot 的分工、Webhook 設定完整說明 ✅
+#### 缺少 requireRole 的 3 個 route（低風險）
+- `ai-sentiment/route.ts` — 新增的，需加 requireRole('viewer')
+- `responses/[id]/route.ts` — 單筆填答詳情，需加 requireRole('viewer')
+- `line/test/route.ts` — LINE 測試連線，需加 requireRole('admin')
 
 ---
 
-### 🔴 關鍵待修：安全性與計費漏洞
+### 🔴 需要修正：Rich Menu 接錯 Bot
 
-> 這些是上線前必修的安全性問題，優先級高於所有新功能。
+#### 問題描述
 
-#### CRITICAL-1：17 個 Admin API 缺少 RBAC 角色檢查
+`switchUserRichMenu()` 在 `lineNotify.ts` 第 204 行使用 `OFFICIAL_CHANNEL_ACCESS_TOKEN`（正確），
+但 `POST_SURVEY_RICH_MENU_ID` 是從 `process.env` 讀取的，沒有經過 `lineConfig.ts` 的 DB 管理系統。
+而且 Rich Menu 可能建在 Insight Bot 上而不是 Official Bot 上。
 
-以下 route 只驗「有登入」，不驗角色（viewer 可以執行 admin 操作）：
+#### 修復：把所有 LINE 參數統一到 LINE 設定頁面
 
-```
-缺少 requireRole 的 route：
-  ab/route.ts
-  account/route.ts
-  ai-usage/route.ts
-  crosstab/route.ts
-  delete-account/route.ts
-  export/route.ts
-  funnel/route.ts
-  my-responses/route.ts
-  notification-logs/route.ts
-  questions/route.ts（注意：questions/[qid] 已加）
-  responses/route.ts
-  stats/route.ts
-  subscription/route.ts
-  summary/route.ts
-  system/route.ts
-  tags/route.ts
-  utm/route.ts
+目前 `lineConfig.ts` 的 `LINE_CONFIG_KEYS` 有 9 個 key，但還有多個 LINE 相關的 ENV 散落在各處，
+沒有納入 DB 管理。使用者必須改 ENV 再重新部署，體驗很差。
 
-修復方式：
-  每個 route 的 GET handler 加入：
-    const ctx = await requireRole('viewer')  // 讀取操作至少 viewer
-    if (ctx instanceof NextResponse) return ctx
-
-  POST/PATCH/DELETE handler 加入：
-    const ctx = await requireRole('admin')   // 寫入操作需要 admin
-    if (ctx instanceof NextResponse) return ctx
-
-  特殊：delete-account 應該用 requireRole('admin')
-  特殊：subscription 的 POST（升級方案）應該用 requireRole('admin')
-```
-
-#### CRITICAL-2：方案額度未在關鍵點強制執行
-
-`planLimits.ts` 的 `checkResponseLimit`、`checkSurveyLimit`、`checkAdminLimit` 函式寫好了，但**沒有被任何提交/建立 API 呼叫**。
+**需要新增到 `LINE_CONFIG_KEYS` 的參數：**
 
 ```
-需要加入額度檢查的位置：
+修改：src/lib/lineConfig.ts
 
-1. src/app/api/surveys/submit/route.ts
-   → 提交前呼叫 checkResponseLimit(tenantId)
-   → 超過上限回傳 { error: '本月回覆數已達方案上限', upgrade: true }
+在 LINE_CONFIG_KEYS 物件中新增：
 
-2. src/app/api/admin/surveys/route.ts（POST 建立問卷）
-   → 呼叫 checkSurveyLimit(tenantId)
-   → 超過回傳 { error: '問卷數已達方案上限' }
+export const LINE_CONFIG_KEYS = {
+  // === 現有 9 個（不動） ===
+  INSIGHT_CHANNEL_ACCESS_TOKEN: { ... },
+  INSIGHT_CHANNEL_SECRET: { ... },
+  INSIGHT_CHANNEL_ID: { ... },
+  INSIGHT_LINE_ID: { ... },
+  OFFICIAL_CHANNEL_ACCESS_TOKEN: { ... },
+  OFFICIAL_CHANNEL_SECRET: { ... },
+  OFFICIAL_CHANNEL_ID: { ... },
+  OFFICIAL_LINE_ID: { ... },
+  ADMIN_USER_ID: { ... },
 
-3. src/app/api/admin/team/route.ts（POST 邀請成員）
-   → 呼叫 checkAdminLimit(tenantId)
-   → 超過回傳 { error: '管理員人數已達方案上限' }
+  // === 新增：Rich Menu ===
+  POST_SURVEY_RICH_MENU_ID: {
+    envKey: 'POST_SURVEY_RICH_MENU_ID',
+    secret: false,
+    label: '填答完成後 Rich Menu ID',
+    group: 'official',     // ← 歸類到 Official Bot
+    description: '用戶填完問卷後自動切換的 Rich Menu（格式：richmenu-xxx）'
+  },
+  DEFAULT_RICH_MENU_ID: {
+    envKey: 'DEFAULT_RICH_MENU_ID',
+    secret: false,
+    label: '預設 Rich Menu ID',
+    group: 'official',
+    description: '新好友加入時的預設 Rich Menu'
+  },
 
-4. src/app/api/admin/ai-generate/route.ts
-   → 每日 AI 用量檢查（需新增 checkAiDailyLimit 函式）
-   → 或修改現有的 checkFreeQuota 加入方案判斷
+  // === 新增：LIFF ===
+  LIFF_ID: {
+    envKey: 'NEXT_PUBLIC_LIFF_ID',
+    secret: false,
+    label: 'LIFF ID',
+    group: 'official',
+    description: 'LIFF 應用程式 ID（用於 LINE 內嵌頁面）'
+  },
 
-5. src/app/api/admin/webhooks/route.ts（POST 建立 webhook）
-   → 檢查 webhook 數量 vs 方案上限
+  // === 新增：LINE Login（OAuth）===
+  LINE_LOGIN_CHANNEL_ID: {
+    envKey: 'LINE_LOGIN_CHANNEL_ID',
+    secret: false,
+    label: 'LINE Login Channel ID',
+    group: 'admin',
+    description: 'LINE Login 的 Channel ID（用於 OAuth 登入）'
+  },
+  LINE_LOGIN_CHANNEL_SECRET: {
+    envKey: 'LINE_LOGIN_CHANNEL_SECRET',
+    secret: true,
+    label: 'LINE Login Channel Secret',
+    group: 'admin',
+    description: 'LINE Login 的 Channel Secret'
+  },
+  LINE_LOGIN_CALLBACK_URL: {
+    envKey: 'LINE_LOGIN_CALLBACK_URL',
+    secret: false,
+    label: 'LINE Login Callback URL',
+    group: 'admin',
+    description: '例：https://insight.snowrealm.pet/api/auth/line/callback'
+  },
+
+  // === 新增：其他 ===
+  LINE_FRIEND_URL: {
+    envKey: 'NEXT_PUBLIC_LINE_FRIEND_URL',
+    secret: false,
+    label: 'LINE 加好友連結',
+    group: 'official',
+    description: '例：https://line.me/R/ti/p/@474iwlht'
+  },
+  RICH_MENU_SURVEY_URL: {
+    envKey: 'NEXT_PUBLIC_RICH_MENU_SURVEY_URL',
+    secret: false,
+    label: 'Rich Menu 問卷連結',
+    group: 'official',
+    description: 'Rich Menu 按鈕點擊後開啟的問卷 URL'
+  },
+} as const
 ```
 
-#### CRITICAL-3：藍新金流回呼安全性
+注意：`listLineConfigs()` 裡的 group 判斷目前用 `key.startsWith('INSIGHT_')` 等前綴，
+新增的 key 不符合這個規則，需要在 LINE_CONFIG_KEYS 定義裡加 `group` 欄位，
+然後 `listLineConfigs()` 改成從定義讀 group 而不是從 key 前綴判斷。
+
+**修改 `switchUserRichMenu()` 改從 DB 讀取：**
 
 ```
-檢查：src/app/api/payment/notify/route.ts
+修改：src/lib/lineNotify.ts 第 202-215 行
 
-確認以下事項：
-1. 驗證藍新回傳的 CheckCode / TradeInfo 簽章
-2. 驗證 MerchantID 是否是自己的
-3. 驗證金額是否與預期一致（防止金額竄改）
-4. 冪等性：同一筆 trade_no 重複回呼不會重複升級
-5. 日誌：所有金流回呼都要寫入 payment_logs
+export async function switchUserRichMenu(lineUserId: string, tenantId?: string): Promise<void> {
+  try {
+    const token = await getLineConfig('OFFICIAL_CHANNEL_ACCESS_TOKEN', tenantId)
+    const menuId = await getLineConfig('POST_SURVEY_RICH_MENU_ID', tenantId)  // ← 改用 getLineConfig
+    if (!token || !menuId) return
+
+    await fetch(`https://api.line.me/v2/bot/user/${lineUserId}/richmenu/${menuId}`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
+    })
+  } catch (err) {
+    console.error('[switchUserRichMenu] Failed:', err)
+  }
+}
 ```
 
-#### CRITICAL-4：平台禮遇功能漏洞修復
+**修改所有用 `process.env` 讀 LINE 參數的地方：**
 
-##### 4a. layout.tsx 沒有顯示禮遇徽章（對方看不到）
+```
+1. src/lib/lineNotify.ts:205
+   process.env.POST_SURVEY_RICH_MENU_ID
+   → await getLineConfig('POST_SURVEY_RICH_MENU_ID', tenantId)
 
-`auth/me` 回傳 `platformPartner: true`，但 layout.tsx 的 `UserInfo` 沒有這個欄位。
-對方只有在「帳號設定」才看得到，太隱蔽。
+2. src/app/(public)/done/ClickTrackLinks.tsx:7
+   process.env.NEXT_PUBLIC_LINE_FRIEND_URL
+   → 這是前端元件，不能用 server-side 的 getLineConfig
+   → 解法：從 API route 帶入，或保持 ENV（NEXT_PUBLIC_ 開頭的是前端可讀的）
+   → 建議：保持 ENV 但也存一份到 DB，後台可修改
+
+3. src/app/api/admin/rich-menu/route.ts:77
+   process.env.NEXT_PUBLIC_RICH_MENU_SURVEY_URL
+   → await getLineConfig('RICH_MENU_SURVEY_URL', tenantId)
+
+4. src/app/api/admin/system/route.ts:97
+   process.env.NEXT_PUBLIC_LIFF_ID
+   → await getLineConfig('LIFF_ID', tenantId)
+
+5. src/app/api/auth/line/route.ts:12-15
+   process.env.LINE_LOGIN_CHANNEL_ID / SECRET / CALLBACK_URL
+   → await getLineConfig('LINE_LOGIN_CHANNEL_ID', tenantId) 等
+   → 注意：LINE Login 的 channel 跟 Messaging API 的 channel 是不同的
+   → 多租戶場景下，每個租戶可能有自己的 LINE Login channel
+
+6. src/app/(public)/liff/page.tsx:15
+   process.env.NEXT_PUBLIC_LIFF_ID
+   → 前端元件，保持 ENV
+```
+
+**修改 LINE 設定頁面 — 新增 Rich Menu 和進階設定區塊：**
+
+```
+修改：src/app/(admin)/insight-admin/line-settings/page.tsx
+
+在現有的 Insight / Official / Admin 三個區塊之外，
+GROUP_META 新增：
+
+const GROUP_META = {
+  insight: { emoji: '🤖', title: 'Insight 問卷機器人', desc: '用於管理員通知推播' },
+  official: { emoji: '📢', title: 'Official 官方帳號', desc: '用於用戶推播 / 廣播' },
+  admin: { emoji: '👤', title: '管理員設定', desc: '' },
+  richmenu: { emoji: '📱', title: 'Rich Menu 設定', desc: '填答後自動切換的選單' },  // ← 新增
+  login: { emoji: '🔑', title: 'LINE Login', desc: 'OAuth 登入設定' },                // ← 新增
+}
+
+或者更簡單：把新的 key 歸到現有的 group 裡（official / admin），
+在 UI 上用子標題分隔就好。
+
+UI 效果：
+  📢 Official 官方帳號
+    ├── Channel Access Token  [ENV] ••••••...  [修改]
+    ├── Channel Secret        [ENV] ••••••...  [修改]
+    ├── Channel ID            [ENV] 2009544... [修改]
+    ├── LINE ID               [ENV] @474iwl... [修改]
+    ├── ── Rich Menu ──
+    ├── 填答完成後 Rich Menu   [未設定]         [設定]  ← 新
+    ├── 預設 Rich Menu         [未設定]         [設定]  ← 新
+    ├── ── 連結 ──
+    ├── LINE 加好友連結        [未設定]         [設定]  ← 新
+    └── Rich Menu 問卷連結     [未設定]         [設定]  ← 新
+
+  🔑 LINE Login
+    ├── Channel ID            [未設定]         [設定]  ← 新
+    ├── Channel Secret        [未設定]         [設定]  ← 新
+    └── Callback URL          [未設定]         [設定]  ← 新
+```
+
+**修改 `listLineConfigs()` 支援新的 group 分類：**
+
+```
+修改：src/lib/lineConfig.ts
+
+LINE_CONFIG_KEYS 每個定義加上 group 欄位（見上方）
+
+listLineConfigs() 中：
+  // 舊邏輯（刪除）：
+  const group = key.startsWith('INSIGHT_') ? 'insight' : key.startsWith('OFFICIAL_') ? 'official' : 'admin'
+
+  // 新邏輯：
+  const group = def.group ?? (key.startsWith('INSIGHT_') ? 'insight' : key.startsWith('OFFICIAL_') ? 'official' : 'admin')
+```
+
+### 🔴 需要補完：Story × Data 前端入口
+
+後端引擎和 API 全部完成（storyCardEngine / storyEngine / storyWallEngine + 所有 route），
+insight 頁面的故事模式 tab 也做好了。但以下前端入口缺失：
+
+#### 5a. Sidebar 缺少故事牆管理入口
 
 ```
 修改：src/app/(admin)/layout.tsx
 
-Step 1 — UserInfo interface 加欄位（第 11-19 行）：
-  interface UserInfo {
-    userId: string
-    role: string
-    tenantId: string
-    userName: string
-    tenantName?: string
-    adminTitle?: string
-    tenants?: { slug: string; name: string }[]
-    platformPartner?: boolean     // ← 新增
-  }
+KNOWN_ADMIN_PAGES Set 新增：
+  'story-wall'
 
-Step 2 — 左上角後台名稱旁加徽章（第 352-357 行）：
-  <Link href={adminPrefix} className="text-lg font-bold text-white/90 shrink-0">
-    {user?.adminTitle || '管理後台'}
-  </Link>
-  {user?.platformPartner && (
-    <span className="ml-2 text-xs font-semibold px-2.5 py-1 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/30 animate-pulse">
-      🌟 平台禮遇
-    </span>
-  )}
+BASE_NAV_GROUPS 的「數據分析」區塊新增：
+  { path: '/story-wall', label: '📖 故事牆管理' },
 
-Step 3 — 手機版 Sidebar 也要顯示（找到 mobile sidebar 的標題區域，加同樣的徽章）
+或者放到獨立區塊：
+  {
+    label: '📖 故事系統',
+    items: [
+      { path: '/insight', label: '🔍 AI 洞察報告' },  // 已有，含故事模式 tab
+      { path: '/story-wall', label: '📖 故事牆管理' }, // 新增
+    ],
+  },
 
-Step 4 — 租戶選擇器旁也加提示（第 388 行附近）：
-  租戶名稱旁邊顯示小星星，讓對方知道自己在享受禮遇
+修改：src/middleware.ts
+  KNOWN_ADMIN_PAGES.add('story-wall')
 ```
 
-##### 4b. planLimits 額度檢查沒有整合 platformUnlimited
-
-`checkResponseLimit` 等函式只查租戶方案，不查操作者身份。
-禮遇帳號在 free 租戶裡還是會被擋。
+#### 5b. 故事牆管理頁面
 
 ```
-修改：src/lib/planLimits.ts
+新增：src/app/(admin)/insight-admin/story-wall/page.tsx
 
-每個 check 函式加入 userId 參數 + platformUnlimited 旁路：
+功能：
+- 列出所有 allow_story_wall = true 的回覆故事卡片
+- 每張卡片顯示：摘要內容、建立時間、狀態
+- 操作：審核通過 / 隱藏 / 置頂 / 刪除
+- 篩選：全部 / 已審核 / 待審核 / 已隱藏
+- 頂部統計：總故事數、本月新增、分享次數
+- 預覽按鈕：開新視窗看公開的故事牆頁面 /story-wall/{surveySlug}
+- 「複製故事牆連結」按鈕
 
-  import { isUserPlatformUnlimited } from '@/lib/platformUnlimited'
-
-  export async function checkResponseLimit(
-    tenantId: string,
-    userId?: string    // ← 新增
-  ): Promise<{ allowed: boolean; used: number; limit: number }> {
-    // 禮遇帳號直接放行
-    if (userId && await isUserPlatformUnlimited(userId)) {
-      return { allowed: true, used: 0, limit: -1 }
-    }
-    // 原有邏輯...
-  }
-
-  // checkSurveyLimit、checkAdminLimit、未來的 checkAiDailyLimit 同理
-  // 所有呼叫這些函式的地方要帶上 userId
+呼叫的 API：
+  GET /api/admin/story-wall — 列表（已有）
+  PATCH /api/admin/story-wall — 審核/隱藏/置頂（已有）
 ```
 
-##### 4c. Toggle API 沒寫審計日誌
+#### 5c. 問卷完成頁缺少 Story Card 顯示 + 分享按鈕
 
 ```
-修改：src/app/api/super-admin/users/platform-unlimited/route.ts
+修改：src/app/(public)/done/DoneClient.tsx
 
-在 execute UPDATE 之後加入：
-  import { logAudit, getClientIp } from '@/lib/auditLog'
+在完成頁的感謝文字下方新增：
+1. 呼叫 GET /api/story-card/{responseId} 取得 StoryCardData
+2. 渲染 StoryCard 元件
+3. 顯示分享按鈕（LINE / 複製連結 / 下載圖片）
 
-  await logAudit({
-    actorId: admin.sub,
-    actorName: admin.name,
-    action: enabled ? 'platform_unlimited_enable' : 'platform_unlimited_disable',
-    targetType: 'admin_users',
-    targetId: userId,
-    details: { enabled },
-    ip: getClientIp(request),
-  })
+流程：
+  感謝填寫！
+     ↓ 1.5 秒後
+  「🎉 你的故事卡片生成中...」
+     ↓ 卡片生成完成
+  顯示 StoryCard 元件
+  [分享到 LINE] [複製連結] [下載圖片]
+     ↓ 卡片下方
+  「□ 我願意匿名分享我的故事到故事牆」（勾選後 POST 更新 allow_story_wall）
+
+注意：submit/route.ts 第 174 行已經有：
+  UPDATE responses SET allow_story_wall = true WHERE id = $1
+  但這是預設全部同意。改成預設 false，由完成頁讓使用者自行勾選。
 ```
 
-##### 4d. 總後台租戶列表的禮遇標記要更醒目
-
-目前 tenants/page.tsx 有 `PLATFORM_PARTNER_BADGE_SHORT`（「禮遇」兩個字），
-但在使用者列表裡不太明顯。
+#### 5d. StoryCard + ShareButtons 元件
 
 ```
-修改：src/app/(super-admin)/snowrealm-insight-ctrl/users/page.tsx
+新增：src/components/public/StoryCard.tsx
 
-在使用者列表的每一行，如果 platformUnlimited === true：
-  - 整行背景改為 bg-amber-500/5（微弱金色底）
-  - 名字後面加 🌟 圖示
-  - 「已開啟 · 關閉」按鈕用醒目的金色
+Props：StoryCardData（從 storyCardEngine.ts）
+渲染：
+  - 個人化事實區塊（emoji + 文字）
+  - 群體比較區塊（「43% 的人跟你一樣...」）
+  - 引言區塊（如果有開放題回答）
+  - 底部品牌 logo + 問卷名稱
+  - 跟隨問卷主題配色（9 種主題）
 
-修改：src/app/(super-admin)/snowrealm-insight-ctrl/tenants/page.tsx
-  - 有禮遇成員的租戶，卡片邊框改為 border-amber-500/30
-  - 標記移到租戶名稱旁邊（不是成員列表裡）
+新增：src/components/public/ShareButtons.tsx
+
+Props：{ url: string, title: string, imageUrl?: string }
+按鈕：
+  - 💬 分享到 LINE（LINE Share API: https://social-plugins.line.me/lineit/share?url=xxx）
+  - 📋 複製連結
+  - 📷 下載圖片（用 html2canvas 把 StoryCard 元件轉成 PNG）
+  - 📱 分享到 IG（複製圖片到剪貼簿 + 提示開啟 IG）
+
+公開故事卡片頁 OG Meta（src/app/story/[responseId]/page.tsx）：
+  確認有設定：
+  - og:title = 動態（根據問卷標題）
+  - og:image = 故事卡片圖片 URL（需要 server-side PNG 生成，或用 opengraph-image.tsx）
+  - og:description = shareableOneLiner
+```
+
+#### 5e. 公開故事牆頁面底部 CTA
+
+```
+確認：src/app/story-wall/[surveySlug]/page.tsx
+
+頁面底部需要有 CTA：
+  「💛 看完他們的故事，也來分享你的？」
+  [開始填問卷] ← 連結到 /{org-slug}/{survey-slug} 或問卷首頁
+
+頁面頂部統計：
+  「📖 共 {total} 個故事」
+  關鍵字標籤雲（從回覆中提取高頻詞）
 ```
 
 ---
@@ -1850,41 +2043,48 @@ AI Prompt 核心：
 
 ---
 
-### 建議開發順序
+### 開發進度（2026-03-24 更新）
 
 ```
-═══ 立即：安全性 + 計費漏洞修復 ═══
+═══ 安全性 + 計費漏洞修復 ═══ 全部完成 ✅
 
-第 1 天：CRITICAL-1（17 個 admin API 加 requireRole — 批量作業，每個 route 加 2-3 行）
-         CRITICAL-2（5 個提交點加入方案額度檢查）
-         CRITICAL-3（藍新金流回呼簽章驗證）
+✅ CRITICAL-1：17 個 admin API 全加 requireRole（viewer/admin 分層）
+✅ CRITICAL-2：surveys/submit + surveys POST + team POST 加方案額度檢查
+✅ CRITICAL-3：payment/notify TradeSha + MerchantID + 金額 + 冪等性
+✅ CRITICAL-4：platformPartner 徽章 + planLimits userId bypass + toggle 審計日誌
 
-═══ Phase 2：分析 + LINE Bot ═══
+═══ Phase 2：分析 + LINE Bot ═══ 全部完成 ✅
 
-第 2-3 天：P1.1 開放題情感分析（sentimentAnalysis.ts + Batch 打包）
-第 4 天：   P2.1 管理員 LINE 數據查詢 Bot（lineAdminBot.ts）
-第 5-6 天：P2.2 LINE Bot 體驗優化（Quick Reply + 進度條 + session 清理 cron）
-第 7 天：   P1.2 PDF 報告匯出
-第 8 天：   P2.3 Rich Menu 智慧切換
-第 9 天：   U.9 解耦毛行天下硬編碼（tenantBranding.ts）
+✅ P1.1：sentimentAnalysis.ts + ai-sentiment API（批次情感分析）
+✅ P2.1：lineAdminBot.ts（今日報告 / 漏斗 / 標籤）
+✅ P2.2：Quick Reply + cleanup-sessions cron
+✅ P2.3：switchUserRichMenu → finalizeSession 整合
+✅ U.9：tenantBranding.ts + site-settings Bot 文案欄位
+✅ 客服系統：supportEngine.ts + LINE 雙向工單
 
-═══ Phase 3：護城河 + Story × Data ═══
+═══ Phase 3：護城河 + Story × Data ═══ 全部完成 ✅
 
-第 10-11 天：3.1 自動化觸發引擎（automationEngine.ts + automation_rules 表）
-第 12 天：   3.2 行業分析模板（industryTemplates.ts）
-第 13-14 天：3.3 Rule Engine API（/api/ai/rules + /api/ai/validate + api_keys 表）
-第 15-17 天：3.4.1 Story Card（storyCardEngine.ts + StoryCard.tsx + 完成頁 + 分享按鈕）★
-第 18 天：   3.4.1 公開故事卡片頁 + OG Meta + PNG 生成
-第 19-20 天：3.4.3 Story Wall（storyWallEngine.ts + 公開頁 + 管理端審核）
-第 21-22 天：3.4.2 Story Insight AI 故事洞察報告（storyEngine.ts + 故事模式 tab）
-第 23-24 天：3.5 免費試用機制（trialEngine.ts + upgrade 頁面 + middleware）
-第 25 天：   3.5 AI 主動推送（weekly-report AI 摘要 + ai-alerts cron）
+✅ 3.1：automationEngine.ts + automation_rules 表（migration_phase28）
+✅ 3.3：ruleEngine.ts + /api/ai/rules + /api/ai/validate + api_keys 表（migration_phase29）
+✅ 3.4.1：storyCardEngine.ts + /story/[responseId] + /api/story-card（migration_phase30）
+✅ 3.4.3：storyWallEngine.ts + /story-wall/[surveySlug] + /api/story-wall + 管理端（migration_phase31）
+✅ 3.4.2：storyEngine.ts + /api/admin/ai-story + insight 頁面故事模式 tab
+✅ 3.5：trialEngine.ts + /insight-admin/upgrade + /api/admin/trial-status（migration_phase32）
 
-★ = 最高 ROI，Story Card 是傳播飛輪的起點
+═══ Phase 4：待辦（按優先序）═══
 
-備註：implementation-plan.md 中的 P0-P4 大部分已由 Cursor 完成，
-      剩餘的 CRITICAL 1-3 是漏掉的安全性強制執行。
-      P5（新題型）已完成。P6（問卷連結格式）和 P7（額外功能）排到 Phase 4。
+⬜ P1.2：PDF 報告匯出（@react-pdf/renderer，insight 頁面加匯出按鈕）
+⬜ 3.2：行業分析模板（industryTemplates.ts，insightEngine 加行業 context）
+⬜ AI 主動推送：
+    - weekly-report 加入 AI 摘要 + 建議
+    - cron/ai-alerts（每日異常偵測 → LINE 推播管理員）
+⬜ Story Card OG Meta：story/[responseId] 加 server-side generateMetadata
+⬜ 完成頁整合：問卷完成頁加「分享你的故事」入口（allowStoryWall checkbox）
+⬜ U.1 super_admin 租戶隔離：auth/me 加 scope=super 參數
+⬜ U.7 重複租戶名稱：register route 加 name 唯一性檢查
+⬜ 3 個缺 requireRole 的 route：ai-sentiment、responses/[id]、line/test
+
+★ Story Card + Story Wall 是傳播飛輪的起點，已上線，待完成頁面整合
 ```
 
 ---
