@@ -49,6 +49,11 @@ const MIGRATION_FILES = [
   'migration_phase26_platform_unlimited.sql',
   'migration_phase27_bot_branding.sql',
   'migration_line_survey_sessions.sql',
+  'migration_phase28_automation.sql',
+  'migration_phase29_api_keys.sql',
+  'migration_phase30_story.sql',
+  'migration_phase31_story_wall.sql',
+  'migration_phase32_trial.sql',
 ]
 
 function pgSslOption() {
