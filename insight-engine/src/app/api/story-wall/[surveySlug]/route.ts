@@ -1,9 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { queryOne } from '@/lib/db'
+import { queryOne, query } from '@/lib/db'
 import { getStoryWallItems, getStoryWallCount } from '@/lib/storyWallEngine'
 
 interface SurveyExistRow extends Record<string, unknown> {
   id: string
+}
+
+interface TagRow extends Record<string, unknown> {
+  tag_value: string
+  cnt: string
 }
 
 export async function GET(
@@ -27,12 +32,26 @@ export async function GET(
       return NextResponse.json({ error: 'Not found' }, { status: 404 })
     }
 
-    const [items, total] = await Promise.all([
+    const [items, total, tagRows] = await Promise.all([
       getStoryWallItems(surveySlug, pageSize, offset),
       getStoryWallCount(surveySlug),
+      // 取高頻標籤值作為關鍵字標籤雲（只取首頁時）
+      page === 1 ? query<TagRow>(
+        `SELECT ut.tag_value, count(*) as cnt
+         FROM user_tags ut
+         JOIN responses r ON ut.response_id = r.id
+         JOIN surveys s ON r.survey_id = s.id
+         WHERE s.slug = $1 AND r.allow_story_wall = true
+         GROUP BY ut.tag_value
+         ORDER BY cnt DESC
+         LIMIT 15`,
+        [surveySlug]
+      ) : Promise.resolve([]),
     ])
 
-    return NextResponse.json({ items, total, page, pageSize })
+    const topKeywords = tagRows.map((t) => t.tag_value)
+
+    return NextResponse.json({ items, total, page, pageSize, topKeywords })
   } catch (error) {
     console.error('[story-wall] GET error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

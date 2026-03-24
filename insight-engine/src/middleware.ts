@@ -37,7 +37,7 @@ function withTenantHeaders(request: NextRequest, auth: TokenPayload, access: { t
 const KNOWN_ADMIN_PAGES = new Set([
   'ab', 'account', 'ai-settings', 'api-keys', 'broadcast', 'crosstab', 'export', 'funnel', 'insight', 'line-settings',
   'my-responses', 'notification-rules', 'notification-styles', 'panel', 'rich-menu',
-  'site-settings', 'story-wall', 'subscription', 'support', 'surveys', 'tag-rules', 'tags', 'team', 'templates', 'tenants',
+  'site-settings', 'story-wall', 'subscription', 'support', 'survey-templates', 'surveys', 'tag-rules', 'tags', 'team', 'templates', 'tenants',
   'theme-settings', 'utm', 'utm-links', 'upgrade', 'waitlist', 'webhooks', 'responses',
 ])
 

@@ -18,6 +18,7 @@ interface SiteSettings {
   bot_default_reply: string
   bot_completion: string
   bot_survey_prompt: string
+  bot_admin_passcode: string
 }
 
 const CARD = 'bg-slate-800/50 border border-slate-700/50'
@@ -28,6 +29,7 @@ export default function SiteSettingsPage() {
     og_image_url: '', og_site_name: '', og_locale: 'zh_TW', twitter_card: 'summary_large_image',
     favicon_url: '',
     bot_welcome: '', bot_intro: '', bot_default_reply: '', bot_completion: '', bot_survey_prompt: '',
+    bot_admin_passcode: '',
   })
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -56,6 +58,7 @@ export default function SiteSettingsPage() {
           bot_default_reply: data.bot_default_reply ?? '',
           bot_completion: data.bot_completion ?? '',
           bot_survey_prompt: data.bot_survey_prompt ?? '',
+          bot_admin_passcode: data.bot_admin_passcode ?? '',
         })
         setLoading(false)
       })
@@ -296,6 +299,17 @@ export default function SiteSettingsPage() {
           placeholder="例：輸入「問卷」開始填寫，或輸入「客服」聯繫我們。"
           textarea
         />
+        <div>
+          <label className="block text-sm text-slate-400 mb-1">管理員註冊口令（Insight Bot 使用）</label>
+          <input
+            type="text"
+            value={settings.bot_admin_passcode}
+            onChange={e => update('bot_admin_passcode', e.target.value)}
+            placeholder="留空則使用系統預設口令"
+            className="w-full bg-slate-900 border border-slate-700 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-t-accent/50 focus:border-t-accent placeholder:text-slate-600"
+          />
+          <p className="mt-1 text-xs text-slate-500">用戶在 Insight Bot 輸入此口令後，可取得一次性管理員註冊連結。</p>
+        </div>
       </section>
 
       {/* Save */}

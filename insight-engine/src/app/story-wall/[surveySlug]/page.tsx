@@ -9,6 +9,7 @@ interface WallResponse {
   total: number
   page: number
   pageSize: number
+  topKeywords?: string[]
 }
 
 function SkeletonCard() {
@@ -49,6 +50,7 @@ export default function StoryWallPage() {
   const [page, setPage] = useState(1)
   const [loading, setLoading] = useState(true)
   const [loadingMore, setLoadingMore] = useState(false)
+  const [topKeywords, setTopKeywords] = useState<string[]>([])
   const PAGE_SIZE = 20
 
   const fetchPage = async (pageNum: number, append: boolean) => {
@@ -63,6 +65,7 @@ export default function StoryWallPage() {
       setItems((prev) => append ? [...prev, ...data.items] : data.items)
       setTotal(data.total)
       setPage(pageNum)
+      if (!append && data.topKeywords) setTopKeywords(data.topKeywords)
     } catch {
       // silent — empty state handles it
     } finally {
@@ -83,8 +86,20 @@ export default function StoryWallPage() {
         <header className="mb-8 text-center">
           <h1 className="text-2xl font-bold text-white mb-2">故事牆</h1>
           <p className="text-white/50 text-sm">
-            {loading ? '載入中...' : total > 0 ? `共 ${total} 位填答者分享了他們的故事` : ''}
+            {loading ? '載入中...' : total > 0 ? `📖 共 ${total} 個故事` : ''}
           </p>
+          {!loading && topKeywords.length > 0 && (
+            <div className="mt-4 flex flex-wrap justify-center gap-2">
+              {topKeywords.map((kw) => (
+                <span
+                  key={kw}
+                  className="px-3 py-1 rounded-full bg-slate-700/60 text-white/60 text-xs border border-slate-600/40"
+                >
+                  {kw}
+                </span>
+              ))}
+            </div>
+          )}
         </header>
 
         {loading && (

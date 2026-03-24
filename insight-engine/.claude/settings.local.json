@@ -19,7 +19,10 @@
       "Read(//d/SnowRealmRebirth/snowrealm-insight-engine/insight-engine/src/app/api/admin/$route/**)",
       "Bash(done)",
       "Bash(do echo:*)",
-      "Bash(node scripts/db-push-all.js)"
+      "Bash(node scripts/db-push-all.js)",
+      "Bash(head -30 \"src/app/\\(admin\\)/insight-admin/story-wall/page.tsx\")",
+      "Bash(head -20 src/app/report/[slug]/page.tsx)",
+      "Bash(head -60 src/app/api/story-wall/[surveySlug]/route.ts)"
     ]
   }
 }

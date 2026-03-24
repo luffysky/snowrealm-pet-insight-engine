@@ -320,8 +320,13 @@ export async function startSurveySession(
   const responseId = await createResponse(survey.id, survey.tenant_id, lineUserId)
   await createSession(lineUserId, survey.id, responseId, survey.tenant_id)
 
+  const { surveyPrompt } = await getTenantBranding(survey.tenant_id)
+  const startHint = surveyPrompt
+    ? `📋 開始填答問卷！\n共 ${questions.length} 題\n\n${surveyPrompt}\n\n輸入「離開」可隨時中止`
+    : `📋 開始填答問卷！\n共 ${questions.length} 題\n\n輸入「離開」可隨時中止`
+
   return [
-    { type: 'text', text: `📋 開始填答問卷！\n共 ${questions.length} 題，填完可加入封測名單 💛\n\n輸入「離開」可隨時中止` },
+    { type: 'text', text: startHint },
     buildQuestionMessage(questions[0], 0, questions.length),
   ]
 }

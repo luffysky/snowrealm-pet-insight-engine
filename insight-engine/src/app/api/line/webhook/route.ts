@@ -4,8 +4,10 @@ import { query, queryOne } from '@/lib/db'
 import { generateInviteToken } from '@/lib/auth'
 import { getLineConfig } from '@/lib/lineConfig'
 import { isLineAdmin, handleAdminCommand } from '@/lib/lineAdminBot'
+import { getTenantBranding } from '@/lib/tenantBranding'
 
-const PASSCODE = '我要當足跡管理員'
+const DEFAULT_TENANT = process.env.DEFAULT_TENANT_SLUG || 'default'
+const PASSCODE_FALLBACK = '我要成為管理員'
 
 /**
  * LINE Insight (問卷帳號) Webhook
@@ -56,8 +58,12 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         }
       }
 
-      // 口令：「我要當足跡管理員」→ 產生一次性註冊連結
-      if (text === PASSCODE) {
+      // 口令：從 DB site_settings 讀取，未設定時 fallback 到 PASSCODE_FALLBACK
+      const branding = await getTenantBranding(DEFAULT_TENANT)
+      const effectivePasscode = branding.adminPasscode || PASSCODE_FALLBACK
+
+      // 口令正確 → 產生一次性管理員註冊連結
+      if (text === effectivePasscode) {
         // 檢查是否已有帳號
         const existing = await queryOne(
           `SELECT id FROM admin_users WHERE line_user_id = $1 AND username IS NOT NULL`,

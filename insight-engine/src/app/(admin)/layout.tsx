@@ -23,7 +23,7 @@ interface UserInfo {
 const KNOWN_ADMIN_PAGES = new Set([
   'ab', 'account', 'ai-settings', 'broadcast', 'crosstab', 'export', 'funnel', 'insight', 'line-settings',
   'my-responses', 'notification-rules', 'notification-styles', 'panel', 'rich-menu',
-  'site-settings', 'story-wall', 'subscription', 'support', 'surveys', 'tag-rules', 'tags', 'team', 'templates', 'tenants',
+  'site-settings', 'story-wall', 'subscription', 'support', 'survey-templates', 'surveys', 'tag-rules', 'tags', 'team', 'templates', 'tenants',
   'theme-settings', 'utm', 'utm-links', 'waitlist', 'webhooks', 'responses',
 ])
 
@@ -39,6 +39,7 @@ function extractSlug(pathname: string): string | null {
 const BASE_NAV_ITEMS = [
   { path: '', label: 'Dashboard' },
   { path: '/surveys', label: '問卷管理' },
+  { path: '/survey-templates', label: '📋 模板庫' },
   { path: '/responses', label: '填答列表' },
   { path: '/funnel', label: '漏斗分析' },
   { path: '/crosstab', label: '交叉分析' },
@@ -62,6 +63,7 @@ const BASE_NAV_ITEMS = [
 const BASE_DIRECT = [
   { path: '', label: 'Dashboard' },
   { path: '/surveys', label: '問卷管理' },
+  { path: '/survey-templates', label: '📋 模板庫' },
 ]
 
 const BASE_NAV_GROUPS = [
@@ -120,6 +122,7 @@ const BASE_MOBILE_GROUPS = [
     items: [
       { path: '', label: 'Dashboard' },
       { path: '/surveys', label: '問卷管理' },
+      { path: '/survey-templates', label: '📋 模板庫' },
     ],
   },
   {
