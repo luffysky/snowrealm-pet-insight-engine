@@ -45,29 +45,22 @@ function resolveRoutes(
   answers: Map<string, string | string[]>
 ): Set<string> {
   const active = new Set<string>()
-  // 預設一律包含主路線 A
-  active.add('A')
 
   for (const rule of rules) {
     const branchAnswer = answers.get(rule.branchKey)
-    if (!branchAnswer) continue // 尚未作答此分流題
+    if (!branchAnswer) {
+      // 還沒回答分流題 → 不啟動任何分支路線
+      continue
+    }
 
     const ansArr = Array.isArray(branchAnswer) ? branchAnswer : [branchAnswer]
-    if (ansArr.length === 0) continue
 
-    // 優先走非 A 的特殊分流
-    let matched = false
     for (const ans of ansArr) {
       for (const [route, values] of Object.entries(rule.routes)) {
-        if ((values as string[]).includes(ans) && route !== 'A') {
+        if ((values as string[]).includes(ans)) {
           active.add(route)
-          matched = true
         }
       }
-    }
-    // 若此規則所有答案都只對應到 A，則不需要額外添加（A 已在）
-    if (!matched) {
-      // 仍然走 A，不做事
     }
   }
 
@@ -86,19 +79,18 @@ function filterQuestions(
   }
 
   const branchKeys = new Set(rules.map(r => r.branchKey))
-  // 尚未有任何分流生效（所有分流題都還沒作答）
-  const hasDecided = activeRoutes.size > 1 // 多於 A 就代表已經有至少一條規則生效
+  // 是否已經有至少一條分流規則生效（分流題已作答）
+  const hasAnyBranchDecision = activeRoutes.size > 0
 
   return questions.filter((q) => {
     // 沒有 route 或 route 是 all → 一律顯示
     if (!q.route || q.route === 'all') return true
     // 分流題本身一定要顯示
     if (branchKeys.has(q.key)) return true
-    // 主路線 A 的題目：在還沒有任何分流生效時也顯示
-    if (q.route === 'A') return true
-    // 條件路線的題目：只有當該路線活躍時才顯示
-    if (activeRoutes.has(q.route)) return true
-    return false
+    // 尚未有任何分流決策 → 只顯示 all / 分流題，其餘全隱藏（等待分流）
+    if (!hasAnyBranchDecision) return false
+    // 已有分流決策 → 只顯示活躍路線的題目
+    return activeRoutes.has(q.route)
   })
 }
 
@@ -143,7 +135,7 @@ export function useSurveyFlow({
   answersRef.current = answers
 
   // 路線變更時：清除已不再活躍路線上的獨佔題目答案
-  const prevRoutesRef = useRef<Set<string>>(new Set(['A']))
+  const prevRoutesRef = useRef<Set<string>>(new Set())
   useEffect(() => {
     // 找出上一輪有但這一輪沒有的路線
     const removedRoutes = new Set<string>()
