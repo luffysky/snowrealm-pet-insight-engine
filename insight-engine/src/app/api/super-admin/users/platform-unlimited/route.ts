@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { queryOne, execute } from '@/lib/db'
 import { verifySuperAdminRequest } from '@/lib/superAdminAuth'
+import { logAudit, getClientIp } from '@/lib/auditLog'
 
 export const dynamic = 'force-dynamic'
 
@@ -53,6 +54,16 @@ export async function PATCH(request: NextRequest): Promise<NextResponse> {
       [userId]
     )
   }
+
+  await logAudit({
+    actorId: admin.sub,
+    actorName: admin.name ?? admin.sub,
+    action: enabled ? 'platform_unlimited_enable' : 'platform_unlimited_disable',
+    targetType: 'admin_users',
+    targetId: userId,
+    details: { enabled },
+    ip: getClientIp(request),
+  })
 
   return NextResponse.json({ ok: true, userId, platformUnlimited: enabled })
 }

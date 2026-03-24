@@ -16,6 +16,7 @@ interface UserInfo {
   tenantName?: string
   adminTitle?: string
   tenants?: { slug: string; name: string }[]
+  platformPartner?: boolean
 }
 
 /** 已知的 admin 子頁面路徑（與 middleware 保持一致，用來區分 tenant slug） */
@@ -349,12 +350,19 @@ function AdminLayoutInner({
     <div className={`min-h-screen ${tc.bodyBg} transition-colors duration-300`} style={cssVars} data-admin-theme={theme}>
       <nav className={`border-b ${tc.navBorder} ${tc.navBg} backdrop-blur-sm sticky top-0 z-50 ${tc.headerGlow}`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
-          <Link
-            href={adminPrefix}
-            className="text-lg font-bold text-white/90 shrink-0"
-          >
-            {user?.adminTitle || '管理後台'}
-          </Link>
+          <div className="flex items-center gap-2 shrink-0">
+            <Link
+              href={adminPrefix}
+              className="text-lg font-bold text-white/90"
+            >
+              {user?.adminTitle || '管理後台'}
+            </Link>
+            {user?.platformPartner && (
+              <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/30 animate-pulse">
+                🌟 平台禮遇
+              </span>
+            )}
+          </div>
 
           {/* Desktop nav — 直連 + 分組下拉 */}
           <div className="hidden lg:flex items-center gap-5 text-sm ml-8">
@@ -413,6 +421,9 @@ function AdminLayoutInner({
               <div className="flex items-center gap-2">
                 <span className="text-xs text-slate-500">{user.userName}</span>
                 <span className="text-[10px] text-slate-600 bg-slate-800 px-1.5 py-0.5 rounded">{displayRole}</span>
+                {user.platformPartner && (
+                  <span className="text-[10px] text-amber-400">🌟</span>
+                )}
                 <button onClick={handleLogout} className="text-xs text-slate-500 hover:text-red-400 cursor-pointer">登出</button>
               </div>
             )}

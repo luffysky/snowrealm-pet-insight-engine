@@ -1,4 +1,5 @@
 import { queryOne } from '@/lib/db'
+import { isUserPlatformUnlimited } from '@/lib/platformUnlimited'
 
 export const PLAN_LIMITS = {
   free:       { responses: 1000,  surveys: 3,  admins: 1,  aiDaily: 3,  webhooks: 1,  name: '免費版',   price: 0 },
@@ -19,6 +20,8 @@ export const PLATFORM_PARTNER_EFFECTIVE_LIMITS = {
   name: '平台禮遇',
   price: 0,
 } as const
+
+const UNLIMITED = { allowed: true, used: 0, limit: -1 } as const
 
 export type PlanKey = keyof typeof PLAN_LIMITS
 
@@ -64,7 +67,11 @@ interface CountRow extends Record<string, unknown> {
   count: string
 }
 
-export async function checkResponseLimit(tenantId: string): Promise<{ allowed: boolean; used: number; limit: number }> {
+export async function checkResponseLimit(
+  tenantId: string,
+  userId?: string
+): Promise<{ allowed: boolean; used: number; limit: number }> {
+  if (userId && await isUserPlatformUnlimited(userId)) return { ...UNLIMITED }
   const { plan } = await getTenantPlan(tenantId)
   const limits = getPlanLimits(plan)
   const row = await queryOne<CountRow>(
@@ -78,7 +85,11 @@ export async function checkResponseLimit(tenantId: string): Promise<{ allowed: b
   return { allowed: isWithinLimit(used, limits.responses), used, limit: limits.responses }
 }
 
-export async function checkSurveyLimit(tenantId: string): Promise<{ allowed: boolean; used: number; limit: number }> {
+export async function checkSurveyLimit(
+  tenantId: string,
+  userId?: string
+): Promise<{ allowed: boolean; used: number; limit: number }> {
+  if (userId && await isUserPlatformUnlimited(userId)) return { ...UNLIMITED }
   const { plan } = await getTenantPlan(tenantId)
   const limits = getPlanLimits(plan)
   const row = await queryOne<CountRow>(
@@ -89,7 +100,11 @@ export async function checkSurveyLimit(tenantId: string): Promise<{ allowed: boo
   return { allowed: isWithinLimit(used, limits.surveys), used, limit: limits.surveys }
 }
 
-export async function checkAdminLimit(tenantId: string): Promise<{ allowed: boolean; used: number; limit: number }> {
+export async function checkAdminLimit(
+  tenantId: string,
+  userId?: string
+): Promise<{ allowed: boolean; used: number; limit: number }> {
+  if (userId && await isUserPlatformUnlimited(userId)) return { ...UNLIMITED }
   const { plan } = await getTenantPlan(tenantId)
   const limits = getPlanLimits(plan)
   const row = await queryOne<CountRow>(

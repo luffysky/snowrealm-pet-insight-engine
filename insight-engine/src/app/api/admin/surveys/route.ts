@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server'
 import { listSurveys, createSurvey, setPrimarySurvey, reorderSurveys } from '@/lib/surveyRepo'
 import { getTenantContext, requireRole } from '@/lib/tenant'
 import { checkSurveyLimit } from '@/lib/planLimits'
-import { isUserPlatformUnlimited } from '@/lib/platformUnlimited'
 
 export async function GET(): Promise<NextResponse> {
   const { tenantId } = await getTenantContext()
@@ -26,12 +25,9 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: 'slug 只能包含小寫英數字和 -' }, { status: 400 })
   }
 
-  const platformUnlimited = await isUserPlatformUnlimited(roleCheck.userId)
-  if (!platformUnlimited) {
-    const surveyLimit = await checkSurveyLimit(tenantId)
-    if (!surveyLimit.allowed) {
-      return NextResponse.json({ error: '已達方案問卷數量上限，請升級方案' }, { status: 403 })
-    }
+  const surveyLimit = await checkSurveyLimit(tenantId, roleCheck.userId)
+  if (!surveyLimit.allowed) {
+    return NextResponse.json({ error: '已達方案問卷數量上限，請升級方案' }, { status: 403 })
   }
 
   try {
