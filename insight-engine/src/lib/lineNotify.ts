@@ -191,3 +191,25 @@ export async function notifyUserLogin(info: {
     rows,
   }))
 }
+
+// ━━━━━━━━━━━━━━━━━ Rich Menu ━━━━━━━━━━━━━━━━━
+
+/**
+ * 切換 LINE 用戶的 Rich Menu（填完問卷後）
+ * Rich Menu ID 從 line_configs 讀取
+ * Key: POST_SURVEY_RICH_MENU_ID（存於 site_settings 或 ENV POST_SURVEY_RICH_MENU_ID）
+ */
+export async function switchUserRichMenu(lineUserId: string, _tenantId?: string): Promise<void> {
+  try {
+    const token = await getLineConfig('OFFICIAL_CHANNEL_ACCESS_TOKEN')
+    const menuId = process.env.POST_SURVEY_RICH_MENU_ID ?? null
+    if (!token || !menuId) return
+
+    await fetch(`https://api.line.me/v2/bot/user/${lineUserId}/richmenu/${menuId}`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
+    })
+  } catch (err) {
+    console.error('[switchUserRichMenu] Failed:', err)
+  }
+}

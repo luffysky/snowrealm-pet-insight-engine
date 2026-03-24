@@ -4,7 +4,15 @@
       "Bash(wc -l /d/SnowRealmRebirth/snowrealm-insight-engine/insight-engine/src/lib/*.ts)",
       "Bash(npx tsc:*)",
       "Bash(npm run:*)",
-      "Bash(pwsh -File deploy.ps1 \"feat\\(support\\): LINE 客服工單整合 + U.9 解耦寵物硬編碼\")"
+      "Bash(pwsh -File deploy.ps1 \"feat\\(support\\): LINE 客服工單整合 + U.9 解耦寵物硬編碼\")",
+      "Bash(ls -la /d/SnowRealmRebirth/snowrealm-insight-engine/insight-engine/src/app/\\\\\\(admin\\\\\\)/insight-admin/)",
+      "Bash(grep -r Sidebar /d/SnowRealmRebirth/snowrealm-insight-engine/insight-engine/src/components/ --include=*.tsx)",
+      "Bash(ls:*)",
+      "Bash(grep -r tenantBranding /d/SnowRealmRebirth/snowrealm-insight-engine/insight-engine/src --include=*.ts --include=*.tsx)",
+      "Bash(grep -rn \"bot_welcome_message\\\\|bot_intro_text\\\\|bot_completion_message\" /d/SnowRealmRebirth/snowrealm-insight-engine/insight-engine/src --include=*.ts --include=*.tsx)",
+      "Bash(find:*)",
+      "Bash(grep -rn \"BOT_COMPLETION_MESSAGE\\\\|BRAND_NAME\" /d/SnowRealmRebirth/snowrealm-insight-engine/insight-engine/src/lib --include=*.ts)",
+      "Bash(wc:*)"
     ]
   }
 }

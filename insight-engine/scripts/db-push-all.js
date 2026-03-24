@@ -47,6 +47,7 @@ const MIGRATION_FILES = [
   'migration_phase24_insight_reports.sql',
   'migration_phase25_scheduling.sql',
   'migration_phase26_platform_unlimited.sql',
+  'migration_phase27_bot_branding.sql',
   'migration_line_survey_sessions.sql',
 ]
 

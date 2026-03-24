@@ -3,6 +3,7 @@ import crypto from 'crypto'
 import { query, queryOne } from '@/lib/db'
 import { generateInviteToken } from '@/lib/auth'
 import { getLineConfig } from '@/lib/lineConfig'
+import { isLineAdmin, handleAdminCommand } from '@/lib/lineAdminBot'
 
 const PASSCODE = '我要當足跡管理員'
 
@@ -45,6 +46,15 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     if (event.type === 'message' && event.message?.type === 'text' && userId) {
       const text = (event.message.text as string).trim()
       const replyToken = event.replyToken as string
+
+      // 管理員指令：今日報告 / 漏斗 / 標籤
+      if (await isLineAdmin(userId)) {
+        const adminMessages = await handleAdminCommand(userId, text, 'default')
+        if (adminMessages !== null) {
+          await replyMessages(replyToken, adminMessages, CHANNEL_ACCESS_TOKEN)
+          continue
+        }
+      }
 
       // 口令：「我要當足跡管理員」→ 產生一次性註冊連結
       if (text === PASSCODE) {
@@ -118,8 +128,12 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   return NextResponse.json({ ok: true })
 }
 
-/** 回覆訊息 */
-async function replyMessage(replyToken: string, text: string, accessToken?: string): Promise<void> {
+/** 回覆多則訊息（最多 5 則） */
+async function replyMessages(
+  replyToken: string,
+  messages: { type: string; [key: string]: unknown }[],
+  accessToken?: string
+): Promise<void> {
   const token = accessToken || await getLineConfig('INSIGHT_CHANNEL_ACCESS_TOKEN') || ''
   if (!token) return
   await fetch('https://api.line.me/v2/bot/message/reply', {
@@ -128,11 +142,13 @@ async function replyMessage(replyToken: string, text: string, accessToken?: stri
       'Content-Type': 'application/json',
       Authorization: `Bearer ${token}`,
     },
-    body: JSON.stringify({
-      replyToken,
-      messages: [{ type: 'text', text }],
-    }),
+    body: JSON.stringify({ replyToken, messages }),
   }).catch(() => {})
+}
+
+/** 回覆單則文字訊息 */
+async function replyMessage(replyToken: string, text: string, accessToken?: string): Promise<void> {
+  await replyMessages(replyToken, [{ type: 'text', text }], accessToken)
 }
 
 /** 取得 LINE 使用者名稱 */

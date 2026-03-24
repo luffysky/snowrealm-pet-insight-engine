@@ -51,7 +51,16 @@ interface SessionRow extends Record<string, unknown> {
   status: string
 }
 
-export type LineTextMessage = { type: 'text'; text: string }
+export interface LineTextMessage {
+  type: 'text'
+  text: string
+  quickReply?: {
+    items: Array<{
+      type: 'action'
+      action: { type: 'message'; label: string; text: string }
+    }>
+  }
+}
 
 // ===== 常數 =====
 
@@ -232,16 +241,33 @@ function buildQuestionMessage(row: QuestionRow, step: number, total: number): Li
   const lines: string[] = [`[${step + 1}/${total}] ${row.content}`]
   if (!row.is_required) lines.push('（選填，可輸入「跳過」）')
 
+  const options = parseOptions(row.options)
+
   if (row.type !== 'text') {
     lines.push('')
     if (row.type === 'multiple') {
       const maxHint = row.max_selections ? `最多 ${row.max_selections} 個，` : ''
       lines.push(`（多選，${maxHint}用逗號分隔，例如：1,3）`)
     }
-    parseOptions(row.options).forEach((opt, i) => lines.push(`${i + 1}. ${opt.label}`))
+    options.forEach((opt, i) => lines.push(`${i + 1}. ${opt.label}`))
   }
 
   lines.push('\n輸入「離開」可結束填答')
+
+  const isQuickReply = row.type === 'single' && options.length > 0 && options.length <= 10
+  if (isQuickReply) {
+    return {
+      type: 'text',
+      text: lines.join('\n'),
+      quickReply: {
+        items: options.map((_, i) => ({
+          type: 'action' as const,
+          action: { type: 'message' as const, label: `${i + 1}`, text: `${i + 1}` },
+        })),
+      },
+    }
+  }
+
   return { type: 'text', text: lines.join('\n') }
 }
 

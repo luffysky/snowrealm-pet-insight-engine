@@ -23,6 +23,11 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       twitter_card: 'summary_large_image',
       favicon_url: '',
       extra_meta: {},
+      bot_welcome: '',
+      bot_intro: '',
+      bot_default_reply: '',
+      bot_completion: '',
+      bot_survey_prompt: '',
     })
   }
 
@@ -40,12 +45,16 @@ export async function PUT(request: NextRequest): Promise<NextResponse> {
     await query(
       `INSERT INTO site_settings (
         tenant_id, site_title, site_description, admin_title, og_title, og_description,
-        og_image_url, og_site_name, og_locale, twitter_card, favicon_url, extra_meta, updated_at
-      ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,now())
+        og_image_url, og_site_name, og_locale, twitter_card, favicon_url, extra_meta,
+        bot_welcome, bot_intro, bot_default_reply, bot_completion, bot_survey_prompt,
+        updated_at
+      ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,now())
       ON CONFLICT (tenant_id) DO UPDATE SET
         site_title = $2, site_description = $3, admin_title = $4, og_title = $5, og_description = $6,
         og_image_url = $7, og_site_name = $8, og_locale = $9, twitter_card = $10,
-        favicon_url = $11, extra_meta = $12, updated_at = now()`,
+        favicon_url = $11, extra_meta = $12,
+        bot_welcome = $13, bot_intro = $14, bot_default_reply = $15, bot_completion = $16,
+        bot_survey_prompt = $17, updated_at = now()`,
       [
         tenantId,
         body.site_title ?? '',
@@ -59,6 +68,11 @@ export async function PUT(request: NextRequest): Promise<NextResponse> {
         body.twitter_card ?? 'summary_large_image',
         body.favicon_url ?? '',
         JSON.stringify(body.extra_meta ?? {}),
+        body.bot_welcome ?? '',
+        body.bot_intro ?? '',
+        body.bot_default_reply ?? '',
+        body.bot_completion ?? '',
+        body.bot_survey_prompt ?? '',
       ],
     )
 

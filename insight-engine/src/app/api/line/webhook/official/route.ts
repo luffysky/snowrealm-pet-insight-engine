@@ -4,6 +4,7 @@ import { execute } from '@/lib/db'
 import { createLineToken } from '@/lib/lineToken'
 import { getLineConfig } from '@/lib/lineConfig'
 import { getPrimarySurveySlug } from '@/lib/surveyRepo'
+import { getTenantBranding } from '@/lib/tenantBranding'
 import {
   getActiveSession,
   startSurveySession,
@@ -23,7 +24,6 @@ const DEFAULT_TENANT = process.env.DEFAULT_TENANT_SLUG || 'maoxingtianxia'
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://snowrealm.pet'
 const IG_URL = process.env.NEXT_PUBLIC_IG_URL || ''
-const BRAND_NAME = process.env.NEXT_PUBLIC_BRAND_NAME || '問卷系統'
 
 /**
  * LINE Official Account Webhook
@@ -81,10 +81,11 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         )
       }
 
+      const followBranding = await getTenantBranding(DEFAULT_TENANT)
       await replyMessage(replyToken, [
         {
           type: 'text',
-          text: `歡迎加入 ${BRAND_NAME}！\n\n輸入「問卷」即可填寫，幫我們更了解你的需求 💛`,
+          text: followBranding.welcomeMsg,
         },
       ], CHANNEL_ACCESS_TOKEN)
     }
@@ -163,13 +164,16 @@ async function buildSurveyLink(userId?: string): Promise<string> {
 }
 
 async function getAutoReply(text: string, userId?: string): Promise<LineTextMessage[]> {
-  const surveyLink = await buildSurveyLink(userId)
+  const [surveyLink, branding] = await Promise.all([
+    buildSurveyLink(userId),
+    getTenantBranding(DEFAULT_TENANT),
+  ])
 
   if (/問卷|填問卷|survey/i.test(text)) {
     return [
       {
         type: 'text',
-        text: `📋 問卷調查\n\n花 2 分鐘填寫，讓我們更了解你的需求！\n\n👉 網頁版：${surveyLink}\n\n💬 LINE 對話填答：輸入「LINE填答」即可直接在這裡填寫`,
+        text: `📋 問卷調查\n\n${branding.surveyPrompt}\n\n👉 網頁版：${surveyLink}\n\n💬 LINE 對話填答：輸入「LINE填答」即可直接在這裡填寫`,
       },
     ]
   }
@@ -187,7 +191,7 @@ async function getAutoReply(text: string, userId?: string): Promise<LineTextMess
     return [
       {
         type: 'text',
-        text: `🐾 ${BRAND_NAME}\n\n歡迎使用我們的服務！輸入「問卷」可以填寫問卷，讓我們更了解你的需求。`,
+        text: `💬 ${branding.siteName}\n\n${branding.introText}`,
       },
     ]
   }
@@ -232,7 +236,7 @@ async function getAutoReply(text: string, userId?: string): Promise<LineTextMess
   return [
     {
       type: 'text',
-      text: `嗨～歡迎使用 ${BRAND_NAME} 🐾\n\n你可以輸入：\n📋「問卷」— 填寫問卷\n💬「LINE填答」— 直接在 LINE 填寫問卷\n🎉「封測」— 加入封測名單\n🌐「官網」— 前往官網\n📢「最新消息」— 查看動態\n🆘「聯絡我們」— 聯繫方式`,
+      text: `嗨～${branding.defaultReply}`,
     },
   ]
 }

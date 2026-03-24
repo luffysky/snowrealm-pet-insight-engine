@@ -651,9 +651,111 @@ CREATE INDEX idx_line_sessions_survey ON line_survey_sessions (survey_id);
 5. 日誌：所有金流回呼都要寫入 payment_logs
 ```
 
+#### CRITICAL-4：平台禮遇功能漏洞修復
+
+##### 4a. layout.tsx 沒有顯示禮遇徽章（對方看不到）
+
+`auth/me` 回傳 `platformPartner: true`，但 layout.tsx 的 `UserInfo` 沒有這個欄位。
+對方只有在「帳號設定」才看得到，太隱蔽。
+
+```
+修改：src/app/(admin)/layout.tsx
+
+Step 1 — UserInfo interface 加欄位（第 11-19 行）：
+  interface UserInfo {
+    userId: string
+    role: string
+    tenantId: string
+    userName: string
+    tenantName?: string
+    adminTitle?: string
+    tenants?: { slug: string; name: string }[]
+    platformPartner?: boolean     // ← 新增
+  }
+
+Step 2 — 左上角後台名稱旁加徽章（第 352-357 行）：
+  <Link href={adminPrefix} className="text-lg font-bold text-white/90 shrink-0">
+    {user?.adminTitle || '管理後台'}
+  </Link>
+  {user?.platformPartner && (
+    <span className="ml-2 text-xs font-semibold px-2.5 py-1 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/30 animate-pulse">
+      🌟 平台禮遇
+    </span>
+  )}
+
+Step 3 — 手機版 Sidebar 也要顯示（找到 mobile sidebar 的標題區域，加同樣的徽章）
+
+Step 4 — 租戶選擇器旁也加提示（第 388 行附近）：
+  租戶名稱旁邊顯示小星星，讓對方知道自己在享受禮遇
+```
+
+##### 4b. planLimits 額度檢查沒有整合 platformUnlimited
+
+`checkResponseLimit` 等函式只查租戶方案，不查操作者身份。
+禮遇帳號在 free 租戶裡還是會被擋。
+
+```
+修改：src/lib/planLimits.ts
+
+每個 check 函式加入 userId 參數 + platformUnlimited 旁路：
+
+  import { isUserPlatformUnlimited } from '@/lib/platformUnlimited'
+
+  export async function checkResponseLimit(
+    tenantId: string,
+    userId?: string    // ← 新增
+  ): Promise<{ allowed: boolean; used: number; limit: number }> {
+    // 禮遇帳號直接放行
+    if (userId && await isUserPlatformUnlimited(userId)) {
+      return { allowed: true, used: 0, limit: -1 }
+    }
+    // 原有邏輯...
+  }
+
+  // checkSurveyLimit、checkAdminLimit、未來的 checkAiDailyLimit 同理
+  // 所有呼叫這些函式的地方要帶上 userId
+```
+
+##### 4c. Toggle API 沒寫審計日誌
+
+```
+修改：src/app/api/super-admin/users/platform-unlimited/route.ts
+
+在 execute UPDATE 之後加入：
+  import { logAudit, getClientIp } from '@/lib/auditLog'
+
+  await logAudit({
+    actorId: admin.sub,
+    actorName: admin.name,
+    action: enabled ? 'platform_unlimited_enable' : 'platform_unlimited_disable',
+    targetType: 'admin_users',
+    targetId: userId,
+    details: { enabled },
+    ip: getClientIp(request),
+  })
+```
+
+##### 4d. 總後台租戶列表的禮遇標記要更醒目
+
+目前 tenants/page.tsx 有 `PLATFORM_PARTNER_BADGE_SHORT`（「禮遇」兩個字），
+但在使用者列表裡不太明顯。
+
+```
+修改：src/app/(super-admin)/snowrealm-insight-ctrl/users/page.tsx
+
+在使用者列表的每一行，如果 platformUnlimited === true：
+  - 整行背景改為 bg-amber-500/5（微弱金色底）
+  - 名字後面加 🌟 圖示
+  - 「已開啟 · 關閉」按鈕用醒目的金色
+
+修改：src/app/(super-admin)/snowrealm-insight-ctrl/tenants/page.tsx
+  - 有禮遇成員的租戶，卡片邊框改為 border-amber-500/30
+  - 標記移到租戶名稱旁邊（不是成員列表裡）
+```
+
 ---
 
-## 當前開發重點（Phase 2）— 智慧分析 + LINE Bot 強化 + 自動化
+## 當前開發重點（Phase 2+3）— 安全修復 + 分析 + LINE Bot + Story × Data
 
 ### 開發優先順序
 

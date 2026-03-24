@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { query, queryOne } from '@/lib/db'
 import { generateInviteToken } from '@/lib/auth'
 import { requireRole } from '@/lib/tenant'
+import { checkAdminLimit } from '@/lib/planLimits'
+import { isUserPlatformUnlimited } from '@/lib/platformUnlimited'
 
 // GET - 列出該 tenant 的所有管理員 + 待使用邀請
 export async function GET(request: NextRequest) {
@@ -47,6 +49,14 @@ export async function POST(request: NextRequest) {
   const email = (body?.email as string)?.trim().toLowerCase()
   const role = (body?.role as string) || 'admin'
   const isLineInvite = body?.isLineInvite === true
+
+  const platformUnlimited = await isUserPlatformUnlimited(roleCheck.userId)
+  if (!platformUnlimited) {
+    const adminLimit = await checkAdminLimit(tenantId)
+    if (!adminLimit.allowed) {
+      return NextResponse.json({ error: '已達方案成員數量上限，請升級方案' }, { status: 403 })
+    }
+  }
 
   if (!isLineInvite) {
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {

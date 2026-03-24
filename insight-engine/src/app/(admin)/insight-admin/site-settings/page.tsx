@@ -13,6 +13,11 @@ interface SiteSettings {
   og_locale: string
   twitter_card: string
   favicon_url: string
+  bot_welcome: string
+  bot_intro: string
+  bot_default_reply: string
+  bot_completion: string
+  bot_survey_prompt: string
 }
 
 const CARD = 'bg-slate-800/50 border border-slate-700/50'
@@ -22,6 +27,7 @@ export default function SiteSettingsPage() {
     site_title: '', site_description: '', admin_title: '', og_title: '', og_description: '',
     og_image_url: '', og_site_name: '', og_locale: 'zh_TW', twitter_card: 'summary_large_image',
     favicon_url: '',
+    bot_welcome: '', bot_intro: '', bot_default_reply: '', bot_completion: '', bot_survey_prompt: '',
   })
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -45,6 +51,11 @@ export default function SiteSettingsPage() {
           og_locale: data.og_locale ?? 'zh_TW',
           twitter_card: data.twitter_card ?? 'summary_large_image',
           favicon_url: data.favicon_url ?? '',
+          bot_welcome: data.bot_welcome ?? '',
+          bot_intro: data.bot_intro ?? '',
+          bot_default_reply: data.bot_default_reply ?? '',
+          bot_completion: data.bot_completion ?? '',
+          bot_survey_prompt: data.bot_survey_prompt ?? '',
         })
         setLoading(false)
       })
@@ -246,6 +257,45 @@ export default function SiteSettingsPage() {
             </p>
           </div>
         </div>
+      </section>
+
+      {/* LINE Bot 文案設定 */}
+      <section className={`${CARD} rounded-xl p-6 space-y-4`}>
+        <h2 className="text-lg font-semibold text-white">LINE Bot 文案設定</h2>
+        <p className="text-xs text-slate-500">設定 LINE 官方帳號 Bot 的回覆文案，留空則使用系統預設文案。</p>
+        <Field
+          label="歡迎加入訊息"
+          value={settings.bot_welcome}
+          onChange={v => update('bot_welcome', v)}
+          placeholder="例：👋 歡迎加入！輸入「問卷」開始填寫，或輸入「客服」聯繫我們。"
+          textarea
+        />
+        <Field
+          label="介紹文案（回覆「你是誰」時使用）"
+          value={settings.bot_intro}
+          onChange={v => update('bot_intro', v)}
+          placeholder="例：我們提供 AI 智慧問卷服務，歡迎隨時告訴我們你的需求。"
+          textarea
+        />
+        <Field
+          label="問卷提示文案（回覆「問卷」關鍵字時使用）"
+          value={settings.bot_survey_prompt}
+          onChange={v => update('bot_survey_prompt', v)}
+          placeholder="例：花 2 分鐘填寫，幫助我們更了解你的需求！"
+        />
+        <Field
+          label="填答完成訊息"
+          value={settings.bot_completion}
+          onChange={v => update('bot_completion', v)}
+          placeholder="例：🎉 感謝你的填寫！你的回覆已成功送出 💛"
+        />
+        <Field
+          label="預設回覆（無法識別關鍵字時使用）"
+          value={settings.bot_default_reply}
+          onChange={v => update('bot_default_reply', v)}
+          placeholder="例：輸入「問卷」開始填寫，或輸入「客服」聯繫我們。"
+          textarea
+        />
       </section>
 
       {/* Save */}
