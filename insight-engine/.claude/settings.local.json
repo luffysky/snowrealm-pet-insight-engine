@@ -12,7 +12,13 @@
       "Bash(grep -rn \"bot_welcome_message\\\\|bot_intro_text\\\\|bot_completion_message\" /d/SnowRealmRebirth/snowrealm-insight-engine/insight-engine/src --include=*.ts --include=*.tsx)",
       "Bash(find:*)",
       "Bash(grep -rn \"BOT_COMPLETION_MESSAGE\\\\|BRAND_NAME\" /d/SnowRealmRebirth/snowrealm-insight-engine/insight-engine/src/lib --include=*.ts)",
-      "Bash(wc:*)"
+      "Bash(wc:*)",
+      "Bash(for route:*)",
+      "Bash(do)",
+      "Bash(echo \"--- $route ---\")",
+      "Read(//d/SnowRealmRebirth/snowrealm-insight-engine/insight-engine/src/app/api/admin/$route/**)",
+      "Bash(done)",
+      "Bash(do echo:*)"
     ]
   }
 }

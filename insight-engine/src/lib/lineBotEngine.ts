@@ -8,6 +8,7 @@ import { query, queryOne, execute } from '@/lib/db'
 import { getPrimarySurveySlug } from '@/lib/surveyRepo'
 import { analyzeResponse } from '@/lib/analyzeResponse'
 import { MVP_SURVEY_SLUG } from '@/constants'
+import { getTenantBranding } from '@/lib/tenantBranding'
 
 // ===== 型別 =====
 
@@ -271,13 +272,9 @@ function buildQuestionMessage(row: QuestionRow, step: number, total: number): Li
   return { type: 'text', text: lines.join('\n') }
 }
 
-function buildCompletionMessage(): LineTextMessage {
-  const extra = process.env.BOT_COMPLETION_MESSAGE || ''
-  const base = '🎉 感謝你的填寫！\n\n你的回覆已成功送出，我們會認真閱讀每一份答覆 💛'
-  return {
-    type: 'text',
-    text: extra ? `${base}\n\n${extra}` : base,
-  }
+async function buildCompletionMessage(tenantId: string): Promise<LineTextMessage> {
+  const { completionMsg } = await getTenantBranding(tenantId)
+  return { type: 'text', text: completionMsg }
 }
 
 function buildInvalidAnswerMessage(row: QuestionRow): LineTextMessage {
@@ -335,7 +332,7 @@ export async function processUserAnswer(
 
   if (!currentQuestion) {
     await finalizeSession(session, questions.length)
-    return [buildCompletionMessage()]
+    return [await buildCompletionMessage(session.tenantId)]
   }
 
   // 選填題允許跳過
@@ -360,7 +357,7 @@ export async function processUserAnswer(
 
   if (nextStep >= nextQuestions.length) {
     await finalizeSession({ ...session, route: nextRoute }, nextStep)
-    return [buildCompletionMessage()]
+    return [await buildCompletionMessage(session.tenantId)]
   }
 
   await advanceSession(session.id, nextStep, nextRoute)

@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { listVariantGroups, getVariantGroupStats } from '@/lib/surveyRepo'
-import { getTenantContext } from '@/lib/tenant'
+import { requireRole } from '@/lib/tenant'
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
   try {
-    const { tenantId } = await getTenantContext()
+    const roleCheck = await requireRole('viewer')
+    if (roleCheck instanceof NextResponse) return roleCheck
+    const { tenantId } = roleCheck
     const group = request.nextUrl.searchParams.get('group')
 
     if (group) {

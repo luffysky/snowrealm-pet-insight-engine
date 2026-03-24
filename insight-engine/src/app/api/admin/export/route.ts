@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getResponsesCsv } from '@/lib/stats'
-import { getTenantContext } from '@/lib/tenant'
+import { requireRole } from '@/lib/tenant'
 import { query } from '@/lib/db'
 
 function toCSV(headers: string[], rows: string[][]): string {
@@ -13,7 +13,9 @@ function toCSV(headers: string[], rows: string[][]): string {
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
   try {
-    const { tenantId } = await getTenantContext()
+    const roleCheck = await requireRole('viewer')
+    if (roleCheck instanceof NextResponse) return roleCheck
+    const { tenantId } = roleCheck
     const type = request.nextUrl.searchParams.get('type') || 'responses'
     const surveyId = request.nextUrl.searchParams.get('surveyId') || undefined
     const date = new Date().toISOString().slice(0, 10)

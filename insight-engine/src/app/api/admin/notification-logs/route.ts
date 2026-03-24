@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { query, queryOne } from '@/lib/db'
-import { getTenantContext } from '@/lib/tenant'
+import { requireRole } from '@/lib/tenant'
 
 interface NotificationLogRow {
   id: string
@@ -18,6 +18,10 @@ interface NotificationLogRow {
 
 // GET /api/admin/notification-logs?page=1&pageSize=20
 export async function GET(request: NextRequest): Promise<NextResponse> {
+  const roleCheck = await requireRole('viewer')
+  if (roleCheck instanceof NextResponse) return roleCheck
+  const { tenantId } = roleCheck
+
   const { searchParams } = new URL(request.url)
   const page = Math.max(1, parseInt(searchParams.get('page') ?? '1', 10))
   const pageSize = Math.min(100, Math.max(1, parseInt(searchParams.get('pageSize') ?? '20', 10)))
@@ -31,11 +35,11 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
        WHERE nl.tenant_id = $1
        ORDER BY nl.created_at DESC
        LIMIT $2 OFFSET $3`,
-      [(await getTenantContext()).tenantId, pageSize, offset]
+      [tenantId, pageSize, offset]
     ),
     queryOne<{ count: string }>(
       `SELECT COUNT(*)::text AS count FROM notification_logs WHERE tenant_id = $1`,
-      [(await getTenantContext()).tenantId]
+      [tenantId]
     ),
   ])
 

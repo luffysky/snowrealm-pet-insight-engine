@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { query, queryOne } from '@/lib/db'
-import { getTenantContext } from '@/lib/tenant'
+import { requireRole } from '@/lib/tenant'
 import { getLineConfig } from '@/lib/lineConfig'
 import { getActiveAiKey } from '@/lib/aiService'
 
@@ -8,7 +8,9 @@ export const dynamic = 'force-dynamic'
 
 export async function GET(): Promise<NextResponse> {
   try {
-    const { tenantId } = await getTenantContext()
+    const roleCheck = await requireRole('viewer')
+    if (roleCheck instanceof NextResponse) return roleCheck
+    const { tenantId } = roleCheck
     // 平行查詢系統資訊
     const [
       surveyCount,

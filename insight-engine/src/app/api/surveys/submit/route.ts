@@ -9,6 +9,7 @@ import { fireWebhooks } from '@/lib/webhook'
 import { notifySurveySubmitted } from '@/lib/line'
 import { verifyLineToken } from '@/lib/lineToken'
 import { evaluateNotificationRules } from '@/lib/notificationEngine'
+import { checkResponseLimit } from '@/lib/planLimits'
 import type { SubmitSurveyPayload } from '@/types'
 
 const MAX_ANSWER_LENGTH = 2000
@@ -35,6 +36,15 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   }
 
   const tenantId = slugExists?.tenant_id ?? 'maoxingtianxia'
+
+  // 方案額度檢查
+  const responseLimit = await checkResponseLimit(tenantId)
+  if (!responseLimit.allowed) {
+    return NextResponse.json(
+      { error: '本月回覆數已達方案上限，請聯繫管理員升級方案', upgrade: true },
+      { status: 403 }
+    )
+  }
 
   try {
     // 若有 progress response，複用它；否則建立新的

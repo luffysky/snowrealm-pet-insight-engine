@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getCrossTabData } from '@/lib/stats'
-import { getTenantContext } from '@/lib/tenant'
+import { requireRole } from '@/lib/tenant'
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
   try {
@@ -21,7 +21,9 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       return NextResponse.json({ error: '無效的題目 key' }, { status: 400 })
     }
 
-    const { tenantId } = await getTenantContext()
+    const roleCheck = await requireRole('viewer')
+    if (roleCheck instanceof NextResponse) return roleCheck
+    const { tenantId } = roleCheck
     const surveyId = searchParams.get('surveyId') || undefined
     const data = await getCrossTabData(a, b, tenantId, surveyId)
     return NextResponse.json(data)

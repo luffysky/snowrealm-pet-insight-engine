@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { getTenantContext } from '@/lib/tenant'
+import { requireRole } from '@/lib/tenant'
 import { query, queryOne } from '@/lib/db'
 import { getTenantPlan, getPlanLimits, PLAN_LIMITS, PLATFORM_PARTNER_EFFECTIVE_LIMITS } from '@/lib/planLimits'
 import { isUserPlatformUnlimited } from '@/lib/platformUnlimited'
@@ -12,7 +12,9 @@ interface CountRow extends Record<string, unknown> {
 
 export async function GET(): Promise<NextResponse> {
   try {
-    const { tenantId, userId } = await getTenantContext()
+    const roleCheck = await requireRole('viewer')
+    if (roleCheck instanceof NextResponse) return roleCheck
+    const { tenantId, userId } = roleCheck
     const platformPartner = await isUserPlatformUnlimited(userId)
 
     const plan = await getTenantPlan(tenantId)

@@ -2,9 +2,13 @@ import { NextRequest, NextResponse } from 'next/server'
 import { queryOne, query } from '@/lib/db'
 import { verifyToken } from '@/lib/jwt'
 import { verifyPassword } from '@/lib/auth'
+import { requireRole } from '@/lib/tenant'
 
 export async function POST(request: NextRequest) {
   try {
+    const roleCheck = await requireRole('admin')
+    if (roleCheck instanceof NextResponse) return roleCheck
+
     const token = request.cookies.get('admin_session')?.value
     if (!token) return NextResponse.json({ error: '未授權' }, { status: 401 })
 

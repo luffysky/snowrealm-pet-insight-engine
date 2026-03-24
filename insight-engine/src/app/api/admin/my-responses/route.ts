@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { query } from '@/lib/db'
 import { verifyToken } from '@/lib/jwt'
+import { requireRole } from '@/lib/tenant'
 
 interface ResponseRow {
   [key: string]: unknown
@@ -14,6 +15,9 @@ interface ResponseRow {
 }
 
 export async function GET(request: NextRequest) {
+  const roleCheck = await requireRole('viewer')
+  if (roleCheck instanceof NextResponse) return roleCheck
+
   const token = request.cookies.get('admin_session')?.value
   if (!token) return NextResponse.json({ error: '未授權' }, { status: 401 })
 

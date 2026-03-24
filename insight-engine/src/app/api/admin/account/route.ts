@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { queryOne } from '@/lib/db'
-import { getTenantContext } from '@/lib/tenant'
+import { requireRole } from '@/lib/tenant'
 import { isUserPlatformUnlimited } from '@/lib/platformUnlimited'
 import { hashPassword, verifyPassword } from '@/lib/auth'
 
@@ -15,7 +15,9 @@ interface UserRow extends Record<string, unknown> {
 }
 
 export async function GET(): Promise<NextResponse> {
-  const ctx = await getTenantContext()
+  const roleCheck = await requireRole('viewer')
+  if (roleCheck instanceof NextResponse) return roleCheck
+  const ctx = roleCheck
   const user = await queryOne<UserRow>(
     `SELECT id, username, display_name, email, phone, role, created_at FROM admin_users WHERE id = $1`,
     [ctx.userId],
@@ -37,7 +39,9 @@ export async function GET(): Promise<NextResponse> {
 }
 
 export async function PATCH(request: NextRequest): Promise<NextResponse> {
-  const ctx = await getTenantContext()
+  const roleCheck = await requireRole('admin')
+  if (roleCheck instanceof NextResponse) return roleCheck
+  const ctx = roleCheck
   const body = await request.json().catch(() => null)
   const action = body?.action as string
 
