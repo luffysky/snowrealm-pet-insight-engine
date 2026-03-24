@@ -95,6 +95,8 @@ export interface SubmitSurveyPayload {
   route?: string
   /** LINE 身份簽名 token（從 LINE 點連結時帶入） */
   lineToken?: string
+  /** 使用者同意將故事匿名展示於故事牆 */
+  allowStoryWall?: boolean
 }
 
 /** UTM 參數 */

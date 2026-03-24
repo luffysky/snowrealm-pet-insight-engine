@@ -168,6 +168,14 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       lineUserId,
     }).catch(() => {})
 
+    // 故事牆授權（非阻塞）
+    if (body.allowStoryWall) {
+      execute(
+        `UPDATE responses SET allow_story_wall = true WHERE id = $1`,
+        [responseId]
+      ).catch(() => {})
+    }
+
     return NextResponse.json({ success: true, responseId })
   } catch (error) {
     console.error('[submit] DB error:', error)
