@@ -56,6 +56,7 @@ const MIGRATION_FILES = [
   'migration_phase32_trial.sql',
   'migration_phase33_report_sharing.sql',
   'migration_phase34_bot_passcode.sql',
+  'migration_phase35_platform_notifications.sql',
 ]
 
 function pgSslOption() {

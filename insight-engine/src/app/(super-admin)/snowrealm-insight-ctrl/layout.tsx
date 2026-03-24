@@ -11,6 +11,9 @@ const NAV_OPERATIONS = [
   { href: '/snowrealm-insight-ctrl/users', label: '使用者', icon: '👤' },
   { href: '/snowrealm-insight-ctrl/usage', label: '用量追蹤', icon: '📈' },
   { href: '/snowrealm-insight-ctrl/support', label: '客服工單', icon: '📬' },
+  { href: '/snowrealm-insight-ctrl/notifications', label: '平台通知', icon: '📢' },
+  { href: '/snowrealm-insight-ctrl/rich-menu', label: 'Rich Menu', icon: '📱' },
+  { href: '/snowrealm-insight-ctrl/notification-styles', label: '通知樣式', icon: '🎨' },
   { href: '/snowrealm-insight-ctrl/site-settings', label: '首頁 SEO', icon: '🌐' },
   { href: '/snowrealm-insight-ctrl/plans', label: '收費規劃', icon: '💰' },
 ]

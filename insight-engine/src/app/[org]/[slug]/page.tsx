@@ -4,6 +4,8 @@ import { queryOne } from '@/lib/db'
 import { toAbsoluteOgImageUrl } from '@/lib/ogUrls'
 import { OrgSurveyClient } from './OrgSurveyClient'
 
+export const dynamic = 'force-dynamic'
+
 interface Props {
   params: Promise<{ org: string; slug: string }>
 }

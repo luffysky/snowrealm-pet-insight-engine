@@ -3,6 +3,7 @@ import { query } from '@/lib/db'
 import { pushLineMessage } from '@/lib/line'
 import { getDashboardStats } from '@/lib/stats'
 import { getStyle } from '@/lib/lineStyles'
+import { getPlatformKey } from '@/lib/aiService'
 
 const TW_TZ = 'Asia/Taipei'
 
@@ -126,7 +127,31 @@ export async function GET(): Promise<NextResponse> {
       },
     }
 
-    await pushLineMessage([flexMessage])
+    // 嘗試生成 AI 摘要（失敗不影響週報發送）
+    let aiSummaryText = ''
+    try {
+      aiSummaryText = await generateAiWeeklySummary({
+        totalResponses: stats.totalResponses,
+        weeklyCount,
+        completionRate: stats.completionRate,
+        trendIcon,
+        topFeatures,
+        highEmotionRate,
+      })
+    } catch (aiErr) {
+      console.error('[weekly-report] AI summary failed (non-fatal):', aiErr)
+    }
+
+    const messagesToSend: Array<{ type: string; [key: string]: unknown }> = [flexMessage]
+
+    if (aiSummaryText) {
+      messagesToSend.push({
+        type: 'text',
+        text: `🤖 AI 週報摘要\n\n${aiSummaryText}`,
+      })
+    }
+
+    await pushLineMessage(messagesToSend)
 
     // 記錄 notification_logs
     await query(
@@ -134,7 +159,7 @@ export async function GET(): Promise<NextResponse> {
        VALUES (NULL, 'weekly_report', 'admin', 'all_admins', 'sent')`
     )
 
-    return NextResponse.json({ sent: true, weeklyCount, totalResponses: stats.totalResponses })
+    return NextResponse.json({ sent: true, weeklyCount, totalResponses: stats.totalResponses, hasAiSummary: !!aiSummaryText })
   } catch (err) {
     console.error('[weekly-report] Error:', err)
     return NextResponse.json({ error: '週報產生失敗' }, { status: 500 })
@@ -150,4 +175,57 @@ function kpiRow(label: string, value: string) {
       { type: 'text' as const, text: value, color: '#333333', size: 'sm' as const, flex: 5, align: 'end' as const },
     ],
   }
+}
+
+interface WeeklySummaryInput {
+  totalResponses: number
+  weeklyCount: number
+  completionRate: number
+  trendIcon: string
+  topFeatures: Array<{ feature: string; count: number }>
+  highEmotionRate: string
+}
+
+/**
+ * 呼叫 AI（平台 key）產生週報摘要文字
+ * 最多 150 字，失敗時拋出 error 讓呼叫方 catch
+ */
+async function generateAiWeeklySummary(input: WeeklySummaryInput): Promise<string> {
+  const aiKey = getPlatformKey()
+  if (!aiKey) return ''
+
+  const prompt = [
+    `以下是本週問卷數據，請用繁體中文寫出 2-3 句精簡的 AI 洞察摘要（不超過 150 字），`,
+    `重點放在趨勢變化和可行動的建議，不要只是重複數字：`,
+    ``,
+    `- 累計填答：${input.totalResponses} 份`,
+    `- 本週新增：${input.weeklyCount} 份 ${input.trendIcon}`,
+    `- 整體完成率：${(input.completionRate * 100).toFixed(1)}%`,
+    `- 高情感比例：${input.highEmotionRate}%`,
+    `- 熱門功能 Top 3：${input.topFeatures.map((f) => f.feature).join('、') || '尚無資料'}`,
+  ].join('\n')
+
+  const res = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${aiKey.apiKey}`,
+    },
+    body: JSON.stringify({
+      model: aiKey.model,
+      messages: [{ role: 'user', content: prompt }],
+      max_tokens: 300,
+      temperature: 0.7,
+    }),
+  })
+
+  if (!res.ok) {
+    throw new Error(`OpenAI API error: ${res.status}`)
+  }
+
+  const data = await res.json() as {
+    choices?: Array<{ message?: { content?: string } }>
+  }
+
+  return data.choices?.[0]?.message?.content?.trim() ?? ''
 }

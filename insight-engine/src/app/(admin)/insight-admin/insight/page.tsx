@@ -436,6 +436,37 @@ export default function InsightPage() {
     }
   }
 
+  // ===== 匯出報告 =====
+
+  const [exporting, setExporting] = useState(false)
+
+  async function handleExportReport(reportId: string) {
+    if (exporting) return
+    setExporting(true)
+    try {
+      const res = await fetch('/api/admin/export-report', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reportId, surveyId: selectedSurveyId }),
+      })
+      if (!res.ok) {
+        alert('匯出失敗，請稍後再試')
+        return
+      }
+      const blob = await res.blob()
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `insight-report-${reportId.slice(0, 8)}.md`
+      a.click()
+      URL.revokeObjectURL(url)
+    } catch {
+      alert('匯出失敗，請稍後再試')
+    } finally {
+      setExporting(false)
+    }
+  }
+
   // ===== 分享報告 =====
 
   async function handleShare(reportId: string) {
@@ -523,13 +554,23 @@ export default function InsightPage() {
           {activeTab === 'data' && (
             <>
               {report && currentDataReportId && (
-                <button
-                  type="button"
-                  onClick={() => handleShare(currentDataReportId)}
-                  className="px-4 py-2.5 bg-slate-700 hover:bg-slate-600 text-white rounded-xl text-sm font-medium transition-all cursor-pointer"
-                >
-                  📤 分享
-                </button>
+                <>
+                  <button
+                    type="button"
+                    onClick={() => handleExportReport(currentDataReportId)}
+                    disabled={exporting}
+                    className="px-4 py-2.5 bg-slate-700 hover:bg-slate-600 disabled:opacity-50 text-white rounded-xl text-sm font-medium transition-all cursor-pointer"
+                  >
+                    {exporting ? '⏳ 匯出中...' : '📄 匯出報告'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleShare(currentDataReportId)}
+                    className="px-4 py-2.5 bg-slate-700 hover:bg-slate-600 text-white rounded-xl text-sm font-medium transition-all cursor-pointer"
+                  >
+                    📤 分享
+                  </button>
+                </>
               )}
               <button
                 type="button"
@@ -544,13 +585,23 @@ export default function InsightPage() {
           {activeTab === 'story' && (
             <>
               {storyReport && currentStoryReportId && (
-                <button
-                  type="button"
-                  onClick={() => handleShare(currentStoryReportId)}
-                  className="px-4 py-2.5 bg-slate-700 hover:bg-slate-600 text-white rounded-xl text-sm font-medium transition-all cursor-pointer"
-                >
-                  📤 分享
-                </button>
+                <>
+                  <button
+                    type="button"
+                    onClick={() => handleExportReport(currentStoryReportId)}
+                    disabled={exporting}
+                    className="px-4 py-2.5 bg-slate-700 hover:bg-slate-600 disabled:opacity-50 text-white rounded-xl text-sm font-medium transition-all cursor-pointer"
+                  >
+                    {exporting ? '⏳ 匯出中...' : '📄 匯出報告'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleShare(currentStoryReportId)}
+                    className="px-4 py-2.5 bg-slate-700 hover:bg-slate-600 text-white rounded-xl text-sm font-medium transition-all cursor-pointer"
+                  >
+                    📤 分享
+                  </button>
+                </>
               )}
               <button
                 type="button"
@@ -675,6 +726,7 @@ export default function InsightPage() {
             loading={historyLoading}
             onLoad={handleLoadHistoryItem}
             onShare={(id) => handleShare(id)}
+            onExport={(id) => handleExportReport(id)}
             onDelete={handleDeleteReport}
           />
         </div>
@@ -720,6 +772,7 @@ export default function InsightPage() {
             loading={historyLoading}
             onLoad={handleLoadHistoryItem}
             onShare={(id) => handleShare(id)}
+            onExport={(id) => handleExportReport(id)}
             onDelete={handleDeleteReport}
           />
         </div>
@@ -735,12 +788,14 @@ function HistoryList({
   loading,
   onLoad,
   onShare,
+  onExport,
   onDelete,
 }: {
   history: HistoryItem[]
   loading: boolean
   onLoad: (item: HistoryItem) => void
   onShare: (id: string) => void
+  onExport: (id: string) => void
   onDelete: (id: string) => void
 }) {
   return (
@@ -787,6 +842,14 @@ function HistoryList({
 
               {/* 操作按鈕 */}
               <div className="flex items-center gap-1 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => onExport(item.id)}
+                  className="text-xs text-slate-400 hover:text-emerald-400 transition-colors cursor-pointer px-2 py-1"
+                  title="匯出此報告"
+                >
+                  📄
+                </button>
                 <button
                   type="button"
                   onClick={() => onShare(item.id)}
