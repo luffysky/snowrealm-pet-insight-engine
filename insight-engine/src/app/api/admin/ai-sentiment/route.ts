@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getTenantContext } from '@/lib/tenant'
+import { requireRole } from '@/lib/tenant'
 import { getActiveAiKey, getPlatformKey, logAiUsage } from '@/lib/aiService'
 import { getOpenTextResponses, analyzeOpenTextSentiment } from '@/lib/sentimentAnalysis'
 
@@ -10,8 +10,9 @@ interface SentimentRequest {
 }
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
-  const ctx = await getTenantContext()
-  const { tenantId } = ctx
+  const roleCheck = await requireRole('viewer')
+  if (roleCheck instanceof NextResponse) return roleCheck
+  const { tenantId } = roleCheck
 
   let body: SentimentRequest
   try {

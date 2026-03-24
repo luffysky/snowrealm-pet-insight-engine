@@ -6,10 +6,13 @@ import { SurveyShell, SurveyCard } from '@/components/survey'
 import { questionTitleClass, stepTextClass } from '@/lib/themes'
 import { analyzePersonality, type PersonalityResult } from '@/lib/personalityAnalyzer'
 import type { SurveyTheme, ThemeIntensity, SurveyConfig } from '@/types'
+import type { StoryCardData } from '@/lib/storyCardEngine'
 import { MVP_SURVEY_SLUG } from '@/constants'
 import { WaitlistForm } from './WaitlistForm'
 import { ClickTrackLinks } from './ClickTrackLinks'
 import { DownloadAnswers } from './DownloadAnswers'
+import { StoryCard } from '@/components/public/StoryCard'
+import { ShareButtons } from '@/components/public/ShareButtons'
 
 interface ThemeSettings {
   defaultTheme: SurveyTheme
@@ -215,6 +218,13 @@ function DoneContent({ config }: { config: SurveyConfig }) {
   const [gameStats, setGameStats] = useState<GameStats | null>(null)
   const [personality, setPersonality] = useState<PersonalityResult | null>(null)
 
+  // 故事卡片狀態
+  const [responseId, setResponseId] = useState<string | null>(null)
+  const [storyCard, setStoryCard] = useState<StoryCardData | null>(null)
+  const [storyCardLoading, setStoryCardLoading] = useState(false)
+  const [allowStoryWall, setAllowStoryWall] = useState(false)
+  const [storyWallUpdating, setStoryWallUpdating] = useState(false)
+
   useEffect(() => {
     try {
       const gs = sessionStorage.getItem('gameStats')
@@ -224,7 +234,35 @@ function DoneContent({ config }: { config: SurveyConfig }) {
       const ar = sessionStorage.getItem('surveyAnswerRecord')
       if (ar) setPersonality(analyzePersonality(JSON.parse(ar)))
     } catch {}
+
+    const rid = sessionStorage.getItem('lastResponseId')
+    if (rid) {
+      setResponseId(rid)
+      setStoryCardLoading(true)
+      fetch(`/api/story-card/${rid}`)
+        .then(r => r.ok ? r.json() as Promise<StoryCardData> : null)
+        .then(card => { if (card) setStoryCard(card) })
+        .catch(() => {})
+        .finally(() => setStoryCardLoading(false))
+    }
   }, [])
+
+  async function handleAllowStoryWallChange(checked: boolean) {
+    if (!responseId || storyWallUpdating) return
+    setStoryWallUpdating(true)
+    try {
+      await fetch(`/api/story-card/${responseId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ allowStoryWall: checked }),
+      })
+      setAllowStoryWall(checked)
+    } catch {
+      // 靜默失敗，不影響使用者體驗
+    } finally {
+      setStoryWallUpdating(false)
+    }
+  }
 
   const level = gameStats?.level ?? 1
   const totalXp = gameStats?.totalXp ?? 0
@@ -293,6 +331,41 @@ function DoneContent({ config }: { config: SurveyConfig }) {
           </div>
 
           <ClickTrackLinks />
+
+          {/* Story Card 區塊 */}
+          {(storyCardLoading || storyCard) && (
+            <div className="space-y-3">
+              <div className={tc.dividerClass} />
+              {storyCardLoading && (
+                <p className={`text-xs text-center ${stepTextClass[theme]} opacity-40 animate-pulse`}>
+                  🎉 你的故事卡片生成中...
+                </p>
+              )}
+              {!storyCardLoading && storyCard && (
+                <div className="space-y-3">
+                  <StoryCard data={storyCard} theme={theme} />
+                  <ShareButtons
+                    url={`${typeof window !== 'undefined' ? window.location.origin : ''}/story/${storyCard.responseId}`}
+                    title={`${storyCard.surveyTitle} — 我的故事卡片`}
+                  />
+                  {/* 匿名分享到故事牆 */}
+                  <label className="flex items-center gap-2 justify-center cursor-pointer group">
+                    <input
+                      type="checkbox"
+                      checked={allowStoryWall}
+                      disabled={storyWallUpdating}
+                      onChange={e => handleAllowStoryWallChange(e.target.checked)}
+                      className="w-3.5 h-3.5 rounded accent-indigo-400 cursor-pointer disabled:opacity-50"
+                    />
+                    <span className={`text-xs ${stepTextClass[theme]} opacity-40 group-hover:opacity-60 transition-opacity select-none`}>
+                      我願意匿名分享我的故事到故事牆
+                    </span>
+                    {storyWallUpdating && <span className="text-xs opacity-30">...</span>}
+                  </label>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Stats Cards */}
           {gameStats && (

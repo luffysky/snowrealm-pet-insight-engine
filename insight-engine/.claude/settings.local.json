@@ -18,7 +18,8 @@
       "Bash(echo \"--- $route ---\")",
       "Read(//d/SnowRealmRebirth/snowrealm-insight-engine/insight-engine/src/app/api/admin/$route/**)",
       "Bash(done)",
-      "Bash(do echo:*)"
+      "Bash(do echo:*)",
+      "Bash(node scripts/db-push-all.js)"
     ]
   }
 }

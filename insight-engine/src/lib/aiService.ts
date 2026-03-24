@@ -8,7 +8,7 @@ const FREE_REGENERATE_LIMIT = 1
 const FREE_META_GENERATE_LIMIT = 1
 const FREE_META_REGENERATE_LIMIT = 1
 
-export type AiAction = 'generate' | 'regenerate' | 'generate_meta' | 'regenerate_meta' | 'chat'
+export type AiAction = 'generate' | 'regenerate' | 'generate_meta' | 'regenerate_meta' | 'chat' | 'insight' | 'story' | 'sentiment'
 
 export interface AiKeyResult {
   provider: string

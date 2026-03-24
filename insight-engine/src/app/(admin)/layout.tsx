@@ -23,7 +23,7 @@ interface UserInfo {
 const KNOWN_ADMIN_PAGES = new Set([
   'ab', 'account', 'ai-settings', 'broadcast', 'crosstab', 'export', 'funnel', 'insight', 'line-settings',
   'my-responses', 'notification-rules', 'notification-styles', 'panel', 'rich-menu',
-  'site-settings', 'subscription', 'support', 'surveys', 'tag-rules', 'tags', 'team', 'templates', 'tenants',
+  'site-settings', 'story-wall', 'subscription', 'support', 'surveys', 'tag-rules', 'tags', 'team', 'templates', 'tenants',
   'theme-settings', 'utm', 'utm-links', 'waitlist', 'webhooks', 'responses',
 ])
 
@@ -76,6 +76,7 @@ const BASE_NAV_GROUPS = [
       { path: '/utm', label: '來源分析' },
       { path: '/ab', label: 'A/B 比較' },
       { path: '/insight', label: '🔍 AI 洞察報告' },
+      { path: '/story-wall', label: '📖 故事牆管理' },
     ],
   },
   {
@@ -132,6 +133,7 @@ const BASE_MOBILE_GROUPS = [
       { path: '/utm', label: '來源分析' },
       { path: '/ab', label: 'A/B 比較' },
       { path: '/insight', label: 'AI 洞察報告' },
+      { path: '/story-wall', label: '故事牆管理' },
     ],
   },
   {

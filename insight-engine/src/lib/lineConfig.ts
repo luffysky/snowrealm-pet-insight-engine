@@ -10,15 +10,43 @@ import { encryptApiKey, decryptApiKey, maskApiKey } from '@/lib/aiCrypto'
 // ===== Config Key 定義 =====
 
 export const LINE_CONFIG_KEYS = {
-  INSIGHT_CHANNEL_ACCESS_TOKEN: { envKey: 'LINE_INSIGHT_CHANNEL_ACCESS_TOKEN', secret: true, label: 'Channel Access Token' },
-  INSIGHT_CHANNEL_SECRET: { envKey: 'LINE_INSIGHT_CHANNEL_SECRET', secret: true, label: 'Channel Secret' },
-  INSIGHT_CHANNEL_ID: { envKey: 'LINE_INSIGHT_CHANNEL_ID', secret: false, label: 'Channel ID' },
-  INSIGHT_LINE_ID: { envKey: 'LINE_INSIGHT_ID', secret: false, label: 'LINE ID' },
-  OFFICIAL_CHANNEL_ACCESS_TOKEN: { envKey: 'LINE_OFFICIAL_CHANNEL_ACCESS_TOKEN', secret: true, label: 'Channel Access Token' },
-  OFFICIAL_CHANNEL_SECRET: { envKey: 'LINE_OFFICIAL_CHANNEL_SECRET', secret: true, label: 'Channel Secret' },
-  OFFICIAL_CHANNEL_ID: { envKey: 'LINE_OFFICIAL_CHANNEL_ID', secret: false, label: 'Channel ID' },
-  OFFICIAL_LINE_ID: { envKey: 'LINE_OFFICIAL_ID', secret: false, label: 'LINE ID' },
-  ADMIN_USER_ID: { envKey: 'LINE_YOUR_USER_ID', secret: false, label: '管理員 LINE User ID' },
+  INSIGHT_CHANNEL_ACCESS_TOKEN: { envKey: 'LINE_INSIGHT_CHANNEL_ACCESS_TOKEN', secret: true, label: 'Channel Access Token', group: 'insight' as const },
+  INSIGHT_CHANNEL_SECRET: { envKey: 'LINE_INSIGHT_CHANNEL_SECRET', secret: true, label: 'Channel Secret', group: 'insight' as const },
+  INSIGHT_CHANNEL_ID: { envKey: 'LINE_INSIGHT_CHANNEL_ID', secret: false, label: 'Channel ID', group: 'insight' as const },
+  INSIGHT_LINE_ID: { envKey: 'LINE_INSIGHT_ID', secret: false, label: 'LINE ID', group: 'insight' as const },
+  OFFICIAL_CHANNEL_ACCESS_TOKEN: { envKey: 'LINE_OFFICIAL_CHANNEL_ACCESS_TOKEN', secret: true, label: 'Channel Access Token', group: 'official' as const },
+  OFFICIAL_CHANNEL_SECRET: { envKey: 'LINE_OFFICIAL_CHANNEL_SECRET', secret: true, label: 'Channel Secret', group: 'official' as const },
+  OFFICIAL_CHANNEL_ID: { envKey: 'LINE_OFFICIAL_CHANNEL_ID', secret: false, label: 'Channel ID', group: 'official' as const },
+  OFFICIAL_LINE_ID: { envKey: 'LINE_OFFICIAL_ID', secret: false, label: 'LINE ID', group: 'official' as const },
+  ADMIN_USER_ID: { envKey: 'LINE_YOUR_USER_ID', secret: false, label: '管理員 LINE User ID', group: 'admin' as const },
+  POST_SURVEY_RICH_MENU_ID: {
+    envKey: 'POST_SURVEY_RICH_MENU_ID',
+    secret: false,
+    label: '填答完成後 Rich Menu ID',
+    group: 'official' as const,
+    description: '用戶填完問卷後切換的 Rich Menu（格式：richmenu-xxx）',
+  },
+  DEFAULT_RICH_MENU_ID: {
+    envKey: 'DEFAULT_RICH_MENU_ID',
+    secret: false,
+    label: '預設 Rich Menu ID',
+    group: 'official' as const,
+    description: '新好友加入時的預設 Rich Menu',
+  },
+  LIFF_ID: {
+    envKey: 'NEXT_PUBLIC_LIFF_ID',
+    secret: false,
+    label: 'LIFF ID',
+    group: 'official' as const,
+    description: 'LIFF 應用程式 ID（用於 LINE 內嵌頁面）',
+  },
+  LINE_FRIEND_URL: {
+    envKey: 'NEXT_PUBLIC_LINE_FRIEND_URL',
+    secret: false,
+    label: 'LINE 加好友連結',
+    group: 'official' as const,
+    description: '例：https://line.me/R/ti/p/@474iwlht',
+  },
 } as const
 
 export type LineConfigKey = keyof typeof LINE_CONFIG_KEYS
@@ -124,9 +152,9 @@ export async function listLineConfigs(tenantId = 'default'): Promise<LineConfigI
 
   const result: LineConfigInfo[] = []
   for (const [key, def] of Object.entries(LINE_CONFIG_KEYS) as [LineConfigKey, typeof LINE_CONFIG_KEYS[LineConfigKey]][]) {
-    const group = key.startsWith('INSIGHT_') ? 'insight'
+    const group = def.group ?? (key.startsWith('INSIGHT_') ? 'insight'
       : key.startsWith('OFFICIAL_') ? 'official'
-      : 'admin'
+      : 'admin')
 
     const dbRow = dbMap.get(key)
     const envVal = process.env[def.envKey]

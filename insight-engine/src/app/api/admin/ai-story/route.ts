@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getActiveAiKey, getPlatformKey, logAiUsage } from '@/lib/aiService'
 import { requireRole } from '@/lib/tenant'
 import { generateStoryInsight } from '@/lib/storyEngine'
+import { queryOne } from '@/lib/db'
 
 interface StoryRequest {
   surveyId: string
@@ -42,7 +43,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     await logAiUsage({
       tenantId,
-      action: 'generate',
+      action: 'story',
       keySource: aiKey.keySource,
       provider: aiKey.provider,
       model: aiKey.model,
@@ -52,8 +53,23 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       isFree,
     })
 
+    const reportMeta = {
+      provider: aiKey.provider,
+      model: aiKey.model,
+      keySource: aiKey.keySource,
+      generatedAt: new Date().toISOString(),
+    }
+
+    const saved = await queryOne<{ id: string }>(
+      `INSERT INTO ai_insight_reports (tenant_id, survey_id, report, meta, generated_by, report_type)
+       VALUES ($1, $2, $3, $4, $5, 'story') RETURNING id`,
+      [tenantId, surveyId, JSON.stringify(report), JSON.stringify(reportMeta), roleCheck.userId]
+    )
+
     return NextResponse.json({
       report,
+      reportId: saved?.id,
+      meta: reportMeta,
       tokenUsage: { prompt: promptTokens, completion: completionTokens },
     })
   } catch (error) {

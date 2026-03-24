@@ -1,7 +1,7 @@
 # CLAUDE.md — SnowRealm Insight Engine
 
 > 本文件供 Claude Code 讀取，讓 AI 完全理解專案結構後直接開始寫 code。
-> 最後更新：2026-03-24
+> 最後更新：2026-03-23
 
 ---
 
@@ -72,15 +72,11 @@ insight-engine/
 │   │   │   │   ├── utm-links/        # UTM 連結
 │   │   │   │   ├── webhooks/         # Webhook 設定
 │   │   │   │   ├── theme-settings/   # 主題設定
-│   │   │   │   ├── site-settings/    # Meta/OG + LINE Bot 文案設定
+│   │   │   │   ├── site-settings/    # Meta/OG 設定
 │   │   │   │   ├── panel/           # 管理員面板
 │   │   │   │   ├── team/            # 團隊管理
 │   │   │   │   ├── tenants/          # 租戶管理
 │   │   │   │   ├── waitlist/         # 封測名單
-│   │   │   │   ├── support/          # 客服中心（LINE 工單）
-│   │   │   │   ├── insight/          # AI 洞察報告（數據 + 故事模式）
-│   │   │   │   ├── upgrade/          # 升級引導頁（試用到期）
-│   │   │   │   ├── api-keys/         # API Key 管理（Rule Engine）
 │   │   │   │   └── account/          # 帳號設定
 │   │   │   └── layout.tsx            # Admin layout（Sidebar + 3D 背景）
 │   │   ├── (public)/                 # Landing Page + 問卷填答
@@ -121,14 +117,7 @@ insight-engine/
 │   │   │   │   ├── upload/
 │   │   │   │   ├── my-responses/
 │   │   │   │   ├── system/
-│   │   │   │   ├── delete-account/
-│   │   │   │   ├── ai-sentiment/    # 開放題情感分析
-│   │   │   │   ├── ai-insight/      # AI 洞察報告
-│   │   │   │   ├── ai-story/        # AI 故事洞察報告
-│   │   │   │   ├── api-keys/        # API Key CRUD（外部開發者）
-│   │   │   │   ├── support/         # 客服工單 API
-│   │   │   │   ├── story-wall/      # 故事牆管理（審核/置頂）
-│   │   │   │   └── trial-status/    # 試用期狀態
+│   │   │   │   └── delete-account/
 │   │   │   ├── auth/                # 認證
 │   │   │   │   ├── login/          # 帳密登入
 │   │   │   │   ├── register/       # 註冊（含邀請碼）
@@ -142,8 +131,7 @@ insight-engine/
 │   │   │   ├── cron/               # 排程任務
 │   │   │   │   ├── broadcast/      # 定時推播
 │   │   │   │   ├── remind/         # 填答提醒
-│   │   │   │   ├── weekly-report/  # 週報
-│   │   │   │   └── cleanup-sessions/ # 清理過期 LINE 填答 session
+│   │   │   │   └── weekly-report/  # 週報
 │   │   │   ├── line/               # LINE Webhook
 │   │   │   │   ├── webhook/        # Insight Bot（管理員口令註冊）
 │   │   │   │   │   ├── route.ts    # 管理員 Bot
@@ -159,23 +147,8 @@ insight-engine/
 │   │   │   │   ├── click/          # POST 點擊追蹤
 │   │   │   │   └── theme/          # GET 主題
 │   │   │   ├── primary-survey/     # 主問卷查詢
-│   │   │   ├── story-card/         # 公開故事卡片 API
-│   │   │   │   └── [responseId]/
-│   │   │   ├── story-wall/         # 公開故事牆 API
-│   │   │   │   └── [surveySlug]/
-│   │   │   ├── ai/                 # Rule Engine（外部 API Key 認證）
-│   │   │   │   ├── rules/          # GET 問卷標籤規則
-│   │   │   │   └── validate/       # POST 驗證問卷 JSON
-│   │   │   ├── payment/            # 藍新金流
-│   │   │   │   ├── create/
-│   │   │   │   ├── notify/         # 回呼（簽章+冪等+金額驗證）
-│   │   │   │   └── return/
 │   │   │   ├── super-admin/        # Super Admin API
 │   │   │   └── waitlist/           # 封測報名
-│   │   ├── story/                  # 公開故事卡片頁
-│   │   │   └── [responseId]/
-│   │   ├── story-wall/             # 公開故事牆頁
-│   │   │   └── [surveySlug]/
 │   │   ├── [org]/                  # 組織動態路由
 │   │   ├── login/                  # 登入頁
 │   │   ├── register/               # 註冊頁
@@ -208,43 +181,25 @@ insight-engine/
 │   │   ├── analyzeResponse.ts     # 回覆分析
 │   │   ├── stats.ts               # ★ 統計引擎（dashboard/漏斗/交叉/標籤/UTM/CSV）
 │   │   ├── surveyRepo.ts          # ★ 問卷 DB 操作（CRUD + 分流 + A/B）
-│   │   ├── surveyConfig.ts        # 問卷靜態設定（MVP_SURVEY fallback）
+│   │   ├── surveyConfig.ts        # 問卷靜態設定（MVP_SURVEY）
 │   │   ├── themes.ts              # 9 種主題定義
 │   │   ├── line.ts                # LINE Messaging API 封裝
-│   │   ├── lineConfig.ts          # LINE 設定管理（從 DB 讀取，fallback ENV）
-│   │   ├── lineNotify.ts          # LINE 通知發送 + switchUserRichMenu
+│   │   ├── lineConfig.ts          # LINE 設定管理（從 DB 讀取）
+│   │   ├── lineNotify.ts          # LINE 通知發送
 │   │   ├── lineStyles.ts          # LINE Flex Message 樣式
 │   │   ├── lineToken.ts           # LINE 身份 Token（HMAC 簽名）
-│   │   ├── lineBotEngine.ts       # LINE 對話式填答狀態機（Quick Reply + tenantBranding）
-│   │   ├── lineAdminBot.ts        # LINE 管理員數據查詢 Bot（今日報告/漏斗/標籤）
 │   │   ├── notificationEngine.ts  # 通知觸發引擎
 │   │   ├── webhook.ts             # Webhook 發送
 │   │   ├── db.ts                  # PostgreSQL 連線池（pg Pool）
 │   │   ├── auth.ts                # 認證工具（密碼雜湊、邀請碼）
 │   │   ├── jwt.ts                 # JWT 簽發/驗證（jose）
-│   │   ├── tenant.ts              # 租戶 context + requireRole RBAC
-│   │   ├── tenantBranding.ts      # 租戶 LINE Bot 文案（從 site_settings 讀取）
-│   │   ├── planLimits.ts          # 方案限制定義 + checkResponseLimit/SurveyLimit/AdminLimit
-│   │   ├── platformUnlimited.ts   # 平台禮遇帳號判斷
-│   │   ├── ruleEngine.ts          # Rule Engine：API Key 管理 + 問卷規則查詢
-│   │   ├── automationEngine.ts    # 自動化觸發引擎（回覆數達標/排程/關鍵字）
-│   │   ├── trialEngine.ts         # 免費試用期狀態管理
-│   │   ├── sentimentAnalysis.ts   # 開放題情感分析（批次 AI）
-│   │   ├── insightEngine.ts       # AI 洞察報告生成
-│   │   ├── storyEngine.ts         # AI 故事洞察報告（故事優先敘事）
-│   │   ├── storyCardEngine.ts     # 個人故事卡片（純計算，無 AI）
-│   │   ├── storyWallEngine.ts     # 故事牆資料查詢 + 管理
-│   │   ├── supportEngine.ts       # 客服工單引擎（LINE 雙向）
+│   │   ├── tenant.ts              # 租戶 context（從 request header 讀取）
 │   │   ├── email.ts               # Email 發送
 │   │   ├── sms.ts                 # 簡訊發送（AWS SNS）
 │   │   ├── r2.ts                  # Cloudflare R2 / S3 儲存
 │   │   ├── fingerprint.ts         # 填答指紋
 │   │   ├── optionEmoji.ts         # 選項 Emoji 對應
 │   │   ├── personalityAnalyzer.ts # 人格分析
-│   │   ├── auditLog.ts            # 操作審計紀錄
-│   │   ├── rateLimit.ts           # 記憶體內 IP 限流
-│   │   ├── superAdminAuth.ts      # Super Admin JWT 驗證
-│   │   ├── newebpay.ts            # 藍新金流 AES 加解密 + 訂單生成
 │   │   ├── supabase.ts            # Supabase client
 │   │   └── supabaseAdmin.ts       # Supabase admin client
 │   ├── types/
@@ -351,14 +306,8 @@ interface DashboardStats {
 | `tenant_users` | 租戶用戶關聯 | user_id, tenant_id, role |
 | `templates` | 訊息模板 | |
 | `utm_links` | UTM 連結 | |
-| `site_settings` | 站台設定 | key, value, tenant_id, bot_welcome, bot_intro, bot_default_reply, bot_completion, bot_survey_prompt |
+| `site_settings` | 站台設定 | key, value, tenant_id |
 | `waitlist` | 封測名單 | |
-| `support_tickets` | 客服工單 | channel, line_user_id, status, priority, category, subject, assigned_to, first_response_at |
-| `support_messages` | 客服訊息（雙向） | ticket_id, sender_type, content, content_type |
-| `support_templates` | 快速回覆模板 | title, content, category |
-| `automation_rules` | 自動化規則 | trigger_type, trigger_config(JSON), action_type, action_config(JSON), last_triggered_at |
-| `api_keys` | Rule Engine API Key | key_hash, key_prefix, scopes(array), tenant_id |
-| `line_survey_sessions` | LINE 填答 session | line_user_id, survey_id, response_id, current_step, route, status |
 
 ---
 
@@ -622,11 +571,193 @@ CREATE INDEX idx_line_sessions_survey ON line_survey_sessions (survey_id);
 
 ---
 
-### 🔴 需要修正：Rich Menu 接錯 Bot
+### 🔴 修復：OG 分享出去沒有使用自訂 OG 欄位
 
-#### 問題描述
+#### 問題
 
-`switchUserRichMenu()` 在 `lineNotify.ts` 第 204 行使用 `OFFICIAL_CHANNEL_ACCESS_TOKEN`（正確），
+後台 OG/SEO tab 設定了自訂 OG 標題「如果有一個地方，能幫你記住牠的一切，你會用嗎？」
+和自訂 OG 圖片（金毛犬圖），但分享到 LINE 時顯示的是 coverTitle「如果有一天牠不在了，你還能留下什麼？」
+
+#### 程式碼邏輯確認（正確）
+
+`generateMetadata` 的 fallback 順序：`survey.og_title || survey.cover_title || survey.title` ✓
+`surveyRepo.ts` 的 allowed 欄位包含 `og_title`、`og_description`、`og_image_url` ✓
+
+#### 可能原因（按機率排序）
+
+**原因 1（最可能）：DB 裡 og_title 是 NULL**
+
+後台 OG/SEO tab 可能沒有正確呼叫 save API，或 save API 把空字串存成了 NULL。
+
+```
+診斷 SQL：
+  SELECT id, slug, og_title, og_description, og_image_url, cover_title
+  FROM surveys WHERE slug = 'maoxingtianxia-mvp-survey';
+
+如果 og_title = NULL → 問題在前端存儲流程
+如果 og_title 有值 → 問題在 LINE 快取（見原因 2）
+```
+
+```
+檢查前端存儲流程：
+  src/app/(admin)/insight-admin/surveys/page.tsx 第 410-412 行
+  og_title: form.og_title || null,   ← 空字串會變 null
+  
+  這個沒問題（空字串 fallback 到 cover_title 是對的）
+  但要確認使用者填入的值有確實觸發 save API
+  
+  看第 377-413 行的 handleSave 函式，確認 PATCH /api/admin/surveys/{id}
+  有帶上 og_title、og_description、og_image_url 欄位
+```
+
+**原因 2：LINE 快取舊的 OG**
+
+LINE 對 OG 圖片和標題有快取，改了不會立刻更新。
+
+```
+驗證方式：
+  1. 用 Facebook 分享除錯工具測試：
+     https://developers.facebook.com/tools/debug/
+     輸入 https://insight.snowrealm.pet/snowrealm-pet/maoxingtianxia-mvp-survey
+     看抓到的 og:title 是什麼
+
+  2. 用 curl 確認 HTML 的 meta tag：
+     curl -s https://insight.snowrealm.pet/snowrealm-pet/maoxingtianxia-mvp-survey | grep 'og:'
+
+  3. 如果 meta tag 是對的但 LINE 顯示舊的 → 是 LINE 快取
+     解法：在 LINE 重新貼一次連結（清除對話記錄重貼），或等 24 小時
+
+  4. 如果 meta tag 也是舊的 → 是 Server 端的問題
+     可能是 Next.js 的 ISR/SSG 快取，需要重新建置或 revalidate
+```
+
+**原因 3：Next.js generateMetadata 快取**
+
+Next.js App Router 的 `generateMetadata` 在 production 可能被靜態化。
+
+```
+修復：確認 layout.tsx 或 page.tsx 有加上動態渲染：
+  export const dynamic = 'force-dynamic'
+  
+  或者用 revalidate：
+  export const revalidate = 60  // 每 60 秒重新生成
+
+檢查：
+  src/app/[org]/[slug]/page.tsx — 有沒有 export const dynamic?
+  src/app/(public)/survey/[slug]/layout.tsx — 有沒有?
+```
+
+---（所有 19 題都顯示）
+
+### 🔴 緊急修復：DB CHECK 約束錯誤 + 分流邏輯未修復
+
+#### 問題 A：`ai_usage_logs_action_check` 約束違反
+
+截圖顯示：`new row for relation "ai_usage_logs" violates check constraint "ai_usage_logs_action_check"`
+
+**根因：** `migration_phase10_ai.sql` 定義的 CHECK constraint 只允許 `'generate'` 和 `'regenerate'`：
+```sql
+action TEXT NOT NULL CHECK (action IN ('generate', 'regenerate'))
+```
+
+但 `ai-chat-generate/route.ts` 第 127 行傳了 `action: 'chat'`。
+TypeScript 的 `AiAction` 型別有加 `'chat'`，DB 沒更新。
+
+**修復 — 跑這段 SQL：**
+```sql
+ALTER TABLE ai_usage_logs DROP CONSTRAINT ai_usage_logs_action_check;
+ALTER TABLE ai_usage_logs ADD CONSTRAINT ai_usage_logs_action_check
+  CHECK (action IN ('generate', 'regenerate', 'generate_meta', 'regenerate_meta', 'chat', 'insight', 'story', 'sentiment'));
+```
+
+這樣所有 AI 功能的 action 值都能寫入（包括未來的 insight 報告、故事報告、情感分析）。
+
+#### 問題 B：分流邏輯 `useSurveyFlow.ts` 完全沒修！
+
+確認 diff：`phase3-src` vs `phase4-src` 的 `useSurveyFlow.ts` **零差異**。
+Cursor 跳過了這個修復。截圖確認還是 1/19，選了「沒有且暫時不考慮」卻要答 19 題。
+
+**必須手動修改 `src/hooks/useSurveyFlow.ts`：**
+
+把第 43-103 行的 `resolveRoutes` 和 `filterQuestions` 整段替換為：
+
+```typescript
+/** 根據所有分流規則與已作答，計算出目前活躍的路線 */
+function resolveRoutes(
+  rules: BranchRule[],
+  answers: Map<string, string | string[]>
+): Set<string> {
+  const active = new Set<string>()
+  // 注意：不要預設加 'A'！A 也是條件路線
+
+  for (const rule of rules) {
+    const branchAnswer = answers.get(rule.branchKey)
+    if (!branchAnswer) continue  // 還沒回答分流題
+
+    const ansArr = Array.isArray(branchAnswer) ? branchAnswer : [branchAnswer]
+
+    for (const ans of ansArr) {
+      for (const [route, values] of Object.entries(rule.routes)) {
+        if ((values as string[]).includes(ans)) {
+          active.add(route)
+        }
+      }
+    }
+  }
+
+  return active
+}
+
+/** 根據活躍路線過濾有效題目 */
+function filterQuestions(
+  questions: Question[],
+  activeRoutes: Set<string>,
+  rules: BranchRule[]
+): Question[] {
+  if (rules.length === 0) {
+    // 無分流設定 → 顯示所有題目
+    return questions
+  }
+
+  const branchKeys = new Set(rules.map(r => r.branchKey))
+  const hasAnyDecision = activeRoutes.size > 0
+
+  return questions.filter((q) => {
+    // route = 'all' 或沒設 → 共用題，永遠顯示
+    if (!q.route || q.route === 'all') return true
+    // 分流觸發題本身 → 永遠顯示
+    if (branchKeys.has(q.key)) return true
+    // 還沒回答分流題 → 不顯示任何分支題
+    if (!hasAnyDecision) return false
+    // 有分流生效 → 只顯示活躍路線的題目
+    return activeRoutes.has(q.route)
+  })
+}
+```
+
+修復後行為：
+- 選「有」或「曾經有」→ A 路線 → q1 + q2,q3,q4,q5 + q6 + q7-q11 = **11 題**
+- 選「沒有但未來想養」→ B 路線 → q1 + q2b,q3b,q4b,q5b + q6 + q7-q11 = **11 題**
+- 選「沒有且暫時不考慮」→ C 路線 → q1 + q2c,q3c,q4c,q5c + q6 + q7-q11 = **11 題**
+- 還沒回答 q1 → 只顯示 route='all' 的題目（第一題就是 q1）
+
+**注意：** 同時檢查 DB 裡 `surveys.branch_config` 是否為 NULL：
+```sql
+SELECT slug, branch_config FROM surveys WHERE slug = 'maoxingtianxia-mvp-survey';
+```
+如果是 NULL → 即使前端邏輯修好也不會分流。需要寫入：
+```sql
+UPDATE surveys SET branch_config = '{"branchKey":"q1","routes":{"A":["有","曾經有"],"B":["沒有但未來想養"],"C":["沒有且暫時不考慮"]}}' WHERE slug = 'maoxingtianxia-mvp-survey';
+```
+（注意：選項值要跟 DB questions 表裡的 option value 完全一致）
+
+---
+
+---
+
+### 🔴 需要修正：Rich Menu 設定 + LINE 參數統一管理
+
+`switchUserRichMenu()` 用的 Token 是 `OFFICIAL_CHANNEL_ACCESS_TOKEN`（正確），
 但 `POST_SURVEY_RICH_MENU_ID` 是從 `process.env` 讀取的，沒有經過 `lineConfig.ts` 的 DB 管理系統。
 而且 Rich Menu 可能建在 Insight Bot 上而不是 Official Bot 上。
 
@@ -829,6 +960,468 @@ listLineConfigs() 中：
   // 新邏輯：
   const group = def.group ?? (key.startsWith('INSIGHT_') ? 'insight' : key.startsWith('OFFICIAL_') ? 'official' : 'admin')
 ```
+
+### 🔴 緊急修復：故事報告沒有保存 + 缺少保存按鈕
+
+#### 問題 1：故事報告 API 沒有存入 DB
+
+`ai-insight/route.ts`（數據報告）第 60-64 行有 INSERT 到 `ai_insight_reports` ✅
+`ai-story/route.ts`（故事報告）**完全沒有存 DB** ✗ → 生成完刷新就消失
+
+```
+修改：src/app/api/admin/ai-story/route.ts
+
+在 return 之前加入：
+
+    // 存入 DB（與數據報告共用 ai_insight_reports 表，用 report_type 區分）
+    const reportMeta = {
+      provider: aiKey.provider,
+      model: aiKey.model,
+      keySource: aiKey.keySource,
+      generatedAt: new Date().toISOString(),
+    }
+
+    const saved = await queryOne<{ id: string }>(
+      `INSERT INTO ai_insight_reports (tenant_id, survey_id, report, meta, generated_by, report_type)
+       VALUES ($1, $2, $3, $4, $5, 'story') RETURNING id`,
+      [tenantId, surveyId, JSON.stringify(report), JSON.stringify(reportMeta), roleCheck.userId]
+    )
+
+    return NextResponse.json({
+      report,
+      reportId: saved?.id,    // ← 回傳 ID 讓前端可以分享
+      meta: reportMeta,
+      tokenUsage: { prompt: promptTokens, completion: completionTokens },
+    })
+
+需要先確認 ai_insight_reports 表有 report_type 欄位：
+  ALTER TABLE ai_insight_reports ADD COLUMN IF NOT EXISTS report_type TEXT DEFAULT 'data';
+```
+
+#### 問題 2：歷史報告列表沒有顯示故事報告
+
+`ai-insight/route.ts` 的 GET handler 只查 `ai_insight_reports`，
+但沒有區分 report_type，也沒有在前端分開顯示。
+
+```
+修改：src/app/api/admin/ai-insight/route.ts GET handler
+
+回傳時加上 report_type：
+  const reports = await query<ReportRow>(
+    `SELECT id, survey_id, report, meta, generated_by, created_at, 
+            COALESCE(report_type, 'data') as report_type
+     FROM ai_insight_reports
+     WHERE tenant_id = $1 AND survey_id = $2
+     ORDER BY created_at DESC
+     LIMIT 20`,
+    [tenantId, surveyId]
+  )
+
+前端 history 型別加上 report_type：
+  { id, report, meta, created_at, report_type: 'data' | 'story' }
+```
+
+#### 問題 3：前端缺少「保存」指示 + 歷史切換
+
+雖然數據報告是自動存的，但使用者不知道。故事報告現在修好後也會自動存。
+需要在 UI 上讓使用者清楚知道報告已保存，並能從歷史中載入。
+
+```
+修改：src/app/(admin)/insight-admin/insight/page.tsx
+
+1. 報告生成成功後顯示提示：
+   「✅ 報告已自動保存」（綠色 toast，2 秒後消失）
+
+2. 歷史報告列表區分數據/故事：
+   📊 2026/03/24 14:30 — 數據報告    [查看] [分享] [刪除]
+   📖 2026/03/24 15:00 — 故事報告    [查看] [分享] [刪除]
+
+3. 點「查看」歷史報告時：
+   - 如果是 report_type = 'data' → setReport(item.report) + setActiveTab('data')
+   - 如果是 report_type = 'story' → setStoryReport(item.report) + setActiveTab('story')
+
+4. 按鈕排列（數據模式）：
+   [✨ 產生報告]  [📤 分享]  [📋 複製摘要]
+
+5. 按鈕排列（故事模式）：
+   [📖 產生故事]  [📤 分享]  [📋 複製全文]
+```
+
+#### 分享小卡設計（可存成圖片）
+
+報告生成後，點「📤 分享」自動生成一張視覺小卡，右上角有儲存按鈕可下載 PNG。
+小卡上有插畫、故事大綱/數據摘要、品牌標記，適合分享到 LINE、IG 限動、FB。
+
+##### 小卡視覺結構
+
+**故事模式小卡：**
+```
+┌─────────────────────────────────────────┐
+│                                    [💾] │  ← 右上角儲存按鈕
+│         🐾 ✨ 🌿                        │  ← 主題插畫（Emoji 組合，根據行業/主題動態選）
+│                                         │
+│  ┌─────────────────────────────────┐    │
+│  │                                 │    │
+│  │  愛與陪伴：在數位時代的           │    │  ← storyTitle
+│  │  寵物情感連結                    │    │
+│  │                                 │    │
+│  └─────────────────────────────────┘    │
+│                                         │
+│  「如果愛有期限的話，                    │  ← pullQuotes[0]（引言）
+│    我希望是一萬年。」                    │
+│                                         │
+│  ── ── ── ── ── ── ──                 │
+│                                         │
+│  📊 500 位填答者                        │  ← keyDataPoints 精選
+│  💛 72% 希望留下毛孩的足跡              │
+│  🐕 312 隻狗 · 🐈 156 隻貓            │
+│                                         │
+│  ── ── ── ── ── ── ──                 │
+│                                         │
+│  ✨ 愛的陪伴，永恆不變。               │  ← shareableOneLiner
+│                                         │
+│  ┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈              │
+│  SnowRealm Insight Engine              │  ← 品牌
+│  insight.snowrealm.pet/report/xxx      │  ← 公開連結
+│  2026.03.24                             │  ← 日期
+└─────────────────────────────────────────┘
+```
+
+**數據模式小卡：**
+```
+┌─────────────────────────────────────────┐
+│                                    [💾] │
+│         📊 🔍 💡                        │
+│                                         │
+│  ┌─────────────────────────────────┐    │
+│  │  毛行天下 MVP 問卷               │    │  ← 問卷標題
+│  │  AI 洞察報告                     │    │
+│  └─────────────────────────────────┘    │
+│                                         │
+│  🟢 完成率 100%，數據品質 87 分         │  ← summary 摘要
+│                                         │
+│  ── 關鍵發現 ──                        │
+│                                         │
+│  ✅ 72% 的飼主想要足跡紀錄功能          │  ← highlights[0]
+│  ⚠️ q5 棄卷率偏高（34%）              │  ← highlights[1]（negative）
+│  📌 年輕族群偏好 AI 互動功能            │  ← highlights[2]
+│                                         │
+│  ── 建議行動 ──                        │
+│                                         │
+│  🎯 優先開發足跡時間線功能              │  ← recommendations[0]
+│                                         │
+│  ┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈              │
+│  SnowRealm Insight Engine              │
+│  insight.snowrealm.pet/report/xxx      │
+│  2026.03.24                             │
+└─────────────────────────────────────────┘
+```
+
+##### 插畫系統（Emoji 組合，不需要外部圖片）
+
+根據問卷主題或行業自動選擇插畫 Emoji 組合：
+```typescript
+// src/lib/shareCardIllustrations.ts
+
+const ILLUSTRATIONS: Record<string, string[]> = {
+  // 預設
+  default: ['📊', '✨', '💡'],
+  
+  // 行業
+  pet:        ['🐾', '✨', '🌿'],
+  restaurant: ['🍽️', '☕', '🌮'],
+  ecommerce:  ['🛍️', '📦', '💳'],
+  education:  ['📚', '🎓', '✏️'],
+  saas:       ['💻', '⚡', '🚀'],
+  health:     ['💚', '🏥', '🌱'],
+  
+  // 問卷主題（跟 9 種 theme 對應）
+  default_theme: ['📊', '✨', '💡'],
+  game:          ['🎮', '🏆', '⭐'],
+  cyber:         ['🤖', '⚡', '🌐'],
+  ancient:       ['🏯', '🌸', '📜'],
+  sakura:        ['🌸', '🎀', '💮'],
+  ocean:         ['🌊', '🐠', '🐚'],
+  forest:        ['🌲', '🍃', '🦊'],
+  candy:         ['🍬', '🎨', '🌈'],
+  noir:          ['🖤', '🌙', '✨'],
+}
+
+export function getIllustration(theme?: string, industry?: string): string[] {
+  if (industry && ILLUSTRATIONS[industry]) return ILLUSTRATIONS[industry]
+  if (theme && ILLUSTRATIONS[theme]) return ILLUSTRATIONS[theme]
+  return ILLUSTRATIONS.default
+}
+```
+
+##### 前端元件
+
+```
+新增：src/components/admin/ShareCard.tsx
+
+Props:
+  reportType: 'data' | 'story'
+  report: InsightReport | StoryInsightReport
+  surveyTitle: string
+  shareUrl: string
+  theme?: string
+  industry?: string
+  createdAt: string
+
+功能：
+  - 根據 reportType 渲染不同的卡片佈局
+  - 右上角 💾 按鈕：用 html2canvas 把卡片 DOM 轉成 PNG 下載
+  - 背景漸層跟問卷主題色連動（從 themes.ts 讀取）
+  - 卡片寬度固定 400px（適合手機螢幕和 IG 限動）
+  - 高度自適應內容
+
+  import html2canvas from 'html2canvas'  // 需要安裝：npm install html2canvas
+
+  const handleSaveImage = async () => {
+    const card = cardRef.current
+    if (!card) return
+    const canvas = await html2canvas(card, {
+      scale: 2,              // 2x 解析度
+      backgroundColor: null, // 透明背景
+      useCORS: true,
+    })
+    const link = document.createElement('a')
+    link.download = `insight-report-${shareSlug}.png`
+    link.href = canvas.toDataURL('image/png')
+    link.click()
+  }
+```
+
+```
+新增：src/components/admin/ShareCardModal.tsx
+
+Props:
+  open: boolean
+  onClose: () => void
+  reportType: 'data' | 'story'
+  report: InsightReport | StoryInsightReport
+  surveyTitle: string
+  shareUrl: string
+  theme?: string
+  createdAt: string
+
+Modal 內容：
+  ┌──────────────────────────────────────┐
+  │ 📤 分享報告                    [✕]  │
+  │                                      │
+  │  ┌────────────────────────┐          │
+  │  │   ShareCard 預覽       │          │
+  │  │   （實際大小預覽）      │          │
+  │  └────────────────────────┘          │
+  │                                      │
+  │  公開連結：                           │
+  │  https://insight.snowrealm.pet/...   │
+  │  [📋 複製連結]                       │
+  │                                      │
+  │  [💾 儲存圖片] [💬 分享到LINE]      │
+  │                                      │
+  │  自訂分享標題：                       │
+  │  ┌──────────────────────────┐       │
+  │  │ 毛行天下問卷分析報告     │       │
+  │  └──────────────────────────┘       │
+  │                                      │
+  │  [關閉公開分享]                      │
+  └──────────────────────────────────────┘
+```
+
+##### 整合到 insight 頁面
+
+```
+修改：src/app/(admin)/insight-admin/insight/page.tsx
+
+1. import ShareCardModal
+
+2. 新增 state：
+   const [shareModalOpen, setShareModalOpen] = useState(false)
+   const [shareReportId, setShareReportId] = useState<string | null>(null)
+   const [shareUrl, setShareUrl] = useState('')
+
+3. 分享按鈕（在產生報告/重新產生旁邊）：
+   <button onClick={handleShare}>📤 分享</button>
+
+4. handleShare 函式：
+   async function handleShare() {
+     // 呼叫 PATCH /api/admin/ai-insight 開啟公開分享
+     const res = await fetch('/api/admin/ai-insight', {
+       method: 'PATCH',
+       body: JSON.stringify({ reportId: currentReportId, action: 'share' })
+     })
+     const data = await res.json()
+     setShareUrl(data.shareUrl)
+     setShareModalOpen(true)
+   }
+
+5. ShareCardModal 元件：
+   <ShareCardModal
+     open={shareModalOpen}
+     onClose={() => setShareModalOpen(false)}
+     reportType={activeTab}
+     report={activeTab === 'data' ? report : storyReport}
+     surveyTitle={selectedSurvey?.title}
+     shareUrl={shareUrl}
+     theme={selectedSurvey?.theme}
+     createdAt={new Date().toISOString()}
+   />
+```
+
+##### 安裝依賴
+
+```bash
+npm install html2canvas
+```
+
+或如果不想加依賴，可以用 server-side 生成 PNG（用 satori + resvg-js）：
+```
+新增：src/app/api/report/[slug]/og/route.tsx
+  — 用 satori 把 React 元件渲染成 SVG → resvg 轉 PNG
+  — 同時用於 OG 圖片和下載功能
+  — 不需要瀏覽器環境（Node.js 原生）
+```
+
+---
+
+### 🟡 新功能：AI 報告公開分享頁面
+
+管理員在 AI 洞察報告頁面點「分享」→ 生成一個公開連結 → 任何人都能看到這份報告。
+連結格式：`https://insight.snowrealm.pet/report/{shareSlug}`
+
+分享出去的報告是**快照**（生成當下的內容），不會隨後續數據變動而改變。
+
+#### DB Migration
+
+```sql
+-- 在 ai_insight_reports 表新增分享欄位
+ALTER TABLE ai_insight_reports ADD COLUMN IF NOT EXISTS share_slug TEXT UNIQUE;
+ALTER TABLE ai_insight_reports ADD COLUMN IF NOT EXISTS is_public BOOLEAN DEFAULT false;
+ALTER TABLE ai_insight_reports ADD COLUMN IF NOT EXISTS share_title TEXT;       -- 自訂分享標題（OG 用）
+ALTER TABLE ai_insight_reports ADD COLUMN IF NOT EXISTS share_views INT DEFAULT 0;
+ALTER TABLE ai_insight_reports ADD COLUMN IF NOT EXISTS report_type TEXT DEFAULT 'data'; -- 'data' | 'story'
+
+-- 故事報告也存到同一張表（report_type = 'story'）
+-- report JSONB 欄位已經夠彈性，InsightReport 和 StoryInsightReport 都能存
+
+CREATE INDEX idx_insight_reports_share ON ai_insight_reports (share_slug) WHERE is_public = true;
+```
+
+#### 後端 API
+
+```
+修改：src/app/api/admin/ai-insight/route.ts
+
+新增 PATCH handler — 開啟/關閉公開分享：
+  PATCH { reportId, action: 'share' }
+    → 生成 share_slug（nanoid 8 碼，如 'rpt-a3x9k2m1'）
+    → 設 is_public = true
+    → 回傳 { shareUrl: 'https://insight.snowrealm.pet/report/rpt-a3x9k2m1' }
+
+  PATCH { reportId, action: 'unshare' }
+    → 設 is_public = false
+    → 回傳 { ok: true }
+
+  PATCH { reportId, action: 'update_title', shareTitle: '...' }
+    → 更新 share_title
+
+新增：src/app/api/report/[slug]/route.ts — 公開 API（不需登入）
+  GET /api/report/{shareSlug}
+    → 查 ai_insight_reports WHERE share_slug = $1 AND is_public = true
+    → 回傳 { report, meta, surveyTitle, shareTitle, reportType, createdAt }
+    → 同時 UPDATE share_views = share_views + 1
+    → 不回傳 tenant_id、generated_by 等敏感欄位
+```
+
+#### 公開報告頁面
+
+```
+新增：src/app/report/[slug]/page.tsx — SSR 公開頁（不需登入）
+
+頁面結構：
+┌─────────────────────────────────────────────────┐
+│  SnowRealm Insight Engine                       │
+│                                                  │
+│  📊 毛行天下 MVP 問卷 — AI 洞察報告              │
+│  產生時間：2026/03/24                            │
+│                                                  │
+│  ┌─────────────────────────────────────────┐    │
+│  │ 報告內容（跟後台看到的一樣）            │    │
+│  │ 如果是故事模式 → 顯示故事敘事           │    │
+│  │ 如果是數據模式 → 顯示 highlights +      │    │
+│  │   recommendations + insights             │    │
+│  └─────────────────────────────────────────┘    │
+│                                                  │
+│  ── ── ── ── ── ── ── ── ── ──                 │
+│                                                  │
+│  由 SnowRealm Insight Engine 生成               │
+│  想為你的問卷也生成 AI 洞察？                    │
+│  [免費試用 30 天]                                │
+│                                                  │
+│  👁 已被查看 {share_views} 次                    │
+└─────────────────────────────────────────────────┘
+
+OG Meta（分享到社群時自動帶圖帶文案）：
+  og:title = share_title || '毛行天下 MVP 問卷 — AI 洞察報告'
+  og:description = report.summary 的前 100 字（數據模式）或 storyBody 前 100 字（故事模式）
+  og:image = 自動生成的報告封面圖（可用 opengraph-image.tsx 動態生成）
+  og:url = https://insight.snowrealm.pet/report/{shareSlug}
+
+重要：
+  - 頁面不需要登入就能看
+  - 但不顯示原始數據（回覆列表、填答者資料等）
+  - 只顯示 AI 分析後的結論、建議、故事
+  - 底部永遠有 CTA 導向免費試用
+```
+
+#### 前端 — insight 頁面加分享按鈕
+
+```
+修改：src/app/(admin)/insight-admin/insight/page.tsx
+
+在報告生成成功後，新增一排按鈕：
+  [🔄 重新產生]  [📤 分享報告]  [📋 複製連結]
+
+點「📤 分享報告」：
+  → PATCH /api/admin/ai-insight { reportId, action: 'share' }
+  → 回傳 shareUrl
+  → 顯示 modal：
+    ┌──────────────────────────────────┐
+    │ 📤 報告已公開！                   │
+    │                                   │
+    │ https://insight.snowrealm.pet/   │
+    │ report/rpt-a3x9k2m1              │
+    │                                   │
+    │ [📋 複製連結] [💬 分享到 LINE]   │
+    │                                   │
+    │ 自訂標題（OG 分享時顯示）：       │
+    │ ┌────────────────────────────┐   │
+    │ │ 毛行天下 MVP 問卷分析報告  │   │
+    │ └────────────────────────────┘   │
+    │                                   │
+    │ 👁 已被查看 0 次                  │
+    │ [關閉公開分享]                    │
+    └──────────────────────────────────┘
+
+歷史報告列表裡，已分享的報告旁邊顯示 🔗 圖示 + 查看次數
+
+故事模式的報告也用同樣的分享機制：
+  - 故事報告存入 ai_insight_reports 時 report_type = 'story'
+  - 公開頁面根據 report_type 決定用數據模式還是故事模式渲染
+```
+
+#### middleware 路由
+
+```
+公開報告頁 /report/[slug] 不需要認證 → 不用改 middleware（它不在 matcher 裡）
+
+但 /api/report/[slug] 也不需要認證 → 確認 middleware matcher 沒有攔截 /api/report/*
+目前 matcher 是：['/insight-admin/:path*', '/api/admin/:path*', '/api/super-admin/:path*', ...]
+/api/report/* 不在裡面 → 自動放行 ✓
+```
+
+---
 
 ### 🔴 需要補完：Story × Data 前端入口
 
@@ -2018,7 +2611,134 @@ AI Prompt 核心：
 
 ---
 
-### 各功能的檔案改動總覽
+#### 3.6 問卷模板系統（預設模板 + 模板市集）
+
+> 現有的 `templates` 頁面是 LINE 訊息模板，不是問卷模板。這是全新功能。
+
+##### 概念
+
+三層模板系統：
+1. **平台預設模板** — SnowRealm 官方行業模板，所有租戶可用
+2. **租戶自訂模板** — 組織把自己的問卷存成模板，組織內共用
+3. **模板市集** — 使用者公開分享問卷模板，其他人一鍵複製
+
+##### DB Migration
+
+```sql
+CREATE TABLE IF NOT EXISTS survey_templates (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  source TEXT NOT NULL DEFAULT 'platform',  -- 'platform' | 'tenant' | 'marketplace'
+  tenant_id TEXT,
+  created_by UUID REFERENCES admin_users(id),
+  name TEXT NOT NULL,
+  description TEXT,
+  industry TEXT,                            -- pet | restaurant | ecommerce | saas | education | hr | general
+  icon TEXT DEFAULT '📋',
+  tags TEXT[] DEFAULT '{}',
+  survey_config JSONB NOT NULL,             -- { title, subtitle, coverTitle, theme, ... }
+  questions JSONB NOT NULL,                 -- Question[] 完整題目
+  branch_config JSONB,                      -- BranchConfig 分流設定
+  use_count INT DEFAULT 0,
+  rating_sum INT DEFAULT 0,
+  rating_count INT DEFAULT 0,
+  is_public BOOLEAN DEFAULT false,
+  is_featured BOOLEAN DEFAULT false,
+  is_active BOOLEAN DEFAULT true,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX idx_templates_industry ON survey_templates (industry) WHERE is_active = true;
+CREATE INDEX idx_templates_marketplace ON survey_templates (is_public, use_count DESC) WHERE is_active = true;
+
+CREATE TABLE IF NOT EXISTS template_ratings (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  template_id UUID NOT NULL REFERENCES survey_templates(id) ON DELETE CASCADE,
+  user_id UUID NOT NULL REFERENCES admin_users(id),
+  rating INT NOT NULL CHECK (rating BETWEEN 1 AND 5),
+  comment TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE (template_id, user_id)
+);
+```
+
+##### 平台預設模板清單
+
+```
+新增：src/lib/surveyTemplates.ts
+
+行業模板（每個含完整 questions + branch_config）：
+  🐾 寵物飼主調查 / 寵物離世紀念回饋
+  🍽️ 顧客滿意度調查 / 新品試吃回饋
+  🛍️ 購物體驗調查 / 購買決策分析
+  🚀 PMF 產品市場適配度 / 功能需求優先級
+  📚 課程滿意度 / 活動講座回饋
+  👥 員工滿意度 / 面試體驗回饋
+  ⭐ NPS 淨推薦分數 / 活動報名表 / 意見回饋表
+
+行業分類：
+  TEMPLATE_INDUSTRIES = [
+    { key: 'all', label: '全部', icon: '📋' },
+    { key: 'pet', label: '寵物', icon: '🐾' },
+    { key: 'restaurant', label: '餐飲', icon: '🍽️' },
+    { key: 'ecommerce', label: '電商', icon: '🛍️' },
+    { key: 'saas', label: 'SaaS', icon: '🚀' },
+    { key: 'education', label: '教育', icon: '📚' },
+    { key: 'hr', label: '人資', icon: '👥' },
+    { key: 'general', label: '通用', icon: '⭐' },
+  ]
+
+新增：scripts/seed-templates.ts — 把預設模板寫入 DB
+```
+
+##### API
+
+```
+新增：src/app/api/admin/survey-templates/route.ts
+  GET  — 列表（?source=platform|tenant|marketplace&industry=pet&search=關鍵字）
+  POST — 建立模板（從現有問卷複製 或 手動填寫）
+
+新增：src/app/api/admin/survey-templates/[id]/route.ts
+  GET    — 單一模板完整內容
+  PATCH  — 更新
+  DELETE — 刪除
+
+新增：src/app/api/admin/survey-templates/[id]/use/route.ts
+  POST — 一鍵從模板建立完整問卷
+    1. 讀取模板 survey_config + questions + branch_config
+    2. createSurvey → 批量 createQuestion → 設定 branch_config
+    3. use_count++
+    4. 回傳新問卷 ID + slug
+
+新增：src/app/api/admin/survey-templates/[id]/rate/route.ts
+  POST { rating: 1-5, comment? }
+
+新增：src/app/api/admin/survey-templates/[id]/publish/route.ts
+  POST { is_public: true } — 公開到市集
+```
+
+##### 後台頁面
+
+```
+新增：src/app/(admin)/insight-admin/survey-templates/page.tsx
+修改：layout.tsx — KNOWN_ADMIN_PAGES 加 'survey-templates'，Sidebar 加 { path: '/survey-templates', label: '📋 問卷模板' }
+修改：middleware.ts — KNOWN_ADMIN_PAGES 加 'survey-templates'
+
+頁面 UI：
+  Tab 切換：[🏢 平台模板] [🏠 我的模板] [🌐 模板市集]
+  行業篩選列：[全部] [🐾寵物] [🍽️餐飲] [🛍️電商] ...
+  搜尋框
+  模板卡片網格：圖示 + 名稱 + 說明 + 使用次數 + 評分 + [預覽] [使用]
+  「使用」→ modal 自訂標題/slug → 一鍵建立
+  「預覽」→ modal 顯示完整題目 + 分流邏輯
+
+修改：surveys/page.tsx
+  新增按鈕：[📋 從模板建立] → 跳轉到 survey-templates 頁面
+  問卷設定區塊加：[💾 存為模板] → modal 填寫名稱/說明/行業 → POST survey-templates
+
+模板市集排序：use_count DESC | rating DESC | created_at DESC
+精選模板（is_featured）置頂
+```
 
 | 功能 | 新增檔案 | 修改檔案 |
 |------|---------|---------|
@@ -2040,51 +2760,347 @@ AI Prompt 核心：
 | Story Wall | `lib/storyWallEngine.ts`、`components/public/StoryWall.tsx`、`app/story-wall/[surveySlug]/`、`api/story-wall/`、`api/admin/story-wall/` | — |
 | 免費試用 | `lib/trialEngine.ts`、`insight-admin/upgrade/`、DB migration | `middleware.ts` |
 | AI 主動推送 | `api/cron/ai-alerts/` | `api/cron/weekly-report/` |
+| 問卷模板 | `lib/surveyTemplates.ts`、`api/admin/survey-templates/`、`insight-admin/survey-templates/`、`scripts/seed-templates.ts`、DB migration | `surveys/page.tsx`、`layout.tsx`、`middleware.ts` |
 
 ---
 
-### 開發進度（2026-03-24 更新）
+### 建議開發順序（2026-03-25 更新）
+
+> Cursor 已建立大量 .ts 檔案，但很多沒有真正接上去。
+> 以下是按「緊急度 × 影響力」排列的執行清單，每項標註狀態。
 
 ```
-═══ 安全性 + 計費漏洞修復 ═══ 全部完成 ✅
+═══ 第 1 批：緊急 Bug 修復（阻礙正常使用）═══
 
-✅ CRITICAL-1：17 個 admin API 全加 requireRole（viewer/admin 分層）
-✅ CRITICAL-2：surveys/submit + surveys POST + team POST 加方案額度檢查
-✅ CRITICAL-3：payment/notify TradeSha + MerchantID + 金額 + 冪等性
-✅ CRITICAL-4：platformPartner 徽章 + planLimits userId bypass + toggle 審計日誌
+□ BUG-1  分流邏輯壞了（19 題全顯示）
+         修改：src/hooks/useSurveyFlow.ts
+         動作：把 resolveRoutes + filterQuestions 兩個函式整段替換
+               （完整代碼在本文件「緊急修復：DB CHECK 約束錯誤 + 分流邏輯未修復」區塊）
+         重點：刪除 active.add('A') 和 if (q.route === 'A') return true
+         驗證：選「沒有且暫時不考慮」→ 應只看到 11 題（不是 19 題）
+         同時：檢查 DB surveys.branch_config 是否為 NULL
 
-═══ Phase 2：分析 + LINE Bot ═══ 全部完成 ✅
+□ BUG-2  AI 對話建立問卷報錯 ai_usage_logs_action_check
+         動作：在 Supabase 跑 SQL：
+           ALTER TABLE ai_usage_logs DROP CONSTRAINT ai_usage_logs_action_check;
+           ALTER TABLE ai_usage_logs ADD CONSTRAINT ai_usage_logs_action_check
+             CHECK (action IN ('generate','regenerate','generate_meta','regenerate_meta','chat','insight','story','sentiment'));
 
-✅ P1.1：sentimentAnalysis.ts + ai-sentiment API（批次情感分析）
-✅ P2.1：lineAdminBot.ts（今日報告 / 漏斗 / 標籤）
-✅ P2.2：Quick Reply + cleanup-sessions cron
-✅ P2.3：switchUserRichMenu → finalizeSession 整合
-✅ U.9：tenantBranding.ts + site-settings Bot 文案欄位
-✅ 客服系統：supportEngine.ts + LINE 雙向工單
+□ BUG-3  OG 分享出去顯示 coverTitle 而非自訂 OG
+         診斷：SELECT og_title, cover_title FROM surveys WHERE slug = 'maoxingtianxia-mvp-survey';
+         如果 og_title = NULL → 前端 save 流程有 bug
+         如果 og_title 有值 → LINE 快取問題，重新貼連結即可
+         同時：確認 [org]/[slug]/page.tsx 和 survey/[slug]/layout.tsx 有 export const dynamic = 'force-dynamic'
 
-═══ Phase 3：護城河 + Story × Data ═══ 全部完成 ✅
+□ BUG-4  3 個 admin API 缺少 requireRole
+         ai-sentiment/route.ts → 加 requireRole('viewer')
+         responses/[id]/route.ts → 加 requireRole('viewer')
+         line/test/route.ts → 加 requireRole('admin')
 
-✅ 3.1：automationEngine.ts + automation_rules 表（migration_phase28）
-✅ 3.3：ruleEngine.ts + /api/ai/rules + /api/ai/validate + api_keys 表（migration_phase29）
-✅ 3.4.1：storyCardEngine.ts + /story/[responseId] + /api/story-card（migration_phase30）
-✅ 3.4.3：storyWallEngine.ts + /story-wall/[surveySlug] + /api/story-wall + 管理端（migration_phase31）
-✅ 3.4.2：storyEngine.ts + /api/admin/ai-story + insight 頁面故事模式 tab
-✅ 3.5：trialEngine.ts + /insight-admin/upgrade + /api/admin/trial-status（migration_phase32）
+═══ 第 2 批：功能接線（後端做好了但前端沒接上）═══
 
-═══ Phase 4：待辦（按優先序）═══
+□ WIRE-1  故事報告沒有保存到 DB
+          修改：src/app/api/admin/ai-story/route.ts
+          動作：在 return 前加 INSERT INTO ai_insight_reports（report_type = 'story'）
+          DB：  ALTER TABLE ai_insight_reports ADD COLUMN IF NOT EXISTS report_type TEXT DEFAULT 'data';
 
-⬜ P1.2：PDF 報告匯出（@react-pdf/renderer，insight 頁面加匯出按鈕）
-⬜ 3.2：行業分析模板（industryTemplates.ts，insightEngine 加行業 context）
-⬜ AI 主動推送：
-    - weekly-report 加入 AI 摘要 + 建議
-    - cron/ai-alerts（每日異常偵測 → LINE 推播管理員）
-⬜ Story Card OG Meta：story/[responseId] 加 server-side generateMetadata
-⬜ 完成頁整合：問卷完成頁加「分享你的故事」入口（allowStoryWall checkbox）
-⬜ U.1 super_admin 租戶隔離：auth/me 加 scope=super 參數
-⬜ U.7 重複租戶名稱：register route 加 name 唯一性檢查
-⬜ 3 個缺 requireRole 的 route：ai-sentiment、responses/[id]、line/test
+□ WIRE-2  洞察報告歷史列表不區分數據/故事
+          修改：ai-insight GET handler — 回傳加上 report_type
+          修改：insight/page.tsx — 歷史列表顯示 📊/📖 圖示，點擊切換對應 tab
+          新增：報告生成成功後顯示「✅ 已自動保存」toast
 
-★ Story Card + Story Wall 是傳播飛輪的起點，已上線，待完成頁面整合
+□ WIRE-3  故事牆管理頁面沒有 Sidebar 入口
+          修改：layout.tsx KNOWN_ADMIN_PAGES 加 'story-wall'
+          修改：layout.tsx BASE_NAV_GROUPS 加 { path: '/story-wall', label: '📖 故事牆管理' }
+          修改：middleware.ts KNOWN_ADMIN_PAGES 加 'story-wall'
+          新增：insight-admin/story-wall/page.tsx（管理頁面：審核/隱藏/置頂/篩選）
+
+□ WIRE-4  問卷完成頁缺少 Story Card + 分享按鈕
+          新增：components/public/StoryCard.tsx
+          新增：components/public/ShareButtons.tsx
+          修改：app/(public)/done/DoneClient.tsx — 呼叫 story-card API → 渲染卡片 → 分享按鈕
+          修改：submit route — allow_story_wall 預設 false，由完成頁勾選
+
+□ WIRE-5  Rich Menu 設定搬進後台 LINE 設定頁面
+          修改：lib/lineConfig.ts — LINE_CONFIG_KEYS 新增 POST_SURVEY_RICH_MENU_ID 等 8 個 key
+          修改：lib/lineNotify.ts switchUserRichMenu() — 改用 getLineConfig 取代 process.env
+          修改：line-settings/page.tsx — 新增 Rich Menu / LIFF / LINE Login 設定區塊
+          修改：listLineConfigs() — group 從定義讀取而非 key 前綴判斷
+
+□ WIRE-6  洞察報告分享功能（公開連結 + 分享小卡）
+          DB：  ALTER TABLE ai_insight_reports ADD COLUMN IF NOT EXISTS share_slug TEXT UNIQUE;
+                ALTER TABLE ai_insight_reports ADD COLUMN IF NOT EXISTS is_public BOOLEAN DEFAULT false;
+                ALTER TABLE ai_insight_reports ADD COLUMN IF NOT EXISTS share_title TEXT;
+                ALTER TABLE ai_insight_reports ADD COLUMN IF NOT EXISTS share_views INT DEFAULT 0;
+          修改：ai-insight route 新增 PATCH handler（share/unshare/update_title）
+          新增：app/api/report/[slug]/route.ts — 公開 API（不需登入）
+          新增：app/report/[slug]/page.tsx — 公開報告頁面（SSR + OG Meta + CTA）
+          新增：components/admin/ShareCard.tsx — 分享小卡（插畫 + 摘要 + 儲存 PNG）
+          新增：components/admin/ShareCardModal.tsx — 分享 modal
+          修改：insight/page.tsx — 加「📤 分享」按鈕 → 開 ShareCardModal
+          安裝：npm install html2canvas
+
+═══ 第 3 批：確認 Sidebar 所有功能都有入口 ═══
+
+□ NAV-1  逐一確認以下頁面在 Sidebar 有連結且可正常訪問：
+         □ Dashboard（/insight-admin/{slug}）
+         □ 問卷管理（/surveys）
+         □ 填答列表（/responses）
+         □ 漏斗分析（/funnel）
+         □ 交叉分析（/crosstab）
+         □ 標籤統計（/tags）
+         □ 標籤規則（/tag-rules）
+         □ 來源分析（/utm）
+         □ A/B 比較（/ab）
+         □ AI 洞察報告（/insight）—— 含數據報告 + 故事模式 tab
+         □ 故事牆管理（/story-wall）—— 新增
+         □ 客服中心（/support）
+         □ LINE 推播（/broadcast）
+         □ 通知規則（/notification-rules）
+         □ 訊息模板（/templates）
+         □ UTM 管理（/utm-links）
+         □ Rich Menu（/rich-menu）
+         □ LINE 設定（/line-settings）—— 含 Rich Menu ID / LIFF / LINE Login 設定
+         □ 通知樣式（/notification-styles）
+         □ 封測名單（/waitlist）
+         □ Webhook（/webhooks）
+         □ Meta/OG（/site-settings）
+         □ AI 設定（/ai-settings）
+         □ 主題設定（/theme-settings）
+         □ 管理員面板（/panel）
+         □ 團隊管理（/team）
+         □ 租戶管理（/tenants）—— 僅 super_admin
+         □ 帳號設定（/account）
+         □ 訂閱方案（/subscription）
+         □ 升級頁面（/upgrade）—— 試用到期時導向
+
+═══ 第 4 批：前面規劃但尚未實作的功能 ═══
+
+□ FEAT-1  Dashboard 頁面整合新指標
+          確認 page.tsx 有顯示：平均填答時間、數據品質分數、回覆速度長條圖、棄卷熱點標紅
+
+□ FEAT-2  AI 對話生成的問卷確認能寫入 DB
+          確認 AiSurveyChat.tsx 的流程：parseSurveyJson → 預覽 → 呼叫 surveys API 建立 → 建立題目
+
+□ FEAT-3  品牌化 PDF 報告匯出
+          新增：api/admin/export-report/route.ts
+          修改：insight/page.tsx 加「匯出 PDF」按鈕
+
+□ FEAT-4  公開故事牆頁底部 CTA + 頂部統計 + 關鍵字標籤雲
+          確認：story-wall/[surveySlug]/page.tsx
+
+□ FEAT-7  總後台：平台級通知系統 + Rich Menu + 通知樣式管理
+          （只有 super_admin 可進入的 /snowrealm-insight-ctrl）
+
+          ═══ 7a. 平台公告通知系統 ═══
+
+          DB：
+          CREATE TABLE IF NOT EXISTS platform_notifications (
+            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            -- 通知內容
+            title TEXT NOT NULL,
+            content TEXT NOT NULL,
+            content_type TEXT DEFAULT 'text',        -- 'text' | 'flex' | 'markdown'
+            flex_json JSONB,                         -- Flex Message JSON（LINE 用）
+            -- 通知類型
+            category TEXT NOT NULL DEFAULT 'announcement',  -- 'announcement' | 'maintenance' | 'feature' | 'promotion' | 'urgent'
+            -- 推送目標
+            target TEXT NOT NULL DEFAULT 'all',       -- 'all' | 'pro' | 'free' | 'specific'
+            target_tenant_ids TEXT[],                 -- target='specific' 時指定
+            -- 推送管道
+            channels TEXT[] DEFAULT '{line,dashboard}', -- 'line' | 'dashboard' | 'email'
+            -- 排程
+            status TEXT DEFAULT 'draft',              -- 'draft' | 'scheduled' | 'sent' | 'cancelled'
+            scheduled_at TIMESTAMPTZ,
+            sent_at TIMESTAMPTZ,
+            -- 統計
+            sent_count INT DEFAULT 0,
+            read_count INT DEFAULT 0,
+            -- 元資料
+            created_by UUID REFERENCES admin_users(id),
+            created_at TIMESTAMPTZ DEFAULT NOW(),
+            updated_at TIMESTAMPTZ DEFAULT NOW()
+          );
+
+          -- 已讀紀錄（Dashboard 內建通知用）
+          CREATE TABLE IF NOT EXISTS notification_reads (
+            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            notification_id UUID REFERENCES platform_notifications(id) ON DELETE CASCADE,
+            user_id UUID REFERENCES admin_users(id),
+            read_at TIMESTAMPTZ DEFAULT NOW(),
+            UNIQUE (notification_id, user_id)
+          );
+
+          通知類型：
+            📢 announcement — 系統公告（新功能上線、版本更新）
+            🔧 maintenance  — 維護通知（預定停機、緊急維修）
+            ✨ feature      — 新功能介紹（功能說明 + CTA）
+            🎉 promotion    — 促銷活動（限時優惠、折扣）
+            🚨 urgent       — 緊急通知（安全事件、重大 bug）
+
+          API：
+            新增：src/app/api/super-admin/notifications/route.ts
+              GET  — 列出所有平台通知（含統計）
+              POST — 建立新通知（草稿 or 立即發送 or 排程）
+
+            新增：src/app/api/super-admin/notifications/[id]/route.ts
+              GET    — 單一通知詳情 + 送達/已讀統計
+              PATCH  — 編輯（draft 狀態才能改）
+              DELETE — 刪除
+
+            新增：src/app/api/super-admin/notifications/[id]/send/route.ts
+              POST — 立即發送
+                1. 根據 target 查出目標租戶的管理員
+                2. channels 包含 'line' → 批量 LINE Push Message
+                3. channels 包含 'dashboard' → 寫入 notification_reads（未讀狀態）
+                4. channels 包含 'email' → 批量發送 email
+                5. 更新 sent_count + sent_at + status='sent'
+
+          總後台頁面：
+            新增：src/app/(super-admin)/snowrealm-insight-ctrl/notifications/page.tsx
+
+            UI：
+            ┌─────────────────────────────────────────────────┐
+            │ 📢 平台通知管理                    [+ 建立通知] │
+            │                                                  │
+            │ [全部] [📢公告] [🔧維護] [✨功能] [🎉促銷]      │
+            │                                                  │
+            │ ┌────────────────────────────────────────────┐  │
+            │ │ 📢 Insight Engine v2.0 正式上線            │  │
+            │ │ 狀態：已發送 · 送達 156 人 · 已讀 89 人    │  │
+            │ │ 管道：LINE + Dashboard                      │  │
+            │ │ 2026/03/25 14:00                            │  │
+            │ │ [查看詳情] [重新發送]                       │  │
+            │ ├────────────────────────────────────────────┤  │
+            │ │ 🔧 系統維護公告：3/28 02:00-04:00          │  │
+            │ │ 狀態：排程中 · 預定 3/27 18:00 發送         │  │
+            │ │ [編輯] [取消排程]                           │  │
+            │ ├────────────────────────────────────────────┤  │
+            │ │ 🎉 Pro 方案首月半價                        │  │
+            │ │ 狀態：草稿                                  │  │
+            │ │ [編輯] [預覽] [立即發送] [排程發送]        │  │
+            │ └────────────────────────────────────────────┘  │
+            └─────────────────────────────────────────────────┘
+
+            建立/編輯 Modal：
+              標題：[________________________]
+              內容：[________________________]（支援 markdown）
+              類型：[▼ 選擇類型]
+              推送目標：● 全部租戶 ○ 僅 Pro ○ 僅 Free ○ 指定租戶
+              推送管道：☑ LINE ☑ Dashboard ☐ Email
+              LINE 樣式：● 純文字 ○ Flex Message（可自訂 JSON）
+              [預覽] [存為草稿] [立即發送] [排程發送]
+
+          ═══ 7b. 總後台 Rich Menu 管理 ═══
+
+          目前 Rich Menu 只在租戶後台（insight-admin/rich-menu）可管理。
+          總後台需要能管理**平台級的 Rich Menu**（Official Bot 的預設選單）。
+
+          新增：src/app/(super-admin)/snowrealm-insight-ctrl/rich-menu/page.tsx
+
+          功能：
+            - 管理 Official Bot 和 Insight Bot 的 Rich Menu（跟租戶版一樣的 UI）
+            - 但這裡是**全域預設**，影響所有沒有自訂 Rich Menu 的用戶
+            - 可以設定「新好友預設 Rich Menu」和「填完問卷後 Rich Menu」
+            - 顯示目前各 Bot 的預設 Rich Menu 狀態
+
+          API：
+            複用現有的 /api/admin/rich-menu，但加一個 scope 參數
+            或新增：src/app/api/super-admin/rich-menu/route.ts
+            → 直接用 ENV 的 Channel Token 操作（不走租戶的 lineConfig）
+
+          ═══ 7c. 總後台通知樣式管理 ═══
+
+          目前 line_notification_styles 是租戶級的。
+          總後台需要管理**平台級的通知樣式**（系統通知的 Flex Message 模板）。
+
+          新增：src/app/(super-admin)/snowrealm-insight-ctrl/notification-styles/page.tsx
+
+          功能：
+            - 管理平台級的 LINE Flex Message 樣式
+            - 系統通知（新帳號、登入、問卷完成、AI 報告等）的樣式在這裡統一管理
+            - 每種通知事件可自訂：標題、顏色、按鈕文字、圖片
+            - 預覽功能：即時看到 Flex Message 的效果
+
+          DB：
+          CREATE TABLE IF NOT EXISTS platform_notification_styles (
+            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            event_type TEXT NOT NULL UNIQUE,   -- 'new_signup' | 'login' | 'survey_complete' | 'ai_report' | 'weekly_report' | 'payment_success' ...
+            display_name TEXT NOT NULL,         -- 顯示名稱（如「新用戶註冊通知」）
+            is_active BOOLEAN DEFAULT true,
+            -- Flex Message 樣式
+            header_color TEXT DEFAULT '#1DB446',
+            header_text TEXT,
+            body_template TEXT NOT NULL,        -- 支援 {{variable}} 佔位符
+            footer_text TEXT,
+            button_label TEXT,
+            button_url TEXT,                    -- 支援 {{variable}}
+            thumbnail_url TEXT,
+            -- 純文字備援（LINE 不支援 Flex 時）
+            text_template TEXT NOT NULL,        -- 支援 {{variable}}
+            -- 元資料
+            updated_by UUID REFERENCES admin_users(id),
+            updated_at TIMESTAMPTZ DEFAULT NOW()
+          );
+
+          預設事件類型 seed：
+            new_signup        → 新用戶註冊（通知到管理員 LINE）
+            user_login        → 用戶登入
+            survey_complete   → 問卷填答完成
+            ai_report_ready   → AI 報告生成完成
+            weekly_report     → 每週報告
+            payment_success   → 付款成功
+            trial_expiring    → 試用即將到期（3天前）
+            trial_expired     → 試用已到期
+            response_milestone → 回覆數里程碑（100/500/1000）
+            support_new_ticket → 新客服工單
+            system_alert      → 系統異常警報
+
+          API：
+            新增：src/app/api/super-admin/notification-styles/route.ts
+              GET  — 列出所有事件樣式
+              PATCH — 更新特定事件的樣式
+
+          修改：src/lib/lineNotify.ts
+            目前 pushToAdmin 等函式的 Flex Message 是硬編碼的
+            改成從 platform_notification_styles 讀取模板 → 填入變數 → 發送
+
+          ═══ 7d. 總後台導覽更新 ═══
+
+          修改：src/app/(super-admin)/snowrealm-insight-ctrl/layout.tsx
+
+          NAV_ITEMS 新增：
+            { href: '/snowrealm-insight-ctrl/notifications', label: '平台通知', icon: '📢' },
+            { href: '/snowrealm-insight-ctrl/rich-menu', label: 'Rich Menu', icon: '📱' },
+            { href: '/snowrealm-insight-ctrl/notification-styles', label: '通知樣式', icon: '🎨' },
+
+□ FEAT-6  問卷模板系統
+          DB：  建立 survey_templates + template_ratings 表
+          新增：lib/surveyTemplates.ts（預設模板定義 + 行業分類）
+          新增：api/admin/survey-templates/（CRUD + use + rate + publish）
+          新增：insight-admin/survey-templates/page.tsx（模板瀏覽 + 市集）
+          新增：scripts/seed-templates.ts（seed 平台預設模板）
+          修改：surveys/page.tsx 加 [📋 從模板建立] + [💾 存為模板]
+          修改：layout.tsx + middleware.ts 加 'survey-templates'
+
+□ FEAT-8  AI 主動推送（LINE 週報 AI 摘要 + 異常預警）
+          修改：api/cron/weekly-report 加 AI 摘要
+          新增：api/cron/ai-alerts（NPS 下降 / 棄卷率飆升 / 負面關鍵字）
+
+═══ 第 5 批：P-URGENT 剩餘項目（部分可能已被 Cursor 處理）═══
+
+□ URG-1  確認毛行天下重複問題已解決
+         SQL: SELECT slug, name FROM tenants WHERE name LIKE '%毛行天下%';
+         如果重複 → 刪除/合併 + register route 加名稱唯一檢查
+
+□ URG-2  確認服務狀態紅燈已修好
+         panel 頁面的 PostgreSQL / LINE / OpenAI 狀態是否全綠
+
+□ URG-3  確認 super_admin 租戶列表不再顯示全部（或維持全部但去重）
+
+□ URG-4  毛行天下硬編碼解耦
+         確認 Official Bot 文案從 tenantBranding.ts 讀取而非硬編碼
+         確認 site-settings 頁面有 Bot 文案設定區塊
 ```
 
 ---

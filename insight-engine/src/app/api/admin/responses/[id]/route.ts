@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getResponseDetail } from '@/lib/stats'
 import { query } from '@/lib/db'
+import { requireRole } from '@/lib/tenant'
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
@@ -8,6 +9,9 @@ export async function GET(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ): Promise<NextResponse> {
+  const roleCheck = await requireRole('viewer')
+  if (roleCheck instanceof NextResponse) return roleCheck
+
   const { id } = await params
 
   if (!UUID_REGEX.test(id)) {
