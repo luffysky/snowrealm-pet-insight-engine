@@ -21,10 +21,10 @@ interface UserInfo {
 
 /** 已知的 admin 子頁面路徑（與 middleware 保持一致，用來區分 tenant slug） */
 const KNOWN_ADMIN_PAGES = new Set([
-  'ab', 'account', 'ai-settings', 'broadcast', 'crosstab', 'export', 'funnel', 'insight', 'line-settings',
+  'ab', 'account', 'ai-settings', 'api-keys', 'broadcast', 'crosstab', 'export', 'funnel', 'insight', 'line-settings',
   'my-responses', 'notification-rules', 'notification-styles', 'panel', 'rich-menu',
   'site-settings', 'story-wall', 'subscription', 'support', 'survey-templates', 'surveys', 'tag-rules', 'tags', 'team', 'templates', 'tenants',
-  'theme-settings', 'utm', 'utm-links', 'waitlist', 'webhooks', 'responses',
+  'theme-settings', 'utm', 'utm-links', 'upgrade', 'waitlist', 'webhooks', 'responses',
 ])
 
 /** 從 pathname 提取 tenant slug（如 /insight-admin/snowrealm-pet/surveys → snowrealm-pet） */
@@ -110,6 +110,7 @@ const BASE_NAV_GROUPS = [
       { path: '/waitlist', label: '封測名單' },
       { path: '/team', label: '團隊管理' },
       { path: '/subscription', label: '訂閱管理' },
+      { path: '/upgrade', label: '🚀 升級方案' },
       { path: '/account', label: '帳號設定' },
       { path: '/my-responses', label: '我的填答' },
     ],
@@ -168,6 +169,7 @@ const BASE_MOBILE_GROUPS = [
       { path: '/waitlist', label: '封測名單' },
       { path: '/team', label: '團隊管理' },
       { path: '/subscription', label: '訂閱管理' },
+      { path: '/upgrade', label: '🚀 升級方案' },
       { path: '/account', label: '帳號設定' },
       { path: '/my-responses', label: '我的填答' },
     ],
@@ -331,6 +333,7 @@ function AdminLayoutInner({
     { href: toHref('/waitlist', adminPrefix), label: '封測名單' },
     { href: toHref('/team', adminPrefix), label: '團隊管理' },
     { href: toHref('/subscription', adminPrefix), label: '訂閱管理' },
+    { href: toHref('/upgrade', adminPrefix), label: '🚀 升級方案' },
     { href: toHref('/export', adminPrefix), label: '資料匯出' },
     { href: toHref('/account', adminPrefix), label: '後台設定' },
     { href: toHref('/my-responses', adminPrefix), label: '我的填答' },
