@@ -38,7 +38,7 @@ const KNOWN_ADMIN_PAGES = new Set([
   'ab', 'account', 'ai-settings', 'api-keys', 'broadcast', 'crosstab', 'export', 'funnel', 'insight', 'line-settings',
   'my-responses', 'notification-rules', 'notification-styles', 'panel', 'rich-menu',
   'site-settings', 'subscription', 'support', 'surveys', 'tag-rules', 'tags', 'team', 'templates', 'tenants',
-  'theme-settings', 'utm', 'utm-links', 'waitlist', 'webhooks', 'responses',
+  'theme-settings', 'utm', 'utm-links', 'upgrade', 'waitlist', 'webhooks', 'responses',
 ])
 
 export async function middleware(request: NextRequest): Promise<NextResponse> {
