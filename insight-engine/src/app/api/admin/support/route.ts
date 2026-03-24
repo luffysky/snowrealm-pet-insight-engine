@@ -36,8 +36,10 @@ const VALID_STATUSES = ['open', 'in_progress', 'resolved', 'closed']
 const VALID_PRIORITIES = ['low', 'normal', 'high', 'urgent']
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
+  const roleCheck = await requireRole('viewer')
+  if (roleCheck instanceof NextResponse) return roleCheck
   try {
-    const { tenantId } = await getTenantContext()
+    const { tenantId } = roleCheck
     const { searchParams } = new URL(request.url)
 
     const status = searchParams.get('status')

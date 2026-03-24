@@ -14,6 +14,23 @@ interface ReportMeta {
   generatedAt: string
 }
 
+interface HistoryItem {
+  id: string
+  report: InsightReport | StoryInsightReport
+  meta: ReportMeta
+  created_at: string
+  report_type: 'data' | 'story'
+  is_public: boolean
+  share_slug: string | null
+  share_views: number
+}
+
+interface ShareModal {
+  open: boolean
+  url: string
+  reportId: string
+}
+
 type ActiveTab = 'data' | 'story'
 
 // ===== 數據報告子元件 =====
@@ -161,6 +178,110 @@ function StoryReportDisplay({ report }: { report: StoryInsightReport }) {
   )
 }
 
+// ===== 已儲存 Toast =====
+
+function SavedToast({ visible }: { visible: boolean }) {
+  return (
+    <div
+      className={`fixed bottom-6 right-6 z-50 flex items-center gap-2 bg-emerald-600 text-white text-sm font-medium px-4 py-2.5 rounded-xl shadow-lg transition-all duration-300 ${
+        visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2 pointer-events-none'
+      }`}
+    >
+      ✅ 報告已自動保存
+    </div>
+  )
+}
+
+// ===== 分享 Modal =====
+
+function ShareModal({
+  modal,
+  onClose,
+  onUnshare,
+}: {
+  modal: ShareModal
+  onClose: () => void
+  onUnshare: (reportId: string) => void
+}) {
+  const [copied, setCopied] = useState(false)
+
+  function handleCopy() {
+    navigator.clipboard.writeText(modal.url).then(() => {
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    })
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      {/* Backdrop */}
+      <div
+        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+        onClick={onClose}
+      />
+      {/* Modal */}
+      <div className="relative bg-slate-900 border border-slate-700 rounded-2xl p-6 w-full max-w-md space-y-5 shadow-2xl">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <h3 className="text-base font-semibold text-white">📤 報告已公開！</h3>
+          <button
+            type="button"
+            onClick={onClose}
+            className="text-slate-400 hover:text-white transition-colors cursor-pointer text-lg leading-none"
+          >
+            ✕
+          </button>
+        </div>
+
+        {/* URL */}
+        <div className="space-y-2">
+          <p className="text-xs text-slate-400">公開連結</p>
+          <div className="flex items-center gap-2 bg-slate-800 border border-slate-700 rounded-xl px-3 py-2">
+            <span className="flex-1 text-sm text-white/80 truncate font-mono">{modal.url}</span>
+            <button
+              type="button"
+              onClick={handleCopy}
+              className="shrink-0 text-xs px-2.5 py-1 rounded-lg bg-violet-600 hover:bg-violet-500 text-white transition-colors cursor-pointer"
+            >
+              {copied ? '✓ 已複製' : '複製'}
+            </button>
+          </div>
+        </div>
+
+        {/* Actions */}
+        <div className="flex gap-3">
+          <a
+            href={`https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(modal.url)}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex-1 text-center text-sm font-medium px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl transition-colors"
+          >
+            💬 分享到 LINE
+          </a>
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex-1 text-sm font-medium px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-xl transition-colors cursor-pointer"
+          >
+            關閉
+          </button>
+        </div>
+
+        {/* Unshare */}
+        <div className="border-t border-slate-700 pt-4">
+          <button
+            type="button"
+            onClick={() => onUnshare(modal.reportId)}
+            className="text-xs text-red-400/60 hover:text-red-400 transition-colors cursor-pointer"
+          >
+            關閉公開分享
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ===== 主頁面 =====
 
 export default function InsightPage() {
@@ -171,23 +292,42 @@ export default function InsightPage() {
   const [meta, setMeta] = useState<ReportMeta | null>(null)
   const [generating, setGenerating] = useState(false)
   const [error, setError] = useState('')
-  const [history, setHistory] = useState<Array<{ id: string; report: InsightReport; meta: ReportMeta; created_at: string }>>([])
+  const [currentDataReportId, setCurrentDataReportId] = useState<string | null>(null)
+
+  // 歷史報告狀態
+  const [history, setHistory] = useState<HistoryItem[]>([])
   const [historyLoading, setHistoryLoading] = useState(false)
 
   // 故事模式狀態
   const [storyReport, setStoryReport] = useState<StoryInsightReport | null>(null)
   const [storyGenerating, setStoryGenerating] = useState(false)
   const [storyError, setStoryError] = useState('')
+  const [currentStoryReportId, setCurrentStoryReportId] = useState<string | null>(null)
 
   // Tab 狀態
   const [activeTab, setActiveTab] = useState<ActiveTab>('data')
+
+  // Toast 狀態
+  const [savedToast, setSavedToast] = useState(false)
+
+  // 分享 Modal 狀態
+  const [shareModal, setShareModal] = useState<ShareModal>({ open: false, url: '', reportId: '' })
+
+  // ===== 顯示已儲存 Toast =====
+
+  function showSavedToast() {
+    setSavedToast(true)
+    setTimeout(() => setSavedToast(false), 2000)
+  }
+
+  // ===== 歷史記錄 =====
 
   const fetchHistory = useCallback(async () => {
     if (!selectedSurveyId) return
     setHistoryLoading(true)
     try {
       const res = await fetch(`/api/admin/ai-insight?surveyId=${selectedSurveyId}`)
-      const data = await res.json() as { data?: Array<{ id: string; report: InsightReport; meta: ReportMeta; created_at: string }> }
+      const data = await res.json() as { data?: HistoryItem[] }
       setHistory(data.data ?? [])
     } catch {
       setHistory([])
@@ -202,8 +342,12 @@ export default function InsightPage() {
     setHistory([])
     setStoryReport(null)
     setStoryError('')
+    setCurrentDataReportId(null)
+    setCurrentStoryReportId(null)
     fetchHistory()
   }, [fetchHistory])
+
+  // ===== 刪除報告 =====
 
   async function handleDeleteReport(reportId: string) {
     try {
@@ -213,6 +357,8 @@ export default function InsightPage() {
       /* silent */
     }
   }
+
+  // ===== 產生數據報告 =====
 
   async function handleGenerate() {
     if (!selectedSurveyId || generating) return
@@ -226,7 +372,12 @@ export default function InsightPage() {
         body: JSON.stringify({ surveyId: selectedSurveyId }),
       })
 
-      const data = await res.json() as { report?: InsightReport; meta?: ReportMeta; error?: string }
+      const data = await res.json() as {
+        report?: InsightReport
+        meta?: ReportMeta
+        reportId?: string
+        error?: string
+      }
 
       if (!res.ok) {
         setError(data.error ?? '產生報告失敗')
@@ -235,6 +386,10 @@ export default function InsightPage() {
 
       setReport(data.report ?? null)
       setMeta(data.meta ?? null)
+      if (data.reportId) {
+        setCurrentDataReportId(data.reportId)
+        showSavedToast()
+      }
       await fetchHistory()
     } catch {
       setError('網路錯誤，請稍後再試')
@@ -242,6 +397,8 @@ export default function InsightPage() {
       setGenerating(false)
     }
   }
+
+  // ===== 產生故事報告 =====
 
   async function handleGenerateStory() {
     if (!selectedSurveyId || storyGenerating) return
@@ -255,7 +412,11 @@ export default function InsightPage() {
         body: JSON.stringify({ surveyId: selectedSurveyId }),
       })
 
-      const data = await res.json() as { report?: StoryInsightReport; error?: string }
+      const data = await res.json() as {
+        report?: StoryInsightReport
+        reportId?: string
+        error?: string
+      }
 
       if (!res.ok) {
         setStoryError(data.error ?? '產生故事報告失敗')
@@ -263,12 +424,67 @@ export default function InsightPage() {
       }
 
       setStoryReport(data.report ?? null)
+      if (data.reportId) {
+        setCurrentStoryReportId(data.reportId)
+        showSavedToast()
+      }
+      await fetchHistory()
     } catch {
       setStoryError('網路錯誤，請稍後再試')
     } finally {
       setStoryGenerating(false)
     }
   }
+
+  // ===== 分享報告 =====
+
+  async function handleShare(reportId: string) {
+    try {
+      const res = await fetch('/api/admin/ai-insight', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reportId, action: 'share' }),
+      })
+      const data = await res.json() as { shareUrl?: string; error?: string }
+      if (res.ok && data.shareUrl) {
+        setShareModal({ open: true, url: data.shareUrl, reportId })
+        await fetchHistory()
+      }
+    } catch {
+      /* silent */
+    }
+  }
+
+  async function handleUnshare(reportId: string) {
+    try {
+      await fetch('/api/admin/ai-insight', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reportId, action: 'unshare' }),
+      })
+      setShareModal({ open: false, url: '', reportId: '' })
+      await fetchHistory()
+    } catch {
+      /* silent */
+    }
+  }
+
+  // ===== 點擊歷史報告 =====
+
+  function handleLoadHistoryItem(item: HistoryItem) {
+    if (item.report_type === 'story') {
+      setStoryReport(item.report as StoryInsightReport)
+      setCurrentStoryReportId(item.id)
+      setActiveTab('story')
+    } else {
+      setReport(item.report as InsightReport)
+      setMeta(item.meta)
+      setCurrentDataReportId(item.id)
+      setActiveTab('data')
+    }
+  }
+
+  // ===== 未選問卷 =====
 
   if (!selectedSurveyId) {
     return (
@@ -285,32 +501,68 @@ export default function InsightPage() {
 
   return (
     <div className="space-y-8">
+      {/* 已儲存 Toast */}
+      <SavedToast visible={savedToast} />
+
+      {/* 分享 Modal */}
+      {shareModal.open && (
+        <ShareModal
+          modal={shareModal}
+          onClose={() => setShareModal({ open: false, url: '', reportId: '' })}
+          onUnshare={handleUnshare}
+        />
+      )}
+
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-white">🔍 AI 洞察報告</h1>
           <p className="text-slate-400 mt-1 text-sm">AI 自動分析問卷數據，產出洞察與建議</p>
         </div>
-        {activeTab === 'data' && (
-          <button
-            type="button"
-            onClick={handleGenerate}
-            disabled={generating}
-            className="px-5 py-2.5 bg-linear-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 disabled:opacity-50 text-white rounded-xl text-sm font-medium transition-all cursor-pointer"
-          >
-            {generating ? '🤖 分析中...' : report ? '🔄 重新產生' : '✨ 產生 AI 洞察報告'}
-          </button>
-        )}
-        {activeTab === 'story' && (
-          <button
-            type="button"
-            onClick={handleGenerateStory}
-            disabled={storyGenerating}
-            className="px-5 py-2.5 bg-linear-to-r from-rose-600 to-orange-600 hover:from-rose-500 hover:to-orange-500 disabled:opacity-50 text-white rounded-xl text-sm font-medium transition-all cursor-pointer"
-          >
-            {storyGenerating ? '✍️ 撰寫中...' : storyReport ? '🔄 重新產生' : '📖 產生故事報告'}
-          </button>
-        )}
+        <div className="flex items-center gap-2">
+          {activeTab === 'data' && (
+            <>
+              {report && currentDataReportId && (
+                <button
+                  type="button"
+                  onClick={() => handleShare(currentDataReportId)}
+                  className="px-4 py-2.5 bg-slate-700 hover:bg-slate-600 text-white rounded-xl text-sm font-medium transition-all cursor-pointer"
+                >
+                  📤 分享
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={handleGenerate}
+                disabled={generating}
+                className="px-5 py-2.5 bg-linear-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 disabled:opacity-50 text-white rounded-xl text-sm font-medium transition-all cursor-pointer"
+              >
+                {generating ? '🤖 分析中...' : report ? '🔄 重新產生' : '✨ 產生 AI 洞察報告'}
+              </button>
+            </>
+          )}
+          {activeTab === 'story' && (
+            <>
+              {storyReport && currentStoryReportId && (
+                <button
+                  type="button"
+                  onClick={() => handleShare(currentStoryReportId)}
+                  className="px-4 py-2.5 bg-slate-700 hover:bg-slate-600 text-white rounded-xl text-sm font-medium transition-all cursor-pointer"
+                >
+                  📤 分享
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={handleGenerateStory}
+                disabled={storyGenerating}
+                className="px-5 py-2.5 bg-linear-to-r from-rose-600 to-orange-600 hover:from-rose-500 hover:to-orange-500 disabled:opacity-50 text-white rounded-xl text-sm font-medium transition-all cursor-pointer"
+              >
+                {storyGenerating ? '✍️ 撰寫中...' : storyReport ? '🔄 重新產生' : '📖 產生故事報告'}
+              </button>
+            </>
+          )}
+        </div>
       </div>
 
       {/* Tab Bar */}
@@ -418,53 +670,13 @@ export default function InsightPage() {
           )}
 
           {/* History */}
-          <div className="bg-t-card-bg border border-t-card-border rounded-2xl p-6 space-y-4">
-            <h2 className="text-base font-semibold text-white/80">📋 歷史報告</h2>
-
-            {historyLoading && (
-              <div className="text-sm text-slate-400 animate-pulse">載入中...</div>
-            )}
-
-            {!historyLoading && history.length === 0 && (
-              <p className="text-sm text-slate-500">尚無歷史報告</p>
-            )}
-
-            {!historyLoading && history.length > 0 && (
-              <div className="space-y-2">
-                {history.map((item) => (
-                  <div
-                    key={item.id}
-                    className="flex items-center justify-between gap-3 border border-slate-700 bg-slate-800/40 rounded-xl px-4 py-3 hover:border-violet-500/40 transition-colors"
-                  >
-                    <button
-                      type="button"
-                      className="flex-1 text-left cursor-pointer"
-                      onClick={() => {
-                        setReport(item.report)
-                        setMeta(item.meta)
-                      }}
-                    >
-                      <span className="text-sm text-white/80">
-                        {new Date(item.created_at).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' })}
-                      </span>
-                      <span className="ml-3 text-xs text-slate-500">
-                        {item.meta?.provider}/{item.meta?.model}
-                        {item.meta?.keySource === 'platform_key' ? '（免費額度）' : ''}
-                      </span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleDeleteReport(item.id)}
-                      className="text-xs text-red-400/60 hover:text-red-400 transition-colors cursor-pointer px-2 py-1"
-                      title="刪除此報告"
-                    >
-                      刪除
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+          <HistoryList
+            history={history}
+            loading={historyLoading}
+            onLoad={handleLoadHistoryItem}
+            onShare={(id) => handleShare(id)}
+            onDelete={handleDeleteReport}
+          />
         </div>
       )}
 
@@ -501,6 +713,99 @@ export default function InsightPage() {
 
           {/* Story Report */}
           {storyReport && <StoryReportDisplay report={storyReport} />}
+
+          {/* History（故事 tab 也顯示歷史，方便切換） */}
+          <HistoryList
+            history={history}
+            loading={historyLoading}
+            onLoad={handleLoadHistoryItem}
+            onShare={(id) => handleShare(id)}
+            onDelete={handleDeleteReport}
+          />
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ===== 歷史列表元件（兩個 Tab 共用）=====
+
+function HistoryList({
+  history,
+  loading,
+  onLoad,
+  onShare,
+  onDelete,
+}: {
+  history: HistoryItem[]
+  loading: boolean
+  onLoad: (item: HistoryItem) => void
+  onShare: (id: string) => void
+  onDelete: (id: string) => void
+}) {
+  return (
+    <div className="bg-t-card-bg border border-t-card-border rounded-2xl p-6 space-y-4">
+      <h2 className="text-base font-semibold text-white/80">📋 歷史報告</h2>
+
+      {loading && (
+        <div className="text-sm text-slate-400 animate-pulse">載入中...</div>
+      )}
+
+      {!loading && history.length === 0 && (
+        <p className="text-sm text-slate-500">尚無歷史報告</p>
+      )}
+
+      {!loading && history.length > 0 && (
+        <div className="space-y-2">
+          {history.map((item) => (
+            <div
+              key={item.id}
+              className="flex items-center justify-between gap-3 border border-slate-700 bg-slate-800/40 rounded-xl px-4 py-3 hover:border-violet-500/40 transition-colors"
+            >
+              {/* 點擊主體區域載入報告 */}
+              <button
+                type="button"
+                className="flex-1 text-left cursor-pointer min-w-0"
+                onClick={() => onLoad(item)}
+              >
+                <span className="text-sm font-medium mr-2">
+                  {item.report_type === 'story' ? '📖' : '📊'}
+                </span>
+                <span className="text-sm text-white/80">
+                  {new Date(item.created_at).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' })}
+                </span>
+                <span className="ml-3 text-xs text-slate-500">
+                  {item.meta?.provider}/{item.meta?.model}
+                  {item.meta?.keySource === 'platform_key' ? '（免費額度）' : ''}
+                </span>
+                {item.is_public && (
+                  <span className="ml-2 text-xs text-emerald-400/80">
+                    🔗 {item.share_views > 0 ? `${item.share_views} 次查看` : '已公開'}
+                  </span>
+                )}
+              </button>
+
+              {/* 操作按鈕 */}
+              <div className="flex items-center gap-1 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => onShare(item.id)}
+                  className="text-xs text-slate-400 hover:text-violet-400 transition-colors cursor-pointer px-2 py-1"
+                  title="分享此報告"
+                >
+                  📤
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onDelete(item.id)}
+                  className="text-xs text-red-400/60 hover:text-red-400 transition-colors cursor-pointer px-2 py-1"
+                  title="刪除此報告"
+                >
+                  刪除
+                </button>
+              </div>
+            </div>
+          ))}
         </div>
       )}
     </div>
