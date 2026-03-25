@@ -2,6 +2,8 @@ import type { Metadata } from 'next'
 import { queryOne } from '@/lib/db'
 import { toAbsoluteOgImageUrl } from '@/lib/ogUrls'
 
+export const dynamic = 'force-dynamic'
+
 interface Props {
   params: Promise<{ slug: string }>
 }
