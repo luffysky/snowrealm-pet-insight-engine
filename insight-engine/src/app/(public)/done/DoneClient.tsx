@@ -7,7 +7,6 @@ import { questionTitleClass, stepTextClass } from '@/lib/themes'
 import { analyzePersonality, type PersonalityResult } from '@/lib/personalityAnalyzer'
 import type { SurveyTheme, ThemeIntensity, SurveyConfig } from '@/types'
 import type { StoryCardData } from '@/lib/storyCardEngine'
-import { MVP_SURVEY_SLUG } from '@/constants'
 import { WaitlistForm } from './WaitlistForm'
 import { ClickTrackLinks } from './ClickTrackLinks'
 import { DownloadAnswers } from './DownloadAnswers'
@@ -37,18 +36,34 @@ export function DoneClient() {
   const [themeSettings, setThemeSettings] = useState<ThemeSettings | null>(null)
 
   useEffect(() => {
-    // 優先從 sessionStorage 取 slug（由 survey 頁面存入），fallback 到主問卷 API
+    // 從 sessionStorage 取 slug（由 survey 頁面存入），若無則顯示通用完成頁
     const savedSlug = sessionStorage.getItem('surveySlug')
-    const slugPromise = savedSlug
-      ? Promise.resolve(savedSlug)
-      : fetch('/api/primary-survey').then(r => r.json() as Promise<{ slug: string }>).then(d => d.slug ?? MVP_SURVEY_SLUG)
+    if (!savedSlug) {
+      // 無問卷 slug → 通用感謝頁面，不載入任何問卷特定內容
+      setConfig({
+        slug: '',
+        title: '感謝填寫',
+        subtitle: '',
+        coverTitle: '',
+        coverSubtitle: '',
+        startButtonText: '',
+        doneTitle: '感謝你的參與！',
+        doneSubtitle: '你的回覆已成功送出 💛',
+        questions: [],
+      })
+      setThemeSettings({
+        defaultTheme: 'default',
+        availableThemes: ['default'],
+        allowUserChoice: false,
+        themeIntensity: {} as Record<SurveyTheme, ThemeIntensity>,
+      })
+      return
+    }
 
-    slugPromise.then(slug =>
-      Promise.all([
-        fetch(`/api/surveys/${slug}`).then(r => r.json() as Promise<SurveyConfig>),
-        fetch(`/api/surveys/theme?slug=${slug}`).then(r => r.json() as Promise<ThemeSettings>),
-      ])
-    )
+    Promise.all([
+      fetch(`/api/surveys/${savedSlug}`).then(r => r.json() as Promise<SurveyConfig>),
+      fetch(`/api/surveys/theme?slug=${savedSlug}`).then(r => r.json() as Promise<ThemeSettings>),
+    ])
       .then(([surveyData, themeData]) => {
         setConfig(surveyData)
         setThemeSettings(themeData)
@@ -324,11 +339,13 @@ function DoneContent({ config }: { config: SurveyConfig }) {
           {/* Divider */}
           <div className={tc.dividerClass} />
 
-          {/* Waitlist — 放最上面讓使用者第一眼看到 */}
-          <div className="space-y-3">
-            <p className={`text-sm ${stepTextClass[theme]}`}>{tc.ctaText}</p>
-            <WaitlistForm />
-          </div>
+          {/* Waitlist — 僅在 doneConfig.showWaitlist 開啟時顯示 */}
+          {(config.doneConfig?.showWaitlist ?? false) && (
+            <div className="space-y-3">
+              <p className={`text-sm ${stepTextClass[theme]}`}>{tc.ctaText}</p>
+              <WaitlistForm />
+            </div>
+          )}
 
           <ClickTrackLinks />
 

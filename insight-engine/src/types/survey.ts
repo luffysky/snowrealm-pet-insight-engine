@@ -64,6 +64,23 @@ export interface BranchRule {
 export type BranchConfig = BranchRule[] | { branchKey: string; routes: Record<string, string[]> }
 
 /** 問卷設定 */
+export interface DoneConfig {
+  /** 是否顯示封測/報名表單（預設 false） */
+  showWaitlist?: boolean
+  /** 表單欄位開關 */
+  waitlistFields?: { nickname?: boolean; email?: boolean; lineId?: boolean }
+  /** 報名按鈕文字 */
+  waitlistButtonText?: string
+  /** 是否顯示故事卡片（預設 true） */
+  showStoryCard?: boolean
+  /** 是否顯示下載答題記錄按鈕 */
+  showDownloadAnswers?: boolean
+  /** 自訂 CTA 文案 */
+  customCtaText?: string
+  /** 自訂 CTA 連結 */
+  customCtaUrl?: string
+}
+
 export interface SurveyConfig {
   slug: string
   title: string
@@ -76,6 +93,8 @@ export interface SurveyConfig {
   questions: Question[]
   /** 分流規則（若無則所有題目順序顯示） */
   branchConfig?: BranchConfig
+  /** 完成頁設定 */
+  doneConfig?: DoneConfig
 }
 
 /** 單筆答案 */

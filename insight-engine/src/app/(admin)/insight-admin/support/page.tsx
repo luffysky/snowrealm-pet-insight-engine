@@ -766,7 +766,7 @@ function NewTicketModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
       <div
         onClick={e => e.stopPropagation()}
         className="bg-[#1a1d2e] border border-t-card-border rounded-2xl w-full max-w-lg mx-4 p-6 space-y-4 shadow-2xl"

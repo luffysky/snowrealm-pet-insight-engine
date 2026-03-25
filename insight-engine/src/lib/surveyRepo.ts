@@ -1,5 +1,5 @@
 import { query, queryOne, execute } from './db'
-import type { Question, SurveyConfig, QuestionOption, BranchConfig } from '@/types'
+import type { Question, SurveyConfig, QuestionOption, BranchConfig, DoneConfig } from '@/types'
 
 // ===== DB Row 型別 =====
 
@@ -18,6 +18,7 @@ interface SurveyRow extends Record<string, unknown> {
   scheduled_start: string | null
   scheduled_end: string | null
   branch_config: string | null
+  done_config: Record<string, unknown> | null
   created_at: string
   updated_at: string
 }
@@ -417,5 +418,6 @@ function toSurveyConfig(survey: SurveyRow, questions: QuestionRow[]): SurveyConf
     doneSubtitle: survey.done_subtitle,
     questions: questions.map(toQuestion),
     branchConfig: parseBranchConfig(survey.branch_config),
+    doneConfig: survey.done_config ? (survey.done_config as unknown as DoneConfig) : undefined,
   }
 }

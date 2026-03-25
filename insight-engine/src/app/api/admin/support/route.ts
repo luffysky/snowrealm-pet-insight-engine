@@ -135,7 +135,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
     const { tenantId, userId, userName } = roleCheck
     const body = await request.json()
-    const { subject, category, priority, channel, email, content } = body
+    const { subject, category, priority, channel, email, content: rawContent, initialMessage } = body
+    const content = rawContent || initialMessage
 
     if (!content || typeof content !== 'string') {
       return NextResponse.json({ error: '缺少訊息內容' }, { status: 400 })

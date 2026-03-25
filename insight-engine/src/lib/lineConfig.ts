@@ -179,7 +179,8 @@ export async function listLineConfigs(tenantId = 'default'): Promise<LineConfigI
       } else {
         maskedValue = dbRow.config_value
       }
-    } else if (envVal) {
+    } else if (envVal && tenantId === 'default') {
+      // ENV fallback 只對 default 租戶顯示，其他租戶不能看到平台設定的 token
       source = 'env'
       maskedValue = def.secret ? maskApiKey(envVal) : envVal
     }
