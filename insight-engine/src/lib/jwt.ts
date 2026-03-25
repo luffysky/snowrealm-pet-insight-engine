@@ -6,8 +6,8 @@
 const ALGORITHM: HmacImportParams = { name: 'HMAC', hash: 'SHA-256' }
 
 async function getSigningKey(): Promise<CryptoKey> {
-  const secret = process.env.ADMIN_SECRET
-  if (!secret) throw new Error('Missing ADMIN_SECRET')
+  const secret = process.env.ADMIN_SECRET ?? process.env.JWT_SECRET
+  if (!secret) throw new Error('Missing ADMIN_SECRET or JWT_SECRET')
   const keyData = new TextEncoder().encode(secret)
   return crypto.subtle.importKey('raw', keyData, ALGORITHM, false, ['sign', 'verify'])
 }
