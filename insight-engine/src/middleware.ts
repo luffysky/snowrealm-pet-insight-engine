@@ -117,9 +117,9 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
     if (!isSuper) {
       return NextResponse.redirect(new URL('/', request.url))
     }
-    const access = getTenantAccess(auth) // default fallback tid/role headers
+    const access = getTenantAccess(auth) ?? { tid: auth.tid ?? 'default', role: 'super_admin' }
     return NextResponse.next({
-      request: { headers: withTenantHeaders(request, auth, access!) },
+      request: { headers: withTenantHeaders(request, auth, access) },
     })
   }
 
