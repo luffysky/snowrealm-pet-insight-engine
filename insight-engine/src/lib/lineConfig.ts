@@ -47,6 +47,34 @@ export const LINE_CONFIG_KEYS = {
     group: 'official' as const,
     description: '例：https://line.me/R/ti/p/@474iwlht',
   },
+  RICH_MENU_SURVEY_URL: {
+    envKey: 'NEXT_PUBLIC_RICH_MENU_SURVEY_URL',
+    secret: false,
+    label: 'Rich Menu 問卷連結',
+    group: 'official' as const,
+    description: 'Rich Menu 按鈕點擊後開啟的問卷 URL',
+  },
+  LINE_LOGIN_CHANNEL_ID: {
+    envKey: 'LINE_LOGIN_CHANNEL_ID',
+    secret: false,
+    label: 'LINE Login Channel ID',
+    group: 'admin' as const,
+    description: 'LINE Login 的 Channel ID（用於 OAuth 登入）',
+  },
+  LINE_LOGIN_CHANNEL_SECRET: {
+    envKey: 'LINE_LOGIN_CHANNEL_SECRET',
+    secret: true,
+    label: 'LINE Login Channel Secret',
+    group: 'admin' as const,
+    description: 'LINE Login 的 Channel Secret',
+  },
+  LINE_LOGIN_CALLBACK_URL: {
+    envKey: 'LINE_LOGIN_CALLBACK_URL',
+    secret: false,
+    label: 'LINE Login Callback URL',
+    group: 'admin' as const,
+    description: '例：https://insight.snowrealm.pet/api/auth/line/callback',
+  },
 } as const
 
 export type LineConfigKey = keyof typeof LINE_CONFIG_KEYS
