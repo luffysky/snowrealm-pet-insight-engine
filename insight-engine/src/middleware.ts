@@ -14,7 +14,7 @@ async function getAuthContext(request: NextRequest): Promise<TokenPayload | null
 
 /** 取得特定 slug 的權限，若無傳入 slug 則回傳預設（第一個）權限 */
 function getTenantAccess(auth: TokenPayload, targetSlug?: string): { tid: string; role: string } | null {
-  const tenants = auth.tenants || (auth.tid ? [{ tid: auth.tid, role: auth.role || 'admin' }] : [])
+  const tenants = (auth.tenants && auth.tenants.length > 0) ? auth.tenants : (auth.tid ? [{ tid: auth.tid, role: auth.role || 'admin' }] : [])
   if (tenants.length === 0) return null
   if (targetSlug) {
     const found = tenants.find(t => t.tid === targetSlug)
@@ -112,7 +112,7 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
     if (!auth) {
       return NextResponse.redirect(new URL('/super-login', request.url))
     }
-    const tenants = auth.tenants || (auth.tid ? [{ tid: auth.tid, role: auth.role || 'admin' }] : [])
+    const tenants = (auth.tenants && auth.tenants.length > 0) ? auth.tenants : (auth.tid ? [{ tid: auth.tid, role: auth.role || 'admin' }] : [])
     const isSuper = tenants.some(t => t.role === 'super_admin') || auth.role === 'super_admin'
     if (!isSuper) {
       return NextResponse.redirect(new URL('/', request.url))
@@ -139,7 +139,7 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
     if (!auth) {
       return NextResponse.json({ error: '未授權' }, { status: 401 })
     }
-    const tenants = auth.tenants || (auth.tid ? [{ tid: auth.tid, role: auth.role || 'admin' }] : [])
+    const tenants = (auth.tenants && auth.tenants.length > 0) ? auth.tenants : (auth.tid ? [{ tid: auth.tid, role: auth.role || 'admin' }] : [])
     const isSuper = tenants.some(t => t.role === 'super_admin') || auth.role === 'super_admin'
     if (!isSuper) {
       return NextResponse.json({ error: '權限不足：僅 super_admin 可存取' }, { status: 403 })
