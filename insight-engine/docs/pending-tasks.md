@@ -2,12 +2,19 @@
 
 > 最後更新：2026-03-26
 > 已完成：HOTFIX-1~9（程式碼 + DB），見 commit `d135fb8`
+> 已完成：BUG-OG / WIRE-1 / WIRE-2，見 commit `6293c1d`（WIRE-1/2 原已由 Cursor 完成）
 
 ---
 
-## 🔴 Bug 修復
+## ✅ 已完成
 
-### BUG-OG：OG 分享不生效
+- **BUG-OG** — `survey/[slug]/layout.tsx` 加 `export const dynamic = 'force-dynamic'`（commit `6293c1d`）
+- **WIRE-1** — `ai-story/route.ts` 已有 INSERT + reportId 回傳（Cursor 已完成）
+- **WIRE-2** — GET API 已回傳 `report_type`，insight 頁面已顯示 📊/📖 + toast（Cursor 已完成）
+
+---
+
+## 🟠 待辦：功能接線
 
 **問題：** 分享連結到 LINE 時顯示 coverTitle 而非自訂 OG 標題/圖片。
 
@@ -26,7 +33,7 @@ WHERE slug = 'maoxingtianxia-mvp-survey';
 
 ## 🟠 功能接線（後端已有，前端未接）
 
-### WIRE-1：故事報告未存入 DB
+### ~~WIRE-1：故事報告未存入 DB~~ ✅ 已完成
 
 **修改：** `src/app/api/admin/ai-story/route.ts`
 
@@ -46,7 +53,7 @@ ALTER TABLE ai_insight_reports ADD COLUMN IF NOT EXISTS report_type TEXT DEFAULT
 
 ---
 
-### WIRE-2：洞察報告歷史不區分數據/故事
+### ~~WIRE-2：洞察報告歷史不區分數據/故事~~ ✅ 已完成
 
 **修改：**
 - `src/app/api/admin/ai-insight/route.ts` GET handler — 回傳加上 `report_type`
