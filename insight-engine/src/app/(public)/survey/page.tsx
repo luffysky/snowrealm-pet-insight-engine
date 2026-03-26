@@ -130,6 +130,7 @@ function SurveyFlow({
     handleSingleSelect,
     handleMultipleToggle,
     handleTextChange,
+    handleAnswerUpdate,
     handleNext,
     handlePrevious,
     dismissDuplicate,
@@ -225,6 +226,7 @@ function SurveyFlow({
                     onSelect={handleSingleSelect}
                     questionEmoji={currentQuestion.emoji}
                     narrative={currentQuestion.narrative}
+                    allowOtherText={currentQuestion.allowOtherText}
                   />
                 )}
 
@@ -235,8 +237,10 @@ function SurveyFlow({
                     selectedValues={(currentAnswer as string[]) ?? []}
                     maxSelections={currentQuestion.maxSelections}
                     onToggle={handleMultipleToggle}
+                    onAnswerUpdate={handleAnswerUpdate}
                     questionEmoji={currentQuestion.emoji}
                     narrative={currentQuestion.narrative}
+                    allowOtherText={currentQuestion.allowOtherText}
                   />
                 )}
 

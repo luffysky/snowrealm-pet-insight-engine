@@ -34,6 +34,7 @@ interface UseSurveyFlowReturn {
   handleSingleSelect: (value: string) => void
   handleMultipleToggle: (value: string) => void
   handleTextChange: (value: string) => void
+  handleAnswerUpdate: (value: string | string[]) => void
   handleNext: () => void
   handlePrevious: () => void
   dismissDuplicate: () => void
@@ -251,6 +252,14 @@ export function useSurveyFlow({
     [currentQuestion, updateAnswer]
   )
 
+  const handleAnswerUpdate = useCallback(
+    (value: string | string[]) => {
+      if (!currentQuestion) return
+      updateAnswer(currentQuestion.key, value)
+    },
+    [currentQuestion, updateAnswer]
+  )
+
   const handleNext = useCallback(() => {
     if (currentStep < totalSteps - 1) {
       setCurrentStep((s) => s + 1)
@@ -344,6 +353,7 @@ export function useSurveyFlow({
     handleSingleSelect,
     handleMultipleToggle,
     handleTextChange,
+    handleAnswerUpdate,
     handleNext,
     handlePrevious,
     dismissDuplicate,

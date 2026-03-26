@@ -24,6 +24,7 @@ interface SurveyRow {
   scheduled_start: string | null
   scheduled_end: string | null
   branch_config: BranchConfig | BranchRule[] | string | null
+  done_config?: Record<string, unknown> | null
   is_primary: boolean
   tenant_id: string
 }
@@ -41,6 +42,7 @@ interface QuestionRow {
   route: string | null
   emoji: string | null
   narrative: string | null
+  allow_other_text: boolean | null
 }
 
 interface BranchRule {
@@ -410,6 +412,7 @@ function SurveyEditor({
         og_title: form.og_title || null,
         og_description: form.og_description || null,
         og_image_url: form.og_image_url || null,
+        done_config: form.done_config ?? null,
       }),
     })
     if (res.ok) {
@@ -601,6 +604,77 @@ function SurveyEditor({
               onChange={(e) => setForm({ ...form, scheduled_end: e.target.value ? new Date(e.target.value).toISOString() : null })}
               className="flex-1 bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-sm text-white/80" />
           </div>
+          {/* 完成頁設定 */}
+          <div className="pt-4 mt-2 border-t border-slate-700 space-y-3">
+            <p className="text-sm font-medium text-white/70">完成頁設定</p>
+            {(() => {
+              const dc = (form.done_config ?? {}) as Record<string, unknown>
+              const wf = (dc.waitlistFields as Record<string, boolean> | undefined) ?? {}
+              const update = (patch: Record<string, unknown>) =>
+                setForm({ ...form, done_config: { ...dc, ...patch } })
+              return (
+                <div className="space-y-2 pl-1">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" className="w-4 h-4 accent-cyan-500"
+                      checked={!!dc.showWaitlist}
+                      onChange={(e) => update({ showWaitlist: e.target.checked })} />
+                    <span className="text-sm text-white/70">顯示封測/報名表單</span>
+                  </label>
+                  {!!dc.showWaitlist && (
+                    <div className="pl-6 space-y-1.5">
+                      {(['nickname', 'email', 'lineId'] as const).map((field) => (
+                        <label key={field} className="flex items-center gap-2 cursor-pointer">
+                          <input type="checkbox" className="w-3.5 h-3.5 accent-cyan-500"
+                            checked={!!wf[field]}
+                            onChange={(e) => update({ waitlistFields: { ...wf, [field]: e.target.checked } })} />
+                          <span className="text-xs text-white/60">
+                            {field === 'nickname' ? '暱稱欄位' : field === 'email' ? 'Email 欄位' : 'LINE ID / IG 欄位'}
+                          </span>
+                        </label>
+                      ))}
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-white/40 w-20 shrink-0">按鈕文字</span>
+                        <input type="text"
+                          value={(dc.waitlistButtonText as string) ?? ''}
+                          onChange={(e) => update({ waitlistButtonText: e.target.value })}
+                          placeholder="預設：立即加入候補"
+                          className="flex-1 bg-slate-800 border border-slate-700 rounded px-2 py-1 text-xs text-white/70" />
+                      </div>
+                    </div>
+                  )}
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" className="w-4 h-4 accent-cyan-500"
+                      checked={!!dc.showStoryCard}
+                      onChange={(e) => update({ showStoryCard: e.target.checked })} />
+                    <span className="text-sm text-white/70">顯示故事卡片</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" className="w-4 h-4 accent-cyan-500"
+                      checked={!!dc.showDownloadAnswers}
+                      onChange={(e) => update({ showDownloadAnswers: e.target.checked })} />
+                    <span className="text-sm text-white/70">顯示下載回答按鈕</span>
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-white/40 w-20 shrink-0">自訂 CTA 文字</span>
+                    <input type="text"
+                      value={(dc.customCtaText as string) ?? ''}
+                      onChange={(e) => update({ customCtaText: e.target.value })}
+                      placeholder="選填"
+                      className="flex-1 bg-slate-800 border border-slate-700 rounded px-2 py-1 text-xs text-white/70" />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-white/40 w-20 shrink-0">自訂 CTA 連結</span>
+                    <input type="text"
+                      value={(dc.customCtaUrl as string) ?? ''}
+                      onChange={(e) => update({ customCtaUrl: e.target.value })}
+                      placeholder="選填"
+                      className="flex-1 bg-slate-800 border border-slate-700 rounded px-2 py-1 text-xs text-white/70" />
+                  </div>
+                </div>
+              )
+            })()}
+          </div>
+
           <div className="pt-4 mt-4 border-t border-slate-700 flex justify-end">
              <button type="button" onClick={handleDelete} className="px-4 py-2 bg-red-900/30 text-red-400 hover:bg-red-900/50 hover:text-red-300 rounded-lg text-sm border border-red-500/20 transition-colors cursor-pointer">
                🗑️ 刪除這份問卷
@@ -1487,6 +1561,7 @@ function QuestionForm({
     route: 'all' as string,
     emoji: '',
     narrative: '',
+    allow_other_text: false,
   })
   const [saving, setSaving] = useState(false)
 
@@ -1510,6 +1585,7 @@ function QuestionForm({
         route: form.route,
         emoji: form.emoji || null,
         narrative: form.narrative || null,
+        allow_other_text: form.allow_other_text,
       }),
     })
     setSaving(false)
@@ -1570,6 +1646,7 @@ function QuestionEditForm({
     route: question.route ?? 'all',
     emoji: question.emoji ?? '',
     narrative: question.narrative ?? '',
+    allow_other_text: question.allow_other_text ?? false,
   })
   const [saving, setSaving] = useState(false)
 
@@ -1592,6 +1669,7 @@ function QuestionEditForm({
         route: form.route,
         emoji: form.emoji || null,
         narrative: form.narrative || null,
+        allow_other_text: form.allow_other_text,
       }),
     })
     setSaving(false)
@@ -1685,6 +1763,7 @@ interface FormState {
   route: string
   emoji: string
   narrative: string
+  allow_other_text: boolean
 }
 
 function QuestionFormFields({
@@ -1789,6 +1868,21 @@ function QuestionFormFields({
           onChange={(e) => onChange({ ...form, is_required: e.target.checked })}
           className="w-4 h-4"
         />
+
+        {(form.type === 'single' || form.type === 'multiple') && (
+          <>
+            <label className="text-xs text-white/40">其他文字</label>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={form.allow_other_text}
+                onChange={(e) => onChange({ ...form, allow_other_text: e.target.checked })}
+                className="w-4 h-4"
+              />
+              <span className="text-xs text-white/60">允許「其他」選項填寫文字</span>
+            </label>
+          </>
+        )}
 
         <label className="text-xs text-white/40">路線</label>
         <div className="flex items-center gap-2">

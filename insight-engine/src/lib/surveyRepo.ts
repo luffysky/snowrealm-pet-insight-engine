@@ -37,6 +37,7 @@ interface QuestionRow extends Record<string, unknown> {
   chapter: string | null
   emoji: string | null
   narrative: string | null
+  allow_other_text: boolean | null
   created_at: string
 }
 
@@ -250,6 +251,7 @@ export async function updateSurvey(
     og_title: string | null
     og_description: string | null
     og_image_url: string | null
+    done_config: Record<string, unknown> | null
   }>
 ): Promise<number> {
   const allowed = [
@@ -257,7 +259,7 @@ export async function updateSurvey(
     'cover_title', 'cover_subtitle', 'start_button_text',
     'done_title', 'done_subtitle',
     'variant_group', 'scheduled_start', 'scheduled_end',
-    'branch_config',
+    'branch_config', 'done_config',
     'og_title', 'og_description', 'og_image_url',
   ]
   const sets: string[] = []
@@ -266,7 +268,7 @@ export async function updateSurvey(
 
   for (const key of allowed) {
     if (key in data) {
-      const val = key === 'branch_config'
+      const val = (key === 'branch_config' || key === 'done_config')
         ? (data[key as keyof typeof data] ? JSON.stringify(data[key as keyof typeof data]) : null)
         : data[key as keyof typeof data]
       sets.push(`${key} = $${idx++}`)
@@ -300,10 +302,11 @@ export async function createQuestion(data: {
   chapter?: string
   emoji?: string
   narrative?: string
+  allow_other_text?: boolean
 }): Promise<QuestionRow> {
   const row = await queryOne<QuestionRow>(
-    `INSERT INTO questions (id, survey_id, key, type, content, options, order_index, is_required, max_selections, route, chapter, emoji, narrative)
-     VALUES (uuid_generate_v4(), $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+    `INSERT INTO questions (id, survey_id, key, type, content, options, order_index, is_required, max_selections, route, chapter, emoji, narrative, allow_other_text)
+     VALUES (uuid_generate_v4(), $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
      RETURNING *`,
     [
       data.survey_id,
@@ -318,6 +321,7 @@ export async function createQuestion(data: {
       data.chapter ?? null,
       data.emoji ?? null,
       data.narrative ?? null,
+      data.allow_other_text ?? false,
     ]
   )
   return row!
@@ -335,7 +339,7 @@ export async function updateQuestion(
     max_selections: number | null
   }>
 ): Promise<number> {
-  const allowed = ['key', 'type', 'content', 'options', 'order_index', 'is_required', 'max_selections', 'route', 'chapter', 'emoji', 'narrative']
+  const allowed = ['key', 'type', 'content', 'options', 'order_index', 'is_required', 'max_selections', 'route', 'chapter', 'emoji', 'narrative', 'allow_other_text']
   const sets: string[] = []
   const params: unknown[] = []
   let idx = 1
@@ -394,6 +398,7 @@ export function toQuestion(row: QuestionRow): Question {
     ...(row.chapter ? { chapter: row.chapter } : {}),
     ...(row.emoji ? { emoji: row.emoji } : {}),
     ...(row.narrative ? { narrative: row.narrative } : {}),
+    ...(row.allow_other_text ? { allowOtherText: true } : {}),
   }
 }
 

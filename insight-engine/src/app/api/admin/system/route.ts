@@ -94,7 +94,7 @@ export async function GET(): Promise<NextResponse> {
       env: {
         hasLineOfficial: !!officialToken,
         hasLineInsight: !!insightToken,
-        hasLiff: !!process.env.NEXT_PUBLIC_LIFF_ID,
+        hasLiff: !!(await getLineConfig('LIFF_ID', tenantId)) || !!process.env.NEXT_PUBLIC_LIFF_ID,
         hasOpenAI: !!process.env.OPENAI_API_KEY || !!aiKey,
         hasDbUrl: !!process.env.DATABASE_URL,
         nodeEnv: process.env.NODE_ENV,

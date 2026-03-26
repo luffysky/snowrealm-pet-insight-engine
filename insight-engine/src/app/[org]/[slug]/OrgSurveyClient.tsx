@@ -241,6 +241,7 @@ function SurveyFlow({
     handleSingleSelect,
     handleMultipleToggle,
     handleTextChange,
+    handleAnswerUpdate,
     handleNext,
     handlePrevious,
     dismissDuplicate,
@@ -316,12 +317,15 @@ function SurveyFlow({
                   {currentQuestion.type === 'single' && (
                     <QuestionSingle content={currentQuestion.content} options={currentQuestion.options}
                       selectedValue={(currentAnswer as string) ?? null} onSelect={handleSingleSelect}
-                      questionEmoji={currentQuestion.emoji} narrative={currentQuestion.narrative} />
+                      questionEmoji={currentQuestion.emoji} narrative={currentQuestion.narrative}
+                      allowOtherText={currentQuestion.allowOtherText} />
                   )}
                   {currentQuestion.type === 'multiple' && (
                     <QuestionMultiple content={currentQuestion.content} options={currentQuestion.options}
                       selectedValues={(currentAnswer as string[]) ?? []} maxSelections={currentQuestion.maxSelections}
-                      onToggle={handleMultipleToggle} questionEmoji={currentQuestion.emoji} narrative={currentQuestion.narrative} />
+                      onToggle={handleMultipleToggle} onAnswerUpdate={handleAnswerUpdate}
+                      questionEmoji={currentQuestion.emoji} narrative={currentQuestion.narrative}
+                      allowOtherText={currentQuestion.allowOtherText} />
                   )}
                   {currentQuestion.type === 'text' && (
                     <QuestionText content={currentQuestion.content} value={(currentAnswer as string) ?? ''}

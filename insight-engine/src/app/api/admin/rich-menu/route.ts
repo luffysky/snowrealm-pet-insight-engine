@@ -74,7 +74,8 @@ async function resolveUrl(template: string, tenantId: string): Promise<string> {
   const baseUrl = (process.env.NEXT_PUBLIC_BASE_URL || 'https://insight.snowrealm.pet').replace(/\/$/, '')
   const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || 'https://snowrealm.pet').replace(/\/$/, '')
   const igUrl = (process.env.NEXT_PUBLIC_IG_URL || siteUrl).replace(/\/$/, '')
-  const envSurvey = process.env.NEXT_PUBLIC_RICH_MENU_SURVEY_URL?.trim()
+  const dbSurveyUrl = await getLineConfig('RICH_MENU_SURVEY_URL', tenantId)
+  const envSurvey = dbSurveyUrl ?? process.env.NEXT_PUBLIC_RICH_MENU_SURVEY_URL?.trim()
   const primarySlug = await getPrimarySurveySlug(tenantId)
   const publicSurveyUrl = envSurvey || (primarySlug ? `${baseUrl}/${tenantId}/${primarySlug}` : `${baseUrl}/`)
 

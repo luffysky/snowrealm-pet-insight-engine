@@ -44,6 +44,8 @@ export interface Question {
   acceptedFileTypes?: string[]
   /** file_upload 最大檔案大小 (MB) */
   maxFileSize?: number
+  /** 是否允許「其他」選項附帶文字輸入（single/multiple 題型） */
+  allowOtherText?: boolean
 }
 
 /** 單一分流規則 */
