@@ -2,10 +2,15 @@ import { queryOne } from '@/lib/db'
 import { isUserPlatformUnlimited } from '@/lib/platformUnlimited'
 
 export const PLAN_LIMITS = {
+  // B端方案
   free:       { responses: 1000,  surveys: 3,  admins: 1,  aiDaily: 3,  webhooks: 1,  name: '免費版',   price: 0 },
   pro:        { responses: 10000, surveys: -1, admins: 5,  aiDaily: 50, webhooks: 10, name: '專業版',   price: 490 },
   business:   { responses: 50000, surveys: -1, admins: -1, aiDaily: -1, webhooks: -1, name: '商業版',   price: 1290 },
   enterprise: { responses: -1,    surveys: -1, admins: -1, aiDaily: -1, webhooks: -1, name: '企業版',   price: 0 },
+  // C端個人方案
+  c_pro:      { responses: -1,    surveys: -1, admins: 1,  aiDaily: 20, webhooks: 0,  name: 'Pro',      price: 149 },
+  c_plus:     { responses: -1,    surveys: -1, admins: 1,  aiDaily: 50, webhooks: 0,  name: 'Plus',     price: 399 },
+  c_premium:  { responses: -1,    surveys: -1, admins: 1,  aiDaily: -1, webhooks: 0,  name: 'Premium',  price: 799 },
 } as const
 
 /**
