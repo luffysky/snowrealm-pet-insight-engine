@@ -6,11 +6,6 @@ import { checkRateLimit } from '@/lib/rateLimit'
 async function getAuthContext(request: NextRequest): Promise<TokenPayload | null> {
   const sessionToken = request.cookies.get('admin_session')?.value
   if (sessionToken) {
-    // Debug: 印出 secret 的前 8 字元
-    const s1 = process.env.ADMIN_SECRET ?? ''
-    const s2 = process.env.JWT_SECRET ?? ''
-    const s3 = process.env.NEXT_PUBLIC_JWT_SECRET ?? ''
-    })
     const payload = await verifyToken(sessionToken)
     if (payload) return payload
   }
