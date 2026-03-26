@@ -51,6 +51,10 @@ async function createSurveyFromAi(data: AiGeneratedSurvey): Promise<string> {
     }
   }
 
+  if (data.resultConfig) {
+    patchBody.result_config = data.resultConfig
+  }
+
   await fetch(`/api/admin/surveys/${surveyId}`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
@@ -67,7 +71,11 @@ async function createSurveyFromAi(data: AiGeneratedSurvey): Promise<string> {
         key: q.key,
         type: q.type,
         content: q.content,
-        options: q.options ?? [],
+        options: q.options?.map((opt) => ({
+          label: opt.label,
+          value: opt.value,
+          emoji: opt.emoji ?? '',
+        })) ?? [],
         order_index: i,
         is_required: q.isRequired,
         route: q.route ?? 'all',
@@ -85,6 +93,24 @@ function stripSurveyJson(text: string): string {
   return text.replace(/<SURVEY_JSON>[\s\S]*?<\/SURVEY_JSON>/g, '').trim()
 }
 
+// ===== Prompt 靈感資料 =====
+
+const PROMPT_INSPIRATIONS = [
+  { icon: '🪞', label: '朋友眼中的你', prompt: '幫我設計一份「朋友眼中的你」人格測驗，10題，每題4個選項，結果要有有趣的稱號，讓人想截圖分享' },
+  { icon: '💕', label: '戀愛致命弱點', prompt: '設計一份「你的戀愛致命弱點」測驗，10題，有點刺但不傷人，結果要讓人覺得被看穿然後忍不住傳給朋友' },
+  { icon: '🐾', label: '你是哪種動物', prompt: '設計一份「你是哪種動物」娛樂型人格測驗，10題，簡短有趣，結果是具象的動物角色，適合做成故事卡分享' },
+  { icon: '😈', label: '隱藏黑暗面', prompt: '設計一份「你的隱藏黑暗人格」測驗，10題，有心理測驗感但不嚴肅，結果是暗黑角色如「溫柔系操控者」' },
+  { icon: '💼', label: '職場人設保質期', prompt: '設計一份「你的職場人設能撐到幾歲」測驗，8題，帶黑色幽默，結果告訴你人設保質期和崩塌預兆' },
+  { icon: '🔮', label: '未來人生路線', prompt: '設計一份「你的未來人生路線」預測型測驗，10題，題目有畫面感，結果是一段微小說描述你的人生劇本' },
+  { icon: '✨', label: '隱藏天賦', prompt: '設計一份「你被低估的隱藏實力」測驗，10題，結果要具體不空洞，讓人覺得「終於有人懂我」' },
+  { icon: '🤝', label: '朋友契合度', prompt: '設計一份「跟我當朋友你能撐多久」友誼測驗，8題，帶點挑釁但好笑，結果用百分比加一句毒舌評語' },
+  { icon: '🥶', label: '關係變淡了？', prompt: '設計一份「我們是不是在變淡了？」的關係體溫計，8題，題目有情境感，結果是關係溫度+AI診斷+回溫建議' },
+  { icon: '😤', label: '你忍了我什麼', prompt: '設計一份「你忍了我哪些事？」匿名真心話問卷，8題，讓人有安全感才敢說真話，結果彙整成大家想說的話' },
+  { icon: '👀', label: '第一印象反差', prompt: '設計一份「第一印象vs真正的你」反差測驗，10題，前5題測別人眼中的你，後5題測真正的你，結果呈現反差感' },
+  { icon: '🏢', label: '公司不敢說的話', prompt: '設計一份「公司裡大家不敢說的真話」匿名調查，8題，題目包含最大問題、效率卡點、想離開的原因，結果有問題排名' },
+  { icon: '💑', label: '情侶吵架', prompt: '設計一份「你們吵架時誰比較可怕」情侶測驗，8題，有趣不引戰，兩個人分別填再對比結果' },
+]
+
 // ===== 主元件 =====
 
 export function AiSurveyChat({ onDone, onCancel }: AiSurveyChatProps) {
@@ -100,10 +126,17 @@ export function AiSurveyChat({ onDone, onCancel }: AiSurveyChatProps) {
   const [detectedSurvey, setDetectedSurvey] = useState<AiGeneratedSurvey | null>(null)
   const [creating, setCreating] = useState(false)
   const [createError, setCreateError] = useState('')
+  const [showAllInspirations, setShowAllInspirations] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const chatContainerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+    const container = chatContainerRef.current
+    if (!container) return
+    const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 100
+    if (isNearBottom) {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+    }
   }, [messages])
 
   async function handleSend() {
@@ -208,12 +241,23 @@ export function AiSurveyChat({ onDone, onCancel }: AiSurveyChatProps) {
       </div>
 
       {/* Messages */}
-      <div className="h-96 overflow-y-auto px-6 py-4 space-y-4">
+      <div ref={chatContainerRef} className="h-96 overflow-y-auto px-6 py-4 space-y-4">
         {messages.map((msg, i) => {
           const displayContent =
             msg.role === 'assistant' ? stripSurveyJson(msg.content) : msg.content
 
-          if (!displayContent && msg.role === 'assistant') return null
+          if (!displayContent && msg.role === 'assistant') {
+            return (
+              <div key={i} className="flex gap-3 justify-start">
+                <div className="w-8 h-8 rounded-full bg-cyan-600/30 border border-cyan-500/40 flex items-center justify-center text-sm flex-shrink-0 mt-0.5">
+                  🤖
+                </div>
+                <div className="bg-slate-700/60 rounded-xl px-4 py-3 text-sm text-cyan-400/80">
+                  ✅ AI 已完成問卷設計，請查看下方預覽
+                </div>
+              </div>
+            )
+          }
 
           return (
             <div
@@ -320,6 +364,34 @@ export function AiSurveyChat({ onDone, onCancel }: AiSurveyChatProps) {
             >
               重新設計
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Prompt 靈感按鈕（僅在對話初始時顯示） */}
+      {messages.length <= 1 && (
+        <div className="px-6 pb-2">
+          <p className="text-xs text-slate-400 mb-2">💡 不知道怎麼開始？試試這些：</p>
+          <div className="flex flex-wrap gap-2">
+            {PROMPT_INSPIRATIONS.slice(0, showAllInspirations ? undefined : 8).map((p) => (
+              <button
+                key={p.label}
+                type="button"
+                onClick={() => setInput(p.prompt)}
+                className="px-3 py-1.5 text-xs bg-slate-700/60 hover:bg-slate-600/80 text-slate-300 rounded-full transition-colors cursor-pointer"
+              >
+                {p.icon} {p.label}
+              </button>
+            ))}
+            {!showAllInspirations && PROMPT_INSPIRATIONS.length > 8 && (
+              <button
+                type="button"
+                onClick={() => setShowAllInspirations(true)}
+                className="px-3 py-1.5 text-xs text-slate-500 hover:text-slate-300 transition-colors cursor-pointer"
+              >
+                查看更多 ▼
+              </button>
+            )}
           </div>
         </div>
       )}

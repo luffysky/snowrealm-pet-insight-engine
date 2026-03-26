@@ -93,6 +93,64 @@ function SurveyContent({ slug }: { slug: string }) {
 }
 
 /** Cover screen → then SurveyFlow */
+function PasswordGate({ slug, onPass }: { slug: string; onPass: () => void }) {
+  const { theme } = useTheme()
+  const [input, setInput] = useState('')
+  const [error, setError] = useState('')
+  const [checking, setChecking] = useState(false)
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setChecking(true)
+    setError('')
+    try {
+      const res = await fetch('/api/surveys/verify-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ slug, password: input }),
+      })
+      const data = await res.json() as { valid?: boolean }
+      if (data.valid) {
+        onPass()
+      } else {
+        setError('密碼錯誤，請再試一次')
+      }
+    } catch {
+      setError('驗證失敗，請重新整理')
+    } finally {
+      setChecking(false)
+    }
+  }
+
+  return (
+    <>
+      <ParticleCanvas theme={theme} />
+      <SurveyShell>
+        <SurveyCard>
+          <form onSubmit={handleSubmit} className="text-center space-y-6">
+            <div className="space-y-2">
+              <p className="text-3xl">🔒</p>
+              <h2 className={`text-xl font-bold ${questionTitleClass[theme]}`}>此問卷已設定密碼保護</h2>
+              <p className={`text-sm ${stepTextClass[theme]}`}>請輸入密碼以繼續</p>
+            </div>
+            <input
+              type="password"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder="輸入密碼"
+              className="w-full bg-white/5 border border-white/20 rounded-xl px-4 py-3 text-white text-center text-lg tracking-widest focus:outline-none focus:border-white/40"
+            />
+            {error && <p className="text-red-400 text-sm">{error}</p>}
+            <button type="submit" disabled={!input || checking} className={`${ctaBtnClass[theme]} disabled:opacity-50 disabled:cursor-not-allowed`}>
+              {checking ? '驗證中...' : '進入問卷'}
+            </button>
+          </form>
+        </SurveyCard>
+      </SurveyShell>
+    </>
+  )
+}
+
 function SurveyFlowWithCover({
   config,
   slug,
@@ -107,6 +165,7 @@ function SurveyFlowWithCover({
   fingerprint?: string
 }) {
   const [started, setStarted] = useState(false)
+  const [passwordPassed, setPasswordPassed] = useState(!config.accessPassword)
   const { theme, setTheme } = useTheme()
 
   const [ts, setTs] = useState<ThemeSettings | null>(null)
@@ -121,6 +180,10 @@ function SurveyFlowWithCover({
     ? THEME_LIST.filter(t => ts.availableThemes.includes(t.value))
     : []
 
+  if (!passwordPassed) {
+    return <PasswordGate slug={slug} onPass={() => setPasswordPassed(true)} />
+  }
+
   if (!started) {
     return (
       <>
@@ -128,6 +191,13 @@ function SurveyFlowWithCover({
         <SurveyShell>
           <SurveyCard>
             <div className="text-center space-y-8">
+              {config.coverImageUrl && (
+                <img
+                  src={config.coverImageUrl}
+                  alt={config.title}
+                  className="w-full max-h-64 object-cover rounded-xl"
+                />
+              )}
               <div className="space-y-4">
                 <h1 className={`text-2xl md:text-3xl font-bold leading-snug ${questionTitleClass[theme]}`}>
                   {config.coverTitle || config.title}

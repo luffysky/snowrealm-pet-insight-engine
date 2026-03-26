@@ -38,10 +38,16 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       if (!surveySlug || !fingerprint) {
         return NextResponse.json({ error: '參數不完整' }, { status: 400 })
       }
-      // 檢查是否已提交過（soft block）
+
+      // 先查詢 survey_id（需要用來限定是「這份問卷」的填答）
+      const survey = await queryOne<{ id: string; tenant_id: string }>(
+        `SELECT id, tenant_id FROM surveys WHERE slug = $1`, [surveySlug]
+      )
+
+      // 檢查是否已提交過「這份問卷」（加 survey_id 條件，避免誤判其他問卷）
       const existing = await queryOne<{ id: string; status: string }>(
-        `SELECT id, status FROM responses WHERE fingerprint = $1 AND status = 'completed' LIMIT 1`,
-        [fingerprint]
+        `SELECT id, status FROM responses WHERE fingerprint = $1 AND survey_id = $2 AND status = 'completed' LIMIT 1`,
+        [fingerprint, survey?.id ?? null]
       )
 
       if (existing) {
@@ -51,11 +57,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
           message: '你似乎已經填過這份問卷了',
         })
       }
-
-      // 查詢 survey_id
-      const survey = await queryOne<{ id: string; tenant_id: string }>(
-        `SELECT id, tenant_id FROM surveys WHERE slug = $1`, [surveySlug]
-      )
 
       // 建立 in_progress response
       const newId = uuidv4()

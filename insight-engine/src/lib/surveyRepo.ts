@@ -11,6 +11,8 @@ interface SurveyRow extends Record<string, unknown> {
   subtitle: string
   cover_title: string
   cover_subtitle: string
+  cover_image_url: string | null
+  access_password: string | null
   start_button_text: string
   done_title: string
   done_subtitle: string
@@ -260,7 +262,9 @@ export async function updateSurvey(
 ): Promise<number> {
   const allowed = [
     'title', 'slug', 'subtitle', 'status',
-    'cover_title', 'cover_subtitle', 'start_button_text',
+    'cover_title', 'cover_subtitle', 'cover_image_url',
+    'access_password',
+    'start_button_text',
     'done_title', 'done_subtitle',
     'variant_group', 'scheduled_start', 'scheduled_end',
     'branch_config', 'done_config', 'result_config',
@@ -429,6 +433,8 @@ function toSurveyConfig(survey: SurveyRow, questions: QuestionRow[]): SurveyConf
     subtitle: survey.subtitle,
     coverTitle: survey.cover_title,
     coverSubtitle: survey.cover_subtitle,
+    coverImageUrl: survey.cover_image_url ?? undefined,
+    accessPassword: survey.access_password ?? undefined,
     startButtonText: survey.start_button_text,
     doneTitle: survey.done_title,
     doneSubtitle: survey.done_subtitle,

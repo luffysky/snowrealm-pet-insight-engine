@@ -341,6 +341,7 @@ function SurveyEditor({
   const [form, setForm] = useState(survey)
   const [saving, setSaving] = useState(false)
   const [ogUploading, setOgUploading] = useState(false)
+  const [coverUploading, setCoverUploading] = useState(false)
 
   useEffect(() => { setForm(survey) }, [survey])
 
@@ -348,6 +349,29 @@ function SurveyEditor({
     typeof window !== 'undefined'
       ? `${window.location.origin}/${survey.tenant_id}/${survey.slug}`
       : ''
+
+  const handleCoverImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setCoverUploading(true)
+    try {
+      const fd = new FormData()
+      fd.append('file', file)
+      fd.append('folder', 'survey-cover')
+      const up = await fetch('/api/admin/upload', { method: 'POST', body: fd })
+      const data = (await up.json()) as { url?: string; error?: string }
+      if (!up.ok || !data.url) {
+        alert(data.error || '上傳失敗')
+        return
+      }
+      setForm((prev) => ({ ...prev, cover_image_url: data.url ?? null }))
+    } catch {
+      alert('上傳失敗')
+    } finally {
+      setCoverUploading(false)
+      e.target.value = ''
+    }
+  }
 
   const handleOgImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -412,6 +436,8 @@ function SurveyEditor({
         og_title: form.og_title || null,
         og_description: form.og_description || null,
         og_image_url: form.og_image_url || null,
+        cover_image_url: (form as unknown as { cover_image_url?: string }).cover_image_url || null,
+        access_password: (form as unknown as { access_password?: string }).access_password || null,
         done_config: form.done_config ?? null,
         is_public_explore: (form as unknown as { is_public_explore?: boolean }).is_public_explore ?? false,
       }),
@@ -588,6 +614,47 @@ function SurveyEditor({
               )}
             </div>
           ))}
+          {/* 封面圖片上傳 */}
+          <div className="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-3">
+            <label className="text-sm text-white/50 sm:w-20 sm:pt-1.5 shrink-0">封面圖片</label>
+            <div className="flex-1 space-y-2">
+              {(form as unknown as { cover_image_url?: string }).cover_image_url && (
+                <div className="relative w-full max-w-xs">
+                  <img
+                    src={(form as unknown as { cover_image_url?: string }).cover_image_url}
+                    alt="封面圖片預覽"
+                    className="w-full max-h-40 object-cover rounded-lg border border-slate-700"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setForm((prev) => ({ ...prev, cover_image_url: null } as typeof prev))}
+                    className="absolute top-1 right-1 bg-slate-900/80 text-white/70 hover:text-white rounded-full w-6 h-6 flex items-center justify-center text-xs cursor-pointer"
+                  >✕</button>
+                </div>
+              )}
+              <label className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border text-sm cursor-pointer transition-colors ${
+                coverUploading ? 'opacity-50 cursor-not-allowed' : 'border-slate-600 text-white/60 hover:text-white hover:border-slate-500'
+              }`}>
+                <input type="file" accept="image/*" className="hidden" disabled={coverUploading} onChange={handleCoverImageUpload} />
+                {coverUploading ? '上傳中...' : '📷 上傳封面圖片'}
+              </label>
+              <p className="text-xs text-slate-500">建議尺寸 1200×630，支援 JPG / PNG / WebP</p>
+            </div>
+          </div>
+          {/* 存取密碼 */}
+          <div className="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-3">
+            <label className="text-sm text-white/50 sm:w-20 sm:pt-1.5 shrink-0">存取密碼</label>
+            <div className="flex-1 space-y-1">
+              <input
+                type="text"
+                value={(form as unknown as { access_password?: string }).access_password ?? ''}
+                onChange={(e) => setForm(Object.assign({}, form, { access_password: e.target.value }) as typeof form)}
+                placeholder="留空表示公開，填入則需輸入密碼才能開啟問卷"
+                className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-sm text-white/80"
+              />
+              <p className="text-xs text-slate-500">設定後，填答者開啟問卷時需輸入此密碼</p>
+            </div>
+          </div>
           <div className="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-3">
             <label className="text-sm text-white/50 sm:w-20 sm:pt-1.5 shrink-0">A/B 群組</label>
             <input type="text" value={form.variant_group ?? ''} onChange={(e) => setForm({ ...form, variant_group: e.target.value })}

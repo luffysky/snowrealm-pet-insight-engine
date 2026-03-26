@@ -67,6 +67,29 @@ export default function ExplorePage() {
           <p className="text-white/50 text-sm">瀏覽大家分享的公開問卷，找到你感興趣的主題</p>
         </div>
 
+        {/* 情緒入口卡片 */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          {[
+            { emoji: '😊', label: '輕鬆有趣', desc: '小測驗 & 娛樂', color: 'from-amber-500/15 to-orange-500/10', border: 'border-amber-500/20', tag: '趣味' },
+            { emoji: '🧠', label: '深度思考', desc: '心理 & 自我探索', color: 'from-indigo-500/15 to-purple-500/10', border: 'border-indigo-500/20', tag: '心理' },
+            { emoji: '💬', label: '分享觀點', desc: '意見 & 生活態度', color: 'from-cyan-500/15 to-sky-500/10', border: 'border-cyan-500/20', tag: '觀點' },
+            { emoji: '🎯', label: '實用調查', desc: '市場 & 商業回饋', color: 'from-emerald-500/15 to-teal-500/10', border: 'border-emerald-500/20', tag: '調查' },
+          ].map(card => (
+            <button
+              key={card.tag}
+              type="button"
+              onClick={() => { setSearchInput(card.tag); setSearch(card.tag); setPage(1) }}
+              className={`group text-left rounded-2xl border ${card.border} bg-linear-to-br ${card.color} p-4 space-y-2 hover:scale-[1.02] transition-all`}
+            >
+              <span className="text-2xl">{card.emoji}</span>
+              <div>
+                <p className="text-sm font-semibold text-white/90 leading-snug">{card.label}</p>
+                <p className="text-xs text-white/40 mt-0.5">{card.desc}</p>
+              </div>
+            </button>
+          ))}
+        </div>
+
         {/* 搜尋 + 篩選 */}
         <div className="flex flex-col sm:flex-row gap-3">
           <form onSubmit={handleSearch} className="flex-1 flex gap-2">

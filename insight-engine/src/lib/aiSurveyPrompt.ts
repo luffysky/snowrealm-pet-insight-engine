@@ -22,6 +22,22 @@ sakura（日系粉櫻）/ ocean（海洋藍綠）/ forest（森林綠）/ candy�
 **分流路線**
 可依某道題的答案把填答者分到 A / B / C 不同路線，路線後的題目 route 欄位設為對應路線代號。
 
+## 選項 Emoji 規則（全部題型適用）
+
+每個選項的 options 陣列必須包含 emoji 欄位：
+- emoji 要直覺好辨識，選最能代表該選項意義的 emoji
+- 同一題的選項 emoji 不能重複
+- 例如：開心 → 😊、難過 → 😢、思考 → 🤔、冒險 → 🏔️、狗 → 🐕、音樂 → 🎵
+
+## resultConfig 規則（測驗型問卷必須生成）
+
+判斷標準：如果問卷目的是讓填答者得到「你是什麼類型/角色/人格」的結果，就必須生成 resultConfig。
+
+稱號命名規則：
+- 格式：「X系 + Y者/王/家/師」（例如「毒舌系真心話王」、「佛系暖陽使者」）
+- 6-10 個字，有趣具體，讓人想截圖分享
+- 每個結果的 emoji 各不相同
+
 ## 輸出格式
 
 當你準備輸出完整問卷時，用以下標記包裹 JSON（不要加 markdown code block，直接輸出）：
@@ -45,8 +61,8 @@ sakura（日系粉櫻）/ ocean（海洋藍綠）/ forest（森林綠）/ candy�
       "type": "single",
       "content": "題目文字",
       "options": [
-        { "label": "選項A", "value": "選項A" },
-        { "label": "選項B", "value": "選項B" }
+        { "label": "主動跟大家聊天", "value": "主動跟大家聊天", "emoji": "💬" },
+        { "label": "靜靜地觀察", "value": "靜靜地觀察", "emoji": "👀" }
       ],
       "isRequired": true,
       "route": "all",
@@ -57,9 +73,32 @@ sakura（日系粉櫻）/ ocean（海洋藍綠）/ forest（森林綠）/ candy�
     "enabled": false,
     "branchKey": null,
     "routes": {}
+  },
+  "resultConfig": {
+    "scoringRules": {
+      "q1": { "主動跟大家聊天": "extrovert", "靜靜地觀察": "introvert" }
+    },
+    "resultTypes": [
+      {
+        "key": "extrovert",
+        "name": "熱血系社交王",
+        "emoji": "🌟",
+        "description": "你天生就是人群中的焦點，活力充沛，到哪裡都能讓氣氛熱絡起來。",
+        "traits": ["外向", "活潑", "善於交際"]
+      },
+      {
+        "key": "introvert",
+        "name": "靜心系觀察者",
+        "emoji": "🔍",
+        "description": "你善於洞察細節，思考深入，雖然話不多但說出來都是重點。",
+        "traits": ["內斂", "細心", "思考深度"]
+      }
+    ]
   }
 }
 </SURVEY_JSON>
+
+注意：若問卷不是測驗型（如一般回饋問卷、意見調查），resultConfig 設為 null 或省略即可。
 
 ## 欄位規則
 - key：q1, q2, q3... 依序遞增
@@ -67,6 +106,8 @@ sakura（日系粉櫻）/ ocean（海洋藍綠）/ forest（森林綠）/ candy�
 - route：預設 "all"；若有分流，分流後的題目設 "A"/"B"/"C"
 - branching.branchKey：觸發分流的題目 key（如 "q2"）
 - branching.routes：每條路線對應的觸發選項值，例如 { "A": ["選項A", "選項B"], "B": ["選項C"] }
+- resultConfig.scoringRules：每題 key → { 選項 value → typeKey }，選項 value 必須與 questions 裡的完全一致
+- resultConfig.resultTypes：至少 4-6 個結果類型，key 為英文小寫，name 為有趣中文稱號
 - 建議題數：5-15 題，至少 1 題 text 類型
 - 所有文字使用繁體中文
 `
@@ -75,7 +116,7 @@ export interface AiGeneratedQuestion {
   key: string
   type: 'single' | 'multiple' | 'text'
   content: string
-  options: { label: string; value: string }[]
+  options: { label: string; value: string; emoji?: string }[]
   isRequired: boolean
   route: string
   maxSelections: number | null
@@ -99,6 +140,16 @@ export interface AiGeneratedSurvey {
     branchKey: string | null
     routes: Record<string, string[]>
   }
+  resultConfig?: {
+    scoringRules: Record<string, Record<string, string>>
+    resultTypes: Array<{
+      key: string
+      name: string
+      emoji: string
+      description: string
+      traits?: string[]
+    }>
+  } | null
 }
 
 /** 從 AI 回覆文字中提取並解析 <SURVEY_JSON> 標記內的 JSON */
@@ -109,6 +160,7 @@ export function parseSurveyJson(text: string): AiGeneratedSurvey | null {
   try {
     const parsed = JSON.parse(match[1].trim()) as AiGeneratedSurvey
     if (!parsed?.survey?.title || !Array.isArray(parsed?.questions)) return null
+    // resultConfig 可以是 undefined / null / 有效物件，都直接保留
     return parsed
   } catch {
     return null

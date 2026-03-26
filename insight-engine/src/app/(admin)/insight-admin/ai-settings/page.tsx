@@ -46,6 +46,10 @@ export default function AiSettingsPage() {
   const [verifying, setVerifying] = useState<string | null>(null)
   const [verifyResult, setVerifyResult] = useState<{ id: string; valid: boolean; maskedKey?: string; error?: string } | null>(null)
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null)
+  const [editingConfig, setEditingConfig] = useState<string | null>(null)
+  const [editModel, setEditModel] = useState('')
+  const [editApiKey, setEditApiKey] = useState('')
+  const [editSaving, setEditSaving] = useState(false)
 
   const fetchConfigs = useCallback(async () => {
     setLoading(true)
@@ -139,6 +143,28 @@ export default function AiSettingsPage() {
     await fetch(`/api/admin/ai-settings?id=${id}`, { method: 'DELETE' })
     setDeleteConfirm(null)
     fetchConfigs()
+  }
+
+  const handleEditSave = async (id: string) => {
+    setEditSaving(true)
+    try {
+      const body: Record<string, string> = { id, action: 'update' }
+      if (editModel) body.defaultModel = editModel
+      if (editApiKey) body.newApiKey = editApiKey
+      const res = await fetch('/api/admin/ai-settings', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      })
+      if (res.ok) {
+        setEditingConfig(null)
+        setEditModel('')
+        setEditApiKey('')
+        fetchConfigs()
+      }
+    } finally {
+      setEditSaving(false)
+    }
   }
 
   const providerInfo = PROVIDERS.find((p) => p.value === selectedProvider)
@@ -404,6 +430,16 @@ export default function AiSettingsPage() {
                       </button>
                     )}
                     <button
+                      onClick={() => {
+                        setEditingConfig(editingConfig === c.id ? null : c.id)
+                        setEditModel(c.defaultModel)
+                        setEditApiKey('')
+                      }}
+                      className="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-white rounded-lg text-xs transition-colors cursor-pointer"
+                    >
+                      ✏️ 編輯
+                    </button>
+                    <button
                       onClick={() => setDeleteConfirm(c.id)}
                       className="px-3 py-1.5 bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded-lg text-xs transition-colors cursor-pointer"
                     >
@@ -411,6 +447,50 @@ export default function AiSettingsPage() {
                     </button>
                   </div>
                 </div>
+
+                {/* 內聯編輯 */}
+                {editingConfig === c.id && (
+                  <div className="mt-3 p-3 bg-slate-900/60 border border-slate-600/60 rounded-xl space-y-3">
+                    <p className="text-xs font-medium text-slate-300">編輯 Provider 設定</p>
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
+                      <label className="text-xs text-slate-400 w-20 shrink-0">模型</label>
+                      <select
+                        value={editModel}
+                        onChange={(e) => setEditModel(e.target.value)}
+                        className="flex-1 bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-sm text-white/80"
+                      >
+                        {(PROVIDERS.find((p) => p.value === c.provider)?.models ?? [c.defaultModel]).map((m) => (
+                          <option key={m} value={m}>{m}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
+                      <label className="text-xs text-slate-400 w-20 shrink-0">新 API Key</label>
+                      <input
+                        type="password"
+                        value={editApiKey}
+                        onChange={(e) => setEditApiKey(e.target.value)}
+                        placeholder="留空則不更新 Key"
+                        className="flex-1 bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-sm text-white/80"
+                      />
+                    </div>
+                    <div className="flex justify-end gap-2">
+                      <button
+                        onClick={() => { setEditingConfig(null); setEditModel(''); setEditApiKey('') }}
+                        className="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-white rounded-lg text-xs cursor-pointer"
+                      >
+                        取消
+                      </button>
+                      <button
+                        onClick={() => handleEditSave(c.id)}
+                        disabled={editSaving}
+                        className="px-3 py-1.5 bg-t-btn hover:bg-t-btn-hover text-white rounded-lg text-xs cursor-pointer disabled:opacity-50"
+                      >
+                        {editSaving ? '儲存中...' : '儲存變更'}
+                      </button>
+                    </div>
+                  </div>
+                )}
 
                 {/* 驗證結果 */}
                 {verifyResult?.id === c.id && (

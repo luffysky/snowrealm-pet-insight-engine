@@ -60,6 +60,13 @@ function CoverContent({ config, themeSettings, slug }: { config: SurveyConfig; t
     <SurveyShell>
       <SurveyCard>
         <div className="text-center space-y-8">
+          {config.coverImageUrl && (
+            <img
+              src={config.coverImageUrl}
+              alt={config.title}
+              className="w-full max-h-64 object-cover rounded-xl"
+            />
+          )}
           <div className="space-y-4">
             <h1 className={`text-2xl md:text-3xl font-bold leading-snug ${questionTitleClass[theme]}`}>
               {config.coverTitle}

@@ -231,5 +231,25 @@ export async function PATCH(request: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ success: true })
   }
 
+  if (action === 'update') {
+    const { defaultModel, newApiKey } = body as { defaultModel?: string; newApiKey?: string }
+    if (newApiKey) {
+      const { encrypted, iv, tag } = encryptApiKey(newApiKey)
+      await execute(
+        `UPDATE ai_provider_configs
+         SET encrypted_api_key = $1, encryption_iv = $2, encryption_tag = $3,
+             default_model = COALESCE($4, default_model), updated_at = NOW()
+         WHERE id = $5 AND tenant_id = $6`,
+        [encrypted, iv, tag, defaultModel ?? null, id, tenantId]
+      )
+    } else if (defaultModel) {
+      await execute(
+        `UPDATE ai_provider_configs SET default_model = $1, updated_at = NOW() WHERE id = $2 AND tenant_id = $3`,
+        [defaultModel, id, tenantId]
+      )
+    }
+    return NextResponse.json({ success: true })
+  }
+
   return NextResponse.json({ error: '未知的 action' }, { status: 400 })
 }
