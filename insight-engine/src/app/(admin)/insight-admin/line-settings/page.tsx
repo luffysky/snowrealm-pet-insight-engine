@@ -2,21 +2,25 @@
 
 import { useEffect, useState, useCallback } from 'react'
 
+type GroupKey = 'insight' | 'official' | 'admin' | 'richmenu' | 'login'
+
 interface ConfigItem {
   key: string
   label: string
-  group: 'insight' | 'official' | 'admin'
+  group: GroupKey
   isSecret: boolean
   source: 'db' | 'env' | 'none'
   maskedValue: string | null
   description: string
 }
 
-const GROUP_META = {
-  insight: { emoji: '🤖', title: 'Insight 問卷機器人', desc: '用於管理員通知推播' },
+const GROUP_META: Record<GroupKey, { emoji: string; title: string; desc: string }> = {
+  insight:  { emoji: '🤖', title: 'Insight 問卷機器人', desc: '用於管理員通知推播' },
   official: { emoji: '📢', title: 'Official 官方帳號', desc: '用於用戶推播 / 廣播' },
-  admin: { emoji: '👤', title: '管理員設定', desc: '' },
-} as const
+  admin:    { emoji: '👤', title: '管理員設定', desc: '' },
+  richmenu: { emoji: '📱', title: 'Rich Menu 設定', desc: '填答後切換選單 / LIFF / 加好友連結' },
+  login:    { emoji: '🔑', title: 'LINE Login', desc: 'OAuth 登入設定（LINE Login Channel）' },
+}
 
 const EXAMPLE_FORMAT: Record<string, string> = {
   INSIGHT_CHANNEL_ACCESS_TOKEN: 'xxxxxxxxxxxxxxxxxxxxxxxxxxx...',
@@ -94,10 +98,12 @@ export default function LineSettingsPage() {
     setTesting(null)
   }
 
-  const grouped = {
-    insight: configs.filter((c) => c.group === 'insight'),
+  const grouped: Record<GroupKey, ConfigItem[]> = {
+    insight:  configs.filter((c) => c.group === 'insight'),
     official: configs.filter((c) => c.group === 'official'),
-    admin: configs.filter((c) => c.group === 'admin'),
+    admin:    configs.filter((c) => c.group === 'admin'),
+    richmenu: configs.filter((c) => c.group === 'richmenu'),
+    login:    configs.filter((c) => c.group === 'login'),
   }
 
   if (loading) return <p className="text-white/50">載入中...</p>
@@ -120,10 +126,10 @@ export default function LineSettingsPage() {
 
       {activeTab === 'settings' && (
         <div className="space-y-6">
-          {(['insight', 'official', 'admin'] as const).map((group) => {
+          {(['insight', 'official', 'admin', 'richmenu', 'login'] as const).map((group) => {
             const meta = GROUP_META[group]
             const items = grouped[group]
-            const testKey = group === 'admin' ? null : group
+            const testKey = (group === 'insight' || group === 'official') ? group : null
             const result = testKey ? testResult[testKey] : null
 
             return (
@@ -156,8 +162,13 @@ export default function LineSettingsPage() {
 
                     return (
                       <div key={item.key} className="flex flex-col gap-2">
-                        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
-                          <span className="text-sm text-white/50 sm:w-36 sm:shrink-0">{item.label}</span>
+                        <div className="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-3">
+                          <div className="sm:w-36 sm:shrink-0 space-y-0.5">
+                            <span className="text-sm text-white/50">{item.label}</span>
+                            {item.description && (
+                              <p className="text-[10px] text-slate-600 leading-tight">{item.description}</p>
+                            )}
+                          </div>
                           <SourceBadge source={item.source} verified={item.source !== 'none' ? verified : null} />
 
                           {editingKey === item.key ? (

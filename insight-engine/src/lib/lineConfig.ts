@@ -23,56 +23,56 @@ export const LINE_CONFIG_KEYS = {
     envKey: 'POST_SURVEY_RICH_MENU_ID',
     secret: false,
     label: '填答完成後 Rich Menu ID',
-    group: 'official' as const,
+    group: 'richmenu' as const,
     description: '用戶填完問卷後切換的 Rich Menu（格式：richmenu-xxx）',
   },
   DEFAULT_RICH_MENU_ID: {
     envKey: 'DEFAULT_RICH_MENU_ID',
     secret: false,
     label: '預設 Rich Menu ID',
-    group: 'official' as const,
+    group: 'richmenu' as const,
     description: '新好友加入時的預設 Rich Menu',
   },
   LIFF_ID: {
     envKey: 'NEXT_PUBLIC_LIFF_ID',
     secret: false,
     label: 'LIFF ID',
-    group: 'official' as const,
+    group: 'richmenu' as const,
     description: 'LIFF 應用程式 ID（用於 LINE 內嵌頁面）',
   },
   LINE_FRIEND_URL: {
     envKey: 'NEXT_PUBLIC_LINE_FRIEND_URL',
     secret: false,
     label: 'LINE 加好友連結',
-    group: 'official' as const,
+    group: 'richmenu' as const,
     description: '例：https://line.me/R/ti/p/@474iwlht',
   },
   RICH_MENU_SURVEY_URL: {
     envKey: 'NEXT_PUBLIC_RICH_MENU_SURVEY_URL',
     secret: false,
     label: 'Rich Menu 問卷連結',
-    group: 'official' as const,
+    group: 'richmenu' as const,
     description: 'Rich Menu 按鈕點擊後開啟的問卷 URL',
   },
   LINE_LOGIN_CHANNEL_ID: {
     envKey: 'LINE_LOGIN_CHANNEL_ID',
     secret: false,
     label: 'LINE Login Channel ID',
-    group: 'admin' as const,
+    group: 'login' as const,
     description: 'LINE Login 的 Channel ID（用於 OAuth 登入）',
   },
   LINE_LOGIN_CHANNEL_SECRET: {
     envKey: 'LINE_LOGIN_CHANNEL_SECRET',
     secret: true,
     label: 'LINE Login Channel Secret',
-    group: 'admin' as const,
+    group: 'login' as const,
     description: 'LINE Login 的 Channel Secret',
   },
   LINE_LOGIN_CALLBACK_URL: {
     envKey: 'LINE_LOGIN_CALLBACK_URL',
     secret: false,
     label: 'LINE Login Callback URL',
-    group: 'admin' as const,
+    group: 'login' as const,
     description: '例：https://insight.snowrealm.pet/api/auth/line/callback',
   },
 } as const
@@ -159,10 +159,12 @@ export async function getLineConfig(key: LineConfigKey, tenantId = 'default'): P
 
 // ===== Admin 用：列出所有設定（遮罩敏感值） =====
 
+export type LineConfigGroup = 'insight' | 'official' | 'admin' | 'richmenu' | 'login'
+
 export interface LineConfigInfo {
   key: LineConfigKey
   label: string
-  group: 'insight' | 'official' | 'admin'
+  group: LineConfigGroup
   isSecret: boolean
   source: 'db' | 'env' | 'none'
   maskedValue: string | null
@@ -180,7 +182,7 @@ export async function listLineConfigs(tenantId = 'default'): Promise<LineConfigI
 
   const result: LineConfigInfo[] = []
   for (const [key, def] of Object.entries(LINE_CONFIG_KEYS) as [LineConfigKey, typeof LINE_CONFIG_KEYS[LineConfigKey]][]) {
-    const group = def.group ?? (key.startsWith('INSIGHT_') ? 'insight'
+    const group: LineConfigGroup = def.group ?? (key.startsWith('INSIGHT_') ? 'insight'
       : key.startsWith('OFFICIAL_') ? 'official'
       : 'admin')
 
