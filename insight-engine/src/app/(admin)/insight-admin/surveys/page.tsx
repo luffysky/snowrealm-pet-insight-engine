@@ -820,8 +820,18 @@ function BranchingPanel({
   const branchQuestions = (route: string) => questions.filter((q) => q.route === route)
   const branchableQuestions = questions.filter((q) => q.type !== 'text' && (q.route === 'all' || !q.route || q.route === 'A') && q.options.length > 0)
 
+  const [customRoutes, setCustomRoutes] = useState<string[]>([])
+
   // All route keys used in the system
-  const allRoutes = existingBranchRoutes.length > 0 ? existingBranchRoutes : []
+  const allRoutes = Array.from(new Set([...existingBranchRoutes, ...customRoutes]))
+
+  const handleAddRoute = (route: string) => {
+    const r = route.trim().toUpperCase()
+    if (r && r !== 'ALL' && r !== 'A' && !allRoutes.includes(r)) {
+      setCustomRoutes((prev) => [...prev, r])
+      setBranchNames((prev) => ({ ...prev, [r]: `分流 ${r}` }))
+    }
+  }
 
   const handleQuestionRouteChange = async (questionId: string, newRoute: string) => {
     setRouteChanges((prev) => ({ ...prev, [questionId]: newRoute }))
@@ -1043,7 +1053,7 @@ function BranchingPanel({
             <h3 className="text-sm font-medium text-white/60">主題目 + 共用題（route: all / A）</h3>
             {mainQuestions.map((q) => (
               <BranchQuestionCard key={q.id} question={q} allRoutes={allRoutes} branchNames={branchNames}
-                pendingRoute={routeChanges[q.id]} onRouteChange={handleQuestionRouteChange} />
+                pendingRoute={routeChanges[q.id]} onRouteChange={handleQuestionRouteChange} onAddRoute={handleAddRoute} />
             ))}
           </div>
         </div>
@@ -1064,7 +1074,7 @@ function BranchingPanel({
           ) : (
             branchQuestions(activeSubTab).map((q) => (
               <BranchQuestionCard key={q.id} question={q} allRoutes={allRoutes} branchNames={branchNames}
-                pendingRoute={routeChanges[q.id]} onRouteChange={handleQuestionRouteChange} />
+                pendingRoute={routeChanges[q.id]} onRouteChange={handleQuestionRouteChange} onAddRoute={handleAddRoute} />
             ))
           )}
         </div>
@@ -1079,14 +1089,28 @@ function BranchQuestionCard({
   branchNames,
   pendingRoute,
   onRouteChange,
+  onAddRoute,
 }: {
   question: QuestionRow
   allRoutes: string[]
   branchNames: Record<string, string>
   pendingRoute?: string
   onRouteChange: (id: string, route: string) => void
+  onAddRoute: (route: string) => void
 }) {
   const currentRoute = pendingRoute ?? question.route ?? 'all'
+  const [showNewInput, setShowNewInput] = useState(false)
+  const [newRouteName, setNewRouteName] = useState('')
+
+  const confirmNewRoute = () => {
+    const r = newRouteName.trim().toUpperCase()
+    if (!r) return
+    onAddRoute(r)
+    onRouteChange(question.id, r)
+    setShowNewInput(false)
+    setNewRouteName('')
+  }
+
   return (
     <div className="bg-t-card-bg border border-t-card-border rounded-xl p-3 flex items-start justify-between gap-3">
       <div className="flex-1 space-y-0.5">
@@ -1108,15 +1132,40 @@ function BranchQuestionCard({
           <p className="text-xs text-white/40">選項：{question.options.map((o) => o.label).join('、')}</p>
         )}
       </div>
-      <select value={currentRoute}
-        onChange={(e) => onRouteChange(question.id, e.target.value)}
-        className="bg-slate-800 border border-slate-600 rounded px-2 py-1 text-xs text-white/70 shrink-0 w-28">
-        <option value="all">共用</option>
-        <option value="A">原始 (A)</option>
-        {allRoutes.map((r) => (
-          <option key={r} value={r}>{branchNames[r] ?? `分流 ${r}`}</option>
-        ))}
-      </select>
+      <div className="flex flex-col items-end gap-1 shrink-0">
+        <select value={currentRoute}
+          onChange={(e) => {
+            if (e.target.value === '__add_new__') { setShowNewInput(true) }
+            else { onRouteChange(question.id, e.target.value) }
+          }}
+          className="bg-slate-800 border border-slate-600 rounded px-2 py-1 text-xs text-white/70 w-28">
+          <option value="all">共用</option>
+          <option value="A">原始 (A)</option>
+          {allRoutes.map((r) => (
+            <option key={r} value={r}>{branchNames[r] ?? `分流 ${r}`}</option>
+          ))}
+          <option value="__add_new__">+ 新增路線</option>
+        </select>
+        {showNewInput && (
+          <div className="flex items-center gap-1">
+            <input
+              type="text"
+              value={newRouteName}
+              onChange={(e) => setNewRouteName(e.target.value.toUpperCase())}
+              placeholder="如 D"
+              maxLength={10}
+              autoFocus
+              className="bg-slate-800 border border-slate-600 rounded px-2 py-1 text-xs text-white/80 w-16"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') confirmNewRoute()
+                if (e.key === 'Escape') { setShowNewInput(false); setNewRouteName('') }
+              }}
+            />
+            <button type="button" onClick={confirmNewRoute} className="text-xs text-t-accent cursor-pointer">✓</button>
+            <button type="button" onClick={() => { setShowNewInput(false); setNewRouteName('') }} className="text-xs text-slate-500 cursor-pointer">✕</button>
+          </div>
+        )}
+      </div>
     </div>
   )
 }
@@ -1153,6 +1202,19 @@ function QuestionList({
   const [editingId, setEditingId] = useState<string | null>(null)
   const [adding, setAdding] = useState(false)
   const [aiMode, setAiMode] = useState(false)
+  const [customRoutes, setCustomRoutes] = useState<string[]>([])
+
+  const existingRoutes = Array.from(new Set([
+    ...questions.map((q) => q.route).filter((r): r is string => !!r && r !== 'all'),
+    ...customRoutes,
+  ]))
+
+  const handleAddRoute = (route: string) => {
+    const r = route.trim().toUpperCase()
+    if (r && r !== 'ALL' && !existingRoutes.includes(r)) {
+      setCustomRoutes((prev) => [...prev, r])
+    }
+  }
 
   const handleDelete = async (qid: string) => {
     if (!confirm('確定要刪除此題目？')) return
@@ -1210,6 +1272,8 @@ function QuestionList({
         <QuestionForm
           surveyId={surveyId}
           nextOrder={questions.length}
+          existingRoutes={existingRoutes}
+          onAddRoute={handleAddRoute}
           onSaved={() => { setAdding(false); onReload() }}
           onCancel={() => setAdding(false)}
         />
@@ -1233,6 +1297,8 @@ function QuestionList({
             {editingId === q.id ? (
               <QuestionEditForm
                 question={q}
+                existingRoutes={existingRoutes}
+                onAddRoute={handleAddRoute}
                 onSaved={() => { setEditingId(null); onReload() }}
                 onCancel={() => setEditingId(null)}
               />
@@ -1340,11 +1406,15 @@ function QuestionList({
 function QuestionForm({
   surveyId,
   nextOrder,
+  existingRoutes,
+  onAddRoute,
   onSaved,
   onCancel,
 }: {
   surveyId: string
   nextOrder: number
+  existingRoutes: string[]
+  onAddRoute: (route: string) => void
   onSaved: () => void
   onCancel: () => void
 }) {
@@ -1390,7 +1460,7 @@ function QuestionForm({
   return (
     <div className="bg-slate-800/60 border border-t-card-border rounded-xl p-4 space-y-3">
       <h3 className="text-sm font-medium text-t-accent">新增題目</h3>
-      <QuestionFormFields form={form} onChange={setForm} />
+      <QuestionFormFields form={form} onChange={setForm} existingRoutes={existingRoutes} onAddRoute={onAddRoute} />
       <div className="flex gap-2 pt-2">
         <button
           type="button"
@@ -1416,10 +1486,14 @@ function QuestionForm({
 
 function QuestionEditForm({
   question,
+  existingRoutes,
+  onAddRoute,
   onSaved,
   onCancel,
 }: {
   question: QuestionRow
+  existingRoutes: string[]
+  onAddRoute: (route: string) => void
   onSaved: () => void
   onCancel: () => void
 }) {
@@ -1465,7 +1539,7 @@ function QuestionEditForm({
 
   return (
     <div className="space-y-3">
-      <QuestionFormFields form={form} onChange={setForm} />
+      <QuestionFormFields form={form} onChange={setForm} existingRoutes={existingRoutes} onAddRoute={onAddRoute} />
       <div className="flex gap-2 pt-2">
         <button
           type="button"
@@ -1504,10 +1578,26 @@ interface FormState {
 function QuestionFormFields({
   form,
   onChange,
+  existingRoutes = [],
+  onAddRoute,
 }: {
   form: FormState
   onChange: (f: FormState) => void
+  existingRoutes?: string[]
+  onAddRoute?: (route: string) => void
 }) {
+  const [showNewRouteInput, setShowNewRouteInput] = useState(false)
+  const [newRouteName, setNewRouteName] = useState('')
+
+  const confirmNewRoute = () => {
+    const r = newRouteName.trim().toUpperCase()
+    if (!r) return
+    onAddRoute?.(r)
+    onChange({ ...form, route: r })
+    setShowNewRouteInput(false)
+    setNewRouteName('')
+  }
+
   const addOption = () => {
     onChange({ ...form, options: [...form.options, { label: '', value: '' }] })
   }
@@ -1587,16 +1677,40 @@ function QuestionFormFields({
         />
 
         <label className="text-xs text-white/40">路線</label>
-        <select
-          value={form.route}
-          onChange={(e) => onChange({ ...form, route: e.target.value })}
-          className="bg-slate-800 border border-slate-700 rounded px-2 py-1 text-sm text-white/80 w-32"
-        >
-          <option value="all">所有人 (all)</option>
-          <option value="A">原始問卷 (A)</option>
-          <option value="B">B 路線</option>
-          <option value="C">C 路線</option>
-        </select>
+        <div className="flex items-center gap-2">
+          <select
+            value={form.route}
+            onChange={(e) => {
+              if (e.target.value === '__add_new__') {
+                setShowNewRouteInput(true)
+              } else {
+                onChange({ ...form, route: e.target.value })
+              }
+            }}
+            className="bg-slate-800 border border-slate-700 rounded px-2 py-1 text-sm text-white/80 w-36"
+          >
+            <option value="all">所有人 (all)</option>
+            {existingRoutes.map((r) => (
+              <option key={r} value={r}>{r} 路線</option>
+            ))}
+            <option value="__add_new__">+ 新增路線</option>
+          </select>
+          {showNewRouteInput && (
+            <div className="flex items-center gap-1">
+              <input
+                type="text"
+                value={newRouteName}
+                onChange={(e) => setNewRouteName(e.target.value.toUpperCase())}
+                onKeyDown={(e) => { if (e.key === 'Enter') confirmNewRoute(); if (e.key === 'Escape') { setShowNewRouteInput(false); setNewRouteName('') } }}
+                placeholder="如 D"
+                autoFocus
+                className="bg-slate-700 border border-slate-600 rounded px-2 py-1 text-sm text-white/80 w-16"
+              />
+              <button type="button" onClick={confirmNewRoute} className="text-xs text-t-accent cursor-pointer">確認</button>
+              <button type="button" onClick={() => { setShowNewRouteInput(false); setNewRouteName('') }} className="text-xs text-white/40 cursor-pointer">✕</button>
+            </div>
+          )}
+        </div>
 
         {form.type === 'multiple' && (
           <>
