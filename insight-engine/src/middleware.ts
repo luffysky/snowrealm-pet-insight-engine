@@ -44,13 +44,6 @@ const KNOWN_ADMIN_PAGES = new Set([
 export async function middleware(request: NextRequest): Promise<NextResponse> {
   const { pathname } = request.nextUrl
 
-  // 🔍 DEBUG: 確認 Edge Runtime 能讀到哪些 secret
-    ADMIN_SECRET: !!process.env.ADMIN_SECRET,
-    JWT_SECRET: !!process.env.JWT_SECRET,
-    NEXT_PUBLIC_JWT_SECRET: !!process.env.NEXT_PUBLIC_JWT_SECRET,
-    pathname,
-  })
-
   // Login / Register / Auth API — 永遠放行
   if (pathname === '/login' || pathname === '/register' || pathname === '/super-login' || pathname.startsWith('/api/auth')) {
     return NextResponse.next()
