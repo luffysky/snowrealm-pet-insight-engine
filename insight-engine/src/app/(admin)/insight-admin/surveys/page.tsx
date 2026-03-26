@@ -1277,6 +1277,8 @@ function QuestionList({
   const [adding, setAdding] = useState(false)
   const [aiMode, setAiMode] = useState(false)
   const [customRoutes, setCustomRoutes] = useState<string[]>([])
+  const [qDragIdx, setQDragIdx] = useState<number | null>(null)
+  const [qDragOverIdx, setQDragOverIdx] = useState<number | null>(null)
 
   const existingRoutes = Array.from(new Set([
     ...questions.map((q) => q.route).filter((r): r is string => !!r && r !== 'all'),
@@ -1375,6 +1377,25 @@ function QuestionList({
     onReload()
   }
 
+  const handleDrop = async (dropIdx: number) => {
+    if (qDragIdx === null || qDragIdx === dropIdx) {
+      setQDragIdx(null)
+      setQDragOverIdx(null)
+      return
+    }
+    const reordered = [...questions]
+    const [moved] = reordered.splice(qDragIdx, 1)
+    reordered.splice(dropIdx, 0, moved)
+    setQDragIdx(null)
+    setQDragOverIdx(null)
+    await fetch(`/api/admin/surveys/${surveyId}/questions`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ orderedIds: reordered.map((x) => x.id) }),
+    })
+    onReload()
+  }
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -1422,7 +1443,15 @@ function QuestionList({
         {questions.map((q, i) => (
           <div
             key={q.id}
-            className="bg-t-card-bg border border-t-card-border rounded-xl p-4"
+            draggable
+            onDragStart={() => setQDragIdx(i)}
+            onDragOver={(e) => { e.preventDefault(); setQDragOverIdx(i) }}
+            onDragLeave={() => setQDragOverIdx(null)}
+            onDrop={() => handleDrop(i)}
+            onDragEnd={() => { setQDragIdx(null); setQDragOverIdx(null) }}
+            className={`bg-t-card-bg border border-t-card-border rounded-xl p-4 cursor-grab active:cursor-grabbing transition-all ${
+              qDragIdx === i ? 'opacity-40' : ''
+            } ${qDragOverIdx === i && qDragIdx !== i ? 'ring-2 ring-t-accent/60 border-t-accent/40' : ''}`}
           >
             {editingId === q.id ? (
               <QuestionEditForm

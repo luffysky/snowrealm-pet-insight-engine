@@ -1,0 +1,22 @@
+CREATE TABLE IF NOT EXISTS survey_templates (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  source TEXT NOT NULL DEFAULT 'platform',
+  tenant_id TEXT,
+  created_by UUID,
+  name TEXT NOT NULL,
+  description TEXT,
+  industry TEXT,
+  icon TEXT DEFAULT '📋',
+  tags TEXT[] DEFAULT '{}',
+  survey_config JSONB NOT NULL,
+  questions JSONB NOT NULL,
+  branch_config JSONB,
+  use_count INT DEFAULT 0,
+  rating_sum INT DEFAULT 0,
+  rating_count INT DEFAULT 0,
+  is_public BOOLEAN DEFAULT false,
+  is_featured BOOLEAN DEFAULT false,
+  is_active BOOLEAN DEFAULT true,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);

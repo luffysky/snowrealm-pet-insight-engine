@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useAdminSurvey } from '@/components/admin/AdminSurveyContext'
 import type { InsightReport, InsightHighlight, InsightRecommendation } from '@/lib/insightEngine'
 import type { StoryInsightReport } from '@/lib/storyEngine'
+import { ShareCardModal } from '@/components/admin/ShareCardModal'
 
 // ===== 型別 =====
 
@@ -25,10 +26,14 @@ interface HistoryItem {
   share_views: number
 }
 
-interface ShareModal {
+interface ShareModalState {
   open: boolean
   url: string
   reportId: string
+  reportType: 'data' | 'story'
+  report: InsightReport | StoryInsightReport | null
+  surveyTitle: string
+  createdAt: string
 }
 
 type ActiveTab = 'data' | 'story'
@@ -192,100 +197,10 @@ function SavedToast({ visible }: { visible: boolean }) {
   )
 }
 
-// ===== 分享 Modal =====
-
-function ShareModal({
-  modal,
-  onClose,
-  onUnshare,
-}: {
-  modal: ShareModal
-  onClose: () => void
-  onUnshare: (reportId: string) => void
-}) {
-  const [copied, setCopied] = useState(false)
-
-  function handleCopy() {
-    navigator.clipboard.writeText(modal.url).then(() => {
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
-    })
-  }
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      {/* Backdrop */}
-      <div
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-        onClick={onClose}
-      />
-      {/* Modal */}
-      <div className="relative bg-slate-900 border border-slate-700 rounded-2xl p-6 w-full max-w-md space-y-5 shadow-2xl">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <h3 className="text-base font-semibold text-white">📤 報告已公開！</h3>
-          <button
-            type="button"
-            onClick={onClose}
-            className="text-slate-400 hover:text-white transition-colors cursor-pointer text-lg leading-none"
-          >
-            ✕
-          </button>
-        </div>
-
-        {/* URL */}
-        <div className="space-y-2">
-          <p className="text-xs text-slate-400">公開連結</p>
-          <div className="flex items-center gap-2 bg-slate-800 border border-slate-700 rounded-xl px-3 py-2">
-            <span className="flex-1 text-sm text-white/80 truncate font-mono">{modal.url}</span>
-            <button
-              type="button"
-              onClick={handleCopy}
-              className="shrink-0 text-xs px-2.5 py-1 rounded-lg bg-violet-600 hover:bg-violet-500 text-white transition-colors cursor-pointer"
-            >
-              {copied ? '✓ 已複製' : '複製'}
-            </button>
-          </div>
-        </div>
-
-        {/* Actions */}
-        <div className="flex gap-3">
-          <a
-            href={`https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(modal.url)}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex-1 text-center text-sm font-medium px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl transition-colors"
-          >
-            💬 分享到 LINE
-          </a>
-          <button
-            type="button"
-            onClick={onClose}
-            className="flex-1 text-sm font-medium px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-xl transition-colors cursor-pointer"
-          >
-            關閉
-          </button>
-        </div>
-
-        {/* Unshare */}
-        <div className="border-t border-slate-700 pt-4">
-          <button
-            type="button"
-            onClick={() => onUnshare(modal.reportId)}
-            className="text-xs text-red-400/60 hover:text-red-400 transition-colors cursor-pointer"
-          >
-            關閉公開分享
-          </button>
-        </div>
-      </div>
-    </div>
-  )
-}
-
 // ===== 主頁面 =====
 
 export default function InsightPage() {
-  const { selectedSurveyId } = useAdminSurvey()
+  const { selectedSurveyId, selectedSurvey, theme: surveyTheme } = useAdminSurvey()
 
   // 數據報告狀態
   const [report, setReport] = useState<InsightReport | null>(null)
@@ -311,7 +226,10 @@ export default function InsightPage() {
   const [savedToast, setSavedToast] = useState(false)
 
   // 分享 Modal 狀態
-  const [shareModal, setShareModal] = useState<ShareModal>({ open: false, url: '', reportId: '' })
+  const [shareModal, setShareModal] = useState<ShareModalState>({
+    open: false, url: '', reportId: '',
+    reportType: 'data', report: null, surveyTitle: '', createdAt: '',
+  })
 
   // ===== 顯示已儲存 Toast =====
 
@@ -478,7 +396,19 @@ export default function InsightPage() {
       })
       const data = await res.json() as { shareUrl?: string; error?: string }
       if (res.ok && data.shareUrl) {
-        setShareModal({ open: true, url: data.shareUrl, reportId })
+        // 判斷是哪種報告類型 + 取得報告內容
+        const histItem = history.find(h => h.id === reportId)
+        const rType = histItem?.report_type ?? (reportId === currentStoryReportId ? 'story' : 'data')
+        const rContent = rType === 'story' ? (histItem?.report ?? storyReport) : (histItem?.report ?? report)
+        setShareModal({
+          open: true,
+          url: data.shareUrl,
+          reportId,
+          reportType: rType,
+          report: rContent as InsightReport | StoryInsightReport | null,
+          surveyTitle: selectedSurvey?.title ?? '',
+          createdAt: histItem?.created_at ?? new Date().toISOString(),
+        })
         await fetchHistory()
       }
     } catch {
@@ -493,7 +423,7 @@ export default function InsightPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ reportId, action: 'unshare' }),
       })
-      setShareModal({ open: false, url: '', reportId: '' })
+      setShareModal(prev => ({ ...prev, open: false }))
       await fetchHistory()
     } catch {
       /* silent */
@@ -536,11 +466,17 @@ export default function InsightPage() {
       <SavedToast visible={savedToast} />
 
       {/* 分享 Modal */}
-      {shareModal.open && (
-        <ShareModal
-          modal={shareModal}
-          onClose={() => setShareModal({ open: false, url: '', reportId: '' })}
-          onUnshare={handleUnshare}
+      {shareModal.open && shareModal.report && (
+        <ShareCardModal
+          open={shareModal.open}
+          onClose={() => setShareModal(prev => ({ ...prev, open: false }))}
+          reportType={shareModal.reportType}
+          report={shareModal.report}
+          surveyTitle={shareModal.surveyTitle}
+          shareUrl={shareModal.url}
+          theme={surveyTheme}
+          createdAt={shareModal.createdAt}
+          onUnshare={() => handleUnshare(shareModal.reportId)}
         />
       )}
 
