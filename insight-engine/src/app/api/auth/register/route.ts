@@ -5,6 +5,7 @@ import { signToken } from '@/lib/jwt'
 import { createHash } from 'crypto'
 import { formatPhoneE164 } from '@/lib/sms'
 import { notifyNewRegistration } from '@/lib/lineNotify'
+import { validateReferralCode, createReferral } from '@/lib/referralEngine'
 
 /** 將中文/英文組織名轉成 URL 安全 slug */
 function toSlug(name: string): string {
@@ -28,6 +29,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     const codeId = (body?.codeId as string)?.trim()
     const code = (body?.code as string)?.trim()
     const inviteToken = (body?.invite as string)?.trim()
+    const referralCode = (body?.referralCode as string)?.trim().toUpperCase() || ''
     const channel = phone ? 'phone' : 'email'
     const phoneE164 = phone ? formatPhoneE164(phone) : ''
 
@@ -165,6 +167,14 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     if (inviteData) {
       await query(`UPDATE admin_invites SET used = true WHERE id = $1`, [inviteData.id])
+    }
+
+    // ── 推薦碼處理 ──
+    if (referralCode && newUser?.id) {
+      const ref = await validateReferralCode(referralCode)
+      if (ref.valid && ref.referrerId) {
+        await createReferral({ referrerId: ref.referrerId, referredId: newUser.id, referralCode })
+      }
     }
 
     // ── LINE Notify 通知管理員 ──

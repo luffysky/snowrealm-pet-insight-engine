@@ -83,6 +83,35 @@ export interface DoneConfig {
   customCtaUrl?: string
 }
 
+/** 測驗結果類型（用於爆款人格問卷） */
+export interface ResultType {
+  /** 唯一識別 key，例如 'guardian' | 'adventurer' */
+  key: string
+  /** 顯示名稱，例如「守護者」 */
+  name: string
+  /** 代表 emoji */
+  emoji: string
+  /** 描述文案（2-3 句） */
+  description: string
+  /** 特質標籤列表 */
+  traits?: string[]
+  /** 主題色（Tailwind 或 hex） */
+  color?: string
+}
+
+/** 結果計分設定（只有人格/測驗問卷才需要） */
+export interface ResultConfig {
+  /**
+   * 計分規則：題目 key → { 選項 value → 結果 typeKey }
+   * 例如 { "q1": { "A": "guardian", "B": "adventurer" } }
+   */
+  scoringRules: Record<string, Record<string, string>>
+  /** 所有可能的結果類型定義 */
+  resultTypes: ResultType[]
+  /** 平手時預設選哪個 typeKey（不設則取第一個）  */
+  tieBreaker?: string
+}
+
 export interface SurveyConfig {
   slug: string
   title: string
@@ -97,6 +126,8 @@ export interface SurveyConfig {
   branchConfig?: BranchConfig
   /** 完成頁設定 */
   doneConfig?: DoneConfig
+  /** 結果計分設定（人格/測驗問卷專用） */
+  resultConfig?: ResultConfig
 }
 
 /** 單筆答案 */

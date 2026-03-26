@@ -413,6 +413,7 @@ function SurveyEditor({
         og_description: form.og_description || null,
         og_image_url: form.og_image_url || null,
         done_config: form.done_config ?? null,
+        is_public_explore: (form as unknown as { is_public_explore?: boolean }).is_public_explore ?? false,
       }),
     })
     if (res.ok) {
@@ -673,6 +674,18 @@ function SurveyEditor({
                 </div>
               )
             })()}
+          </div>
+
+          {/* 探索頁公開設定 */}
+          <div className="pt-3 mt-1 border-t border-slate-700">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" className="w-4 h-4 accent-cyan-500"
+                checked={!!(form as unknown as { is_public_explore?: boolean }).is_public_explore}
+                onChange={(e) => {
+                  setForm(Object.assign({}, form, { is_public_explore: e.target.checked }) as unknown as typeof form)
+                }} />
+              <span className="text-sm text-white/70">☐ 公開到探索頁（讓所有人瀏覽此問卷）</span>
+            </label>
           </div>
 
           <div className="pt-4 mt-4 border-t border-slate-700 flex justify-end">

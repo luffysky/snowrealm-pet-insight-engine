@@ -1,3 +1,3 @@
-export type { QuestionType, SurveyStatus, ResponseStatus, QuestionOption, Question, BranchRule, BranchConfig, DoneConfig, SurveyConfig, Answer, SubmitSurveyPayload, UtmParams, SurveyTheme, ThemeIntensity, ThemeSettings } from './survey'
+export type { QuestionType, SurveyStatus, ResponseStatus, QuestionOption, Question, BranchRule, BranchConfig, DoneConfig, ResultType, ResultConfig, SurveyConfig, Answer, SubmitSurveyPayload, UtmParams, SurveyTheme, ThemeIntensity, ThemeSettings } from './survey'
 export type { UserTag, PetOwnerStatus, PetType, EmotionLevel, MemorialNeed, RecordHabit, RevisitFrequency, PaymentIntent, EngagementPotential } from './tags'
 export type { DashboardStats, DailyTrendItem, FeatureCount, TagDistribution, QuestionStats, ResponseListItem, ResponseDetail, PaginatedResponse, UtmSourceStats, UtmAnalytics, ResponseVelocityItem, ResponseQuality } from './admin'

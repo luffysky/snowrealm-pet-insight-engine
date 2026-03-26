@@ -5,7 +5,8 @@ import { ThemeProvider, useTheme } from '@/components/survey/ThemeContext'
 import { SurveyShell, SurveyCard } from '@/components/survey'
 import { questionTitleClass, stepTextClass } from '@/lib/themes'
 import { analyzePersonality, type PersonalityResult } from '@/lib/personalityAnalyzer'
-import type { SurveyTheme, ThemeIntensity, SurveyConfig } from '@/types'
+import type { SurveyTheme, ThemeIntensity, SurveyConfig, ResultType } from '@/types'
+import { ResultCard, calculateResultKey } from '@/components/public/ResultCard'
 import type { StoryCardData } from '@/lib/storyCardEngine'
 import { WaitlistForm } from './WaitlistForm'
 import { ClickTrackLinks } from './ClickTrackLinks'
@@ -232,6 +233,7 @@ function DoneContent({ config }: { config: SurveyConfig }) {
   // 讀 sessionStorage 遊戲狀態（useEffect 避免 hydration mismatch）
   const [gameStats, setGameStats] = useState<GameStats | null>(null)
   const [personality, setPersonality] = useState<PersonalityResult | null>(null)
+  const [resultType, setResultType] = useState<ResultType | null>(null)
 
   // 故事卡片狀態
   const [responseId, setResponseId] = useState<string | null>(null)
@@ -247,7 +249,22 @@ function DoneContent({ config }: { config: SurveyConfig }) {
     } catch {}
     try {
       const ar = sessionStorage.getItem('surveyAnswerRecord')
-      if (ar) setPersonality(analyzePersonality(JSON.parse(ar)))
+      if (ar) {
+        const record = JSON.parse(ar)
+        setPersonality(analyzePersonality(record))
+        // 如果問卷有 resultConfig → 用 scoringRules 計算真實結果類型
+        if (config?.resultConfig) {
+          const answers = (record as { questionKey: string; answer: unknown }[]).map(r => ({
+            questionKey: r.questionKey,
+            value: r.answer as string | string[] | null,
+          }))
+          const key = calculateResultKey(config.resultConfig.scoringRules, answers)
+          if (key) {
+            const found = config.resultConfig.resultTypes.find(rt => rt.key === key)
+            if (found) setResultType(found)
+          }
+        }
+      }
     } catch {}
 
     const rid = sessionStorage.getItem('lastResponseId')
@@ -305,8 +322,22 @@ function DoneContent({ config }: { config: SurveyConfig }) {
             ))}
           </div>
 
-          {/* Hero: personality avatar + title */}
-          {personality ? (
+          {/* 結果類型卡片（人格/測驗問卷專用） */}
+          {resultType && (
+            <ResultCard
+              result={resultType}
+              theme={theme}
+              onShare={() => {
+                if (typeof window === 'undefined') return
+                const url = window.location.origin + '/done'
+                const text = `我在${config.title}中測出：${resultType.emoji} ${resultType.name}`
+                window.open(`https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(url)}&text=${encodeURIComponent(text)}`, '_blank')
+              }}
+            />
+          )}
+
+          {/* Hero: personality avatar + title — 當沒有 resultConfig 時才顯示 */}
+          {!resultType && personality ? (
             <div className="space-y-3">
               <div className="text-6xl drop-shadow-lg" style={{ animation: tc.avatarAnim }}>
                 {personality.avatar}
@@ -318,7 +349,7 @@ function DoneContent({ config }: { config: SurveyConfig }) {
                 {personality.description}
               </p>
             </div>
-          ) : (
+          ) : !resultType ? (
             <div className="space-y-3">
               <div className="text-5xl" style={{ animation: tc.avatarAnim }}>{tc.topDecor}</div>
               <h1 className={`text-2xl md:text-3xl font-bold leading-snug ${questionTitleClass[theme]}`}>
@@ -328,7 +359,7 @@ function DoneContent({ config }: { config: SurveyConfig }) {
                 {config.doneSubtitle}
               </p>
             </div>
-          )}
+          ) : null}
 
           {/* Theme closing message */}
           <div className="space-y-1">

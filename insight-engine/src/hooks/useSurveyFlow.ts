@@ -322,8 +322,9 @@ export function useSurveyFlow({
         }
       }
 
-      // 儲存回答紀錄供 done 頁面下載 TXT 用
+      // 儲存回答紀錄供 done 頁面下載 TXT + 結果計分用
       const surveyRecord = activeQuestions.map((q) => ({
+        questionKey: q.key,
         content: q.content,
         type: q.type,
         options: q.options,

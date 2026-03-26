@@ -1,5 +1,5 @@
 import { query, queryOne, execute } from './db'
-import type { Question, SurveyConfig, QuestionOption, BranchConfig, DoneConfig } from '@/types'
+import type { Question, SurveyConfig, QuestionOption, BranchConfig, DoneConfig, ResultConfig } from '@/types'
 
 // ===== DB Row 型別 =====
 
@@ -19,6 +19,8 @@ interface SurveyRow extends Record<string, unknown> {
   scheduled_end: string | null
   branch_config: string | null
   done_config: Record<string, unknown> | null
+  result_config: Record<string, unknown> | null
+  is_public_explore: boolean | null
   created_at: string
   updated_at: string
 }
@@ -252,6 +254,8 @@ export async function updateSurvey(
     og_description: string | null
     og_image_url: string | null
     done_config: Record<string, unknown> | null
+    result_config: Record<string, unknown> | null
+    is_public_explore: boolean | null
   }>
 ): Promise<number> {
   const allowed = [
@@ -259,8 +263,9 @@ export async function updateSurvey(
     'cover_title', 'cover_subtitle', 'start_button_text',
     'done_title', 'done_subtitle',
     'variant_group', 'scheduled_start', 'scheduled_end',
-    'branch_config', 'done_config',
+    'branch_config', 'done_config', 'result_config',
     'og_title', 'og_description', 'og_image_url',
+    'is_public_explore',
   ]
   const sets: string[] = []
   const params: unknown[] = []
@@ -268,7 +273,8 @@ export async function updateSurvey(
 
   for (const key of allowed) {
     if (key in data) {
-      const val = (key === 'branch_config' || key === 'done_config')
+      const jsonKeys = ['branch_config', 'done_config', 'result_config']
+      const val = jsonKeys.includes(key)
         ? (data[key as keyof typeof data] ? JSON.stringify(data[key as keyof typeof data]) : null)
         : data[key as keyof typeof data]
       sets.push(`${key} = $${idx++}`)
@@ -429,5 +435,6 @@ function toSurveyConfig(survey: SurveyRow, questions: QuestionRow[]): SurveyConf
     questions: questions.map(toQuestion),
     branchConfig: parseBranchConfig(survey.branch_config),
     doneConfig: survey.done_config ? (survey.done_config as unknown as DoneConfig) : undefined,
+    resultConfig: survey.result_config ? (survey.result_config as unknown as ResultConfig) : undefined,
   }
 }

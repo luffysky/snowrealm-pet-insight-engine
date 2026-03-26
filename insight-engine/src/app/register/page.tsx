@@ -8,6 +8,7 @@ type Step = 'form' | 'verify'
 function RegisterForm() {
   const searchParams = useSearchParams()
   const inviteToken = searchParams.get('invite')
+  const referralCode = searchParams.get('ref')
 
   const [step, setStep] = useState<Step>('form')
   const [email, setEmail] = useState('')
@@ -128,7 +129,7 @@ function RegisterForm() {
       const res = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: email || undefined, phone: phone ? `${countryCode}${phone.replace(/^0+/, '')}` : undefined, password, displayName, orgName: inviteToken ? undefined : orgName, slug: inviteToken ? undefined : slug, codeId, code, invite: inviteToken || undefined }),
+        body: JSON.stringify({ email: email || undefined, phone: phone ? `${countryCode}${phone.replace(/^0+/, '')}` : undefined, password, displayName, orgName: inviteToken ? undefined : orgName, slug: inviteToken ? undefined : slug, codeId, code, invite: inviteToken || undefined, referralCode: referralCode || undefined }),
       })
       const data = await res.json()
       if (res.ok) {
@@ -171,6 +172,12 @@ function RegisterForm() {
           {step === 'form' ? (
             /* ══════════ Step 1: 表單 ══════════ */
             <div className="space-y-4">
+              {/* 推薦碼提示 */}
+              {referralCode && (
+                <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl px-4 py-3 text-sm text-emerald-300/80">
+                  🎉 由好友邀請註冊，你將獲得 <strong>30 天免費試用</strong>！
+                </div>
+              )}
               <div>
                 <label className="block text-sm text-slate-400 mb-1">Email</label>
                 <input type="email" value={email} onChange={(e) => setEmail(e.target.value)}
