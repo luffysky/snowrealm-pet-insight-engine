@@ -95,6 +95,9 @@ export default function LandingPage() {
             <Link href="/explore" className="hidden sm:block text-sm text-slate-400 hover:text-white transition-colors">
               探索問卷
             </Link>
+            <Link href="/pricing" className="hidden sm:block text-sm text-slate-400 hover:text-white transition-colors">
+              定價
+            </Link>
             <HomeNav />
           </div>
         </nav>
