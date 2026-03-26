@@ -6,7 +6,13 @@ import { checkRateLimit } from '@/lib/rateLimit'
 async function getAuthContext(request: NextRequest): Promise<TokenPayload | null> {
   const sessionToken = request.cookies.get('admin_session')?.value
   if (sessionToken) {
+    console.log('[MW AUTH]', {
+      tokenLength: sessionToken.length,
+      dotCount: (sessionToken.match(/\./g) || []).length,
+      first20: sessionToken.slice(0, 20),
+    })
     const payload = await verifyToken(sessionToken)
+    console.log('[MW AUTH] verifyToken result:', payload ? 'OK' : 'NULL')
     if (payload) return payload
   }
   return null
