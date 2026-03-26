@@ -235,6 +235,10 @@ function DoneContent({ config }: { config: SurveyConfig }) {
   const [personality, setPersonality] = useState<PersonalityResult | null>(null)
   const [resultType, setResultType] = useState<ResultType | null>(null)
 
+  // Z幣任務狀態
+  const [zcoinEarned] = useState(1) // 完成問卷固定 +1
+  const [taskProgress, setTaskProgress] = useState<{ completed: number; total: number } | null>(null)
+
   // 故事卡片狀態
   const [responseId, setResponseId] = useState<string | null>(null)
   const [storyCard, setStoryCard] = useState<StoryCardData | null>(null)
@@ -266,6 +270,16 @@ function DoneContent({ config }: { config: SurveyConfig }) {
         }
       }
     } catch {}
+
+    // 載入今日任務進度
+    fetch('/api/zcoin/tasks')
+      .then(r => r.ok ? r.json() as Promise<{ tasks: { isCompleted: boolean }[] }> : null)
+      .then(d => {
+        if (d?.tasks) {
+          setTaskProgress({ completed: d.tasks.filter(t => t.isCompleted).length, total: d.tasks.length })
+        }
+      })
+      .catch(() => {})
 
     const rid = sessionStorage.getItem('lastResponseId')
     if (rid) {
@@ -475,6 +489,38 @@ function DoneContent({ config }: { config: SurveyConfig }) {
           </button>
 
           {showAnswers && <DownloadAnswers />}
+
+          {/* Z幣獎勵 */}
+          <div className={tc.dividerClass} />
+          <div className="rounded-2xl border border-amber-400/20 bg-linear-to-br from-amber-600/10 to-amber-400/5 p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="text-xl">🪙</span>
+                <div>
+                  <p className="text-sm font-semibold text-amber-200">完成問卷獲得 +{zcoinEarned} Z幣</p>
+                  {taskProgress && (
+                    <p className="text-xs text-amber-200/50 mt-0.5">
+                      今日任務：{taskProgress.completed}/{taskProgress.total} 完成
+                    </p>
+                  )}
+                </div>
+              </div>
+              <a
+                href="/zcoin-shop"
+                className="text-xs px-3 py-1.5 rounded-full border border-amber-400/30 text-amber-300 hover:bg-amber-400/10 transition-colors"
+              >
+                查看任務 →
+              </a>
+            </div>
+            {taskProgress && (
+              <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-amber-400/50 rounded-full transition-all duration-700"
+                  style={{ width: `${taskProgress.total > 0 ? (taskProgress.completed / taskProgress.total) * 100 : 0}%` }}
+                />
+              </div>
+            )}
+          </div>
 
           {/* Platform CTA */}
           <div className={tc.dividerClass} />

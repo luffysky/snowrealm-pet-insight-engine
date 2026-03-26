@@ -22,6 +22,98 @@ interface DailyTask {
   isCompleted: boolean
 }
 
+// ===== 廣告觀看 =====
+
+interface AdQuota {
+  canWatch: boolean
+  todayCount: number
+  limit: number
+  reward: number
+}
+
+function AdWatchSection({ onEarned }: { onEarned: () => void }) {
+  const [quota, setQuota] = useState<AdQuota | null>(null)
+  const [watching, setWatching] = useState(false)
+  const [countdown, setCountdown] = useState(0)
+  const [toast, setToastMsg] = useState<string | null>(null)
+
+  useEffect(() => {
+    fetch('/api/ad-view')
+      .then(r => r.ok ? r.json() as Promise<AdQuota> : null)
+      .then(d => { if (d) setQuota(d) })
+      .catch(() => {})
+  }, [])
+
+  const handleWatch = async () => {
+    if (!quota?.canWatch || watching) return
+    setWatching(true)
+    setCountdown(3)
+    const tick = setInterval(() => {
+      setCountdown(n => {
+        if (n <= 1) {
+          clearInterval(tick)
+          return 0
+        }
+        return n - 1
+      })
+    }, 1000)
+    await new Promise(r => setTimeout(r, 3000))
+    try {
+      const res = await fetch('/api/ad-view', { method: 'POST' })
+      const data = await res.json() as { success?: boolean; earned?: number; error?: string }
+      if (data.success) {
+        setToastMsg(`🪙 +${data.earned} Z幣！`)
+        setTimeout(() => setToastMsg(null), 2000)
+        setQuota(prev => prev ? { ...prev, todayCount: prev.todayCount + 1, canWatch: prev.todayCount + 1 < prev.limit } : prev)
+        onEarned()
+      } else {
+        setToastMsg(data.error ?? '獲取失敗')
+        setTimeout(() => setToastMsg(null), 2000)
+      }
+    } catch {
+      setToastMsg('網路錯誤')
+      setTimeout(() => setToastMsg(null), 2000)
+    } finally {
+      setWatching(false)
+    }
+  }
+
+  if (!quota) return null
+
+  return (
+    <div className="bg-white/5 border border-amber-400/15 rounded-xl p-4 space-y-3 relative overflow-hidden">
+      {toast && (
+        <div className="absolute top-2 right-3 text-xs font-semibold text-amber-300 animate-bounce">{toast}</div>
+      )}
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-sm font-medium text-white/80">👁️ 觀看廣告賺 Z幣</p>
+          <p className="text-xs text-white/40 mt-0.5">今日剩餘 {quota.limit - quota.todayCount}/{quota.limit} 次</p>
+        </div>
+        <button
+          onClick={handleWatch}
+          disabled={!quota.canWatch || watching}
+          className="relative px-4 py-2 rounded-xl text-sm font-medium bg-amber-500/20 border border-amber-400/30 text-amber-300 hover:bg-amber-500/30 transition-colors disabled:opacity-40 disabled:cursor-not-allowed min-w-[80px] text-center"
+        >
+          {watching ? (
+            <span className="flex items-center gap-1 justify-center">
+              <span className="w-4 h-4 border-2 border-amber-400/50 border-t-amber-300 rounded-full animate-spin" />
+              {countdown > 0 ? `${countdown}s` : '...'}
+            </span>
+          ) : quota.canWatch ? `+${quota.reward} 觀看` : '已達上限'}
+        </button>
+      </div>
+      {/* 進度條 */}
+      <div className="h-1 bg-white/5 rounded-full overflow-hidden">
+        <div
+          className="h-full bg-amber-400/40 rounded-full transition-all"
+          style={{ width: `${(quota.todayCount / quota.limit) * 100}%` }}
+        />
+      </div>
+    </div>
+  )
+}
+
 // ===== 充值方案 =====
 
 interface RechargePackage {
@@ -276,6 +368,11 @@ export default function ZcoinShopPage() {
               ))}
             </div>
           )}
+        </section>
+
+        {/* 觀看廣告 */}
+        <section className="mb-8">
+          <AdWatchSection onEarned={fetchBalance} />
         </section>
 
         {/* Z幣充值方案 */}

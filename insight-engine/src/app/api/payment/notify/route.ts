@@ -2,6 +2,14 @@ import { NextRequest, NextResponse } from 'next/server'
 import { queryOne } from '@/lib/db'
 import { verifyAndDecryptNotify } from '@/lib/newebpay'
 import { upgradePlan } from '@/lib/subscriptionEngine'
+import { earnZcoin } from '@/lib/zcoinEngine'
+
+const ZCOIN_PACKAGES: Record<string, number> = {
+  zcoin_starter: 30,
+  zcoin_basic:   100,
+  zcoin_popular: 350,
+  zcoin_value:   900,
+}
 
 const MERCHANT_ID = process.env.MIG_MERCHANT_ID || process.env.NEWEBPAY_MERCHANT_ID || ''
 
@@ -63,7 +71,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       return NextResponse.json({ error: 'Amount mismatch' }, { status: 400 })
     }
 
-    const meta = (paymentLog.raw_response || {}) as { plan?: string; period?: string }
+    const meta = (paymentLog.raw_response || {}) as { plan?: string; period?: string; zcoin?: number; userId?: string }
 
     await queryOne(
       `UPDATE payment_logs SET status = $1, raw_response = $2 WHERE trade_no = $3 RETURNING id`,
@@ -71,13 +79,27 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     )
 
     if (isSuccess && meta.plan) {
-      await upgradePlan({
-        tenantId: paymentLog.tenant_id,
-        plan: meta.plan,
-        period: meta.period || 'monthly',
-        tradeNo: result.Result.TradeNo,
-        amount: result.Result.Amt,
-      })
+      // Z幣儲值
+      if (meta.plan.startsWith('zcoin_') && meta.userId) {
+        const zcoinAmount = ZCOIN_PACKAGES[meta.plan] ?? meta.zcoin ?? 0
+        if (zcoinAmount > 0) {
+          await earnZcoin({
+            userId: meta.userId,
+            amount: zcoinAmount,
+            reason: 'milestone',
+            referenceId: orderNo,
+          })
+        }
+      } else {
+        // 訂閱方案升級
+        await upgradePlan({
+          tenantId: paymentLog.tenant_id,
+          plan: meta.plan,
+          period: meta.period || 'monthly',
+          tradeNo: result.Result.TradeNo,
+          amount: result.Result.Amt,
+        })
+      }
     }
 
     return NextResponse.json({ status: 'OK' })
