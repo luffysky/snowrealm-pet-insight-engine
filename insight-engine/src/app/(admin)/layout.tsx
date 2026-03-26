@@ -19,7 +19,6 @@ interface UserInfo {
   platformPartner?: boolean
 }
 
-/** 已知的 admin 子頁面路徑（與 middleware 保持一致，用來區分 tenant slug） */
 const KNOWN_ADMIN_PAGES = new Set([
   'ab', 'account', 'ai-settings', 'api-keys', 'broadcast', 'crosstab', 'export', 'funnel', 'insight', 'line-settings',
   'my-responses', 'notification-rules', 'notification-styles', 'panel', 'profile', 'rich-menu',
@@ -27,7 +26,6 @@ const KNOWN_ADMIN_PAGES = new Set([
   'theme-settings', 'utm', 'utm-links', 'upgrade', 'waitlist', 'webhooks', 'responses', 'zcoin',
 ])
 
-/** 從 pathname 提取 tenant slug（如 /insight-admin/snowrealm-pet/surveys → snowrealm-pet） */
 function extractSlug(pathname: string): string | null {
   if (!pathname.startsWith('/insight-admin/')) return null
   const firstSegment = pathname.slice('/insight-admin/'.length).split('/')[0]
@@ -35,212 +33,137 @@ function extractSlug(pathname: string): string | null {
   return null
 }
 
-// 基礎導航路徑定義（不含 slug，slug 由 render 時動態加入）
-const BASE_NAV_ITEMS = [
-  { path: '', label: 'Dashboard' },
-  { path: '/surveys', label: '問卷管理' },
-  { path: '/survey-templates', label: '📋 模板庫' },
-  { path: '/responses', label: '填答列表' },
-  { path: '/funnel', label: '漏斗分析' },
-  { path: '/crosstab', label: '交叉分析' },
-  { path: '/tags', label: '標籤統計' },
-  { path: '/tag-rules', label: '標籤規則' },
-  { path: '/utm', label: '來源分析' },
-  { path: '/ab', label: 'A/B 比較' },
-  { path: '/webhooks', label: 'Webhook' },
-  { path: '/panel', label: '管理員面板' },
-  { path: '/broadcast', label: 'LINE 推播' },
-  { path: '/notification-rules', label: '通知規則' },
-  { path: '/templates', label: '訊息模板' },
-  { path: '/utm-links', label: 'UTM 管理' },
-  { path: '/rich-menu', label: 'Rich Menu' },
-  { path: '/line-settings', label: 'LINE 設定' },
-  { path: '/notification-styles', label: '通知樣式' },
-  { path: '/waitlist', label: '封測名單' },
-  { path: '/site-settings', label: 'Meta / OG' },
-]
-
-const BASE_DIRECT = [
-  { path: '', label: 'Dashboard' },
-  { path: '/surveys', label: '問卷管理' },
-  { path: '/survey-templates', label: '📋 模板庫' },
-]
-
-const BASE_NAV_GROUPS = [
-  {
-    label: '📊 數據分析',
-    items: [
-      { path: '/responses', label: '填答列表' },
-      { path: '/funnel', label: '漏斗分析' },
-      { path: '/crosstab', label: '交叉分析' },
-      { path: '/tags', label: '標籤統計' },
-      { path: '/tag-rules', label: '標籤規則' },
-      { path: '/utm', label: '來源分析' },
-      { path: '/ab', label: 'A/B 比較' },
-      { path: '/insight', label: '🔍 AI 洞察報告' },
-      { path: '/story-wall', label: '📖 故事牆管理' },
-    ],
-  },
-  {
-    label: '📬 客服',
-    items: [
-      { path: '/support', label: '客服中心' },
-    ],
-  },
-  {
-    label: '💬 LINE',
-    items: [
-      { path: '/line-settings', label: 'LINE 設定' },
-      { path: '/broadcast', label: 'LINE 推播' },
-      { path: '/notification-rules', label: '通知規則' },
-      { path: '/templates', label: '訊息模板' },
-      { path: '/rich-menu', label: 'Rich Menu' },
-      { path: '/notification-styles', label: '通知樣式' },
-    ],
-  },
-  {
-    label: '⚙️ 系統',
-    items: [
-      { path: '/panel', label: '管理員面板' },
-      { path: '/ai-settings', label: 'AI 設定' },
-      { path: '/theme-settings', label: '主題設定' },
-      { path: '/site-settings', label: 'Meta / OG' },
-      { path: '/utm-links', label: 'UTM 管理' },
-      { path: '/webhooks', label: 'Webhook' },
-      { path: '/waitlist', label: '封測名單' },
-      { path: '/team', label: '團隊管理' },
-      { path: '/zcoin', label: '🪙 Z幣管理' },
-      { path: '/subscription', label: '訂閱管理' },
-      { path: '/upgrade', label: '🚀 升級方案' },
-      { path: '/account', label: '帳號設定' },
-      { path: '/profile', label: '👤 個人頁面' },
-      { path: '/my-responses', label: '我的填答' },
-    ],
-  },
-]
-
-const BASE_MOBILE_GROUPS = [
-  {
-    title: '總覽',
-    items: [
-      { path: '', label: 'Dashboard' },
-      { path: '/surveys', label: '問卷管理' },
-      { path: '/survey-templates', label: '📋 模板庫' },
-    ],
-  },
-  {
-    title: '數據分析',
-    items: [
-      { path: '/responses', label: '填答列表' },
-      { path: '/funnel', label: '漏斗分析' },
-      { path: '/crosstab', label: '交叉分析' },
-      { path: '/tags', label: '標籤統計' },
-      { path: '/tag-rules', label: '標籤規則' },
-      { path: '/utm', label: '來源分析' },
-      { path: '/ab', label: 'A/B 比較' },
-      { path: '/insight', label: 'AI 洞察報告' },
-      { path: '/story-wall', label: '故事牆管理' },
-    ],
-  },
-  {
-    title: '客服',
-    items: [
-      { path: '/support', label: '客服中心' },
-    ],
-  },
-  {
-    title: 'LINE',
-    items: [
-      { path: '/line-settings', label: 'LINE 設定' },
-      { path: '/broadcast', label: 'LINE 推播' },
-      { path: '/notification-rules', label: '通知規則' },
-      { path: '/templates', label: '訊息模板' },
-      { path: '/rich-menu', label: 'Rich Menu' },
-      { path: '/notification-styles', label: '通知樣式' },
-    ],
-  },
-  {
-    title: '系統',
-    items: [
-      { path: '/panel', label: '管理員面板' },
-      { path: '/ai-settings', label: 'AI 設定' },
-      { path: '/theme-settings', label: '主題設定' },
-      { path: '/site-settings', label: 'Meta / OG' },
-      { path: '/utm-links', label: 'UTM 管理' },
-      { path: '/webhooks', label: 'Webhook' },
-      { path: '/waitlist', label: '封測名單' },
-      { path: '/team', label: '團隊管理' },
-      { path: '/subscription', label: '訂閱管理' },
-      { path: '/upgrade', label: '🚀 升級方案' },
-      { path: '/account', label: '帳號設定' },
-      { path: '/profile', label: '👤 個人頁面' },
-      { path: '/my-responses', label: '我的填答' },
-    ],
-  },
-]
-
-/** 將 base path 加上 admin prefix（含 slug） */
 function toHref(basePath: string, adminPrefix: string): string {
   return `${adminPrefix}${basePath}`
 }
 
-interface NavItem { href: string; label: string }
-interface NavGroup { label: string; items: NavItem[] }
+// 導航群組定義
+const NAV_GROUPS = [
+  {
+    label: '核心',
+    items: [
+      { path: '', label: 'Dashboard', icon: '🏠' },
+      { path: '/surveys', label: '問卷管理', icon: '📋' },
+      { path: '/survey-templates', label: '模板庫', icon: '📑' },
+      { path: '/responses', label: '填答列表', icon: '📝' },
+    ],
+  },
+  {
+    label: '數據分析',
+    items: [
+      { path: '/funnel', label: '漏斗分析', icon: '🔻' },
+      { path: '/crosstab', label: '交叉分析', icon: '📊' },
+      { path: '/tags', label: '標籤統計', icon: '🏷️' },
+      { path: '/tag-rules', label: '標籤規則', icon: '⚙️' },
+      { path: '/utm', label: '來源分析', icon: '📡' },
+      { path: '/ab', label: 'A/B 比較', icon: '⚖️' },
+      { path: '/insight', label: 'AI 洞察報告', icon: '🔍' },
+      { path: '/story-wall', label: '故事牆管理', icon: '📖' },
+    ],
+  },
+  {
+    label: '社群',
+    items: [
+      { path: '/profile', label: '個人頁面', icon: '👤' },
+      { path: '/support', label: '客服中心', icon: '📬' },
+    ],
+  },
+  {
+    label: 'LINE',
+    items: [
+      { path: '/line-settings', label: 'LINE 設定', icon: '💬' },
+      { path: '/broadcast', label: 'LINE 推播', icon: '📢' },
+      { path: '/notification-rules', label: '通知規則', icon: '🔔' },
+      { path: '/templates', label: '訊息模板', icon: '✉️' },
+      { path: '/rich-menu', label: 'Rich Menu', icon: '📱' },
+      { path: '/notification-styles', label: '通知樣式', icon: '🎨' },
+    ],
+  },
+  {
+    label: '系統',
+    items: [
+      { path: '/panel', label: '管理員面板', icon: '🖥️' },
+      { path: '/ai-settings', label: 'AI 設定', icon: '🤖' },
+      { path: '/theme-settings', label: '主題設定', icon: '🎨' },
+      { path: '/site-settings', label: 'Meta / OG', icon: '🌐' },
+      { path: '/utm-links', label: 'UTM 管理', icon: '🔗' },
+      { path: '/webhooks', label: 'Webhook', icon: '🪝' },
+      { path: '/waitlist', label: '封測名單', icon: '📋' },
+      { path: '/team', label: '團隊管理', icon: '👥' },
+      { path: '/zcoin', label: 'Z幣管理', icon: '🪙' },
+      { path: '/subscription', label: '訂閱管理', icon: '💳' },
+      { path: '/upgrade', label: '升級方案', icon: '🚀' },
+      { path: '/account', label: '帳號設定', icon: '⚙️' },
+      { path: '/my-responses', label: '我的填答', icon: '📄' },
+    ],
+  },
+]
 
-function NavDropdown({ group, pathname, themeColors }: { group: NavGroup; pathname: string; themeColors: any }) {
-  const [open, setOpen] = useState(false)
-  const ref = useRef<HTMLDivElement>(null)
-
-  const hasActive = group.items.some((i) => pathname === i.href)
+function SidebarGroup({
+  label,
+  items,
+  pathname,
+  adminPrefix,
+  accent,
+  accentBg,
+  defaultOpen = true,
+}: {
+  label: string
+  items: { path: string; label: string; icon: string }[]
+  pathname: string
+  adminPrefix: string
+  accent: string
+  accentBg: string
+  defaultOpen?: boolean
+}) {
+  const [open, setOpen] = useState(defaultOpen)
+  const hasActive = items.some(i => {
+    const href = toHref(i.path, adminPrefix)
+    return i.path === '' ? pathname === adminPrefix : pathname.startsWith(href)
+  })
 
   useEffect(() => {
-    function handleClick(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
-    }
-    document.addEventListener('mousedown', handleClick)
-    return () => document.removeEventListener('mousedown', handleClick)
-  }, [])
+    if (hasActive) setOpen(true)
+  }, [hasActive])
 
   return (
-    <div className="relative" ref={ref}>
+    <div>
       <button
-        onClick={() => setOpen(!open)}
-        className={`flex items-center gap-1 transition-colors whitespace-nowrap cursor-pointer ${
-          hasActive ? `${themeColors.accent} font-medium` : 'text-slate-400 hover:text-white'
-        }`}
+        onClick={() => setOpen(o => !o)}
+        className="w-full flex items-center justify-between px-3 py-1.5 text-xs font-semibold text-slate-500 uppercase tracking-wider hover:text-slate-400 transition-colors"
       >
-        {group.label}
-        <svg className={`w-3.5 h-3.5 transition-transform ${open ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        {label}
+        <svg className={`w-3 h-3 transition-transform ${open ? '' : '-rotate-90'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
         </svg>
       </button>
       {open && (
-        <div className="absolute top-full left-0 mt-2 w-44 bg-slate-800 border border-slate-700 rounded-lg shadow-xl py-1 z-50">
-          {group.items.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              onClick={() => setOpen(false)}
-              className={`block px-4 py-2 text-sm transition-colors ${
-                pathname === item.href
-                  ? `${themeColors.accent} ${themeColors.accentBg} font-medium`
-                  : 'text-slate-300 hover:text-white hover:bg-slate-700'
-              }`}
-            >
-              {item.label}
-            </Link>
-          ))}
+        <div className="mt-0.5 space-y-0.5">
+          {items.map(item => {
+            const href = toHref(item.path, adminPrefix)
+            const isActive = item.path === '' ? pathname === adminPrefix : pathname.startsWith(href)
+            return (
+              <Link
+                key={href}
+                href={href}
+                className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors ${
+                  isActive
+                    ? `${accentBg} ${accent} font-medium`
+                    : 'text-slate-400 hover:text-white hover:bg-white/5'
+                }`}
+              >
+                <span className="text-base leading-none">{item.icon}</span>
+                <span>{item.label}</span>
+              </Link>
+            )
+          })}
         </div>
       )}
     </div>
   )
 }
 
-export default function AdminLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
+export default function AdminLayout({ children }: { children: React.ReactNode }) {
   return (
     <AdminSurveyProvider>
       <AdminLayoutInner>{children}</AdminLayoutInner>
@@ -248,48 +171,29 @@ export default function AdminLayout({
   )
 }
 
-function AdminLayoutInner({
-  children,
-}: {
-  children: React.ReactNode
-}) {
+function AdminLayoutInner({ children }: { children: React.ReactNode }) {
   const { surveys, selectedSurveyId, selectedSurvey, theme, setSelectedSurveyId } = useAdminSurvey()
   const tc = ADMIN_THEME_COLORS[theme]
   const cssVars = THEME_CSS_VALUES[theme] as React.CSSProperties
-  const [menuOpen, setMenuOpen] = useState(false)
+  const [sidebarOpen, setSidebarOpen] = useState(false)
   const [user, setUser] = useState<UserInfo | null>(null)
-  const [tenantDropOpen, setTenantDropOpen] = useState(false)
-  const tenantRef = useRef<HTMLDivElement>(null)
   const pathname = usePathname()
   const router = useRouter()
 
   const slug = extractSlug(pathname) ?? user?.tenantId ?? null
   const adminPrefix = slug ? `/insight-admin/${slug}` : '/insight-admin'
 
-  const directItems = useMemo(() =>
-    BASE_DIRECT.map(i => ({ href: toHref(i.path, adminPrefix), label: i.label })),
-    [adminPrefix]
-  )
-
   const fetchUser = useCallback(async () => {
     try {
       const res = await fetch('/api/auth/me')
-      if (res.ok) {
-        const data = await res.json()
-        setUser(data)
-      }
+      if (res.ok) setUser(await res.json())
     } catch { /* ignore */ }
   }, [])
 
   useEffect(() => { fetchUser() }, [fetchUser])
 
-  useEffect(() => {
-    function handleClick(e: MouseEvent) {
-      if (tenantRef.current && !tenantRef.current.contains(e.target as Node)) setTenantDropOpen(false)
-    }
-    document.addEventListener('mousedown', handleClick)
-    return () => document.removeEventListener('mousedown', handleClick)
-  }, [])
+  // Close sidebar on route change (mobile)
+  useEffect(() => { setSidebarOpen(false) }, [pathname])
 
   const handleLogout = async () => {
     await fetch('/api/auth/logout', { method: 'POST' })
@@ -302,244 +206,137 @@ function AdminLayoutInner({
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ tenantId: tenantSlug }),
     })
-    if (res.ok) {
-      setTenantDropOpen(false)
-      window.location.href = `/insight-admin/${tenantSlug}`
-    }
+    if (res.ok) window.location.href = `/insight-admin/${tenantSlug}`
   }
 
-  const displayRole = user?.role === 'super_admin' ? 'admin' : user?.role
+  const displayRole = user?.role === 'super_admin' ? 'super' : user?.role
 
-  const resolvedNavGroups = useMemo(() =>
-    BASE_NAV_GROUPS.map(g => ({
-      label: g.label,
-      items: g.items.map(i => ({ href: toHref(i.path, adminPrefix), label: i.label })),
-    })),
-    [adminPrefix]
+  const SidebarContent = (
+    <div className="flex flex-col h-full">
+      {/* Logo + title */}
+      <div className="px-4 py-4 border-b border-white/8">
+        <Link href={adminPrefix} className="flex items-center gap-2">
+          <span className="text-lg">✦</span>
+          <span className="text-sm font-bold text-white/90 truncate">
+            {user?.adminTitle || 'Insight Engine'}
+          </span>
+        </Link>
+        {user?.platformPartner && (
+          <span className="mt-1.5 inline-block text-xs font-semibold px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/30">
+            🌟 平台禮遇
+          </span>
+        )}
+      </div>
+
+      {/* 問卷選擇器 */}
+      {surveys.length > 0 && (
+        <div className="px-3 py-3 border-b border-white/8">
+          <p className="text-xs text-slate-500 mb-1.5">當前問卷</p>
+          <select
+            value={selectedSurveyId ?? ''}
+            onChange={e => setSelectedSurveyId(e.target.value || null)}
+            className={`w-full bg-white/5 border ${tc.accentBorder} ${tc.accent} rounded-lg px-2.5 py-1.5 text-xs truncate cursor-pointer focus:outline-none`}
+          >
+            {surveys.map(s => (
+              <option key={s.id} value={s.id} className="bg-slate-900">
+                {s.title}{s.is_primary ? ' ⭐' : ''}
+              </option>
+            ))}
+          </select>
+          {selectedSurvey && (
+            <p className="text-[10px] text-slate-600 mt-1 font-mono truncate">{selectedSurvey.slug}</p>
+          )}
+        </div>
+      )}
+
+      {/* Nav groups */}
+      <div className="flex-1 overflow-y-auto px-2 py-3 space-y-4 scrollbar-thin">
+        {NAV_GROUPS.map((group, i) => (
+          <SidebarGroup
+            key={group.label}
+            label={group.label}
+            items={group.items}
+            pathname={pathname}
+            adminPrefix={adminPrefix}
+            accent={tc.accent}
+            accentBg={tc.accentBg}
+            defaultOpen={i < 3}
+          />
+        ))}
+      </div>
+
+      {/* User info + logout */}
+      <div className="border-t border-white/8 px-3 py-3 space-y-2">
+        {user?.tenants && user.tenants.length > 1 && (
+          <select
+            value={user.tenantId}
+            onChange={e => handleSwitchTenant(e.target.value)}
+            className="w-full bg-white/5 border border-white/10 text-slate-300 rounded-lg px-2.5 py-1.5 text-xs cursor-pointer focus:outline-none"
+          >
+            {user.tenants.map(t => (
+              <option key={t.slug} value={t.slug} className="bg-slate-900">{t.name}</option>
+            ))}
+          </select>
+        )}
+        {user && (
+          <div className="flex items-center justify-between">
+            <div className="min-w-0">
+              <p className="text-xs text-slate-300 truncate">{user.userName}</p>
+              <p className="text-[10px] text-slate-500">{displayRole} · {user.tenantName ?? user.tenantId}</p>
+            </div>
+            <button onClick={handleLogout} className="text-xs text-slate-500 hover:text-red-400 transition-colors shrink-0 ml-2">
+              登出
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
   )
-
-  const resolvedMobileGroups = useMemo(() =>
-    BASE_MOBILE_GROUPS.map(g => ({
-      title: g.title,
-      items: g.items.map(i => ({ href: toHref(i.path, adminPrefix), label: i.label })),
-    })),
-    [adminPrefix]
-  )
-
-  const systemItems: NavItem[] = useMemo(() => [
-    { href: toHref('/panel', adminPrefix), label: '管理員面板' },
-    { href: toHref('/ai-settings', adminPrefix), label: 'AI 設定' },
-    { href: toHref('/theme-settings', adminPrefix), label: '主題設定' },
-    { href: toHref('/site-settings', adminPrefix), label: 'Meta / OG' },
-    { href: toHref('/utm-links', adminPrefix), label: 'UTM 管理' },
-    { href: toHref('/webhooks', adminPrefix), label: 'Webhook' },
-    { href: toHref('/waitlist', adminPrefix), label: '封測名單' },
-    { href: toHref('/team', adminPrefix), label: '團隊管理' },
-    { href: toHref('/zcoin', adminPrefix), label: '🪙 Z幣管理' },
-    { href: toHref('/subscription', adminPrefix), label: '訂閱管理' },
-    { href: toHref('/upgrade', adminPrefix), label: '🚀 升級方案' },
-    { href: toHref('/export', adminPrefix), label: '資料匯出' },
-    { href: toHref('/account', adminPrefix), label: '後台設定' },
-    { href: toHref('/my-responses', adminPrefix), label: '我的填答' },
-  ], [adminPrefix])
-
-  const dynamicGroups: NavGroup[] = useMemo(() => [
-    resolvedNavGroups[0],
-    resolvedNavGroups[1],
-    resolvedNavGroups[2],
-    { label: '⚙️ 系統', items: systemItems },
-  ], [resolvedNavGroups, systemItems])
-
-  const dynamicMobileGroups = useMemo(() => [
-    resolvedMobileGroups[0],
-    resolvedMobileGroups[1],
-    resolvedMobileGroups[2],
-    resolvedMobileGroups[3],
-    { title: '系統', items: systemItems },
-  ], [resolvedMobileGroups, systemItems])
 
   return (
     <div className={`min-h-screen ${tc.bodyBg} transition-colors duration-300`} style={cssVars} data-admin-theme={theme}>
-      <nav className={`border-b ${tc.navBorder} ${tc.navBg} backdrop-blur-sm sticky top-0 z-50 ${tc.headerGlow}`}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-2 shrink-0">
-            <Link
-              href={adminPrefix}
-              className="text-lg font-bold text-white/90"
-            >
-              {user?.adminTitle || '管理後台'}
-            </Link>
-            {user?.platformPartner && (
-              <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/30 animate-pulse">
-                🌟 平台禮遇
-              </span>
-            )}
-          </div>
+      <AdminBackground3D />
 
-          {/* Desktop nav — 直連 + 分組下拉 */}
-          <div className="hidden lg:flex items-center gap-5 text-sm ml-8">
-            {directItems.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`transition-colors whitespace-nowrap ${
-                  pathname === item.href
-                    ? `${tc.accent} font-medium`
-                    : 'text-slate-400 hover:text-white'
-                }`}
-              >
-                {item.label}
-              </Link>
-            ))}
-            {dynamicGroups.map((group) => (
-              <NavDropdown key={group.label} group={group} pathname={pathname} themeColors={tc} />
-            ))}
-          </div>
+      {/* Mobile overlay */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black/60 z-40 lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
 
-          {/* User info + tenant switcher + logout */}
-          <div className="hidden lg:flex items-center gap-3 ml-auto">
-            {user && user.tenants && user.tenants.length > 1 && (
-              <div className="relative" ref={tenantRef}>
-                <button
-                  onClick={() => setTenantDropOpen(!tenantDropOpen)}
-                  className="flex items-center gap-1 text-xs text-slate-400 hover:text-white bg-slate-800 px-2.5 py-1.5 rounded-lg cursor-pointer"
-                >
-                  <span className="text-slate-500">🏢</span>
-                  <span>{user.tenantName ?? user.tenantId}</span>
-                  <svg className={`w-3 h-3 transition-transform ${tenantDropOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
-                </button>
-                {tenantDropOpen && (
-                  <div className="absolute top-full right-0 mt-1 w-48 bg-slate-800 border border-slate-700 rounded-lg shadow-xl py-1 z-50">
-                    {user.tenants.map((t) => (
-                      <button
-                        key={t.slug}
-                        onClick={() => handleSwitchTenant(t.slug)}
-                        className={`block w-full text-left px-4 py-2 text-sm cursor-pointer ${
-                          t.slug === user.tenantId
-                            ? `${tc.accent} ${tc.accentBg}`
-                            : 'text-slate-300 hover:text-white hover:bg-slate-700'
-                        }`}
-                      >
-                        {t.name}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-            {user && (
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-slate-500">{user.userName}</span>
-                <span className="text-[10px] text-slate-600 bg-slate-800 px-1.5 py-0.5 rounded">{displayRole}</span>
-                {user.platformPartner && (
-                  <span className="text-[10px] text-amber-400">🌟</span>
-                )}
-                <button onClick={handleLogout} className="text-xs text-slate-500 hover:text-red-400 cursor-pointer">登出</button>
-              </div>
-            )}
-          </div>
+      {/* Sidebar */}
+      <aside className={`
+        fixed top-0 left-0 h-full w-60 z-50
+        bg-slate-950/95 backdrop-blur-xl border-r border-white/8
+        transition-transform duration-300 ease-in-out
+        ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
+        lg:translate-x-0
+      `}>
+        {SidebarContent}
+      </aside>
 
-          {/* Mobile hamburger */}
+      {/* Main content */}
+      <div className="lg:pl-60 min-h-screen flex flex-col">
+        {/* Mobile top bar */}
+        <header className="lg:hidden sticky top-0 z-30 bg-slate-950/80 backdrop-blur-sm border-b border-white/8 px-4 py-3 flex items-center gap-3">
           <button
-            onClick={() => setMenuOpen(!menuOpen)}
-            className="lg:hidden text-slate-400 hover:text-white p-2 cursor-pointer"
-            aria-label="選單"
+            onClick={() => setSidebarOpen(true)}
+            className="text-slate-400 hover:text-white transition-colors"
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              {menuOpen ? (
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              ) : (
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-              )}
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
             </svg>
           </button>
-        </div>
+          <span className="text-sm font-semibold text-white/80 truncate">
+            {user?.adminTitle || 'Insight Engine'}
+          </span>
+        </header>
 
-        {/* Survey Selector Bar */}
-        {surveys.length > 0 && (
-          <div className={`border-t ${tc.navBorder} ${tc.bodyBg}/60`}>
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 py-2 flex items-center gap-3">
-              <span className="text-xs text-slate-500 shrink-0">問卷:</span>
-              <select
-                value={selectedSurveyId ?? ''}
-                onChange={(e) => setSelectedSurveyId(e.target.value || null)}
-                className={`bg-slate-800 border ${tc.accentBorder} ${tc.accent} rounded-lg px-3 py-1.5 text-sm max-w-xs truncate cursor-pointer`}
-              >
-                {surveys.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.title}{s.is_primary ? ' ⭐' : ''}
-                  </option>
-                ))}
-              </select>
-              {selectedSurvey && (
-                <span className="text-xs text-slate-600 hidden sm:inline font-mono">{selectedSurvey.slug}</span>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Mobile menu — 分組顯示 */}
-        {menuOpen && (
-          <div className="lg:hidden border-t border-slate-800 bg-slate-900/95 backdrop-blur-sm max-h-[75vh] overflow-y-auto">
-            <div className="max-w-7xl mx-auto px-4 py-3 space-y-4">
-              {dynamicMobileGroups.map((group) => (
-                <div key={group.title}>
-                  <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider px-3 mb-1">
-                    {group.title}
-                  </p>
-                  <div className="grid grid-cols-2 gap-1">
-                    {group.items.map((item) => (
-                      <Link
-                        key={item.href}
-                        href={item.href}
-                        onClick={() => setMenuOpen(false)}
-                        className={`px-3 py-2.5 rounded-lg text-sm transition-colors ${
-                          pathname === item.href
-                            ? `${tc.accentBg} ${tc.accent} font-medium`
-                            : 'text-slate-400 hover:text-white hover:bg-slate-800'
-                        }`}
-                      >
-                        {item.label}
-                      </Link>
-                    ))}
-                  </div>
-                </div>
-              ))}
-              {/* Mobile user info */}
-              {user && (
-                <div className="border-t border-slate-800 pt-3 flex flex-col gap-2 relative pb-3">
-                  {user.tenants && user.tenants.length > 1 && (
-                    <div className="px-3">
-                      <select
-                        value={user.tenantId}
-                        onChange={(e) => handleSwitchTenant(e.target.value)}
-                        className="w-full bg-slate-800 border border-slate-700 text-slate-300 rounded-lg px-3 py-2 text-sm"
-                      >
-                        {user.tenants.map(t => (
-                          <option key={t.slug} value={t.slug}>{t.name}</option>
-                        ))}
-                      </select>
-                    </div>
-                  )}
-                  <div className="px-3 flex items-center justify-between">
-                    <div className="text-xs text-slate-500">
-                      {user.userName} <span className="text-slate-600">({displayRole})</span>
-                      {(!user.tenants || user.tenants.length <= 1) && user.tenantName && (
-                        <span className="ml-2 text-slate-600">• {user.tenantName}</span>
-                      )}
-                    </div>
-                    <button onClick={handleLogout} className="text-xs text-slate-500 hover:text-red-400 cursor-pointer">登出</button>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-      </nav>
-      <AdminBackground3D />
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8">{children}</main>
+        <main className="flex-1 px-4 sm:px-6 lg:px-8 py-6 sm:py-8 relative z-10">
+          {children}
+        </main>
+      </div>
     </div>
   )
 }
