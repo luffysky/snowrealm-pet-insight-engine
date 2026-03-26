@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { queryOne } from '@/lib/db'
 import { verifyAndDecryptNotify } from '@/lib/newebpay'
+import { upgradePlan } from '@/lib/subscriptionEngine'
 
 const MERCHANT_ID = process.env.MIG_MERCHANT_ID || process.env.NEWEBPAY_MERCHANT_ID || ''
 
@@ -70,24 +71,13 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     )
 
     if (isSuccess && meta.plan) {
-      const plan = meta.plan
-      const period = meta.period || 'monthly'
-      const now = new Date()
-      const periodEnd = new Date(now)
-      if (period === 'yearly') {
-        periodEnd.setFullYear(periodEnd.getFullYear() + 1)
-      } else {
-        periodEnd.setMonth(periodEnd.getMonth() + 1)
-      }
-
-      await queryOne(
-        `INSERT INTO subscriptions (tenant_id, plan, status, period, current_period_start, current_period_end, newebpay_trade_no, amount, updated_at)
-         VALUES ($1, $2, 'active', $3, $4, $5, $6, $7, NOW())
-         ON CONFLICT (tenant_id)
-         DO UPDATE SET plan = $2, status = 'active', period = $3, current_period_start = $4, current_period_end = $5, newebpay_trade_no = $6, amount = $7, updated_at = NOW()
-         RETURNING id`,
-        [paymentLog.tenant_id, plan, period, now.toISOString(), periodEnd.toISOString(), result.Result.TradeNo, result.Result.Amt]
-      )
+      await upgradePlan({
+        tenantId: paymentLog.tenant_id,
+        plan: meta.plan,
+        period: meta.period || 'monthly',
+        tradeNo: result.Result.TradeNo,
+        amount: result.Result.Amt,
+      })
     }
 
     return NextResponse.json({ status: 'OK' })

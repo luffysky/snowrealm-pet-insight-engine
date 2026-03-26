@@ -33,6 +33,8 @@ interface SubscriptionData {
   planName: string
   status: string
   periodEnd: string | null
+  cancelAt?: string | null
+  autoRenew?: boolean
   platformPartner?: boolean
   usage: {
     responses: UsageItem
@@ -316,6 +318,40 @@ function SubscriptionPageInner() {
     }
   }, [])
 
+  const [cancelLoading, setCancelLoading] = useState(false)
+  const [cancelConfirm, setCancelConfirm] = useState(false)
+
+  const handleCancel = async () => {
+    setCancelLoading(true)
+    try {
+      const res = await fetch('/api/admin/subscription/cancel', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'cancel', reason: '用戶申請取消' }),
+      })
+      if (res.ok) {
+        setCancelConfirm(false)
+        fetchSubscription()
+      }
+    } finally {
+      setCancelLoading(false)
+    }
+  }
+
+  const handleReinstate = async () => {
+    setCancelLoading(true)
+    try {
+      const res = await fetch('/api/admin/subscription/cancel', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'reinstate' }),
+      })
+      if (res.ok) fetchSubscription()
+    } finally {
+      setCancelLoading(false)
+    }
+  }
+
   useEffect(() => { fetchSubscription() }, [fetchSubscription])
 
   if (loading) return <p className="text-slate-400 animate-pulse">載入中…</p>
@@ -352,6 +388,57 @@ function SubscriptionPageInner() {
           <p className="text-sm text-slate-400">
             帳期至 <span className="text-white/80">{formatDate(data.periodEnd)}</span>
           </p>
+        )}
+        {data.cancelAt && (
+          <p className="text-sm text-amber-400 mt-1">
+            訂閱將於 {formatDate(data.cancelAt)} 到期後不再續訂
+          </p>
+        )}
+
+        {/* Cancel / Reinstate controls for active paid plans */}
+        {data.plan !== 'free' && data.status === 'active' && (
+          <div className="mt-4 pt-4 border-t border-white/10">
+            {data.cancelAt ? (
+              <div className="flex items-center gap-3">
+                <p className="text-sm text-slate-400 flex-1">
+                  已設定到期不續訂。帳期結束前仍可正常使用。
+                </p>
+                <button
+                  onClick={handleReinstate}
+                  disabled={cancelLoading}
+                  className="px-4 py-2 rounded-lg text-sm font-medium bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white cursor-pointer transition-colors"
+                >
+                  {cancelLoading ? '處理中…' : '恢復自動續訂'}
+                </button>
+              </div>
+            ) : cancelConfirm ? (
+              <div className="flex items-center gap-3">
+                <p className="text-sm text-amber-400 flex-1">
+                  確定取消？帳期結束後將降回免費方案。
+                </p>
+                <button
+                  onClick={() => setCancelConfirm(false)}
+                  className="px-4 py-2 rounded-lg text-sm bg-white/10 hover:bg-white/15 text-slate-300 cursor-pointer transition-colors"
+                >
+                  返回
+                </button>
+                <button
+                  onClick={handleCancel}
+                  disabled={cancelLoading}
+                  className="px-4 py-2 rounded-lg text-sm font-medium bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white cursor-pointer transition-colors"
+                >
+                  {cancelLoading ? '處理中…' : '確定取消'}
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => setCancelConfirm(true)}
+                className="text-sm text-slate-500 hover:text-red-400 cursor-pointer transition-colors underline"
+              >
+                取消訂閱
+              </button>
+            )}
+          </div>
         )}
       </section>
 

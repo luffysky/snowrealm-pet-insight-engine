@@ -67,11 +67,23 @@ export async function GET(): Promise<NextResponse> {
       // payment_logs 表尚未建立時略過
     }
 
+    interface SubCancelRow extends Record<string, unknown> {
+      cancel_at: string | null
+      auto_renew: boolean
+    }
+
+    const subRow = await queryOne<SubCancelRow>(
+      `SELECT cancel_at, auto_renew FROM subscriptions WHERE tenant_id = $1`,
+      [tenantId]
+    ).catch(() => null)
+
     return NextResponse.json({
       plan: plan.plan,
       planName: limits.name,
       status: plan.status,
       periodEnd: plan.periodEnd,
+      cancelAt: subRow?.cancel_at ?? null,
+      autoRenew: subRow?.auto_renew ?? true,
       platformPartner,
       usage: {
         responses: { used: parseInt(responseCount?.count ?? '0', 10), limit: limits.responses },

@@ -1,4 +1,4 @@
-import { query, queryOne } from '@/lib/db'
+import { query, queryOne, execute } from '@/lib/db'
 
 export interface StoryCardData {
   responseId: string
@@ -159,7 +159,7 @@ export async function buildStoryCard(responseId: string): Promise<StoryCardData 
     ? buildShareableOneLiner(mostUnique.pct, mostUnique.label)
     : '感謝你完成了這份問卷！'
 
-  return {
+  const cardData: StoryCardData = {
     responseId,
     surveyTitle: response.survey_title,
     personalFacts: topFacts,
@@ -168,4 +168,22 @@ export async function buildStoryCard(responseId: string): Promise<StoryCardData 
     surveySlug: response.survey_slug,
     generatedAt: new Date().toISOString(),
   }
+
+  // 取得租戶 ID（從 surveys 表）
+  const tenantRow = await queryOne<{ tenant_id: string }>(
+    `SELECT tenant_id FROM surveys WHERE id = $1`,
+    [response.survey_id]
+  ).catch(() => null)
+
+  const tenantId = tenantRow?.tenant_id ?? 'default'
+
+  // 存入 story_cards（已存在則不重複建立）
+  await execute(
+    `INSERT INTO story_cards (response_id, tenant_id, survey_id, card_data)
+     SELECT $1, $2, $3, $4
+     WHERE NOT EXISTS (SELECT 1 FROM story_cards WHERE response_id = $1)`,
+    [responseId, tenantId, response.survey_id, JSON.stringify(cardData)]
+  ).catch(() => {})  // 靜默失敗，不阻擋卡片回傳
+
+  return cardData
 }
