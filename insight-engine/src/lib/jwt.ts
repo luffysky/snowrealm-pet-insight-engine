@@ -59,13 +59,15 @@ export async function verifyToken(token: string): Promise<TokenPayload | null> {
     const valid = await crypto.subtle.verify(
       'HMAC', key, sig.buffer as ArrayBuffer, new TextEncoder().encode(payloadB64),
     )
+    console.log('[MW VERIFY]', { valid, payloadLen: payloadB64.length, sigLen: sigB64.length })
     if (!valid) return null
     const payload: TokenPayload = JSON.parse(
       new TextDecoder().decode(base64urlDecode(payloadB64)),
     )
     if (payload.exp < Math.floor(Date.now() / 1000)) return null
     return payload
-  } catch {
+  } catch (err) {
+    console.log('[MW VERIFY ERROR]', err)
     return null
   }
 }
