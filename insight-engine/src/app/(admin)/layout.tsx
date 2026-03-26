@@ -24,7 +24,7 @@ const KNOWN_ADMIN_PAGES = new Set([
   'ab', 'account', 'ai-settings', 'api-keys', 'broadcast', 'crosstab', 'export', 'funnel', 'insight', 'line-settings',
   'my-responses', 'notification-rules', 'notification-styles', 'panel', 'rich-menu',
   'site-settings', 'story-wall', 'subscription', 'support', 'survey-templates', 'surveys', 'tag-rules', 'tags', 'team', 'templates', 'tenants',
-  'theme-settings', 'utm', 'utm-links', 'upgrade', 'waitlist', 'webhooks', 'responses',
+  'theme-settings', 'utm', 'utm-links', 'upgrade', 'waitlist', 'webhooks', 'responses', 'zcoin',
 ])
 
 /** 從 pathname 提取 tenant slug（如 /insight-admin/snowrealm-pet/surveys → snowrealm-pet） */
@@ -109,6 +109,7 @@ const BASE_NAV_GROUPS = [
       { path: '/webhooks', label: 'Webhook' },
       { path: '/waitlist', label: '封測名單' },
       { path: '/team', label: '團隊管理' },
+      { path: '/zcoin', label: '🪙 Z幣管理' },
       { path: '/subscription', label: '訂閱管理' },
       { path: '/upgrade', label: '🚀 升級方案' },
       { path: '/account', label: '帳號設定' },
