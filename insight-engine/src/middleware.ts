@@ -10,14 +10,8 @@ async function getAuthContext(request: NextRequest): Promise<TokenPayload | null
     const s1 = process.env.ADMIN_SECRET ?? ''
     const s2 = process.env.JWT_SECRET ?? ''
     const s3 = process.env.NEXT_PUBLIC_JWT_SECRET ?? ''
-    console.log('[MW SECRET CHECK]', {
-      ADMIN_SECRET_prefix: s1.slice(0, 8),
-      JWT_SECRET_prefix: s2.slice(0, 8),
-      NEXT_PUBLIC_prefix: s3.slice(0, 8),
-      actualUsed: (s1 || s2 || s3).slice(0, 8),
     })
     const payload = await verifyToken(sessionToken)
-    console.log('[MW AUTH] verifyToken result:', payload ? 'OK' : 'NULL')
     if (payload) return payload
   }
   return null
@@ -56,7 +50,6 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
   const { pathname } = request.nextUrl
 
   // 🔍 DEBUG: 確認 Edge Runtime 能讀到哪些 secret
-  console.log('[MW DEBUG]', {
     ADMIN_SECRET: !!process.env.ADMIN_SECRET,
     JWT_SECRET: !!process.env.JWT_SECRET,
     NEXT_PUBLIC_JWT_SECRET: !!process.env.NEXT_PUBLIC_JWT_SECRET,

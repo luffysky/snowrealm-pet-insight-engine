@@ -71,7 +71,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
   // 在 const token = await signToken({... 那行前面加：
   const debugSecret = process.env.ADMIN_SECRET ?? process.env.JWT_SECRET ?? process.env.NEXT_PUBLIC_JWT_SECRET ?? ''
-  console.log('[LOGIN SECRET CHECK]', { prefix: debugSecret.slice(0, 8) })
 
   const token = await signToken({
     sub: user.id,
