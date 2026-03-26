@@ -1216,6 +1216,61 @@ function QuestionList({
     }
   }
 
+  const handleRenameRoute = async (oldRoute: string, newRoute: string) => {
+    const r = newRoute.trim().toUpperCase()
+    if (!r || r === oldRoute || r === 'ALL') return
+
+    // 批量更新所有使用此路線的題目
+    const affected = questions.filter((q) => q.route === oldRoute)
+    await Promise.all(
+      affected.map((q) =>
+        fetch(`/api/admin/questions/${q.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            key: q.key,
+            type: q.type,
+            content: q.content,
+            options: q.options,
+            is_required: q.is_required,
+            max_selections: q.max_selections,
+            route: r,
+            emoji: q.emoji ?? null,
+            narrative: q.narrative ?? null,
+          }),
+        })
+      )
+    )
+
+    // 更新 branch_config 的 routes key
+    const surveyRes = await fetch(`/api/admin/surveys/${surveyId}`)
+    if (surveyRes.ok) {
+      const survey = await surveyRes.json()
+      if (survey.branch_config) {
+        let bc = survey.branch_config
+        if (Array.isArray(bc)) {
+          bc = bc.map((rule: { branchKey: string; routes: Record<string, string[]>; id?: string }) => {
+            if (!rule.routes[oldRoute]) return rule
+            const { [oldRoute]: vals, ...rest } = rule.routes
+            return { ...rule, routes: { ...rest, [r]: vals } }
+          })
+        } else if (bc.routes && bc.routes[oldRoute]) {
+          const { [oldRoute]: vals, ...rest } = bc.routes
+          bc = { ...bc, routes: { ...rest, [r]: vals } }
+        }
+        await fetch(`/api/admin/surveys/${surveyId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ branch_config: bc }),
+        })
+      }
+    }
+
+    // 更新本地 customRoutes
+    setCustomRoutes((prev) => prev.map((x) => (x === oldRoute ? r : x)))
+    onReload()
+  }
+
   const handleDelete = async (qid: string) => {
     if (!confirm('確定要刪除此題目？')) return
     await fetch(`/api/admin/questions/${qid}`, { method: 'DELETE' })
@@ -1274,6 +1329,7 @@ function QuestionList({
           nextOrder={questions.length}
           existingRoutes={existingRoutes}
           onAddRoute={handleAddRoute}
+          onRenameRoute={handleRenameRoute}
           onSaved={() => { setAdding(false); onReload() }}
           onCancel={() => setAdding(false)}
         />
@@ -1299,6 +1355,7 @@ function QuestionList({
                 question={q}
                 existingRoutes={existingRoutes}
                 onAddRoute={handleAddRoute}
+                onRenameRoute={handleRenameRoute}
                 onSaved={() => { setEditingId(null); onReload() }}
                 onCancel={() => setEditingId(null)}
               />
@@ -1408,6 +1465,7 @@ function QuestionForm({
   nextOrder,
   existingRoutes,
   onAddRoute,
+  onRenameRoute,
   onSaved,
   onCancel,
 }: {
@@ -1415,6 +1473,7 @@ function QuestionForm({
   nextOrder: number
   existingRoutes: string[]
   onAddRoute: (route: string) => void
+  onRenameRoute: (oldRoute: string, newRoute: string) => Promise<void>
   onSaved: () => void
   onCancel: () => void
 }) {
@@ -1460,7 +1519,7 @@ function QuestionForm({
   return (
     <div className="bg-slate-800/60 border border-t-card-border rounded-xl p-4 space-y-3">
       <h3 className="text-sm font-medium text-t-accent">新增題目</h3>
-      <QuestionFormFields form={form} onChange={setForm} existingRoutes={existingRoutes} onAddRoute={onAddRoute} />
+      <QuestionFormFields form={form} onChange={setForm} existingRoutes={existingRoutes} onAddRoute={onAddRoute} onRenameRoute={onRenameRoute} />
       <div className="flex gap-2 pt-2">
         <button
           type="button"
@@ -1488,12 +1547,14 @@ function QuestionEditForm({
   question,
   existingRoutes,
   onAddRoute,
+  onRenameRoute,
   onSaved,
   onCancel,
 }: {
   question: QuestionRow
   existingRoutes: string[]
   onAddRoute: (route: string) => void
+  onRenameRoute: (oldRoute: string, newRoute: string) => Promise<void>
   onSaved: () => void
   onCancel: () => void
 }) {
@@ -1539,7 +1600,7 @@ function QuestionEditForm({
 
   return (
     <div className="space-y-3">
-      <QuestionFormFields form={form} onChange={setForm} existingRoutes={existingRoutes} onAddRoute={onAddRoute} />
+      <QuestionFormFields form={form} onChange={setForm} existingRoutes={existingRoutes} onAddRoute={onAddRoute} onRenameRoute={onRenameRoute} />
       <div className="flex gap-2 pt-2">
         <button
           type="button"
@@ -1558,6 +1619,57 @@ function QuestionEditForm({
         </button>
       </div>
     </div>
+  )
+}
+
+// ===== RouteChip =====
+
+function RouteChip({
+  route,
+  onRename,
+}: {
+  route: string
+  onRename: (newName: string) => void
+}) {
+  const [editing, setEditing] = useState(false)
+  const [name, setName] = useState(route)
+
+  const confirm = () => {
+    const r = name.trim().toUpperCase()
+    if (!r || r === route) { setEditing(false); return }
+    onRename(r)
+    setEditing(false)
+  }
+
+  if (editing) {
+    return (
+      <div className="flex items-center gap-1">
+        <input
+          type="text"
+          value={name}
+          onChange={(e) => setName(e.target.value.toUpperCase())}
+          onKeyDown={(e) => { if (e.key === 'Enter') confirm(); if (e.key === 'Escape') { setName(route); setEditing(false) } }}
+          autoFocus
+          className="bg-slate-700 border border-slate-500 rounded px-2 py-0.5 text-xs text-white/80 w-16"
+        />
+        <button type="button" onClick={confirm} className="text-xs text-t-accent cursor-pointer">確認</button>
+        <button type="button" onClick={() => { setName(route); setEditing(false) }} className="text-xs text-white/40 cursor-pointer">✕</button>
+      </div>
+    )
+  }
+
+  return (
+    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-slate-700 border border-slate-600 text-xs text-white/60">
+      {route} 路線
+      <button
+        type="button"
+        onClick={() => setEditing(true)}
+        title={`重新命名 ${route} 路線`}
+        className="text-white/30 hover:text-white/70 cursor-pointer"
+      >
+        ✏️
+      </button>
+    </span>
   )
 }
 
@@ -1580,11 +1692,13 @@ function QuestionFormFields({
   onChange,
   existingRoutes = [],
   onAddRoute,
+  onRenameRoute,
 }: {
   form: FormState
   onChange: (f: FormState) => void
   existingRoutes?: string[]
   onAddRoute?: (route: string) => void
+  onRenameRoute?: (oldRoute: string, newRoute: string) => Promise<void>
 }) {
   const [showNewRouteInput, setShowNewRouteInput] = useState(false)
   const [newRouteName, setNewRouteName] = useState('')
@@ -1711,6 +1825,24 @@ function QuestionFormFields({
             </div>
           )}
         </div>
+
+        {existingRoutes.length > 0 && onRenameRoute && (
+          <>
+            <div />
+            <div className="flex flex-wrap gap-1.5">
+              {existingRoutes.map((r) => (
+                <RouteChip
+                  key={r}
+                  route={r}
+                  onRename={async (newName) => {
+                    await onRenameRoute(r, newName)
+                    if (form.route === r) onChange({ ...form, route: newName })
+                  }}
+                />
+              ))}
+            </div>
+          </>
+        )}
 
         {form.type === 'multiple' && (
           <>
