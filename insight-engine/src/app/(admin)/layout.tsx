@@ -22,7 +22,7 @@ interface UserInfo {
 /** 已知的 admin 子頁面路徑（與 middleware 保持一致，用來區分 tenant slug） */
 const KNOWN_ADMIN_PAGES = new Set([
   'ab', 'account', 'ai-settings', 'api-keys', 'broadcast', 'crosstab', 'export', 'funnel', 'insight', 'line-settings',
-  'my-responses', 'notification-rules', 'notification-styles', 'panel', 'rich-menu',
+  'my-responses', 'notification-rules', 'notification-styles', 'panel', 'profile', 'rich-menu',
   'site-settings', 'story-wall', 'subscription', 'support', 'survey-templates', 'surveys', 'tag-rules', 'tags', 'team', 'templates', 'tenants',
   'theme-settings', 'utm', 'utm-links', 'upgrade', 'waitlist', 'webhooks', 'responses', 'zcoin',
 ])
@@ -113,6 +113,7 @@ const BASE_NAV_GROUPS = [
       { path: '/subscription', label: '訂閱管理' },
       { path: '/upgrade', label: '🚀 升級方案' },
       { path: '/account', label: '帳號設定' },
+      { path: '/profile', label: '👤 個人頁面' },
       { path: '/my-responses', label: '我的填答' },
     ],
   },
@@ -172,6 +173,7 @@ const BASE_MOBILE_GROUPS = [
       { path: '/subscription', label: '訂閱管理' },
       { path: '/upgrade', label: '🚀 升級方案' },
       { path: '/account', label: '帳號設定' },
+      { path: '/profile', label: '👤 個人頁面' },
       { path: '/my-responses', label: '我的填答' },
     ],
   },

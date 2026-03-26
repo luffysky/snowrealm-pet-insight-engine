@@ -59,7 +59,32 @@
       "Bash(ls \"D:/SnowRealmRebirth/snowrealm-insight-engine/insight-engine/src/app/\\(admin\\)/insight-admin/zcoin/\")",
       "Bash(ls \"D:/SnowRealmRebirth/snowrealm-insight-engine/insight-engine/src/app/\\(public\\)/wallet/\")",
       "Bash(ls \"D:/SnowRealmRebirth/snowrealm-insight-engine/insight-engine/src/app/\\(public\\)/explore/\")",
-      "Bash(ls \"D:/SnowRealmRebirth/snowrealm-insight-engine/insight-engine/src/app/\\(admin\\)/insight-admin/api-keys/\")"
+      "Bash(ls \"D:/SnowRealmRebirth/snowrealm-insight-engine/insight-engine/src/app/\\(admin\\)/insight-admin/api-keys/\")",
+      "Bash(grep -r min-w-[ src/app --include=*.tsx)",
+      "Bash(grep -r w-[[3-9][0-9][0-9]px] src/app --include=*.tsx)",
+      "Bash(grep -r lg:w-[ src/app --include=*.tsx)",
+      "Bash(ls \"D:/SnowRealmRebirth/snowrealm-insight-engine/insight-engine/src/app/\\(admin\\)/insight-admin/subscription/\")",
+      "Bash(ls \"D:/SnowRealmRebirth/snowrealm-insight-engine/insight-engine/src/app/\\(public\\)/done/\" 2)",
+      "Bash(1 cat:*)",
+      "Bash(ls \"D:/SnowRealmRebirth/snowrealm-insight-engine/insight-engine/src/app/\\(public\\)/gap-result/\")",
+      "Bash(ls \"D:/SnowRealmRebirth/snowrealm-insight-engine/insight-engine/src/app/\\(public\\)/rate-friend/\")",
+      "Bash(ls \"D:/SnowRealmRebirth/snowrealm-insight-engine/insight-engine/src/app/\\(public\\)/result/\")",
+      "Bash(1 grep:*)",
+      "Bash(ls /d/SnowRealmRebirth/snowrealm-insight-engine/insight-engine/src/app/\\\\\\(public\\\\\\)/result/)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(ls /d/SnowRealmRebirth/snowrealm-insight-engine/insight-engine/src/app/\\\\\\(public\\\\\\)/pricing/)",
+      "Bash(ls /d/SnowRealmRebirth/snowrealm-insight-engine/insight-engine/src/app/\\\\\\(public\\\\\\)/zcoin-shop/)",
+      "mcp__ide__getDiagnostics",
+      "Bash(xargs grep:*)",
+      "Read(//d/SnowRealmRebirth/snowrealm-pet/**)",
+      "Read(//d/SnowRealmRebirth/snowrealm-pet//**)",
+      "Read(//d/SnowRealmRebirth/**)",
+      "Bash(mkdir -p \"D:/SnowRealmRebirth/snowrealm-insight-engine/insight-engine/src/app/api/admin/social/posts/[id]\")",
+      "Bash(mkdir -p \"D:/SnowRealmRebirth/snowrealm-insight-engine/insight-engine/src/app/api/admin/social/comments/[id]\")",
+      "Bash(mkdir -p \"D:/SnowRealmRebirth/snowrealm-insight-engine/insight-engine/src/app/api/posts/[id]\")",
+      "Bash(head:*)"
     ]
   }
 }
