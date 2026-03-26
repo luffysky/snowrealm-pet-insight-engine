@@ -58,7 +58,7 @@ export default function WalletPage() {
     <div className="min-h-screen bg-slate-950 text-white">
       {/* Top nav */}
       <nav className="sticky top-0 z-10 bg-slate-950/80 backdrop-blur-sm border-b border-white/10">
-        <div className="max-w-md mx-auto px-4 py-3 flex items-center justify-between">
+        <div className="max-w-md mx-auto px-4 py-3 flex items-center justify-between gap-2">
           <Link href="/" className="text-sm text-white/60 hover:text-white transition-colors">← 首頁</Link>
           <Link href="/explore" className="text-sm text-white/50 hover:text-white transition-colors">🔍 探索問卷</Link>
         </div>

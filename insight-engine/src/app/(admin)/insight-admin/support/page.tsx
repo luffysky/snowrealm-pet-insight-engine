@@ -288,7 +288,7 @@ export default function SupportCenterPage() {
       <div className="flex flex-1 min-h-0">
         {/* ─── Left Panel: Ticket List ─── */}
         <div
-          className={`w-full lg:w-[350px] lg:min-w-[350px] flex-shrink-0 border-r border-t-card-border bg-t-card-bg flex flex-col ${
+          className={`w-full md:w-[300px] md:min-w-[300px] lg:w-[350px] lg:min-w-[350px] flex-shrink-0 border-r border-t-card-border bg-t-card-bg flex flex-col ${
             mobileShowDetail ? 'hidden lg:flex' : 'flex'
           }`}
         >
