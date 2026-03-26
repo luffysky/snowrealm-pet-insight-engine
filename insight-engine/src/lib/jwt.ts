@@ -68,8 +68,7 @@ export async function verifyToken(token: string): Promise<TokenPayload | null> {
     )
     if (payload.exp < Math.floor(Date.now() / 1000)) return null
     return payload
-  } catch (err) {
-    
+  } catch {
     return null
   }
 }
