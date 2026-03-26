@@ -47,13 +47,25 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   }
 
   try {
-    // 若有 progress response，複用它；否則建立新的
-    const responseId = body.progressResponseId ?? uuidv4()
-    const fingerprint = body.fingerprint ?? null
-    const route = body.route ?? null
-
     // 查詢 survey_id
     const surveyId = slugExists?.id ?? null
+
+    // 防跨問卷汙染：progressResponseId 若屬於不同問卷，忽略它
+    let progressResponseId = body.progressResponseId
+    if (progressResponseId) {
+      const existing = await queryOne<{ survey_id: string }>(
+        'SELECT survey_id FROM responses WHERE id = $1',
+        [progressResponseId]
+      )
+      if (existing && existing.survey_id !== surveyId) {
+        progressResponseId = undefined
+      }
+    }
+
+    // 若有 progress response，複用它；否則建立新的
+    const responseId = progressResponseId ?? uuidv4()
+    const fingerprint = body.fingerprint ?? null
+    const route = body.route ?? null
 
     // 解析是否登入，如有則紀錄 user_id
     const cookieStore = await cookies()
@@ -64,7 +76,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       if (payload) userId = payload.sub
     }
 
-    if (body.progressResponseId) {
+    if (progressResponseId) {
       // 更新既有的 in_progress response → completed
       await query(
         `UPDATE responses SET
