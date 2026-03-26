@@ -55,10 +55,10 @@ export async function verifyToken(token: string): Promise<TokenPayload | null> {
     const payloadB64 = token.slice(0, dot)
     const sigB64 = token.slice(dot + 1)
     const key = await getSigningKey()
-    const sig = base64urlDecode(sigB64)
+    const sigBytes = new Uint8Array(sig)
     const valid = await crypto.subtle.verify(
-      'HMAC', key, new Uint8Array(sig).buffer, new TextEncoder().encode(payloadB64),
-      )
+      'HMAC', key, sigBytes, new TextEncoder().encode(payloadB64),
+    )
     console.log('[MW VERIFY]', { valid, payloadLen: payloadB64.length, sigLen: sigB64.length })
     if (!valid) return null
     const payload: TokenPayload = JSON.parse(
