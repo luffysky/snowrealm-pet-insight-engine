@@ -19,15 +19,15 @@ const GROUP_META = {
 } as const
 
 const EXAMPLE_FORMAT: Record<string, string> = {
-  INSIGHT_CHANNEL_ACCESS_TOKEN: 'Bearer xxxxxxxxxx...xxxxxxxxxx',
-  INSIGHT_CHANNEL_SECRET: 'abcdef0123456789abcdef012345',
-  INSIGHT_CHANNEL_ID: '1234567890',
+  INSIGHT_CHANNEL_ACCESS_TOKEN: 'xxxxxxxxxxxxxxxxxxxxxxxxxxx...',
+  INSIGHT_CHANNEL_SECRET: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
+  INSIGHT_CHANNEL_ID: '20XXXXXXXX',
   INSIGHT_LINE_ID: '@your-bot-id',
-  OFFICIAL_CHANNEL_ACCESS_TOKEN: 'Bearer xxxxxxxxxx...xxxxxxxxxx',
-  OFFICIAL_CHANNEL_SECRET: 'abcdef0123456789abcdef012345',
-  OFFICIAL_CHANNEL_ID: '1234567890',
+  OFFICIAL_CHANNEL_ACCESS_TOKEN: 'xxxxxxxxxxxxxxxxxxxxxxxxxxx...',
+  OFFICIAL_CHANNEL_SECRET: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
+  OFFICIAL_CHANNEL_ID: '20XXXXXXXX',
   OFFICIAL_LINE_ID: '@your-bot-id',
-  ADMIN_USER_ID: 'U1a2b3c4d5e6f7890abcdef01234',
+  ADMIN_USER_ID: 'Uxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
 }
 
 function SourceBadge({ source, verified }: { source: string; verified?: boolean | null }) {

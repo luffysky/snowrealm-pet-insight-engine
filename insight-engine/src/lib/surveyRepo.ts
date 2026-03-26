@@ -401,7 +401,12 @@ function parseBranchConfig(raw: string | null): BranchConfig | undefined {
   if (!raw) return undefined
   try {
     const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw
+    // 物件格式：{ branchKey, routes }
     if (parsed && parsed.branchKey && parsed.routes) return parsed
+    // 陣列格式：[{ branchKey, routes, id? }]（Cursor 可能存成這種）
+    if (Array.isArray(parsed) && parsed.length > 0 && parsed[0].branchKey && parsed[0].routes) {
+      return parsed as BranchConfig
+    }
     return undefined
   } catch { return undefined }
 }

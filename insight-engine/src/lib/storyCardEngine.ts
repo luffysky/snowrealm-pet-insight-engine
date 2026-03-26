@@ -113,6 +113,7 @@ export async function buildStoryCard(responseId: string): Promise<StoryCardData 
 
   const personalFacts: string[] = []
   const comparisonCandidates: Array<{ pct: number; label: string }> = []
+  const seenQuestions = new Set<string>()  // 避免同一題重複顯示
 
   for (const answer of answers) {
     const rawValue: unknown = (() => {
@@ -123,7 +124,9 @@ export async function buildStoryCard(responseId: string): Promise<StoryCardData 
       ? rawValue.map(String)
       : [String(rawValue)]
 
-    if (answer.question_content && labels.length > 0) {
+    // 每個題目只出現一次，跳過分流題（通常是 q1）
+    if (answer.question_content && labels.length > 0 && !seenQuestions.has(answer.question_key)) {
+      seenQuestions.add(answer.question_key)
       personalFacts.push(buildPersonalFact(answer.question_content, labels.join('、')))
     }
 
