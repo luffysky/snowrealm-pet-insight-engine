@@ -333,6 +333,7 @@ function AdminLayoutInner({
     { href: toHref('/webhooks', adminPrefix), label: 'Webhook' },
     { href: toHref('/waitlist', adminPrefix), label: '封測名單' },
     { href: toHref('/team', adminPrefix), label: '團隊管理' },
+    { href: toHref('/zcoin', adminPrefix), label: '🪙 Z幣管理' },
     { href: toHref('/subscription', adminPrefix), label: '訂閱管理' },
     { href: toHref('/upgrade', adminPrefix), label: '🚀 升級方案' },
     { href: toHref('/export', adminPrefix), label: '資料匯出' },

@@ -40,6 +40,7 @@ export function HomeNav() {
 
   return (
     <div className="flex items-center gap-3 relative" ref={ref}>
+      <Link href="/explore" className="hidden sm:block text-sm text-slate-400 hover:text-white transition-colors">探索問卷</Link>
       {user ? (
         <>
           <button 
@@ -67,6 +68,13 @@ export function HomeNav() {
                 onClick={() => setDropOpen(false)}
               >
                 📊 進入後台
+              </Link>
+              <Link
+                href="/wallet"
+                className="block px-4 py-2 text-sm text-slate-300 hover:text-white hover:bg-slate-800 transition-colors"
+                onClick={() => setDropOpen(false)}
+              >
+                🪙 Z幣錢包
               </Link>
               <Link
                 href={`/insight-admin/${user.tenantId}/account`}

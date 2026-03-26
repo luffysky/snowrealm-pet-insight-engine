@@ -26,8 +26,11 @@ export default function LandingPage() {
       <header className="relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/10 via-transparent to-purple-500/10" />
         <nav className="relative max-w-6xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
-          <span className="text-lg font-bold text-white/90">🐾 SnowRealm Insight Engine</span>
-          <HomeNav />
+          <Link href="/" className="text-lg font-bold text-white/90">🐾 SnowRealm Insight Engine</Link>
+          <div className="flex items-center gap-4">
+            <Link href="/explore" className="hidden sm:block text-sm text-slate-400 hover:text-white transition-colors">🔍 探索問卷</Link>
+            <HomeNav />
+          </div>
         </nav>
 
         <div className="relative max-w-4xl mx-auto px-4 sm:px-6 pt-16 pb-24 text-center">
@@ -115,6 +118,8 @@ export default function LandingPage() {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-slate-500">
           <span>© 2026 SnowRealm Insight Engine</span>
           <div className="flex items-center gap-4 flex-wrap justify-center">
+            <Link href="/explore" className="hover:text-white transition-colors">探索問卷</Link>
+            <Link href="/wallet" className="hover:text-white transition-colors">Z幣錢包</Link>
             <Link href="/privacy" className="hover:text-white transition-colors">隱私權政策</Link>
             <Link href="/terms" className="hover:text-white transition-colors">使用者條款</Link>
             <Link href="/cookies" className="hover:text-white transition-colors">Cookie 政策</Link>

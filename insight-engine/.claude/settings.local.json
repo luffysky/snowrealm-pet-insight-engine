@@ -51,7 +51,15 @@
       "Bash(grep -n \"handleSingleSelect\\\\|autoNext\\\\|handleNext\\\\|auto.*next\\\\|setCurrentStep\" src/app/[org]/[slug]/OrgSurveyClient.tsx)",
       "Bash(grep -n \"handleSingleSelect\\\\|autoNext\\\\|auto_next\\\\|setTimeout.*next\\\\|handleNext\" src/app/[org]/[slug]/OrgSurveyClient.tsx)",
       "Bash(npm install:*)",
-      "Bash(ls \"D:\\\\SnowRealmRebirth\\\\snowrealm-insight-engine\\\\insight-engine\\\\src\\\\app\\\\\\(public\\)\\\\survey\")"
+      "Bash(ls \"D:\\\\SnowRealmRebirth\\\\snowrealm-insight-engine\\\\insight-engine\\\\src\\\\app\\\\\\(public\\)\\\\survey\")",
+      "Bash(grep -n force-dynamic D:/SnowRealmRebirth/snowrealm-insight-engine/insight-engine/src/app/[org]/[slug]/page.tsx)",
+      "Bash(ls \"D:/SnowRealmRebirth/snowrealm-insight-engine/insight-engine/src/app/\\(admin\\)/insight-admin/story-wall/\")",
+      "Bash(ls \"D:/SnowRealmRebirth/snowrealm-insight-engine/insight-engine/src/app/\\(admin\\)/insight-admin/survey-templates/\")",
+      "Bash(ls \"D:/SnowRealmRebirth/snowrealm-insight-engine/insight-engine/src/app/\\(admin\\)/insight-admin/support/\")",
+      "Bash(ls \"D:/SnowRealmRebirth/snowrealm-insight-engine/insight-engine/src/app/\\(admin\\)/insight-admin/zcoin/\")",
+      "Bash(ls \"D:/SnowRealmRebirth/snowrealm-insight-engine/insight-engine/src/app/\\(public\\)/wallet/\")",
+      "Bash(ls \"D:/SnowRealmRebirth/snowrealm-insight-engine/insight-engine/src/app/\\(public\\)/explore/\")",
+      "Bash(ls \"D:/SnowRealmRebirth/snowrealm-insight-engine/insight-engine/src/app/\\(admin\\)/insight-admin/api-keys/\")"
     ]
   }
 }

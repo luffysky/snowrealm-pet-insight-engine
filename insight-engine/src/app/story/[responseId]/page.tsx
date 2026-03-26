@@ -74,7 +74,15 @@ export default function StoryCardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center px-4 py-12">
+    <div className="min-h-screen bg-slate-900 flex flex-col">
+      {/* Top nav */}
+      <nav className="sticky top-0 z-10 bg-slate-900/90 backdrop-blur-sm border-b border-white/10">
+        <div className="max-w-md mx-auto px-4 py-3 flex items-center justify-between">
+          <a href="/" className="text-sm text-white/50 hover:text-white transition-colors">← 首頁</a>
+          <a href="/explore" className="text-sm text-white/50 hover:text-white transition-colors">🔍 探索問卷</a>
+        </div>
+      </nav>
+      <div className="flex-1 flex flex-col items-center justify-center px-4 py-10">
       <div className="w-full max-w-md bg-slate-800 rounded-2xl shadow-2xl overflow-hidden border border-slate-700">
         {/* Header */}
         <div className="bg-gradient-to-r from-emerald-600 to-teal-600 px-6 py-5">
@@ -135,6 +143,7 @@ export default function StoryCardPage() {
       </div>
 
       <p className="mt-6 text-white/20 text-xs">Powered by SnowRealm Insight Engine</p>
+      </div>
     </div>
   )
 }

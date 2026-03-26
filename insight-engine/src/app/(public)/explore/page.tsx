@@ -44,8 +44,23 @@ export default function ExplorePage() {
   }
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-slate-950 via-indigo-950 to-purple-950 px-4 py-12">
-      <div className="max-w-4xl mx-auto space-y-8">
+    <div className="min-h-screen bg-linear-to-br from-slate-950 via-indigo-950 to-purple-950">
+      {/* Top nav */}
+      <nav className="sticky top-0 z-10 bg-slate-950/80 backdrop-blur-sm border-b border-white/10">
+        <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
+          <Link href="/" className="text-sm font-semibold text-white/80 hover:text-white transition-colors">
+            ← SnowRealm Insight Engine
+          </Link>
+          <div className="flex items-center gap-4 text-sm text-white/50">
+            <Link href="/wallet" className="hover:text-white/80 transition-colors">🪙 Z幣錢包</Link>
+            <Link href="/register" className="px-3 py-1 rounded-full bg-indigo-500/20 border border-indigo-400/30 text-indigo-200 hover:bg-indigo-500/30 transition-colors">
+              免費註冊
+            </Link>
+          </div>
+        </div>
+      </nav>
+
+      <div className="max-w-4xl mx-auto space-y-8 px-4 py-10">
         {/* Header */}
         <div className="text-center space-y-3">
           <h1 className="text-3xl font-bold text-white">🔍 探索問卷</h1>

@@ -81,7 +81,15 @@ export default function StoryWallPage() {
   const hasMore = items.length < total
 
   return (
-    <div className="min-h-screen bg-slate-900 px-4 py-12">
+    <div className="min-h-screen bg-slate-900">
+      {/* Top nav */}
+      <nav className="sticky top-0 z-10 bg-slate-900/90 backdrop-blur-sm border-b border-white/10">
+        <div className="max-w-2xl mx-auto px-4 py-3 flex items-center justify-between">
+          <a href="/" className="text-sm text-white/50 hover:text-white transition-colors">← 首頁</a>
+          <a href="/explore" className="text-sm text-white/50 hover:text-white transition-colors">🔍 探索問卷</a>
+        </div>
+      </nav>
+      <div className="px-4 py-10">
       <div className="max-w-2xl mx-auto">
         <header className="mb-8 text-center">
           <h1 className="text-2xl font-bold text-white mb-2">故事牆</h1>
@@ -149,6 +157,7 @@ export default function StoryWallPage() {
         </div>
 
         <p className="mt-6 text-center text-white/20 text-xs">Powered by SnowRealm Insight Engine</p>
+      </div>
       </div>
     </div>
   )

@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Link from 'next/link'
 
 interface Transaction {
   id: string
@@ -54,7 +55,15 @@ export default function WalletPage() {
   const { balance, history } = data
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white px-4 py-8 max-w-md mx-auto">
+    <div className="min-h-screen bg-slate-950 text-white">
+      {/* Top nav */}
+      <nav className="sticky top-0 z-10 bg-slate-950/80 backdrop-blur-sm border-b border-white/10">
+        <div className="max-w-md mx-auto px-4 py-3 flex items-center justify-between">
+          <Link href="/" className="text-sm text-white/60 hover:text-white transition-colors">← 首頁</Link>
+          <Link href="/explore" className="text-sm text-white/50 hover:text-white transition-colors">🔍 探索問卷</Link>
+        </div>
+      </nav>
+      <div className="px-4 py-8 max-w-md mx-auto">
       <h1 className="text-2xl font-bold mb-6 text-center">🪙 我的 Z幣錢包</h1>
 
       {/* 餘額卡片 */}
@@ -110,6 +119,7 @@ export default function WalletPage() {
             ))}
           </div>
         )}
+      </div>
       </div>
     </div>
   )
