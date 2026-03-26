@@ -2,11 +2,9 @@
  * Lightweight JWT (HS256) — 使用 Web Crypto API
  * 同時支援 Edge Runtime (middleware) 和 Node.js (API routes)
  */
-
 const ALGORITHM: HmacImportParams = { name: 'HMAC', hash: 'SHA-256' }
-
 async function getSigningKey(): Promise<CryptoKey> {
-  const secret = process.env.ADMIN_SECRET ?? process.env.JWT_SECRET
+  const secret = process.env.ADMIN_SECRET ?? process.env.JWT_SECRET ?? process.env.NEXT_PUBLIC_JWT_SECRET
   if (!secret) throw new Error('Missing ADMIN_SECRET or JWT_SECRET')
   const keyData = new TextEncoder().encode(secret)
   return crypto.subtle.importKey('raw', keyData, ALGORITHM, false, ['sign', 'verify'])
