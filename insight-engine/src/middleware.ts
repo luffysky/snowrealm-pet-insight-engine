@@ -6,10 +6,15 @@ import { checkRateLimit } from '@/lib/rateLimit'
 async function getAuthContext(request: NextRequest): Promise<TokenPayload | null> {
   const sessionToken = request.cookies.get('admin_session')?.value
   if (sessionToken) {
-    console.log('[MW AUTH]', {
-      tokenLength: sessionToken.length,
-      dotCount: (sessionToken.match(/\./g) || []).length,
-      first20: sessionToken.slice(0, 20),
+    // Debug: 印出 secret 的前 8 字元
+    const s1 = process.env.ADMIN_SECRET ?? ''
+    const s2 = process.env.JWT_SECRET ?? ''
+    const s3 = process.env.NEXT_PUBLIC_JWT_SECRET ?? ''
+    console.log('[MW SECRET CHECK]', {
+      ADMIN_SECRET_prefix: s1.slice(0, 8),
+      JWT_SECRET_prefix: s2.slice(0, 8),
+      NEXT_PUBLIC_prefix: s3.slice(0, 8),
+      actualUsed: (s1 || s2 || s3).slice(0, 8),
     })
     const payload = await verifyToken(sessionToken)
     console.log('[MW AUTH] verifyToken result:', payload ? 'OK' : 'NULL')
