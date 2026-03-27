@@ -1,19 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { query, execute, queryOne } from '@/lib/db'
-import { verifyToken } from '@/lib/jwt'
+import { headers } from 'next/headers'
 import { uploadToR2 } from '@/lib/r2'
-import { cookies } from 'next/headers'
 import AdmZip from 'adm-zip'
 
 async function requireSuperAdmin() {
-  const cookieStore = await cookies()
-  const token = cookieStore.get('admin_token')?.value
-  if (!token) return null
-  try {
-    const payload = await verifyToken(token)
-    if (!payload || payload.role !== 'super_admin') return null
-    return payload
-  } catch { return null }
+  const h = await headers()
+  const role = h.get('x-user-role')
+  const userId = h.get('x-user-id')
+  if (!userId || role !== 'super_admin') return null
+  return { sub: userId, role }
 }
 
 interface PackRow extends Record<string, unknown> {

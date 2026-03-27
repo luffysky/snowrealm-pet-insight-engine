@@ -106,6 +106,22 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
     })
   }
 
+  // Public user API /api/zcoin/... /api/ad-view /api/referral — 注入認證但不強制要求
+  if (
+    pathname.startsWith('/api/zcoin') ||
+    pathname.startsWith('/api/ad-view') ||
+    pathname.startsWith('/api/referral')
+  ) {
+    const auth = await getAuthContext(request)
+    if (auth) {
+      const access = getTenantAccess(auth) ?? { tid: auth.tid ?? 'default', role: auth.role ?? 'viewer' }
+      return NextResponse.next({
+        request: { headers: withTenantHeaders(request, auth, access) },
+      })
+    }
+    return NextResponse.next()
+  }
+
   // Super Admin 控制台 /snowrealm-insight-ctrl/...（僅 super_admin 可存取）
   if (pathname.startsWith('/snowrealm-insight-ctrl')) {
     const auth = await getAuthContext(request)
@@ -161,5 +177,5 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
 }
 
 export const config = {
-  matcher: ['/insight-admin/:path*', '/insight-admin', '/api/admin/:path*', '/api/super-admin/:path*', '/login', '/register', '/snowrealm-insight-ctrl/:path*', '/snowrealm-insight-ctrl'],
+  matcher: ['/insight-admin/:path*', '/insight-admin', '/api/admin/:path*', '/api/super-admin/:path*', '/api/zcoin/:path*', '/api/zcoin', '/api/ad-view', '/api/ad-view/:path*', '/api/referral', '/api/referral/:path*', '/login', '/register', '/snowrealm-insight-ctrl/:path*', '/snowrealm-insight-ctrl'],
 }

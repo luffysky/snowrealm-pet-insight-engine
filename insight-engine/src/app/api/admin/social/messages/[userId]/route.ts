@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireRole } from '@/lib/tenant'
 import { query, execute, queryOne } from '@/lib/db'
-import { decryptApiKey } from '@/lib/aiCrypto'
+import { decryptApiKey, encryptApiKey } from '@/lib/aiCrypto'
 
 interface MessageRow extends Record<string, unknown> {
   id: string
@@ -12,6 +12,7 @@ interface MessageRow extends Record<string, unknown> {
   tag: string
   read_at: string | null
   recalled_at: string | null
+  edited_at: string | null
   deleted_for: string[]
   created_at: string
   from_name: string | null
@@ -26,6 +27,7 @@ interface MessageResult {
   content: string
   readAt: string | null
   recalledAt: string | null
+  editedAt: string | null
   createdAt: string
   fromName: string | null
   fromAvatar: string | null
@@ -34,7 +36,6 @@ interface MessageResult {
 }
 
 function decryptMessage(row: MessageRow, myId: string): MessageResult {
-  // Hidden if recalled or deleted by this user
   const isDeleted = Array.isArray(row.deleted_for) && row.deleted_for.includes(myId)
   let content = '[無法解密]'
   if (row.recalled_at) {
@@ -55,6 +56,7 @@ function decryptMessage(row: MessageRow, myId: string): MessageResult {
     content,
     readAt: row.read_at,
     recalledAt: row.recalled_at,
+    editedAt: row.edited_at,
     createdAt: row.created_at,
     fromName: row.from_name,
     fromAvatar: row.from_avatar,
@@ -78,7 +80,7 @@ export async function GET(
   const rows = await query<MessageRow>(
     `SELECT dm.id, dm.from_user_id, dm.to_user_id,
             dm.encrypted_content, dm.iv, dm.tag,
-            dm.read_at, dm.recalled_at,
+            dm.read_at, dm.recalled_at, dm.edited_at,
             COALESCE(dm.deleted_for, '{}') AS deleted_for,
             dm.created_at,
             u.display_name AS from_name, u.avatar_url AS from_avatar,
@@ -138,8 +140,27 @@ export async function PATCH(
   await params // consume
 
   const body = await req.json() as {
-    action: 'recall' | 'save' | 'unsave'
+    action: 'recall' | 'save' | 'unsave' | 'edit'
     messageId: string
+    newContent?: string
+  }
+
+  if (body.action === 'edit') {
+    const content = body.newContent?.trim()
+    if (!content) return NextResponse.json({ error: '內容不能為空' }, { status: 400 })
+    const msg = await queryOne<{ from_user_id: string; recalled_at: string | null }>(
+      `SELECT from_user_id, recalled_at FROM direct_messages WHERE id = $1`, [body.messageId]
+    )
+    if (!msg) return NextResponse.json({ error: '訊息不存在' }, { status: 404 })
+    if (msg.from_user_id !== myId) return NextResponse.json({ error: '只能編輯自己的訊息' }, { status: 403 })
+    if (msg.recalled_at) return NextResponse.json({ error: '已收回的訊息無法編輯' }, { status: 400 })
+
+    const { encrypted, iv, tag } = encryptApiKey(content)
+    await execute(
+      `UPDATE direct_messages SET encrypted_content = $1, iv = $2, tag = $3, edited_at = NOW() WHERE id = $4`,
+      [encrypted, iv, tag, body.messageId]
+    )
+    return NextResponse.json({ ok: true })
   }
 
   if (body.action === 'recall') {

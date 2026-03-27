@@ -1,17 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { execute, queryOne } from '@/lib/db'
-import { verifyToken } from '@/lib/jwt'
-import { cookies } from 'next/headers'
+import { headers } from 'next/headers'
 
 async function requireSuperAdmin() {
-  const cookieStore = await cookies()
-  const token = cookieStore.get('admin_token')?.value
-  if (!token) return null
-  try {
-    const payload = await verifyToken(token)
-    if (!payload || payload.role !== 'super_admin') return null
-    return payload
-  } catch { return null }
+  const h = await headers()
+  const role = h.get('x-user-role')
+  const userId = h.get('x-user-id')
+  if (!userId || role !== 'super_admin') return null
+  return { sub: userId, role }
 }
 
 /** POST /api/super-admin/ban — 封禁 / 解禁用戶 */

@@ -1,18 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { query, execute } from '@/lib/db'
 import { decryptApiKey } from '@/lib/aiCrypto'
-import { verifyToken } from '@/lib/jwt'
-import { cookies } from 'next/headers'
+import { headers } from 'next/headers'
 
 async function requireSuperAdmin() {
-  const cookieStore = await cookies()
-  const token = cookieStore.get('admin_token')?.value
-  if (!token) return null
-  try {
-    const payload = await verifyToken(token)
-    if (!payload || payload.role !== 'super_admin') return null
-    return payload
-  } catch { return null }
+  const h = await headers()
+  const role = h.get('x-user-role')
+  const userId = h.get('x-user-id')
+  if (!userId || role !== 'super_admin') return null
+  return { sub: userId, role }
 }
 
 interface ReportRow extends Record<string, unknown> {
@@ -98,16 +94,20 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
   const offset = (page - 1) * pageSize
 
   if (tab === 'reports') {
-    const rows = await query<ReportRow>(
-      `SELECT r.id, r.reporter_name, r.target_type, r.target_id, r.target_content,
-              r.target_author_name, r.reason, r.description, r.status,
-              r.review_note, r.reviewed_at, r.created_at
-       FROM social_reports r
-       ORDER BY CASE r.status WHEN 'pending' THEN 0 WHEN 'reviewing' THEN 1 ELSE 2 END, r.created_at DESC
-       LIMIT $1 OFFSET $2`,
-      [pageSize, offset]
-    )
-    return NextResponse.json({ reports: rows })
+    try {
+      const rows = await query<ReportRow>(
+        `SELECT r.id, r.reporter_name, r.target_type, r.target_id, r.target_content,
+                r.target_author_name, r.reason, r.description, r.status,
+                r.review_note, r.reviewed_at, r.created_at
+         FROM social_reports r
+         ORDER BY CASE r.status WHEN 'pending' THEN 0 WHEN 'reviewing' THEN 1 ELSE 2 END, r.created_at DESC
+         LIMIT $1 OFFSET $2`,
+        [pageSize, offset]
+      )
+      return NextResponse.json({ reports: rows })
+    } catch {
+      return NextResponse.json({ reports: [] })
+    }
   }
 
   if (tab === 'posts') {
@@ -117,7 +117,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
               sp.is_public, sp.created_at,
               sp.likes_count, sp.comments_count
        FROM social_posts sp
-       LEFT JOIN admin_users au ON au.id = sp.user_id
+       LEFT JOIN admin_users au ON au.id::text = sp.user_id::text
        ORDER BY sp.created_at DESC
        LIMIT $1 OFFSET $2`,
       [pageSize, offset]
@@ -137,8 +137,8 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
               f.display_name as from_name, t.display_name as to_name,
               dm.encrypted_content, dm.iv, dm.tag, dm.created_at
        FROM direct_messages dm
-       LEFT JOIN admin_users f ON f.id = dm.from_user_id
-       LEFT JOIN admin_users t ON t.id = dm.to_user_id
+       LEFT JOIN admin_users f ON f.id::text = dm.from_user_id::text
+       LEFT JOIN admin_users t ON t.id::text = dm.to_user_id::text
        ORDER BY dm.created_at DESC
        LIMIT $1 OFFSET $2`,
       [pageSize, offset]

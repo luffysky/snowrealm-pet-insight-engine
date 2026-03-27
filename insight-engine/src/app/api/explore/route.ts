@@ -30,7 +30,21 @@ interface UserRow extends Record<string, unknown> {
   follower_count: string
 }
 
-/** GET /api/explore?type=surveys|stories|users */
+interface PostRow extends Record<string, unknown> {
+  id: string
+  user_id: string
+  display_name: string | null
+  avatar_url: string | null
+  type: string
+  title: string | null
+  content: string
+  images: unknown
+  likes_count: string
+  comments_count: string
+  created_at: string
+}
+
+/** GET /api/explore?type=surveys|stories|users|posts */
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
   const type = searchParams.get('type') ?? 'surveys'
@@ -42,28 +56,68 @@ export async function GET(req: NextRequest) {
 
   if (type === 'stories') {
     // 公開故事小卡：allow_story_wall = true 且有 one_liner
-    const rows = await query<StoryRow>(
-      `SELECT r.id AS response_id, s.title AS survey_title, s.slug AS survey_slug,
-              t.name AS tenant_name,
-              sc.one_liner, r.created_at
-       FROM responses r
-       JOIN surveys s ON s.id = r.survey_id
-       LEFT JOIN tenants t ON t.slug = s.tenant_id
-       LEFT JOIN story_cards sc ON sc.response_id = r.id
-       WHERE r.allow_story_wall = true
-         AND r.status = 'completed'
-         AND sc.one_liner IS NOT NULL
-       ORDER BY r.created_at DESC
+    try {
+      const rows = await query<StoryRow>(
+        `SELECT r.id AS response_id, s.title AS survey_title, s.slug AS survey_slug,
+                t.name AS tenant_name,
+                sc.one_liner, r.created_at
+         FROM responses r
+         JOIN surveys s ON s.id = r.survey_id
+         LEFT JOIN tenants t ON t.slug = s.tenant_id
+         LEFT JOIN story_cards sc ON sc.response_id = r.id
+         WHERE r.allow_story_wall = true
+           AND r.status = 'completed'
+           AND sc.one_liner IS NOT NULL
+         ORDER BY r.created_at DESC
+         LIMIT $1 OFFSET $2`,
+        [pageSize, offset]
+      )
+      return NextResponse.json({
+        stories: rows.map(r => ({
+          responseId: r.response_id,
+          surveyTitle: r.survey_title,
+          surveySlug: r.survey_slug,
+          tenantName: r.tenant_name,
+          oneLiner: r.one_liner,
+          createdAt: r.created_at,
+        })),
+        page,
+        pageSize,
+      })
+    } catch {
+      // story_cards table may not exist yet
+      return NextResponse.json({ stories: [], page, pageSize })
+    }
+  }
+
+  if (type === 'posts') {
+    const searchClause = search ? `AND (sp.title ILIKE $3 OR sp.content ILIKE $3)` : ''
+    const params: unknown[] = [pageSize, offset]
+    if (search) params.push(`%${search}%`)
+    const rows = await query<PostRow>(
+      `SELECT sp.id, sp.user_id, au.display_name, au.avatar_url,
+              sp.type, sp.title, sp.content, sp.images,
+              sp.likes_count::text, sp.comments_count::text, sp.created_at
+       FROM social_posts sp
+       JOIN admin_users au ON au.id::text = sp.user_id::text
+       WHERE sp.is_public = true AND sp.status = 'published'
+       ${searchClause}
+       ORDER BY sp.created_at DESC
        LIMIT $1 OFFSET $2`,
-      [pageSize, offset]
+      params
     )
     return NextResponse.json({
-      stories: rows.map(r => ({
-        responseId: r.response_id,
-        surveyTitle: r.survey_title,
-        surveySlug: r.survey_slug,
-        tenantName: r.tenant_name,
-        oneLiner: r.one_liner,
+      posts: rows.map(r => ({
+        id: r.id,
+        userId: r.user_id,
+        displayName: r.display_name,
+        avatarUrl: r.avatar_url,
+        type: r.type,
+        title: r.title,
+        content: r.content,
+        images: r.images as { url: string }[] | null,
+        likesCount: parseInt(r.likes_count, 10),
+        commentsCount: parseInt(r.comments_count, 10),
         createdAt: r.created_at,
       })),
       page,
