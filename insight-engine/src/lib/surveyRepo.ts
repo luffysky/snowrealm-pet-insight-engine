@@ -434,7 +434,7 @@ function toSurveyConfig(survey: SurveyRow, questions: QuestionRow[]): SurveyConf
     coverTitle: survey.cover_title,
     coverSubtitle: survey.cover_subtitle,
     coverImageUrl: survey.cover_image_url ?? undefined,
-    accessPassword: survey.access_password ?? undefined,
+    hasPassword: !!(survey.access_password),
     startButtonText: survey.start_button_text,
     doneTitle: survey.done_title,
     doneSubtitle: survey.done_subtitle,

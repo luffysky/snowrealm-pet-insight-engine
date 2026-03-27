@@ -24,9 +24,9 @@ interface UsageStats {
 }
 
 const PROVIDERS = [
-  { value: 'openai', label: 'OpenAI', icon: '🤖', models: ['gpt-4o-mini', 'gpt-4o', 'gpt-4-turbo', 'gpt-3.5-turbo'] },
-  { value: 'anthropic', label: 'Anthropic', icon: '🧠', models: ['claude-3-haiku-20240307', 'claude-3-sonnet-20240229', 'claude-3-opus-20240229'] },
-  { value: 'google', label: 'Google AI', icon: '🔷', models: ['gemini-1.5-flash', 'gemini-1.5-pro'] },
+  { value: 'openai', label: 'OpenAI', icon: '🤖', models: ['gpt-4o-mini', 'gpt-4o', 'gpt-4.1', 'gpt-4.1-mini', 'gpt-4.1-nano', 'o4-mini', 'o3'] },
+  { value: 'anthropic', label: 'Anthropic', icon: '🧠', models: ['claude-haiku-4-5-20251001', 'claude-sonnet-4-6', 'claude-opus-4-6', 'claude-3-5-haiku-20241022', 'claude-3-5-sonnet-20241022'] },
+  { value: 'google', label: 'Google AI', icon: '🔷', models: ['gemini-2.0-flash', 'gemini-2.0-flash-lite', 'gemini-2.5-flash-preview-05-20', 'gemini-2.5-pro-preview-06-05'] },
 ]
 
 type SetupStep = 'list' | 'provider' | 'apikey' | 'model' | 'done'

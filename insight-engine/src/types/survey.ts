@@ -124,8 +124,8 @@ export interface SurveyConfig {
   questions: Question[]
   /** 封面圖片 URL（上傳到 R2） */
   coverImageUrl?: string
-  /** 存取密碼（空表示公開） */
-  accessPassword?: string
+  /** 是否有存取密碼（不回傳明文密碼） */
+  hasPassword?: boolean
   /** 分流規則（若無則所有題目順序顯示） */
   branchConfig?: BranchConfig
   /** 完成頁設定 */

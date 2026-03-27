@@ -1,7 +1,9 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
+import { cookies } from 'next/headers'
 import { queryOne } from '@/lib/db'
 import { toAbsoluteOgImageUrl } from '@/lib/ogUrls'
+import { verifyToken } from '@/lib/jwt'
 import { OrgSurveyClient } from './OrgSurveyClient'
 
 export const dynamic = 'force-dynamic'
@@ -79,8 +81,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function OrgSurveyPage({ params }: Props) {
   const { org, slug } = await params
 
-  const survey = await queryOne<{ id: string }>(
-    `SELECT id FROM surveys WHERE tenant_id = $1 AND slug = $2 AND status = 'published'`,
+  const survey = await queryOne<{ id: string; access_password: string | null }>(
+    `SELECT id, access_password FROM surveys WHERE tenant_id = $1 AND slug = $2 AND status = 'published'`,
     [org, slug],
   )
 
@@ -88,5 +90,18 @@ export default async function OrgSurveyPage({ params }: Props) {
     notFound()
   }
 
-  return <OrgSurveyClient slug={slug} />
+  // Super admin bypass: check JWT cookie
+  let isSuperAdmin = false
+  try {
+    const cookieStore = await cookies()
+    const token = cookieStore.get('admin_token')?.value
+    if (token) {
+      const payload = await verifyToken(token)
+      isSuperAdmin = payload?.role === 'super_admin'
+    }
+  } catch {}
+
+  const hasPassword = !isSuperAdmin && !!(survey.access_password)
+
+  return <OrgSurveyClient slug={slug} hasPassword={hasPassword} />
 }

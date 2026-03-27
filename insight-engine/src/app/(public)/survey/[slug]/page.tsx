@@ -162,7 +162,7 @@ function SurveyFlowWithCover({
   fingerprint?: string
 }) {
   const [started, setStarted] = useState(false)
-  const [passwordPassed, setPasswordPassed] = useState(!config.accessPassword)
+  const [passwordPassed, setPasswordPassed] = useState(!(config.hasPassword ?? false))
   const { theme, setTheme } = useTheme()
 
   const availableThemes = THEME_LIST.filter(t => themeSettings.availableThemes.includes(t.value))

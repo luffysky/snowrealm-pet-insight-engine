@@ -30,7 +30,7 @@ interface ThemeSettings {
   themeIntensity: Record<SurveyTheme, ThemeIntensity>
 }
 
-function SurveyContent({ slug }: { slug: string }) {
+function SurveyContent({ slug, hasPassword }: { slug: string; hasPassword?: boolean }) {
   const searchParams = useSearchParams()
   const router = useRouter()
   const [config, setConfig] = useState<SurveyConfig | null>(null)
@@ -87,7 +87,7 @@ function SurveyContent({ slug }: { slug: string }) {
       initialTheme={themeSettings.defaultTheme}
       intensityMap={themeSettings.themeIntensity}
     >
-      <SurveyFlowWithCover config={config} slug={slug} searchParams={searchParams} router={router} fingerprint={fingerprint} />
+      <SurveyFlowWithCover config={config} slug={slug} searchParams={searchParams} router={router} fingerprint={fingerprint} hasPassword={hasPassword} />
     </ThemeProvider>
   )
 }
@@ -157,15 +157,18 @@ function SurveyFlowWithCover({
   searchParams,
   router,
   fingerprint,
+  hasPassword,
 }: {
   config: SurveyConfig
   slug: string
   searchParams: ReturnType<typeof useSearchParams>
   router: ReturnType<typeof useRouter>
   fingerprint?: string
+  hasPassword?: boolean
 }) {
   const [started, setStarted] = useState(false)
-  const [passwordPassed, setPasswordPassed] = useState(!config.accessPassword)
+  // hasPassword prop from server takes precedence (handles super admin bypass)
+  const [passwordPassed, setPasswordPassed] = useState(!(hasPassword ?? config.hasPassword ?? false))
   const { theme, setTheme } = useTheme()
 
   const [ts, setTs] = useState<ThemeSettings | null>(null)
@@ -465,7 +468,7 @@ function SurveyFlow({
   )
 }
 
-export function OrgSurveyClient({ slug }: { slug: string }) {
+export function OrgSurveyClient({ slug, hasPassword }: { slug: string; hasPassword?: boolean }) {
   return (
     <Suspense
       fallback={
@@ -478,7 +481,7 @@ export function OrgSurveyClient({ slug }: { slug: string }) {
         </ThemeProvider>
       }
     >
-      <SurveyContent slug={slug} />
+      <SurveyContent slug={slug} hasPassword={hasPassword} />
     </Suspense>
   )
 }
