@@ -8,21 +8,26 @@ import { join } from 'path'
 import { tmpdir } from 'os'
 import { randomBytes } from 'crypto'
 
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const Ffmpeg = require('fluent-ffmpeg')
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const ffmpegPath = require('@ffmpeg-installer/ffmpeg').path
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const ffprobePath = require('@ffprobe-installer/ffprobe').path
-
-Ffmpeg.setFfmpegPath(ffmpegPath)
-Ffmpeg.setFfprobePath(ffprobePath)
-
 const MAX_DURATION_SECONDS = 30
 const MAX_INPUT_SIZE = 200 * 1024 * 1024 // 200 MB
-const ALLOWED_TYPES = ['video/mp4', 'video/quicktime', 'video/webm', 'video/avi', 'video/x-msvideo', 'video/mov']
+const ALLOWED_TYPES = ['mp4', 'quicktime', 'webm', 'avi', 'x-msvideo', 'mov']
+
+// ffmpeg helpers — require() inside functions 讓 Next.js build 不分析這些模組
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function getFfmpeg(): any {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const Ffmpeg = require('fluent-ffmpeg')
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const ffmpegPath: string = require('@ffmpeg-installer/ffmpeg').path
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const ffprobePath: string = require('@ffprobe-installer/ffprobe').path
+  Ffmpeg.setFfmpegPath(ffmpegPath)
+  Ffmpeg.setFfprobePath(ffprobePath)
+  return Ffmpeg
+}
 
 function getDuration(filePath: string): Promise<number> {
+  const Ffmpeg = getFfmpeg()
   return new Promise((resolve, reject) => {
     Ffmpeg.ffprobe(filePath, (err: Error, meta: { format: { duration?: number } }) => {
       if (err) reject(err)
@@ -32,6 +37,7 @@ function getDuration(filePath: string): Promise<number> {
 }
 
 function compressVideo(input: string, output: string): Promise<void> {
+  const Ffmpeg = getFfmpeg()
   return new Promise((resolve, reject) => {
     Ffmpeg(input)
       .videoCodec('libx264')
@@ -44,6 +50,7 @@ function compressVideo(input: string, output: string): Promise<void> {
 }
 
 function extractThumbnail(input: string, output: string): Promise<void> {
+  const Ffmpeg = getFfmpeg()
   return new Promise((resolve, reject) => {
     Ffmpeg(input)
       .seekInput('0.5')
@@ -74,7 +81,7 @@ export async function POST(request: NextRequest) {
     if (!file) return NextResponse.json({ error: '請選擇影片' }, { status: 400 })
 
     const mimeType = file.type || 'video/mp4'
-    if (!ALLOWED_TYPES.some(t => mimeType.includes(t.split('/')[1]))) {
+    if (!ALLOWED_TYPES.some(t => mimeType.includes(t))) {
       return NextResponse.json({ error: '只支援 MP4、MOV、WebM、AVI 格式' }, { status: 400 })
     }
     if (file.size > MAX_INPUT_SIZE) {
@@ -111,7 +118,6 @@ export async function POST(request: NextRequest) {
     console.error('[Video Upload Error]', err)
     return NextResponse.json({ error: '影片處理失敗，請稍後再試' }, { status: 500 })
   } finally {
-    // cleanup temp files
     for (const p of [inputPath, outputPath, thumbPath]) {
       unlink(p).catch(() => {})
     }

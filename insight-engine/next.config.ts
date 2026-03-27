@@ -18,6 +18,19 @@ const nextConfig: NextConfig = {
     '@ffmpeg-installer/ffmpeg',
     '@ffprobe-installer/ffprobe',
   ],
+  webpack: (config, { isServer }) => {
+    if (isServer) {
+      // 讓 webpack 完全不分析這些模組，runtime 才 require
+      const externals = Array.isArray(config.externals) ? config.externals : []
+      config.externals = [
+        ...externals,
+        'fluent-ffmpeg',
+        '@ffmpeg-installer/ffmpeg',
+        '@ffprobe-installer/ffprobe',
+      ]
+    }
+    return config
+  },
 };
 
 export default nextConfig;
