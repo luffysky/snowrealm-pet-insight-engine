@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect, useCallback } from 'react'
-import { Copy, Check, Download } from 'lucide-react'
+import { Copy, Check, Download, X, ChevronDown, ChevronUp } from 'lucide-react'
 import { parseSurveyJson, type AiGeneratedSurvey } from '@/lib/aiSurveyPrompt'
 
 interface ChatMessage {
@@ -17,7 +17,6 @@ interface AiSurveyChatProps {
 // ===== 建立問卷的 API 呼叫 =====
 
 async function createSurveyFromAi(data: AiGeneratedSurvey): Promise<string> {
-  // 1. 建立問卷（title + slug）
   const createRes = await fetch('/api/admin/surveys', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -35,7 +34,6 @@ async function createSurveyFromAi(data: AiGeneratedSurvey): Promise<string> {
   const survey = await createRes.json() as { id: string }
   const surveyId = survey.id
 
-  // 2. 更新問卷其他欄位（subtitle, cover, branching...）
   const patchBody: Record<string, unknown> = {
     subtitle: data.survey.subtitle,
     cover_title: data.survey.coverTitle,
@@ -52,13 +50,8 @@ async function createSurveyFromAi(data: AiGeneratedSurvey): Promise<string> {
     }
   }
 
-  if (data.resultConfig) {
-    patchBody.result_config = data.resultConfig
-  }
-
-  if (data.gameTitles?.length) {
-    patchBody.game_titles = data.gameTitles
-  }
+  if (data.resultConfig) patchBody.result_config = data.resultConfig
+  if (data.gameTitles?.length) patchBody.game_titles = data.gameTitles
 
   await fetch(`/api/admin/surveys/${surveyId}`, {
     method: 'PATCH',
@@ -66,7 +59,6 @@ async function createSurveyFromAi(data: AiGeneratedSurvey): Promise<string> {
     body: JSON.stringify(patchBody),
   })
 
-  // 3. 依序建立題目
   for (let i = 0; i < data.questions.length; i++) {
     const q = data.questions[i]
     await fetch(`/api/admin/surveys/${surveyId}/questions`, {
@@ -92,10 +84,13 @@ async function createSurveyFromAi(data: AiGeneratedSurvey): Promise<string> {
   return surveyId
 }
 
-// ===== 移除 SURVEY_JSON 標記，只保留對話文字 =====
+// ===== 移除 SURVEY_JSON 標記，只保留對話文字，並壓縮多餘空白行 =====
 
 function stripSurveyJson(text: string): string {
-  return text.replace(/<SURVEY_JSON>[\s\S]*?<\/SURVEY_JSON>/g, '').trim()
+  return text
+    .replace(/<SURVEY_JSON>[\s\S]*?<\/SURVEY_JSON>/g, '')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim()
 }
 
 // ===== Prompt 靈感資料 =====
@@ -116,7 +111,7 @@ const PROMPT_INSPIRATIONS = [
   { icon: '💑', label: '情侶吵架', prompt: '設計一份「你們吵架時誰比較可怕」情侶測驗，8題，有趣不引戰，兩個人分別填再對比結果' },
 ]
 
-// ===== 主元件 =====
+// ===== 主元件（固定覆蓋層，不受鍵盤/頁面捲動影響）=====
 
 export function AiSurveyChat({ onDone, onCancel }: AiSurveyChatProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([
@@ -133,6 +128,7 @@ export function AiSurveyChat({ onDone, onCancel }: AiSurveyChatProps) {
   const [createError, setCreateError] = useState('')
   const [showAllInspirations, setShowAllInspirations] = useState(false)
   const [copiedMsgIndex, setCopiedMsgIndex] = useState<number | null>(null)
+  const [showQuestions, setShowQuestions] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const chatContainerRef = useRef<HTMLDivElement>(null)
 
@@ -198,7 +194,6 @@ export function AiSurveyChat({ onDone, onCancel }: AiSurveyChatProps) {
       const reply = data.reply ?? ''
       setMessages([...newMessages, { role: 'assistant', content: reply }])
 
-      // 偵測是否包含問卷 JSON
       const parsed = parseSurveyJson(reply)
       if (parsed) setDetectedSurvey(parsed)
     } catch {
@@ -225,16 +220,12 @@ export function AiSurveyChat({ onDone, onCancel }: AiSurveyChatProps) {
 
   function handleRedesign() {
     setDetectedSurvey(null)
-    setMessages((prev) => [
-      ...prev,
-      { role: 'user', content: '請重新設計這份問卷' },
-    ])
-    // 觸發重新生成
-    setSending(true)
     const updatedMessages: ChatMessage[] = [
       ...messages,
       { role: 'user', content: '請重新設計這份問卷' },
     ]
+    setMessages(updatedMessages)
+    setSending(true)
     fetch('/api/admin/ai-chat-generate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -251,238 +242,272 @@ export function AiSurveyChat({ onDone, onCancel }: AiSurveyChatProps) {
       .finally(() => setSending(false))
   }
 
-  const inputClass =
-    'flex-1 px-3 py-2 bg-slate-900 border border-slate-600 rounded-lg text-white text-sm focus:outline-none focus:ring-1 focus:ring-cyan-500/50 resize-none'
-
   return (
-    <div className="bg-slate-800/80 border border-cyan-500/20 rounded-xl overflow-hidden mt-4">
-      {/* Header */}
-      <div className="flex items-center justify-between px-6 py-4 border-b border-slate-700">
-        <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-          ✨ AI 對話建立問卷
-        </h3>
-        <div className="flex items-center gap-2">
-          {messages.length > 1 && (
+    /* Fixed overlay — stays in place regardless of keyboard / page scroll */
+    <div className="fixed inset-0 z-[80] flex flex-col bg-black/60 backdrop-blur-sm">
+      {/* Panel — bottom sheet on mobile, centered card on desktop */}
+      <div
+        className="flex flex-col bg-slate-900 w-full mt-auto sm:m-auto sm:rounded-2xl sm:max-w-2xl sm:max-h-[90dvh] overflow-hidden"
+        style={{ maxHeight: '100dvh' }}
+      >
+        {/* ── Header (fixed, never moves) ── */}
+        <div className="shrink-0 flex items-center justify-between px-4 py-3 border-b border-slate-700 bg-slate-900">
+          <h3 className="text-base font-semibold text-white flex items-center gap-2">
+            ✨ AI 對話建立問卷
+          </h3>
+          <div className="flex items-center gap-2">
+            {messages.length > 1 && (
+              <button
+                onClick={exportChat}
+                title="匯出對話紀錄"
+                className="flex items-center gap-1.5 px-2.5 py-1.5 bg-slate-700/60 hover:bg-slate-600/80 border border-slate-600/50 text-slate-300 rounded-lg text-xs transition-colors"
+              >
+                <Download className="w-3.5 h-3.5" />匯出
+              </button>
+            )}
             <button
-              onClick={exportChat}
-              title="匯出對話紀錄"
-              className="flex items-center gap-1.5 px-2.5 py-1.5 bg-slate-700/60 hover:bg-slate-600/80 border border-slate-600/50 text-slate-300 rounded-lg text-xs transition-colors cursor-pointer"
+              onClick={onCancel}
+              className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg transition-colors"
             >
-              <Download className="w-3.5 h-3.5" />匯出
+              <X className="w-4 h-4" />
             </button>
-          )}
-          <button
-            onClick={onCancel}
-            className="text-slate-400 hover:text-slate-200 text-sm cursor-pointer"
-          >
-            ✕ 關閉
-          </button>
+          </div>
         </div>
-      </div>
 
-      {/* Messages */}
-      <div ref={chatContainerRef} className="h-96 overflow-y-auto px-6 py-4 space-y-4">
-        {messages.map((msg, i) => {
-          const displayContent =
-            msg.role === 'assistant' ? stripSurveyJson(msg.content) : msg.content
+        {/* ── Messages (scrollable, fills remaining space) ── */}
+        <div
+          ref={chatContainerRef}
+          className="flex-1 min-h-0 overflow-y-auto px-4 py-4 space-y-4"
+        >
+          {messages.map((msg, i) => {
+            const displayContent =
+              msg.role === 'assistant' ? stripSurveyJson(msg.content) : msg.content
 
-          if (!displayContent && msg.role === 'assistant') {
+            if (!displayContent && msg.role === 'assistant') {
+              return (
+                <div key={i} className="flex gap-3 justify-start">
+                  <div className="w-8 h-8 rounded-full bg-cyan-600/30 border border-cyan-500/40 flex items-center justify-center text-sm shrink-0 mt-0.5">
+                    🤖
+                  </div>
+                  <div className="bg-slate-700/60 rounded-xl px-4 py-3 text-sm text-cyan-400/80">
+                    ✅ AI 已完成問卷設計，請查看下方預覽
+                  </div>
+                </div>
+              )
+            }
+
             return (
-              <div key={i} className="flex gap-3 justify-start">
-                <div className="w-8 h-8 rounded-full bg-cyan-600/30 border border-cyan-500/40 flex items-center justify-center text-sm flex-shrink-0 mt-0.5">
-                  🤖
+              <div
+                key={i}
+                className={`flex gap-3 group ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+              >
+                {msg.role === 'assistant' && (
+                  <div className="w-8 h-8 rounded-full bg-cyan-600/30 border border-cyan-500/40 flex items-center justify-center text-sm shrink-0 mt-0.5">
+                    🤖
+                  </div>
+                )}
+                <div className="relative max-w-[80%]">
+                  <div
+                    className={`rounded-xl px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap ${
+                      msg.role === 'user'
+                        ? 'bg-t-btn text-white'
+                        : 'bg-slate-700/60 text-white/85'
+                    }`}
+                  >
+                    {displayContent}
+                  </div>
+                  <button
+                    onClick={() => copyMessage(displayContent, i)}
+                    className={`absolute -top-2 ${msg.role === 'user' ? '-left-8' : '-right-8'} w-6 h-6 bg-slate-700 hover:bg-slate-600 border border-slate-600/50 rounded-md flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity`}
+                    title="複製訊息"
+                  >
+                    {copiedMsgIndex === i
+                      ? <Check className="w-3 h-3 text-emerald-400" />
+                      : <Copy className="w-3 h-3 text-slate-300" />}
+                  </button>
                 </div>
-                <div className="bg-slate-700/60 rounded-xl px-4 py-3 text-sm text-cyan-400/80">
-                  ✅ AI 已完成問卷設計，請查看下方預覽
-                </div>
+                {msg.role === 'user' && (
+                  <div className="w-8 h-8 rounded-full bg-slate-600 flex items-center justify-center text-sm shrink-0 mt-0.5">
+                    👤
+                  </div>
+                )}
               </div>
             )
-          }
+          })}
 
-          return (
-            <div
-              key={i}
-              className={`flex gap-3 group ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
-            >
-              {msg.role === 'assistant' && (
-                <div className="w-8 h-8 rounded-full bg-cyan-600/30 border border-cyan-500/40 flex items-center justify-center text-sm flex-shrink-0 mt-0.5">
-                  🤖
-                </div>
-              )}
-              <div className="relative max-w-[80%]">
-                <div
-                  className={`rounded-xl px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap ${
-                    msg.role === 'user'
-                      ? 'bg-t-btn text-white'
-                      : 'bg-slate-700/60 text-white/85'
-                  }`}
-                >
-                  {displayContent}
-                </div>
-                {/* Copy button on hover */}
+          {sending && (
+            <div className="flex gap-3 justify-start">
+              <div className="w-8 h-8 rounded-full bg-cyan-600/30 border border-cyan-500/40 flex items-center justify-center text-sm shrink-0">
+                🤖
+              </div>
+              <div className="bg-slate-700/60 rounded-xl px-4 py-3 text-sm text-white/50">
+                思考中...
+              </div>
+            </div>
+          )}
+
+          {error && (
+            <p className="text-sm text-red-400 text-center">{error}</p>
+          )}
+
+          <div ref={messagesEndRef} />
+        </div>
+
+        {/* ── Survey preview (scrollable questions list) ── */}
+        {detectedSurvey && (
+          <div className="shrink-0 mx-4 mb-3 bg-slate-800 border border-cyan-500/30 rounded-xl overflow-hidden max-h-[40dvh] flex flex-col">
+            {/* Summary row */}
+            <div className="px-4 py-3 border-b border-slate-700/50">
+              <div className="flex items-center justify-between">
+                <span className="text-cyan-400 font-medium text-sm">✅ 問卷設計完成</span>
                 <button
-                  onClick={() => copyMessage(displayContent, i)}
-                  className={`absolute -top-2 ${msg.role === 'user' ? '-left-8' : '-right-8'} w-6 h-6 bg-slate-700 hover:bg-slate-600 border border-slate-600/50 rounded-md flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity`}
-                  title="複製訊息"
+                  onClick={() => setShowQuestions(p => !p)}
+                  className="flex items-center gap-1 text-xs text-slate-400 hover:text-white transition-colors"
                 >
-                  {copiedMsgIndex === i
-                    ? <Check className="w-3 h-3 text-emerald-400" />
-                    : <Copy className="w-3 h-3 text-slate-300" />}
+                  {showQuestions ? '收起題目' : `查看 ${detectedSurvey.questions.length} 題`}
+                  {showQuestions ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
                 </button>
               </div>
-              {msg.role === 'user' && (
-                <div className="w-8 h-8 rounded-full bg-slate-600 flex items-center justify-center text-sm flex-shrink-0 mt-0.5">
-                  👤
+              <div className="grid grid-cols-2 gap-x-4 gap-y-1 mt-2 text-sm">
+                <div>
+                  <span className="text-slate-400">標題：</span>
+                  <span className="text-white">{detectedSurvey.survey.title}</span>
                 </div>
-              )}
+                <div>
+                  <span className="text-slate-400">Slug：</span>
+                  <span className="text-white/70 font-mono text-xs">{detectedSurvey.survey.slug}</span>
+                </div>
+                <div>
+                  <span className="text-slate-400">題數：</span>
+                  <span className="text-white">{detectedSurvey.questions.length} 題</span>
+                </div>
+                <div>
+                  <span className="text-slate-400">主題：</span>
+                  <span className="text-white">{detectedSurvey.survey.theme}</span>
+                </div>
+                {detectedSurvey.branching?.enabled && (
+                  <div className="col-span-2">
+                    <span className="text-slate-400">分流：</span>
+                    <span className="text-cyan-400">已設定（依 {detectedSurvey.branching.branchKey} 分流）</span>
+                  </div>
+                )}
+              </div>
             </div>
-          )
-        })}
 
-        {sending && (
-          <div className="flex gap-3 justify-start">
-            <div className="w-8 h-8 rounded-full bg-cyan-600/30 border border-cyan-500/40 flex items-center justify-center text-sm flex-shrink-0">
-              🤖
-            </div>
-            <div className="bg-slate-700/60 rounded-xl px-4 py-3 text-sm text-white/50">
-              思考中...
-            </div>
-          </div>
-        )}
-
-        {error && (
-          <p className="text-sm text-red-400 text-center">{error}</p>
-        )}
-
-        <div ref={messagesEndRef} />
-      </div>
-
-      {/* Survey preview (when JSON detected) */}
-      {detectedSurvey && (
-        <div className="mx-6 mb-4 bg-slate-900/80 border border-cyan-500/30 rounded-xl p-4 space-y-3">
-          <div className="flex items-center gap-2 text-cyan-400 font-medium text-sm">
-            ✅ 問卷設計完成
-          </div>
-          <div className="grid grid-cols-2 gap-2 text-sm">
-            <div>
-              <span className="text-slate-400">標題：</span>
-              <span className="text-white">{detectedSurvey.survey.title}</span>
-            </div>
-            <div>
-              <span className="text-slate-400">Slug：</span>
-              <span className="text-white/70 font-mono text-xs">{detectedSurvey.survey.slug}</span>
-            </div>
-            <div>
-              <span className="text-slate-400">題數：</span>
-              <span className="text-white">{detectedSurvey.questions.length} 題</span>
-            </div>
-            <div>
-              <span className="text-slate-400">主題：</span>
-              <span className="text-white">{detectedSurvey.survey.theme}</span>
-            </div>
-            {detectedSurvey.branching?.enabled && (
-              <div className="col-span-2">
-                <span className="text-slate-400">分流：</span>
-                <span className="text-cyan-400">已設定（依 {detectedSurvey.branching.branchKey} 分流）</span>
+            {/* Questions list (scrollable, shown on toggle) */}
+            {showQuestions && (
+              <div className="flex-1 overflow-y-auto px-4 py-2 space-y-2">
+                {detectedSurvey.questions.map((q, idx) => (
+                  <div key={q.key} className="border border-slate-700/50 rounded-lg px-3 py-2">
+                    <p className="text-xs text-slate-400 mb-0.5">
+                      Q{idx + 1} · {q.type === 'single' ? '單選' : q.type === 'multiple' ? '多選' : '填答'}
+                      {q.route && q.route !== 'all' && (
+                        <span className="ml-1 text-amber-400/70">({q.route})</span>
+                      )}
+                    </p>
+                    <p className="text-sm text-white/85 leading-snug">{q.content}</p>
+                    {q.options && q.options.length > 0 && (
+                      <div className="mt-1.5 flex flex-wrap gap-1">
+                        {q.options.map((opt, oi) => (
+                          <span key={oi} className="text-[11px] bg-slate-700/60 text-slate-300 px-2 py-0.5 rounded-full">
+                            {opt.emoji && <span className="mr-0.5">{opt.emoji}</span>}{opt.label}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
               </div>
             )}
-          </div>
-          <div className="text-xs text-slate-500">
-            題型分佈：
-            {['single', 'multiple', 'text'].map((t) => {
-              const count = detectedSurvey.questions.filter((q) => q.type === t).length
-              if (count === 0) return null
-              const labels: Record<string, string> = { single: '單選', multiple: '多選', text: '文字' }
-              return (
-                <span key={t} className="ml-2">
-                  {labels[t]} ×{count}
-                </span>
-              )
-            })}
-          </div>
-          {createError && <p className="text-sm text-red-400">{createError}</p>}
-          <div className="flex gap-3">
-            <button
-              onClick={handleCreate}
-              disabled={creating}
-              className="px-4 py-2 bg-linear-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 disabled:opacity-50 text-white rounded-lg text-sm transition-all cursor-pointer font-medium"
-            >
-              {creating ? '建立中...' : '🚀 確認建立問卷'}
-            </button>
-            <button
-              onClick={handleRedesign}
-              disabled={sending || creating}
-              className="px-4 py-2 bg-slate-700 hover:bg-slate-600 disabled:opacity-50 text-slate-300 rounded-lg text-sm cursor-pointer"
-            >
-              重新設計
-            </button>
-          </div>
-        </div>
-      )}
 
-      {/* Prompt 靈感按鈕（僅在對話初始時顯示） */}
-      {messages.length <= 1 && (
-        <div className="px-6 pb-2">
-          <p className="text-xs text-slate-400 mb-2">💡 不知道怎麼開始？試試這些：</p>
-          <div className="flex flex-wrap gap-2">
-            {PROMPT_INSPIRATIONS.slice(0, showAllInspirations ? undefined : 8).map((p) => (
+            {/* Action buttons */}
+            <div className="shrink-0 px-4 py-3 border-t border-slate-700/50 flex items-center gap-3">
+              {createError && <p className="text-xs text-red-400 flex-1">{createError}</p>}
               <button
-                key={p.label}
-                type="button"
-                onClick={() => setInput(p.prompt)}
-                className="px-3 py-1.5 text-xs bg-slate-700/60 hover:bg-slate-600/80 text-slate-300 rounded-full transition-colors cursor-pointer"
+                onClick={handleCreate}
+                disabled={creating}
+                className="flex-1 px-4 py-2 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 disabled:opacity-50 text-white rounded-lg text-sm font-medium transition-all"
               >
-                {p.icon} {p.label}
+                {creating ? '建立中...' : '🚀 確認建立問卷'}
               </button>
-            ))}
-            {!showAllInspirations && PROMPT_INSPIRATIONS.length > 8 && (
+              <button
+                onClick={handleRedesign}
+                disabled={sending || creating}
+                className="px-4 py-2 bg-slate-700 hover:bg-slate-600 disabled:opacity-50 text-slate-300 rounded-lg text-sm"
+              >
+                重新設計
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* ── Prompt inspirations (initial state only) ── */}
+        {messages.length <= 1 && (
+          <div className="shrink-0 px-4 pb-2">
+            <p className="text-xs text-slate-400 mb-2">💡 不知道怎麼開始？試試這些：</p>
+            <div className="flex flex-wrap gap-2">
+              {PROMPT_INSPIRATIONS.slice(0, showAllInspirations ? undefined : 8).map((p) => (
+                <button
+                  key={p.label}
+                  type="button"
+                  onClick={() => setInput(p.prompt)}
+                  className="px-3 py-1.5 text-xs bg-slate-700/60 hover:bg-slate-600/80 text-slate-300 rounded-full transition-colors"
+                >
+                  {p.icon} {p.label}
+                </button>
+              ))}
+              {!showAllInspirations && PROMPT_INSPIRATIONS.length > 8 && (
+                <button
+                  type="button"
+                  onClick={() => setShowAllInspirations(true)}
+                  className="px-3 py-1.5 text-xs text-slate-500 hover:text-slate-300 transition-colors"
+                >
+                  查看更多 ▼
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* ── Input (fixed at bottom, never moves) ── */}
+        <div
+          className="shrink-0 px-4 pt-2 pb-4 border-t border-slate-700 bg-slate-900 flex gap-3"
+          style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom, 1rem))' }}
+        >
+          <div className="flex-1 relative">
+            <textarea
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault()
+                  handleSend()
+                }
+              }}
+              placeholder="描述你的問卷需求... （Enter 送出，Shift+Enter 換行）"
+              rows={2}
+              disabled={sending || creating}
+              className="w-full px-3 py-2 bg-slate-800 border border-slate-600 rounded-lg text-white text-sm focus:outline-none focus:ring-1 focus:ring-cyan-500/50 resize-none"
+            />
+            {input.trim() && (
               <button
                 type="button"
-                onClick={() => setShowAllInspirations(true)}
-                className="px-3 py-1.5 text-xs text-slate-500 hover:text-slate-300 transition-colors cursor-pointer"
+                onClick={() => { navigator.clipboard.writeText(input).catch(() => {}) }}
+                className="absolute right-2 bottom-2 p-1 text-slate-500 hover:text-slate-300 transition-colors"
+                title="複製 Prompt"
               >
-                查看更多 ▼
+                <Copy className="w-3.5 h-3.5" />
               </button>
             )}
           </div>
+          <button
+            onClick={handleSend}
+            disabled={!input.trim() || sending || creating}
+            className="px-4 py-2 bg-t-btn hover:bg-t-btn-hover disabled:opacity-40 text-white rounded-lg text-sm transition-colors self-end"
+          >
+            送出
+          </button>
         </div>
-      )}
-
-      {/* Input */}
-      <div className="px-6 pb-6 flex gap-3">
-        <div className="flex-1 relative">
-          <textarea
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault()
-                handleSend()
-              }
-            }}
-            placeholder="描述你的問卷需求... （Enter 送出，Shift+Enter 換行）"
-            rows={2}
-            disabled={sending || creating}
-            className={`w-full ${inputClass}`}
-          />
-          {input.trim() && (
-            <button
-              type="button"
-              onClick={() => { navigator.clipboard.writeText(input).catch(() => {}) }}
-              className="absolute right-2 bottom-2 p-1 text-slate-500 hover:text-slate-300 transition-colors"
-              title="複製 Prompt"
-            >
-              <Copy className="w-3.5 h-3.5" />
-            </button>
-          )}
-        </div>
-        <button
-          onClick={handleSend}
-          disabled={!input.trim() || sending || creating}
-          className="px-4 py-2 bg-t-btn hover:bg-t-btn-hover disabled:opacity-40 text-white rounded-lg text-sm transition-colors cursor-pointer self-end"
-        >
-          送出
-        </button>
       </div>
     </div>
   )
