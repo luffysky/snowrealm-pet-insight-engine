@@ -17,6 +17,7 @@ const NAV_OPERATIONS = [
   { href: '/snowrealm-insight-ctrl/notification-styles', label: '通知樣式', icon: '🎨' },
   { href: '/snowrealm-insight-ctrl/site-settings', label: '首頁 SEO', icon: '🌐' },
   { href: '/snowrealm-insight-ctrl/plans', label: '收費規劃', icon: '💰' },
+  { href: '/snowrealm-insight-ctrl/stickers', label: '貼圖管理', icon: '🎭' },
 ]
 
 const NAV_SYSTEM = [

@@ -18,6 +18,15 @@ interface Conversation {
 }
 
 const AUDIO_PREFIX = '[AUDIO]:'
+const STICKER_PREFIX = '[STICKER]:'
+
+interface StickerPack {
+  id: string
+  name: string
+  coverUrl: string | null
+  sortOrder: number
+  stickers: { id: string; url: string }[]
+}
 
 interface Message {
   id: string
@@ -115,6 +124,11 @@ export default function MessagesPage() {
   const [recording, setRecording] = useState(false)
   const [recordingSecs, setRecordingSecs] = useState(0)
   const [audioUploading, setAudioUploading] = useState(false)
+
+  const [showStickerPicker, setShowStickerPicker] = useState(false)
+  const [stickerPacks, setStickerPacks] = useState<StickerPack[]>([])
+  const [stickerPackIdx, setStickerPackIdx] = useState(0)
+  const [loadingStickers, setLoadingStickers] = useState(false)
 
   const bottomRef = useRef<HTMLDivElement>(null)
   const esRef = useRef<EventSource | null>(null)
@@ -402,6 +416,48 @@ export default function MessagesPage() {
   }
 
   const formatRecordingSecs = (s: number) => `${Math.floor(s / 60).toString().padStart(2, '0')}:${(s % 60).toString().padStart(2, '0')}`
+
+  const loadStickerPacks = async () => {
+    if (stickerPacks.length > 0) return
+    setLoadingStickers(true)
+    try {
+      const res = await fetch('/api/stickers')
+      const data = await res.json() as { packs: StickerPack[] }
+      setStickerPacks(data.packs ?? [])
+    } catch { /* ignore */ }
+    finally { setLoadingStickers(false) }
+  }
+
+  const sendSticker = async (url: string) => {
+    if (!selected) return
+    setShowStickerPicker(false)
+    const content = `${STICKER_PREFIX}${url}`
+    try {
+      const res = await fetch('/api/admin/social/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ toUserId: selected.userId, content }),
+      })
+      if (res.ok) {
+        const data = await res.json() as { message: { id: string; createdAt: string } }
+        setMessages(prev => [...prev, {
+          id: data.message.id,
+          content,
+          createdAt: data.message.createdAt,
+          isMine: true,
+          fromName: null,
+          fromAvatar: null,
+          recalledAt: null,
+          isSaved: false,
+        }])
+        setConversations(prev => prev.map(c =>
+          c.userId === selected.userId
+            ? { ...c, lastMessagePreview: '🎭 貼圖', lastMessageAt: data.message.createdAt }
+            : c
+        ))
+      }
+    } catch { /* ignore */ }
+  }
 
   const loadAllUsers = async () => {
     try {
@@ -725,6 +781,8 @@ export default function MessagesPage() {
                   const isMine = msg.isMine
                   const isAudio = !recalled && msg.content.startsWith(AUDIO_PREFIX)
                   const audioUrl = isAudio ? msg.content.slice(AUDIO_PREFIX.length) : null
+                  const isSticker = !recalled && msg.content.startsWith(STICKER_PREFIX)
+                  const stickerUrl = isSticker ? msg.content.slice(STICKER_PREFIX.length) : null
 
                   return (
                     <div
@@ -754,7 +812,16 @@ export default function MessagesPage() {
 
                       {/* Bubble */}
                       <div className="max-w-[68%] sm:max-w-[72%] space-y-0.5">
-                        {isAudio && audioUrl ? (
+                        {isSticker && stickerUrl ? (
+                          <div>
+                            <img
+                              src={stickerUrl}
+                              alt="貼圖"
+                              className="w-24 h-24 object-contain select-none"
+                              draggable={false}
+                            />
+                          </div>
+                        ) : isAudio && audioUrl ? (
                           <div className={`px-3 py-2.5 rounded-2xl ${
                             isMine ? 'rounded-br-sm bg-gradient-to-br from-amber-500/90 to-orange-400/90 shadow-[0_4px_12px_rgba(245,158,11,0.25)]'
                                     : 'rounded-bl-sm bg-white/[0.08] border border-white/[0.08] shadow-[0_2px_8px_rgba(0,0,0,0.3)]'
@@ -798,6 +865,51 @@ export default function MessagesPage() {
                 <div ref={bottomRef} />
               </div>
 
+              {/* ── Sticker picker ── */}
+              {showStickerPicker && (
+                <div className="border-t border-white/8 shrink-0 bg-slate-900/80">
+                  {/* Pack tabs */}
+                  {loadingStickers ? (
+                    <div className="flex justify-center py-6"><Loader2 className="w-5 h-5 text-white/25 animate-spin" /></div>
+                  ) : stickerPacks.length === 0 ? (
+                    <div className="py-6 text-center text-xs text-white/25">尚無貼圖包</div>
+                  ) : (
+                    <>
+                      <div className="flex gap-0.5 px-2 pt-2 overflow-x-auto scrollbar-none">
+                        {stickerPacks.map((pack, idx) => (
+                          <button
+                            key={pack.id}
+                            onClick={() => setStickerPackIdx(idx)}
+                            className={`shrink-0 w-9 h-9 rounded-lg overflow-hidden border transition-all ${
+                              stickerPackIdx === idx
+                                ? 'border-amber-400/50 ring-1 ring-amber-400/30'
+                                : 'border-white/10 hover:border-white/25'
+                            }`}
+                          >
+                            {pack.coverUrl
+                              ? <img src={pack.coverUrl} alt={pack.name} className="w-full h-full object-cover" />
+                              : <span className="text-lg">🎭</span>
+                            }
+                          </button>
+                        ))}
+                      </div>
+                      {/* Sticker grid */}
+                      <div className="grid grid-cols-6 gap-1 p-2 max-h-44 overflow-y-auto">
+                        {(stickerPacks[stickerPackIdx]?.stickers ?? []).map(s => (
+                          <button
+                            key={s.id}
+                            onClick={() => void sendSticker(s.url)}
+                            className="aspect-square rounded-xl overflow-hidden hover:bg-white/10 transition-colors p-1"
+                          >
+                            <img src={s.url} alt="" className="w-full h-full object-contain" />
+                          </button>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
+
               {/* ── Input bar ── */}
               <div className="px-3 py-3 border-t border-white/8 shrink-0 bg-white/[0.02]">
                 {/* Recording indicator */}
@@ -818,7 +930,14 @@ export default function MessagesPage() {
                 <div className="flex items-end gap-2 bg-white/[0.06] border border-white/10 rounded-2xl px-1 pl-3 py-1.5 focus-within:border-amber-400/30 focus-within:bg-white/[0.08] transition-all">
                   {/* Left icons */}
                   <div className="flex items-center gap-0.5 self-end pb-1">
-                    <button className="p-1.5 text-white/20 hover:text-amber-300 hover:bg-white/5 rounded-xl transition-colors" title="表情符號">
+                    <button
+                      onClick={() => {
+                        setShowStickerPicker(v => !v)
+                        if (!showStickerPicker) void loadStickerPacks()
+                      }}
+                      className={`p-1.5 rounded-xl transition-colors ${showStickerPicker ? 'text-amber-400 bg-amber-500/15' : 'text-white/20 hover:text-amber-300 hover:bg-white/5'}`}
+                      title="貼圖"
+                    >
                       <Smile className="w-4 h-4" />
                     </button>
                     {/* Audio file upload */}

@@ -50,6 +50,7 @@ export async function GET(): Promise<NextResponse> {
   )
 
   const AUDIO_PREFIX = '[AUDIO]:'
+  const STICKER_PREFIX = '[STICKER]:'
 
   const conversations: ConversationResult[] = rows.map(row => {
     let preview = '...'
@@ -57,6 +58,8 @@ export async function GET(): Promise<NextResponse> {
       const decrypted = decryptApiKey({ encrypted: row.encrypted_content, iv: row.iv, tag: row.tag })
       if (decrypted.startsWith(AUDIO_PREFIX)) {
         preview = '🎵 語音訊息'
+      } else if (decrypted.startsWith(STICKER_PREFIX)) {
+        preview = '🎭 貼圖'
       } else {
         preview = decrypted.length > 60 ? decrypted.slice(0, 60) + '...' : decrypted
       }
