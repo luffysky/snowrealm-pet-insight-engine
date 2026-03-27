@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { queryOne } from '@/lib/db'
-import { signToken } from '@/lib/jwt'
+import { queryOne, execute } from '@/lib/db'
+import { SignJWT } from 'jose'
 
 interface LineTokenResponse {
   access_token: string
@@ -15,10 +15,16 @@ interface LineProfile {
   pictureUrl?: string
 }
 
-/**
- * 總後台專用 LINE Login callback
- * 只允許 SUPER_ADMIN_LINE_USER_ID 登入，其他人一律拒絕
- */
+/** 簽發短命 pending token（5 分鐘，只含 LINE UID，不是完整 session） */
+async function signPendingToken(lineUserId: string, adminUserId: string): Promise<string> {
+  const secret = new TextEncoder().encode(process.env.JWT_SECRET || process.env.ADMIN_SECRET || 'fallback')
+  return new SignJWT({ lineUserId, adminUserId, purpose: 'sa_pending' })
+    .setProtectedHeader({ alg: 'HS256' })
+    .setIssuedAt()
+    .setExpirationTime('5m')
+    .sign(secret)
+}
+
 export async function GET(request: NextRequest): Promise<NextResponse> {
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
 
@@ -27,18 +33,12 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     const state = request.nextUrl.searchParams.get('state')
     const storedState = request.cookies.get('line_sa_state')?.value
 
-    if (!code) {
-      return NextResponse.redirect(`${baseUrl}/super-login?error=missing_code`)
-    }
-    if (!state || state !== storedState) {
-      return NextResponse.redirect(`${baseUrl}/super-login?error=invalid_state`)
-    }
+    if (!code) return NextResponse.redirect(`${baseUrl}/super-login?error=missing_code`)
+    if (!state || state !== storedState) return NextResponse.redirect(`${baseUrl}/super-login?error=invalid_state`)
 
     const channelId = process.env.LINE_LOGIN_CHANNEL_ID!
     const channelSecret = process.env.LINE_LOGIN_CHANNEL_SECRET!
     const callbackUrl = `${baseUrl}/api/auth/line/super-admin/callback`
-
-    // 允許的管理員 LINE User ID
     const allowedUserId = process.env.SUPER_ADMIN_LINE_USER_ID || process.env.LINE_YOUR_USER_ID
 
     // Code → Token
@@ -53,11 +53,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
         client_secret: channelSecret,
       }),
     })
-
-    if (!tokenRes.ok) {
-      console.error('[Super Admin LINE] Token exchange failed:', await tokenRes.text())
-      return NextResponse.redirect(`${baseUrl}/super-login?error=token_exchange`)
-    }
+    if (!tokenRes.ok) return NextResponse.redirect(`${baseUrl}/super-login?error=token_exchange`)
 
     const tokenData: LineTokenResponse = await tokenRes.json()
 
@@ -65,80 +61,57 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     const profileRes = await fetch('https://api.line.me/v2/profile', {
       headers: { Authorization: `Bearer ${tokenData.access_token}` },
     })
-
-    if (!profileRes.ok) {
-      return NextResponse.redirect(`${baseUrl}/super-login?error=profile_error`)
-    }
+    if (!profileRes.ok) return NextResponse.redirect(`${baseUrl}/super-login?error=profile_error`)
 
     const lineProfile: LineProfile = await profileRes.json()
 
     // ★ 核心安全檢查：只允許指定的 LINE User ID
-    if (lineProfile.userId !== allowedUserId) {
-      console.warn(`[Super Admin LINE] Unauthorized: ${lineProfile.userId} (${lineProfile.displayName})`)
+    if (!allowedUserId || lineProfile.userId !== allowedUserId) {
+      // Log unauthorized attempt
+      try {
+        await execute(
+          `INSERT INTO audit_logs (action, actor_id, actor_name, details, created_at)
+           VALUES ('super_admin_login_rejected', $1, $2, $3, NOW())`,
+          [lineProfile.userId, lineProfile.displayName, JSON.stringify({ reason: 'unauthorized_line_id' })]
+        )
+      } catch { /* audit table may not exist */ }
+      console.warn(`[Super Admin] Unauthorized attempt: ${lineProfile.userId} (${lineProfile.displayName})`)
       return NextResponse.redirect(`${baseUrl}/`)
     }
 
-    // 查找或綁定 super_admin 帳號
-    let user = await queryOne<{
-      id: string; tenant_id: string; role: string; display_name: string
-    }>(
-      `SELECT id, tenant_id, role, display_name FROM admin_users WHERE line_id = $1`,
+    // 找對應的 admin 帳號（只查有綁定 line_id 的，不自動升權）
+    let user = await queryOne<{ id: string; role: string; display_name: string }>(
+      `SELECT id, role, display_name FROM admin_users WHERE line_id = $1`,
       [lineProfile.userId],
     )
 
-    if (user) {
-      // 確保是 super_admin
-      if (user.role !== 'super_admin') {
-        await queryOne(
-          `UPDATE admin_users SET role = 'super_admin' WHERE id = $1 RETURNING id`,
-          [user.id],
-        )
-        user.role = 'super_admin'
-      }
-    } else {
-      // 1) 先找既有的 super_admin 帳號
-      let existing = await queryOne<{
-        id: string; tenant_id: string; role: string; display_name: string
-      }>(
-        `SELECT id, tenant_id, role, display_name FROM admin_users WHERE role = 'super_admin' LIMIT 1`,
+    if (!user) {
+      // 只在明確有 super_admin 帳號時才允許綁定，不自動找最老帳號
+      const existing = await queryOne<{ id: string; role: string; display_name: string }>(
+        `SELECT id, role, display_name FROM admin_users WHERE role = 'super_admin' LIMIT 1`,
       )
+      if (!existing) return NextResponse.redirect(`${baseUrl}/super-login?error=no_account`)
 
-      // 2) 沒有 super_admin → 找任何一個 admin 帳號升級
-      if (!existing) {
-        existing = await queryOne<{
-          id: string; tenant_id: string; role: string; display_name: string
-        }>(
-          `SELECT id, tenant_id, role, display_name FROM admin_users ORDER BY created_at ASC LIMIT 1`,
-        )
-      }
-
-      if (existing) {
-        // 綁定 line_id + 升級為 super_admin
-        await queryOne(
-          `UPDATE admin_users SET line_id = $1, role = 'super_admin' WHERE id = $2 RETURNING id`,
-          [lineProfile.userId, existing.id],
-        )
-        user = { ...existing, role: 'super_admin' }
-        console.log(`[Super Admin LINE] Bound line_id and promoted to super_admin: ${existing.id}`)
-      } else {
-        return NextResponse.redirect(`${baseUrl}/super-login?error=no_account`)
-      }
+      await execute(
+        `UPDATE admin_users SET line_id = $1 WHERE id = $2`,
+        [lineProfile.userId, existing.id],
+      )
+      user = existing
     }
 
-    // 簽發 JWT（super_admin 角色）
-    const jwt = await signToken({
-      sub: user.id,
-      tid: user.tenant_id,
-      role: 'super_admin',
-      name: user.display_name,
-    })
+    if (user.role !== 'super_admin') {
+      return NextResponse.redirect(`${baseUrl}/super-login?error=not_super_admin`)
+    }
 
-    const response = NextResponse.redirect(`${baseUrl}/snowrealm-insight-ctrl`)
-    response.cookies.set('admin_session', jwt, {
+    // 簽發 pending token（不是完整 session，5 分鐘）
+    const pendingToken = await signPendingToken(lineProfile.userId, user.id)
+
+    const response = NextResponse.redirect(`${baseUrl}/super-login?step=pin`)
+    response.cookies.set('sa_pending', pendingToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 60 * 60 * 24,
+      sameSite: 'strict',
+      maxAge: 300, // 5 minutes
       path: '/',
     })
     response.cookies.delete('line_sa_state')
