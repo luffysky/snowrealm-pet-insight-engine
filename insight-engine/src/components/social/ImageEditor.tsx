@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useCallback, useRef, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import ReactCrop, { type Crop, type PixelCrop, centerCrop, makeAspectCrop } from 'react-image-crop'
 import 'react-image-crop/dist/ReactCrop.css'
 import {
@@ -210,9 +211,9 @@ export function ImageEditor({ imageUrl, open, onOpenChange, onSave, aspectRatio:
     transform: `${flipH ? 'scaleX(-1)' : ''} ${flipV ? 'scaleY(-1)' : ''}`.trim() || 'none',
   }
 
-  return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-      <div className="bg-slate-900/95 border border-white/10 rounded-2xl shadow-2xl w-full max-w-3xl max-h-[92vh] flex flex-col overflow-hidden">
+  const modal = (
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+      <div className="bg-slate-900/95 border border-white/10 rounded-2xl shadow-2xl w-full max-w-3xl flex flex-col overflow-hidden" style={{ maxHeight: 'min(92vh, 700px)' }}>
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-white/8">
           <div className="flex items-center gap-2 text-white/80">
@@ -244,7 +245,7 @@ export function ImageEditor({ imageUrl, open, onOpenChange, onSave, aspectRatio:
           {/* CROP TAB */}
           {activeTab === 'crop' && (
             <div className="space-y-4">
-              <div className="relative bg-black/60 rounded-xl overflow-auto" style={{ minHeight: 240, maxHeight: 360 }}>
+              <div className="relative bg-black/60 rounded-xl overflow-auto" style={{ minHeight: 160, maxHeight: 280 }}>
                 {aspectKey === 'full' ? (
                   <div className="w-full h-full flex items-center justify-center p-4 min-h-[200px]">
                     <img src={imageUrl} alt="" className="max-w-full max-h-[300px] object-contain"
@@ -368,7 +369,7 @@ export function ImageEditor({ imageUrl, open, onOpenChange, onSave, aspectRatio:
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between px-5 py-4 border-t border-white/8">
+        <div className="flex items-center justify-between px-5 py-4 border-t border-white/8 shrink-0">
           <button onClick={reset} className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm text-white/50 hover:text-white/80 hover:bg-white/5 transition-colors">
             <Undo2 className="w-4 h-4" /> 重置
           </button>
@@ -377,14 +378,18 @@ export function ImageEditor({ imageUrl, open, onOpenChange, onSave, aspectRatio:
               <X className="w-4 h-4" /> 取消
             </button>
             <button onClick={handleSave} disabled={processing}
-              className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium bg-amber-500 hover:bg-amber-400 text-slate-900 transition-colors disabled:opacity-50"
+              className="flex items-center gap-1.5 px-5 py-2.5 rounded-xl text-sm font-semibold bg-amber-500 hover:bg-amber-400 text-slate-900 transition-colors disabled:opacity-50 shadow-lg"
             >
               <Check className="w-4 h-4" />
-              {processing ? '處理中...' : '套用'}
+              {processing ? '處理中...' : '確定套用'}
             </button>
           </div>
         </div>
       </div>
     </div>
   )
+
+  // Use portal to escape any parent transform/overflow that breaks fixed positioning
+  if (typeof document === 'undefined') return null
+  return createPortal(modal, document.body)
 }

@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
+import { Copy, Check, Download } from 'lucide-react'
 import { parseSurveyJson, type AiGeneratedSurvey } from '@/lib/aiSurveyPrompt'
 
 interface ChatMessage {
@@ -127,8 +128,32 @@ export function AiSurveyChat({ onDone, onCancel }: AiSurveyChatProps) {
   const [creating, setCreating] = useState(false)
   const [createError, setCreateError] = useState('')
   const [showAllInspirations, setShowAllInspirations] = useState(false)
+  const [copiedMsgIndex, setCopiedMsgIndex] = useState<number | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const chatContainerRef = useRef<HTMLDivElement>(null)
+
+  const copyMessage = useCallback((text: string, index: number) => {
+    navigator.clipboard.writeText(text).then(() => {
+      setCopiedMsgIndex(index)
+      setTimeout(() => setCopiedMsgIndex(null), 1500)
+    }).catch(() => {})
+  }, [])
+
+  const exportChat = useCallback(() => {
+    const lines = messages.map(m => {
+      const role = m.role === 'user' ? '我' : 'AI'
+      const content = m.role === 'assistant' ? stripSurveyJson(m.content) : m.content
+      return `[${role}]\n${content}`
+    })
+    const text = lines.join('\n\n---\n\n')
+    const blob = new Blob([text], { type: 'text/plain; charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.download = 'ai-chat.txt'
+    a.href = url
+    a.click()
+    URL.revokeObjectURL(url)
+  }, [messages])
 
   useEffect(() => {
     const container = chatContainerRef.current
@@ -232,12 +257,23 @@ export function AiSurveyChat({ onDone, onCancel }: AiSurveyChatProps) {
         <h3 className="text-lg font-semibold text-white flex items-center gap-2">
           ✨ AI 對話建立問卷
         </h3>
-        <button
-          onClick={onCancel}
-          className="text-slate-400 hover:text-slate-200 text-sm cursor-pointer"
-        >
-          ✕ 關閉
-        </button>
+        <div className="flex items-center gap-2">
+          {messages.length > 1 && (
+            <button
+              onClick={exportChat}
+              title="匯出對話紀錄"
+              className="flex items-center gap-1.5 px-2.5 py-1.5 bg-slate-700/60 hover:bg-slate-600/80 border border-slate-600/50 text-slate-300 rounded-lg text-xs transition-colors cursor-pointer"
+            >
+              <Download className="w-3.5 h-3.5" />匯出
+            </button>
+          )}
+          <button
+            onClick={onCancel}
+            className="text-slate-400 hover:text-slate-200 text-sm cursor-pointer"
+          >
+            ✕ 關閉
+          </button>
+        </div>
       </div>
 
       {/* Messages */}
@@ -262,21 +298,33 @@ export function AiSurveyChat({ onDone, onCancel }: AiSurveyChatProps) {
           return (
             <div
               key={i}
-              className={`flex gap-3 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+              className={`flex gap-3 group ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
             >
               {msg.role === 'assistant' && (
                 <div className="w-8 h-8 rounded-full bg-cyan-600/30 border border-cyan-500/40 flex items-center justify-center text-sm flex-shrink-0 mt-0.5">
                   🤖
                 </div>
               )}
-              <div
-                className={`max-w-[80%] rounded-xl px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap ${
-                  msg.role === 'user'
-                    ? 'bg-t-btn text-white'
-                    : 'bg-slate-700/60 text-white/85'
-                }`}
-              >
-                {displayContent}
+              <div className="relative max-w-[80%]">
+                <div
+                  className={`rounded-xl px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap ${
+                    msg.role === 'user'
+                      ? 'bg-t-btn text-white'
+                      : 'bg-slate-700/60 text-white/85'
+                  }`}
+                >
+                  {displayContent}
+                </div>
+                {/* Copy button on hover */}
+                <button
+                  onClick={() => copyMessage(displayContent, i)}
+                  className={`absolute -top-2 ${msg.role === 'user' ? '-left-8' : '-right-8'} w-6 h-6 bg-slate-700 hover:bg-slate-600 border border-slate-600/50 rounded-md flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity`}
+                  title="複製訊息"
+                >
+                  {copiedMsgIndex === i
+                    ? <Check className="w-3 h-3 text-emerald-400" />
+                    : <Copy className="w-3 h-3 text-slate-300" />}
+                </button>
               </div>
               {msg.role === 'user' && (
                 <div className="w-8 h-8 rounded-full bg-slate-600 flex items-center justify-center text-sm flex-shrink-0 mt-0.5">
@@ -398,20 +446,32 @@ export function AiSurveyChat({ onDone, onCancel }: AiSurveyChatProps) {
 
       {/* Input */}
       <div className="px-6 pb-6 flex gap-3">
-        <textarea
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-              e.preventDefault()
-              handleSend()
-            }
-          }}
-          placeholder="描述你的問卷需求... （Enter 送出，Shift+Enter 換行）"
-          rows={2}
-          disabled={sending || creating}
-          className={inputClass}
-        />
+        <div className="flex-1 relative">
+          <textarea
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault()
+                handleSend()
+              }
+            }}
+            placeholder="描述你的問卷需求... （Enter 送出，Shift+Enter 換行）"
+            rows={2}
+            disabled={sending || creating}
+            className={`w-full ${inputClass}`}
+          />
+          {input.trim() && (
+            <button
+              type="button"
+              onClick={() => { navigator.clipboard.writeText(input).catch(() => {}) }}
+              className="absolute right-2 bottom-2 p-1 text-slate-500 hover:text-slate-300 transition-colors"
+              title="複製 Prompt"
+            >
+              <Copy className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </div>
         <button
           onClick={handleSend}
           disabled={!input.trim() || sending || creating}

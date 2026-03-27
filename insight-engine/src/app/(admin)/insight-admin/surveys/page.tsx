@@ -25,8 +25,23 @@ interface SurveyRow {
   scheduled_end: string | null
   branch_config: BranchConfig | BranchRule[] | string | null
   done_config?: Record<string, unknown> | null
+  result_config?: ResultConfig | null
   is_primary: boolean
   tenant_id: string
+}
+
+interface ResultType {
+  key: string
+  name: string
+  emoji: string
+  description: string
+  traits?: string[]
+}
+
+interface ResultConfig {
+  scoringRules: Record<string, Record<string, string>>
+  resultTypes: ResultType[]
+  tieBreaker?: string
 }
 
 interface QuestionRow {
@@ -335,7 +350,7 @@ function SurveyEditor({
   onReloadQuestions: () => void
   onDeleted: () => void
 }) {
-  const [activeTab, setActiveTab] = useState<'basic' | 'branching' | 'og'>('basic')
+  const [activeTab, setActiveTab] = useState<'basic' | 'branching' | 'og' | 'result'>('basic')
   const [editing, setEditing] = useState(false)
   const [showAiGen, setShowAiGen] = useState(false)
   const [form, setForm] = useState(survey)
@@ -527,6 +542,12 @@ function SurveyEditor({
               ? 'bg-t-accent-bg text-t-accent border border-t-card-border'
               : 'bg-slate-800 text-slate-400 border border-slate-700 hover:text-white'
           }`}>分流邏輯</button>
+        <button type="button" onClick={() => setActiveTab('result')}
+          className={`px-3 py-1.5 rounded-lg text-sm transition-colors cursor-pointer ${
+            activeTab === 'result'
+              ? 'bg-t-accent-bg text-t-accent border border-t-card-border'
+              : 'bg-slate-800 text-slate-400 border border-slate-700 hover:text-white'
+          }`}>結果設定</button>
       </div>
 
       {/* Basic settings - editing */}
@@ -921,6 +942,15 @@ function SurveyEditor({
       {/* Branching tab */}
       {activeTab === 'branching' && (
         <BranchingPanel survey={survey} questions={questions} onUpdate={onUpdate} onReloadQuestions={onReloadQuestions} />
+      )}
+
+      {/* Result config tab */}
+      {activeTab === 'result' && (
+        <ResultConfigPanel
+          survey={survey}
+          questions={questions}
+          onUpdate={onUpdate}
+        />
       )}
     </div>
   )
@@ -1340,6 +1370,198 @@ function normalizeBranchRules(raw: BranchConfig | BranchRule[] | string | null |
     return [{ id: '__legacy__', branchKey: obj.branchKey, routes: obj.routes }]
   }
   return []
+}
+
+// ===== ResultConfigPanel =====
+
+const BLANK_TYPE: ResultType = { key: '', name: '', emoji: '🎯', description: '', traits: [] }
+
+function ResultConfigPanel({
+  survey,
+  questions,
+  onUpdate,
+}: {
+  survey: SurveyRow & { og_title?: string; og_description?: string; og_image_url?: string }
+  questions: QuestionRow[]
+  onUpdate: (s: SurveyRow) => void
+}) {
+  const existing = survey.result_config ?? { scoringRules: {}, resultTypes: [], tieBreaker: '' }
+  const [resultTypes, setResultTypes] = useState<ResultType[]>(
+    existing.resultTypes?.length > 0 ? existing.resultTypes : [{ ...BLANK_TYPE }]
+  )
+  const [scoringRules, setScoringRules] = useState<Record<string, Record<string, string>>>(
+    existing.scoringRules ?? {}
+  )
+  const [tieBreaker, setTieBreaker] = useState(existing.tieBreaker ?? '')
+  const [saving, setSaving] = useState(false)
+  const [saved, setSaved] = useState(false)
+
+  const singleQuestions = questions.filter(q => q.type === 'single')
+
+  const updateType = (idx: number, patch: Partial<ResultType>) => {
+    setResultTypes(prev => prev.map((t, i) => i === idx ? { ...t, ...patch } : t))
+  }
+
+  const addType = () => setResultTypes(prev => [...prev, { ...BLANK_TYPE }])
+
+  const removeType = (idx: number) => {
+    const key = resultTypes[idx].key
+    setResultTypes(prev => prev.filter((_, i) => i !== idx))
+    // Clean up scoring rules that referenced this type
+    setScoringRules(prev => {
+      const next = { ...prev }
+      for (const qKey of Object.keys(next)) {
+        next[qKey] = Object.fromEntries(
+          Object.entries(next[qKey]).filter(([, v]) => v !== key)
+        )
+      }
+      return next
+    })
+  }
+
+  const setRule = (qKey: string, optValue: string, typeKey: string) => {
+    setScoringRules(prev => ({
+      ...prev,
+      [qKey]: { ...prev[qKey], [optValue]: typeKey },
+    }))
+  }
+
+  const save = async () => {
+    setSaving(true)
+    const config: ResultConfig = {
+      scoringRules,
+      resultTypes: resultTypes.filter(t => t.key && t.name),
+      tieBreaker: tieBreaker || undefined,
+    }
+    const res = await fetch(`/api/admin/surveys/${survey.id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ result_config: config }),
+    })
+    if (res.ok) {
+      const updated = await res.json() as SurveyRow
+      onUpdate(updated)
+      setSaved(true)
+      setTimeout(() => setSaved(false), 2000)
+    }
+    setSaving(false)
+  }
+
+  return (
+    <div className="space-y-5">
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-sm font-medium text-white/80">結果類型設定</p>
+          <p className="text-xs text-white/40 mt-0.5">設定人格測驗的結果類型與計分規則</p>
+        </div>
+        <button
+          onClick={save}
+          disabled={saving}
+          className="px-4 py-1.5 bg-cyan-900/40 text-cyan-400 border border-cyan-500/30 hover:bg-cyan-900/60 rounded-lg text-sm disabled:opacity-50 transition-colors cursor-pointer"
+        >
+          {saved ? '✅ 已儲存' : saving ? '儲存中...' : '儲存設定'}
+        </button>
+      </div>
+
+      {/* Result types */}
+      <div className="space-y-3">
+        <p className="text-xs text-white/50 uppercase tracking-wide">結果類型</p>
+        {resultTypes.map((rt, idx) => (
+          <div key={idx} className="bg-slate-800/60 border border-slate-700/60 rounded-xl p-3 space-y-2">
+            <div className="flex items-center gap-2">
+              <input
+                value={rt.emoji}
+                onChange={e => updateType(idx, { emoji: e.target.value })}
+                className="w-12 bg-slate-900 border border-slate-600 rounded-lg px-2 py-1.5 text-center text-sm text-white"
+                placeholder="🎯"
+              />
+              <input
+                value={rt.key}
+                onChange={e => updateType(idx, { key: e.target.value })}
+                className="w-32 bg-slate-900 border border-slate-600 rounded-lg px-2 py-1.5 text-sm text-white font-mono"
+                placeholder="key (英文)"
+              />
+              <input
+                value={rt.name}
+                onChange={e => updateType(idx, { name: e.target.value })}
+                className="flex-1 bg-slate-900 border border-slate-600 rounded-lg px-2 py-1.5 text-sm text-white"
+                placeholder="結果名稱"
+              />
+              <button onClick={() => removeType(idx)} className="text-red-400/60 hover:text-red-400 text-xs cursor-pointer px-1">✕</button>
+            </div>
+            <textarea
+              value={rt.description}
+              onChange={e => updateType(idx, { description: e.target.value })}
+              rows={2}
+              className="w-full bg-slate-900 border border-slate-600 rounded-lg px-2 py-1.5 text-sm text-white/80 resize-none"
+              placeholder="結果描述文案..."
+            />
+            <input
+              value={rt.traits?.join(', ') ?? ''}
+              onChange={e => updateType(idx, { traits: e.target.value.split(',').map(t => t.trim()).filter(Boolean) })}
+              className="w-full bg-slate-900 border border-slate-600 rounded-lg px-2 py-1.5 text-xs text-white/70"
+              placeholder="特質標籤（逗號分隔，如：好奇心強, 行動派, 創意人）"
+            />
+          </div>
+        ))}
+        <button
+          onClick={addType}
+          className="w-full py-2 border border-dashed border-slate-600 hover:border-cyan-500/50 rounded-xl text-sm text-slate-400 hover:text-cyan-400 transition-colors cursor-pointer"
+        >
+          + 新增結果類型
+        </button>
+      </div>
+
+      {/* Scoring rules */}
+      {resultTypes.some(t => t.key) && singleQuestions.length > 0 && (
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <p className="text-xs text-white/50 uppercase tracking-wide">計分規則</p>
+            <p className="text-[10px] text-white/30">每個選項對應的結果類型</p>
+          </div>
+          {singleQuestions.map(q => (
+            <div key={q.key} className="bg-slate-800/40 border border-slate-700/40 rounded-xl p-3 space-y-2">
+              <p className="text-xs font-medium text-white/70">{q.key}: {q.content.slice(0, 40)}</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                {q.options.map(opt => (
+                  <div key={opt.value} className="flex items-center gap-2">
+                    <span className="text-xs text-white/50 truncate w-24 shrink-0">{opt.label}</span>
+                    <select
+                      value={scoringRules[q.key]?.[opt.value] ?? ''}
+                      onChange={e => setRule(q.key, opt.value, e.target.value)}
+                      className="flex-1 bg-slate-900 border border-slate-600 rounded-lg px-2 py-1 text-xs text-white"
+                    >
+                      <option value="">-- 未設定 --</option>
+                      {resultTypes.filter(t => t.key).map(t => (
+                        <option key={t.key} value={t.key}>{t.emoji} {t.name} ({t.key})</option>
+                      ))}
+                    </select>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Tie breaker */}
+      {resultTypes.some(t => t.key) && (
+        <div className="flex items-center gap-3">
+          <label className="text-xs text-white/50 shrink-0">平手時預設</label>
+          <select
+            value={tieBreaker}
+            onChange={e => setTieBreaker(e.target.value)}
+            className="flex-1 bg-slate-900 border border-slate-600 rounded-lg px-2 py-1.5 text-sm text-white"
+          >
+            <option value="">-- 取第一個 --</option>
+            {resultTypes.filter(t => t.key).map(t => (
+              <option key={t.key} value={t.key}>{t.emoji} {t.name}</option>
+            ))}
+          </select>
+        </div>
+      )}
+    </div>
+  )
 }
 
 // ===== QuestionList =====
