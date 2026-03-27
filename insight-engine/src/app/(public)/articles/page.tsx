@@ -1,6 +1,8 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+export const dynamic = 'force-dynamic'
+
+import { useEffect, useState, useCallback, Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Search, TrendingUp, Heart, MessageSquare, Share2, Check, ExternalLink, PenSquare, Play, Bookmark } from 'lucide-react'
@@ -157,7 +159,7 @@ function PostPreviewCard({ post }: { post: SocialPost }) {
   )
 }
 
-export default function ArticlesPage() {
+function ArticlesPageInner() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const [posts, setPosts] = useState<SocialPost[]>([])
@@ -316,5 +318,13 @@ export default function ArticlesPage() {
         )}
       </div>
     </div>
+  )
+}
+
+export default function ArticlesPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-slate-950" />}>
+      <ArticlesPageInner />
+    </Suspense>
   )
 }
