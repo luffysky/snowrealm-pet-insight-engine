@@ -2,10 +2,12 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getTenantContext } from '@/lib/tenant'
 import { getProfile, updateProfile } from '@/lib/socialEngine'
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   const ctx = await getTenantContext()
   if (!ctx.userId) return NextResponse.json({ error: '未登入' }, { status: 401 })
-  const profile = await getProfile(ctx.userId)
+  const { searchParams } = new URL(request.url)
+  const targetUserId = searchParams.get('userId') ?? ctx.userId
+  const profile = await getProfile(targetUserId)
   return NextResponse.json({ profile })
 }
 

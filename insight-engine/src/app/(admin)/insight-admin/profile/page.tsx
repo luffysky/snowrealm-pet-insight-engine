@@ -23,8 +23,8 @@ import { PostCard } from '@/components/social/PostCard'
 import type { UserProfile, SocialPost } from '@/lib/socialEngine'
 
 interface AuthMe {
-  id: string
-  username: string
+  userId: string
+  userName: string
   role: string
 }
 
@@ -42,7 +42,7 @@ function ProfilePage() {
   const [toast, setToast] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<'posts' | 'articles'>('posts')
 
-  const isOwnProfile = !viewingUserId || viewingUserId === me?.id
+  const isOwnProfile = !viewingUserId || viewingUserId === me?.userId
 
   const [form, setForm] = useState({
     displayName: '',
@@ -60,15 +60,16 @@ function ProfilePage() {
 
   const loadData = useCallback(async () => {
     try {
-      const [meRes, profileRes] = await Promise.all([
-        fetch('/api/auth/me'),
-        fetch('/api/admin/profile'),
-      ])
+      const meRes = await fetch('/api/auth/me')
       const meData = await meRes.json() as AuthMe
-      const profileData = await profileRes.json() as { profile: UserProfile }
       setMe(meData)
+      // Load profile: viewed user's profile or own
+      const profileUrl = viewingUserId ? `/api/admin/profile?userId=${viewingUserId}` : '/api/admin/profile'
+      const profileRes = await fetch(profileUrl)
+      const profileData = await profileRes.json() as { profile: UserProfile }
       setProfile(profileData.profile)
-      if (profileData.profile) {
+      // Only pre-fill form for own profile
+      if (!viewingUserId && profileData.profile) {
         setForm({
           displayName: profileData.profile.displayName ?? '',
           bio: profileData.profile.bio ?? '',
@@ -81,12 +82,14 @@ function ProfilePage() {
     } catch {
       // ignore
     }
-  }, [])
+  }, [viewingUserId])
+
+  const targetUserId = viewingUserId || me?.userId
 
   const loadPosts = useCallback(async () => {
-    if (!me?.id) return
+    if (!targetUserId) return
     try {
-      const res = await fetch(`/api/admin/social/posts?userId=${me.id}&type=${activeTab === 'posts' ? 'post' : 'article'}`)
+      const res = await fetch(`/api/admin/social/posts?userId=${targetUserId}&type=${activeTab === 'posts' ? 'post' : 'article'}`)
       const data = await res.json() as { posts: SocialPost[] }
       setPosts(data.posts ?? [])
     } catch {
@@ -94,10 +97,10 @@ function ProfilePage() {
     } finally {
       setLoading(false)
     }
-  }, [me?.id, activeTab])
+  }, [targetUserId, activeTab])
 
   useEffect(() => { loadData() }, [loadData])
-  useEffect(() => { if (me?.id) loadPosts() }, [loadPosts, me?.id])
+  useEffect(() => { if (targetUserId) loadPosts() }, [loadPosts, targetUserId])
 
   const handleSave = async () => {
     setSaving(true)
@@ -143,7 +146,7 @@ function ProfilePage() {
     }
   }
 
-  const displayName = profile?.displayName || me?.username || '用戶'
+  const displayName = profile?.displayName || me?.userName || '用戶'
   const initials = displayName.slice(0, 2).toUpperCase()
 
   return (
@@ -209,7 +212,7 @@ function ProfilePage() {
               <div className="space-y-3">
                 <div>
                   <h1 className="text-xl font-bold text-white">{displayName}</h1>
-                  <p className="text-sm text-white/40">@{me?.username}</p>
+                  <p className="text-sm text-white/40">@{me?.userName}</p>
                 </div>
                 {profile?.bio && <p className="text-sm text-white/60 leading-relaxed">{profile.bio}</p>}
                 <div className="flex flex-wrap gap-3">
@@ -246,7 +249,7 @@ function ProfilePage() {
                   <div>
                     <label className="text-xs text-white/40 mb-1 block">顯示名稱</label>
                     <input value={form.displayName} onChange={e => setForm(p => ({ ...p, displayName: e.target.value }))}
-                      placeholder={me?.username}
+                      placeholder={me?.userName}
                       className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-xl text-sm text-white placeholder-white/20 outline-none focus:border-amber-400/40"
                     />
                   </div>
@@ -339,7 +342,7 @@ function ProfilePage() {
         ) : (
           <div className="space-y-4">
             {posts.map(post => (
-              <PostCard key={post.id} post={post} currentUserId={me?.id} onDeleted={id => setPosts(prev => prev.filter(p => p.id !== id))} />
+              <PostCard key={post.id} post={post} currentUserId={me?.userId} onDeleted={id => setPosts(prev => prev.filter(p => p.id !== id))} />
             ))}
           </div>
         )}

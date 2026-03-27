@@ -12,6 +12,18 @@ interface Message {
   fromAvatar: string | null
 }
 
+interface SSEMessage {
+  type: 'messages' | 'ping'
+  messages?: {
+    id: string
+    content: string
+    createdAt: string
+    fromUserId: string
+    fromName: string | null
+    fromAvatar: string | null
+  }[]
+}
+
 interface DMButtonProps {
   targetUserId: string
   targetName: string
@@ -24,34 +36,58 @@ export function DMButton({ targetUserId, targetName, targetAvatar }: DMButtonPro
   const [input, setInput] = useState('')
   const [sending, setSending] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [meId, setMeId] = useState<string | null>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
-  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const esRef = useRef<EventSource | null>(null)
 
-  const fetchMessages = async () => {
-    try {
-      const res = await fetch(`/api/admin/social/messages/${targetUserId}`)
-      if (res.ok) {
-        const data = await res.json() as { messages: Message[] }
-        setMessages(data.messages)
-      }
-    } catch {
-      // ignore
-    }
-  }
-
+  // Fetch own userId once
   useEffect(() => {
-    if (!open) {
-      if (pollRef.current) clearInterval(pollRef.current)
-      return
-    }
+    fetch('/api/auth/me').then(r => r.ok ? r.json() as Promise<{ userId: string }> : null)
+      .then(d => { if (d?.userId) setMeId(d.userId) }).catch(() => {})
+  }, [])
+
+  // Load initial messages + SSE for real-time
+  useEffect(() => {
+    if (!open || !meId) return
     setLoading(true)
-    fetchMessages().finally(() => setLoading(false))
-    pollRef.current = setInterval(fetchMessages, 5000)
-    return () => {
-      if (pollRef.current) clearInterval(pollRef.current)
+
+    // Initial load
+    fetch(`/api/admin/social/messages/${targetUserId}`)
+      .then(r => r.ok ? r.json() as Promise<{ messages: Message[] }> : null)
+      .then(d => { if (d?.messages) setMessages(d.messages) })
+      .catch(() => {})
+      .finally(() => setLoading(false))
+
+    // SSE for real-time updates
+    const lastMsg = messages[messages.length - 1]
+    const url = `/api/admin/social/messages/sse?userId=${targetUserId}${lastMsg ? `&lastId=${lastMsg.id}` : ''}`
+    const es = new EventSource(url)
+    esRef.current = es
+
+    es.onmessage = (e) => {
+      try {
+        const data = JSON.parse(e.data as string) as SSEMessage
+        if (data.type === 'messages' && data.messages && data.messages.length > 0) {
+          setMessages(prev => {
+            const existingIds = new Set(prev.map(m => m.id))
+            const newMsgs = data.messages!
+              .filter(m => !existingIds.has(m.id))
+              .map(m => ({
+                id: m.id,
+                content: m.content,
+                createdAt: m.createdAt,
+                isMine: m.fromUserId === meId,
+                fromName: m.fromName,
+                fromAvatar: m.fromAvatar,
+              }))
+            return newMsgs.length > 0 ? [...prev, ...newMsgs] : prev
+          })
+        }
+      } catch { /* ignore */ }
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, targetUserId])
+
+    return () => { es.close(); esRef.current = null }
+  }, [open, targetUserId, meId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -59,22 +95,29 @@ export function DMButton({ targetUserId, targetName, targetAvatar }: DMButtonPro
 
   const send = async () => {
     if (!input.trim() || sending) return
+    const text = input.trim()
     setSending(true)
+    setInput('')
     try {
       const res = await fetch('/api/admin/social/messages', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ toUserId: targetUserId, content: input.trim() }),
+        body: JSON.stringify({ toUserId: targetUserId, content: text }),
       })
       if (res.ok) {
-        setInput('')
-        await fetchMessages()
+        const data = await res.json() as { message: { id: string; createdAt: string } }
+        // Optimistically add message
+        setMessages(prev => [...prev, {
+          id: data.message.id,
+          content: text,
+          createdAt: data.message.createdAt,
+          isMine: true,
+          fromName: null,
+          fromAvatar: null,
+        }])
       }
-    } catch {
-      // ignore
-    } finally {
-      setSending(false)
-    }
+    } catch { /* ignore */ }
+    finally { setSending(false) }
   }
 
   const initials = targetName.slice(0, 2).toUpperCase()
@@ -98,7 +141,10 @@ export function DMButton({ targetUserId, targetName, targetAvatar }: DMButtonPro
             <div className="w-7 h-7 rounded-full bg-gradient-to-br from-amber-500/30 to-purple-500/30 flex items-center justify-center text-xs font-bold text-white/80 overflow-hidden shrink-0">
               {targetAvatar ? <img src={targetAvatar} alt="" className="w-full h-full object-cover" /> : initials}
             </div>
-            <span className="text-sm font-medium text-white/80 flex-1 truncate">{targetName}</span>
+            <div className="flex-1 min-w-0">
+              <span className="text-sm font-medium text-white/80 truncate block">{targetName}</span>
+              <span className="text-[10px] text-emerald-400/60">● 即時訊息</span>
+            </div>
             <button onClick={() => setOpen(false)} className="text-white/30 hover:text-white/60 transition-colors">
               <X className="w-4 h-4" />
             </button>
@@ -137,7 +183,7 @@ export function DMButton({ targetUserId, targetName, targetAvatar }: DMButtonPro
               value={input}
               onChange={e => setInput(e.target.value)}
               onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send() } }}
-              placeholder="輸入訊息..."
+              placeholder="輸入訊息... (Enter 送出)"
               className="flex-1 bg-white/5 border border-white/10 rounded-xl px-3 py-1.5 text-sm text-white placeholder-white/25 outline-none focus:border-amber-400/30 transition-colors"
             />
             <button

@@ -88,12 +88,13 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
   try {
     const { encrypted, iv, tag } = encryptApiKey(content.trim())
-    await execute(
+    const row = await query<{ id: string; created_at: string } & Record<string, unknown>>(
       `INSERT INTO direct_messages (from_user_id, to_user_id, encrypted_content, iv, tag)
-       VALUES ($1, $2, $3, $4, $5)`,
+       VALUES ($1, $2, $3, $4, $5) RETURNING id, created_at`,
       [userId, toUserId, encrypted, iv, tag]
     )
-    return NextResponse.json({ ok: true })
+    const msg = row[0]
+    return NextResponse.json({ ok: true, message: { id: msg.id, createdAt: msg.created_at } })
   } catch {
     return NextResponse.json({ error: '發送失敗' }, { status: 500 })
   }
