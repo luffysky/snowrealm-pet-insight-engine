@@ -23,6 +23,10 @@ export function PostShareCard({ post, onClose }: PostShareCardProps) {
     ? `${window.location.origin}/articles/${post.id}`
     : `/articles/${post.id}`
 
+  // Proxy image through Next.js to avoid CORS issues with R2/S3
+  const proxyImg = (url: string) =>
+    url.startsWith('data:') ? url : `/api/img-proxy?url=${encodeURIComponent(url)}`
+
   const dateStr = new Date(post.createdAt).toLocaleDateString('zh-TW', {
     year: 'numeric', month: 'long', day: 'numeric',
   })
@@ -99,7 +103,7 @@ export function PostShareCard({ post, onClose }: PostShareCardProps) {
           <div className="flex items-center gap-2.5">
             <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-500/40 to-purple-500/40 flex items-center justify-center text-sm font-bold text-white/90 overflow-hidden shrink-0">
               {post.authorAvatar
-                ? <img src={post.authorAvatar} alt="" className="w-full h-full object-cover" crossOrigin="anonymous" />
+                ? <img src={proxyImg(post.authorAvatar)} alt="" className="w-full h-full object-cover" crossOrigin="anonymous" />
                 : initials}
             </div>
             <div>
@@ -118,7 +122,7 @@ export function PostShareCard({ post, onClose }: PostShareCardProps) {
               style={{ touchAction: adjustMode ? 'none' : 'auto' }}
             >
               <img
-                src={post.images[0].url}
+                src={proxyImg(post.images[0].url)}
                 alt=""
                 crossOrigin="anonymous"
                 className="w-full h-full object-cover select-none"

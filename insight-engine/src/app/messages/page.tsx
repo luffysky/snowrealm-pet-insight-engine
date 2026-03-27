@@ -1276,12 +1276,11 @@ export default function MessagesPage() {
               <span>🫧</span> 懸浮球
             </button>
             <button
-                onClick={() => deleteMsg(msgMenu.msg.id)}
-                className="w-full flex items-center gap-3 px-4 py-3 hover:bg-rose-500/10 text-sm text-rose-400 text-left transition-colors border-t border-white/8"
-              >
-                <span>🗑️</span> {msgMenu.msg.isMine ? '刪除' : '從我這邊刪除'}
-              </button>
-            )}
+              onClick={() => deleteMsg(msgMenu.msg.id)}
+              className="w-full flex items-center gap-3 px-4 py-3 hover:bg-rose-500/10 text-sm text-rose-400 text-left transition-colors border-t border-white/8"
+            >
+              <span>🗑️</span> {msgMenu.msg.isMine ? '刪除' : '從我這邊刪除'}
+            </button>
           </div>
         </>
       )}
