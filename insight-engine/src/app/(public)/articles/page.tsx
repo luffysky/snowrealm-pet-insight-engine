@@ -5,7 +5,7 @@ export const dynamic = 'force-dynamic'
 import { useEffect, useState, useCallback, Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Search, TrendingUp, Heart, MessageSquare, Share2, Check, PenSquare, Play, Bookmark, UserPlus, ExternalLink, X, ZoomIn } from 'lucide-react'
+import { Search, TrendingUp, Heart, MessageSquare, Share2, Check, PenSquare, Play, Bookmark, UserPlus, ExternalLink, X, ZoomIn, ClipboardList, Sparkles, Users } from 'lucide-react'
 const TwitterIcon = ({ className }: { className?: string }) => (<svg className={className} viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>)
 import type { SocialPost } from '@/lib/socialEngine'
 import { CreatePostModal } from '@/components/public/CreatePostModal'
@@ -14,9 +14,39 @@ import { FollowButton } from '@/components/social/FollowButton'
 import { PostShareCard } from '@/components/social/PostShareCard'
 import { StoryCircles } from '@/components/social/StoryCircles'
 
+// ── types ──────────────────────────────────────────────────────────────────
+interface ExploreSurvey {
+  id: string
+  slug: string
+  title: string
+  subtitle: string | null
+  coverTitle: string | null
+  tenantId: string
+  tenantName: string | null
+  responseCount: number
+  createdAt: string
+}
+
+interface ExploreStory {
+  responseId: string
+  surveyTitle: string
+  surveySlug: string
+  tenantName: string | null
+  oneLiner: string | null
+  createdAt: string
+}
+
+interface ExploreUser {
+  id: string
+  displayName: string | null
+  avatarUrl: string | null
+  postCount: number
+  followerCount: number
+}
+
+// ── Post card (existing) ───────────────────────────────────────────────────
 const CATEGORIES = [
-  { key: '', label: '全部', emoji: '✨' },
-  { key: 'post', label: '短貼文', emoji: '💬' },
+  { key: '', label: '短貼文', emoji: '💬' },
   { key: 'article', label: '長文章', emoji: '📝' },
 ]
 
@@ -102,26 +132,20 @@ function PostPreviewCard({ post, meId }: { post: SocialPost; meId: string | null
   return (
     <>
     <LoginPrompt open={loginPrompt} onClose={() => setLoginPrompt(false)} />
-    {/* Lightbox */}
     {lightboxUrl && (
       <div className="fixed inset-0 z-[300] bg-black/95 flex items-center justify-center" onClick={() => setLightboxUrl(null)}>
         <button className="absolute top-4 right-4 p-2 text-white/60 hover:text-white bg-white/10 rounded-full" onClick={() => setLightboxUrl(null)}>
           <X className="w-5 h-5" />
         </button>
-        <a href={lightboxUrl} download className="absolute top-4 right-16 p-2 text-white/60 hover:text-white bg-white/10 rounded-full" onClick={e => e.stopPropagation()}>
-          <ZoomIn className="w-5 h-5" />
-        </a>
         <img src={lightboxUrl} alt="" className="max-w-full max-h-full object-contain rounded-lg" onClick={e => e.stopPropagation()} />
       </div>
     )}
-    {/* Share card */}
     {showShareCard && (
       <PostShareCard post={post} onClose={() => setShowShareCard(false)} />
     )}
     <article
       onClick={() => router.push(postUrl)}
       className="bg-white/[0.04] backdrop-blur-xl border border-white/8 border-t-white/14 rounded-3xl overflow-hidden hover:border-white/16 hover:bg-white/[0.06] transition-all group shadow-[0_8px_32px_rgba(0,0,0,0.3),inset_0_1px_0_rgba(255,255,255,0.08)] cursor-pointer">
-      {/* Video preview */}
       {post.videoUrl && (
         <div className="relative overflow-hidden h-48 bg-black">
           <img src={post.videoThumbnailUrl ?? ''} alt="" className="w-full h-full object-cover" />
@@ -130,11 +154,8 @@ function PostPreviewCard({ post, meId }: { post: SocialPost; meId: string | null
               <Play className="w-5 h-5 text-white fill-white ml-0.5" />
             </div>
           </div>
-          <span className="absolute bottom-2 right-2 bg-black/60 text-white text-xs px-2 py-0.5 rounded-full">🎬 影片</span>
         </div>
       )}
-
-      {/* Image preview */}
       {!post.videoUrl && post.images.length > 0 && (
         <div className="relative overflow-hidden h-48 cursor-zoom-in" onClick={e => { e.stopPropagation(); setLightboxUrl(post.images[0].url) }}>
           <img src={post.images[0].url} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
@@ -143,9 +164,7 @@ function PostPreviewCard({ post, meId }: { post: SocialPost; meId: string | null
           )}
         </div>
       )}
-
       <div className="p-4 space-y-3">
-        {/* Author */}
         <div className="flex items-center gap-2 flex-wrap">
           <Link href={`/u/${post.userId}`} onClick={e => e.stopPropagation()}
             className="w-7 h-7 rounded-full bg-gradient-to-br from-amber-500/30 to-purple-500/30 flex items-center justify-center text-xs font-bold text-white/80 overflow-hidden shrink-0 hover:ring-2 hover:ring-amber-400/30 transition-all"
@@ -175,12 +194,8 @@ function PostPreviewCard({ post, meId }: { post: SocialPost; meId: string | null
             <span className="ml-auto text-[10px] px-1.5 py-0.5 bg-blue-500/15 text-blue-400 rounded-full font-medium">文章</span>
           )}
         </div>
-
-        {/* Content */}
         {post.title && <h3 className="font-bold text-white/90 text-base line-clamp-2">{post.title}</h3>}
         <p className="text-sm text-white/60 leading-relaxed line-clamp-3">{post.content}</p>
-
-        {/* Tags */}
         {post.tags.length > 0 && (
           <div className="flex flex-wrap gap-1">
             {post.tags.slice(0, 3).map(t => (
@@ -188,22 +203,15 @@ function PostPreviewCard({ post, meId }: { post: SocialPost; meId: string | null
             ))}
           </div>
         )}
-
-        {/* Footer */}
         <div className="flex items-center justify-between pt-1 border-t border-white/5">
           <div className="flex items-center gap-1">
-            <button
-              onClick={toggleLike}
-              disabled={liking}
-              className={`flex items-center gap-1 px-2 py-1 rounded-lg text-xs transition-colors ${
-                liked ? 'text-red-400 bg-red-400/10' : 'text-white/30 hover:text-red-400 hover:bg-white/5'
-              }`}
+            <button onClick={toggleLike} disabled={liking}
+              className={`flex items-center gap-1 px-2 py-1 rounded-lg text-xs transition-colors ${liked ? 'text-red-400 bg-red-400/10' : 'text-white/30 hover:text-red-400 hover:bg-white/5'}`}
             >
               <Heart className={`w-3.5 h-3.5 ${liked ? 'fill-red-400' : ''}`} />
               {likesCount > 0 && <span>{likesCount}</span>}
             </button>
-            <button
-              onClick={e => { e.stopPropagation(); router.push(`${postUrl}#comments`) }}
+            <button onClick={e => { e.stopPropagation(); router.push(`${postUrl}#comments`) }}
               className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs text-white/30 hover:text-blue-400 hover:bg-white/5 transition-colors"
             >
               <MessageSquare className="w-3.5 h-3.5" />
@@ -211,19 +219,13 @@ function PostPreviewCard({ post, meId }: { post: SocialPost; meId: string | null
             </button>
           </div>
           <div className="flex items-center gap-1">
-            <button
-              onClick={e => { e.stopPropagation(); setShowShareCard(true) }}
+            <button onClick={e => { e.stopPropagation(); setShowShareCard(true) }}
               className="p-1.5 rounded-lg text-white/25 hover:text-white/60 hover:bg-white/5 transition-colors"
             >
               <Share2 className="w-3.5 h-3.5" />
             </button>
-            <button
-              onClick={toggleBookmark}
-              disabled={bookmarking}
-              className={`p-1.5 rounded-lg transition-colors ${
-                bookmarked ? 'text-amber-400 hover:text-amber-300' : 'text-white/25 hover:text-amber-400 hover:bg-white/5'
-              }`}
-              title={bookmarked ? '取消收藏' : '收藏'}
+            <button onClick={toggleBookmark} disabled={bookmarking}
+              className={`p-1.5 rounded-lg transition-colors ${bookmarked ? 'text-amber-400 hover:text-amber-300' : 'text-white/25 hover:text-amber-400 hover:bg-white/5'}`}
             >
               <Bookmark className={`w-3.5 h-3.5 ${bookmarked ? 'fill-current' : ''}`} />
             </button>
@@ -235,13 +237,97 @@ function PostPreviewCard({ post, meId }: { post: SocialPost; meId: string | null
   )
 }
 
+// ── Survey card ────────────────────────────────────────────────────────────
+function SurveyCard({ survey }: { survey: ExploreSurvey }) {
+  const href = `/${survey.tenantId}/${survey.slug}`
+  const label = survey.coverTitle || survey.title
+
+  return (
+    <Link href={href}
+      className="group flex flex-col bg-white/[0.04] border border-white/8 rounded-3xl overflow-hidden hover:border-amber-400/20 hover:bg-white/[0.07] transition-all shadow-[0_4px_24px_rgba(0,0,0,0.25)]"
+    >
+      {/* Gradient banner */}
+      <div className="h-20 bg-gradient-to-br from-amber-500/20 via-purple-500/10 to-blue-500/15 flex items-center justify-center">
+        <ClipboardList className="w-8 h-8 text-amber-400/60 group-hover:text-amber-400/90 transition-colors" />
+      </div>
+      <div className="p-4 flex flex-col gap-2 flex-1">
+        {survey.tenantName && (
+          <span className="text-[10px] text-white/30 uppercase tracking-wider">{survey.tenantName}</span>
+        )}
+        <h3 className="text-sm font-semibold text-white/85 line-clamp-2 leading-snug">{label}</h3>
+        {survey.subtitle && (
+          <p className="text-xs text-white/40 line-clamp-2 leading-relaxed">{survey.subtitle}</p>
+        )}
+        <div className="mt-auto pt-2 flex items-center justify-between">
+          <span className="text-xs text-white/30">{survey.responseCount.toLocaleString()} 人填答</span>
+          <span className="text-xs text-amber-400/70 group-hover:text-amber-300 transition-colors">立即填答 →</span>
+        </div>
+      </div>
+    </Link>
+  )
+}
+
+// ── Story mini-card ────────────────────────────────────────────────────────
+function StoryMiniCard({ story }: { story: ExploreStory }) {
+  const timeStr = new Date(story.createdAt).toLocaleDateString('zh-TW', { month: 'short', day: 'numeric' })
+
+  return (
+    <Link href={`/story/${story.responseId}`}
+      className="group flex flex-col bg-gradient-to-br from-purple-900/30 to-slate-900/60 border border-purple-400/15 rounded-3xl p-4 gap-3 hover:border-purple-400/30 hover:from-purple-900/40 transition-all shadow-[0_4px_24px_rgba(0,0,0,0.25)]"
+    >
+      <div className="flex items-center gap-1.5">
+        <Sparkles className="w-3.5 h-3.5 text-purple-400/60" />
+        <span className="text-[10px] text-purple-300/50 uppercase tracking-wider">故事小卡</span>
+        <span className="ml-auto text-[10px] text-white/20">{timeStr}</span>
+      </div>
+      {story.oneLiner && (
+        <p className="text-sm text-white/70 leading-relaxed line-clamp-3 italic">「{story.oneLiner}」</p>
+      )}
+      <div className="mt-auto flex items-center justify-between">
+        <span className="text-[10px] text-white/30 truncate">{story.surveyTitle}</span>
+        <span className="text-[10px] text-purple-400/60 group-hover:text-purple-300 shrink-0 transition-colors">查看 →</span>
+      </div>
+    </Link>
+  )
+}
+
+// ── Creator card ───────────────────────────────────────────────────────────
+function CreatorCard({ user, meId }: { user: ExploreUser; meId: string | null }) {
+  const initials = (user.displayName ?? '?').charAt(0).toUpperCase()
+  return (
+    <div className="flex items-center gap-3 p-3 bg-white/[0.03] border border-white/8 rounded-2xl hover:bg-white/[0.06] transition-colors">
+      <Link href={`/u/${user.id}`} className="shrink-0">
+        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-sky-500/30 to-indigo-500/30 flex items-center justify-center text-sm font-bold text-white/80 overflow-hidden">
+          {user.avatarUrl ? <img src={user.avatarUrl} alt="" className="w-full h-full object-cover" /> : initials}
+        </div>
+      </Link>
+      <div className="flex-1 min-w-0">
+        <Link href={`/u/${user.id}`} className="text-sm font-medium text-white/80 hover:text-white truncate block transition-colors">
+          {user.displayName ?? '用戶'}
+        </Link>
+        <p className="text-[10px] text-white/30">{user.followerCount} 粉絲 · {user.postCount} 貼文</p>
+      </div>
+      {meId && meId !== user.id && (
+        <FollowButton targetUserId={user.id} compact />
+      )}
+    </div>
+  )
+}
+
+// ── Main page ──────────────────────────────────────────────────────────────
+type ExploreTab = 'posts' | 'surveys' | 'stories' | 'creators'
+
 function ArticlesPageInner() {
   const searchParams = useSearchParams()
   const router = useRouter()
+  const [activeTab, setActiveTab] = useState<ExploreTab>('posts')
   const [posts, setPosts] = useState<SocialPost[]>([])
+  const [surveys, setSurveys] = useState<ExploreSurvey[]>([])
+  const [stories, setStories] = useState<ExploreStory[]>([])
+  const [creators, setCreators] = useState<ExploreUser[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState(searchParams.get('tag') ? `#${searchParams.get('tag')}` : '')
-  const [typeFilter, setTypeFilter] = useState('')
+  const [postTypeFilter, setPostTypeFilter] = useState('')
   const [tagFilter, setTagFilter] = useState(searchParams.get('tag') ?? '')
   const [offset, setOffset] = useState(0)
   const [hasMore, setHasMore] = useState(true)
@@ -251,12 +337,11 @@ function ArticlesPageInner() {
 
   useEffect(() => {
     fetch('/api/auth/me')
-      .then(r => r.ok ? r.json() as Promise<{ id?: string }> : null)
-      .then(d => { if (d?.id) setMeId(d.id) })
+      .then(r => r.ok ? r.json() as Promise<{ userId?: string }> : null)
+      .then(d => { if (d?.userId) setMeId(d.userId) })
       .catch(() => {})
   }, [])
 
-  // Sync tagFilter → URL
   function applyTagFilter(tag: string) {
     setTagFilter(tag)
     setSearch(tag ? `#${tag}` : '')
@@ -271,7 +356,7 @@ function ArticlesPageInner() {
     const off = reset ? 0 : offset
     try {
       const params = new URLSearchParams({ limit: String(LIMIT), offset: String(off) })
-      if (typeFilter) params.set('type', typeFilter)
+      if (postTypeFilter) params.set('type', postTypeFilter)
       const res = await fetch(`/api/posts?${params}`)
       const data = await res.json() as { posts: SocialPost[] }
       const fetched = data.posts ?? []
@@ -281,11 +366,29 @@ function ArticlesPageInner() {
     } finally {
       setLoading(false)
     }
-  }, [offset, typeFilter])
+  }, [offset, postTypeFilter])
 
-  useEffect(() => { loadPosts(true) }, [typeFilter]) // eslint-disable-line react-hooks/exhaustive-deps
+  const loadTabData = useCallback(async (tab: ExploreTab) => {
+    if (tab === 'posts') { await loadPosts(true); return }
+    setLoading(true)
+    try {
+      const res = await fetch(`/api/explore?type=${tab === 'creators' ? 'users' : tab}`)
+      const data = await res.json() as {
+        surveys?: ExploreSurvey[]
+        stories?: ExploreStory[]
+        users?: ExploreUser[]
+      }
+      if (tab === 'surveys') setSurveys(data.surveys ?? [])
+      if (tab === 'stories') setStories(data.stories ?? [])
+      if (tab === 'creators') setCreators(data.users ?? [])
+    } finally {
+      setLoading(false)
+    }
+  }, [loadPosts])
 
-  const filtered = (search || tagFilter)
+  useEffect(() => { loadTabData(activeTab) }, [activeTab, postTypeFilter]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const filteredPosts = (search || tagFilter)
     ? posts.filter(p => {
         const s = search.replace(/^#/, '').toLowerCase()
         return p.content.toLowerCase().includes(s) ||
@@ -300,24 +403,28 @@ function ArticlesPageInner() {
     setPosts(prev => [newPost, ...prev])
   }
 
+  const TABS = [
+    { key: 'posts' as ExploreTab, label: '貼文', icon: <MessageSquare className="w-3.5 h-3.5" /> },
+    { key: 'surveys' as ExploreTab, label: '問卷', icon: <ClipboardList className="w-3.5 h-3.5" /> },
+    { key: 'stories' as ExploreTab, label: '故事小卡', icon: <Sparkles className="w-3.5 h-3.5" /> },
+    { key: 'creators' as ExploreTab, label: '創作者', icon: <Users className="w-3.5 h-3.5" /> },
+  ]
+
   return (
     <div className="min-h-screen bg-slate-950 text-white">
-      {/* Create post modal */}
       {showCreateModal && (
-        <CreatePostModal
-          onClose={() => setShowCreateModal(false)}
-          onCreated={handlePostCreated}
-        />
+        <CreatePostModal onClose={() => setShowCreateModal(false)} onCreated={handlePostCreated} />
       )}
 
-      {/* FAB */}
-      <button
-        onClick={() => setShowCreateModal(true)}
-        className="fixed bottom-6 right-6 z-40 w-14 h-14 bg-amber-500 hover:bg-amber-400 text-slate-900 rounded-full shadow-lg shadow-amber-500/30 flex items-center justify-center transition-all hover:scale-105 active:scale-95"
-        title="發文"
-      >
-        <PenSquare className="w-6 h-6" />
-      </button>
+      {/* FAB — only on posts tab */}
+      {activeTab === 'posts' && (
+        <button
+          onClick={() => setShowCreateModal(true)}
+          className="fixed bottom-6 right-6 z-40 w-14 h-14 bg-amber-500 hover:bg-amber-400 text-slate-900 rounded-full shadow-lg shadow-amber-500/30 flex items-center justify-center transition-all hover:scale-105 active:scale-95"
+        >
+          <PenSquare className="w-6 h-6" />
+        </button>
+      )}
 
       {/* Stories */}
       <div className="border-b border-white/8">
@@ -327,84 +434,168 @@ function ArticlesPageInner() {
       {/* Hero */}
       <div className="relative bg-gradient-to-b from-slate-900/80 to-slate-950 border-b border-white/8 backdrop-blur-sm">
         <div className="absolute inset-0 bg-gradient-to-br from-amber-600/5 via-transparent to-purple-600/5 pointer-events-none" />
-        <div className="max-w-4xl mx-auto px-4 py-12 text-center">
-          <p className="text-4xl mb-3">✨</p>
-          <h1 className="text-3xl font-bold text-white mb-2">社群文章</h1>
-          <p className="text-white/40 text-sm">探索問卷洞察、分享觀點、找到共鳴</p>
+        <div className="max-w-4xl mx-auto px-4 py-8 text-center">
+          <h1 className="text-2xl font-bold text-white mb-1">探索社群</h1>
+          <p className="text-white/35 text-sm">探索問卷 · 閱讀貼文 · 發現創作者</p>
         </div>
       </div>
 
-      <div className="max-w-4xl mx-auto px-4 py-8">
-        {/* Search + filter */}
-        <div className="flex flex-col sm:flex-row gap-3 mb-6">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
-            <input
-              value={search}
-              onChange={e => { setSearch(e.target.value); if (!e.target.value) applyTagFilter('') }}
-              placeholder="搜尋文章、標籤..."
-              className="w-full pl-9 pr-4 py-2.5 glass-input rounded-xl text-sm text-white placeholder-white/30"
-            />
-          </div>
-          <div className="flex gap-2">
-            {CATEGORIES.map(c => (
-              <button key={c.key} onClick={() => setTypeFilter(c.key)}
-                className={`flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${
-                  typeFilter === c.key ? 'bg-amber-500/20 border border-amber-400/30 text-amber-300' : 'bg-white/5 border border-white/10 text-white/50 hover:text-white/80'
+      {/* Tabs */}
+      <div className="sticky top-0 z-20 bg-slate-950/90 backdrop-blur-xl border-b border-white/8">
+        <div className="max-w-4xl mx-auto px-4">
+          <div className="flex gap-1 py-2 overflow-x-auto scrollbar-none">
+            {TABS.map(t => (
+              <button key={t.key} onClick={() => setActiveTab(t.key)}
+                className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-colors ${
+                  activeTab === t.key
+                    ? 'bg-amber-500/15 border border-amber-400/30 text-amber-300'
+                    : 'text-white/45 hover:text-white/75 hover:bg-white/5'
                 }`}
               >
-                <span>{c.emoji}</span> {c.label}
+                {t.icon} {t.label}
               </button>
             ))}
           </div>
         </div>
+      </div>
 
-        {/* Trending tags */}
-        {trendingTags.length > 0 && (
-          <div className="flex flex-wrap gap-2 mb-6">
-            <span className="flex items-center gap-1 text-xs text-white/30">
-              <TrendingUp className="w-3.5 h-3.5" /> 熱門：
-            </span>
-            {trendingTags.map(t => (
-              <button key={t} onClick={() => applyTagFilter(tagFilter === t ? '' : t)}
-                className={`text-xs px-2.5 py-1 border rounded-full transition-colors ${
-                  tagFilter === t
-                    ? 'bg-amber-500/10 border-amber-400/40 text-amber-300'
-                    : 'bg-white/5 border-white/10 text-white/50 hover:text-amber-300 hover:border-amber-400/30'
-                }`}
-              >
-                #{t}
-              </button>
-            ))}
-          </div>
+      <div className="max-w-4xl mx-auto px-4 py-6">
+
+        {/* Posts tab */}
+        {activeTab === 'posts' && (
+          <>
+            <div className="flex flex-col sm:flex-row gap-3 mb-5">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
+                <input
+                  value={search}
+                  onChange={e => { setSearch(e.target.value); if (!e.target.value) applyTagFilter('') }}
+                  placeholder="搜尋貼文、標籤..."
+                  className="w-full pl-9 pr-4 py-2.5 glass-input rounded-xl text-sm text-white placeholder-white/30"
+                />
+              </div>
+              <div className="flex gap-2">
+                {CATEGORIES.map(c => (
+                  <button key={c.key} onClick={() => setPostTypeFilter(c.key)}
+                    className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium transition-colors ${
+                      postTypeFilter === c.key ? 'bg-amber-500/20 border border-amber-400/30 text-amber-300' : 'bg-white/5 border border-white/10 text-white/50 hover:text-white/80'
+                    }`}
+                  >
+                    <span>{c.emoji}</span> {c.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            {trendingTags.length > 0 && (
+              <div className="flex flex-wrap gap-2 mb-5">
+                <span className="flex items-center gap-1 text-xs text-white/30">
+                  <TrendingUp className="w-3.5 h-3.5" /> 熱門：
+                </span>
+                {trendingTags.map(t => (
+                  <button key={t} onClick={() => applyTagFilter(tagFilter === t ? '' : t)}
+                    className={`text-xs px-2.5 py-1 border rounded-full transition-colors ${
+                      tagFilter === t
+                        ? 'bg-amber-500/10 border-amber-400/40 text-amber-300'
+                        : 'bg-white/5 border-white/10 text-white/50 hover:text-amber-300 hover:border-amber-400/30'
+                    }`}
+                  >
+                    #{t}
+                  </button>
+                ))}
+              </div>
+            )}
+            {loading && posts.length === 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {[1,2,3,4,5,6].map(i => <div key={i} className="h-64 bg-white/5 rounded-2xl animate-pulse" />)}
+              </div>
+            ) : filteredPosts.length === 0 ? (
+              <div className="text-center py-20">
+                <p className="text-4xl mb-3">🔍</p>
+                <p className="text-white/40">沒有找到相關貼文</p>
+              </div>
+            ) : (
+              <>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {filteredPosts.map(post => <PostPreviewCard key={post.id} post={post} meId={meId} />)}
+                </div>
+                {hasMore && !search && (
+                  <div className="flex justify-center mt-8">
+                    <button onClick={() => loadPosts(false)} disabled={loading}
+                      className="flex items-center gap-2 px-6 py-2.5 bg-white/5 border border-white/10 rounded-xl text-sm text-white/60 hover:text-white hover:bg-white/10 transition-colors disabled:opacity-50"
+                    >
+                      {loading ? <><span className="w-4 h-4 border-2 border-white/20 border-t-white/60 rounded-full animate-spin" /> 載入中</> : '載入更多'}
+                    </button>
+                  </div>
+                )}
+              </>
+            )}
+          </>
         )}
 
-        {/* Grid */}
-        {loading && posts.length === 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {[1,2,3,4,5,6].map(i => <div key={i} className="h-64 bg-white/5 rounded-2xl animate-pulse" />)}
-          </div>
-        ) : filtered.length === 0 ? (
-          <div className="text-center py-20">
-            <p className="text-4xl mb-3">🔍</p>
-            <p className="text-white/40">沒有找到相關文章</p>
-          </div>
-        ) : (
+        {/* Surveys tab */}
+        {activeTab === 'surveys' && (
           <>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {filtered.map(post => <PostPreviewCard key={post.id} post={post} meId={meId} />)}
-            </div>
-            {hasMore && !search && (
-              <div className="flex justify-center mt-8">
-                <button onClick={() => loadPosts(false)} disabled={loading}
-                  className="flex items-center gap-2 px-6 py-2.5 bg-white/5 border border-white/10 rounded-xl text-sm text-white/60 hover:text-white hover:bg-white/10 transition-colors disabled:opacity-50"
-                >
-                  {loading ? <><span className="w-4 h-4 border-2 border-white/20 border-t-white/60 rounded-full animate-spin" /> 載入中</> : '載入更多'}
-                </button>
+            <p className="text-xs text-white/30 mb-4">探索熱門問卷，分享你的觀點</p>
+            {loading ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {[1,2,3,4,5,6].map(i => <div key={i} className="h-48 bg-white/5 rounded-2xl animate-pulse" />)}
+              </div>
+            ) : surveys.length === 0 ? (
+              <div className="text-center py-20">
+                <p className="text-4xl mb-3">📋</p>
+                <p className="text-white/40">目前沒有公開問卷</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {surveys.map(s => <SurveyCard key={s.id} survey={s} />)}
               </div>
             )}
           </>
         )}
+
+        {/* Stories tab */}
+        {activeTab === 'stories' && (
+          <>
+            <p className="text-xs text-white/30 mb-4">來自填答者的故事小卡，每一張都是真實的一瞬間</p>
+            {loading ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {[1,2,3,4,5,6].map(i => <div key={i} className="h-36 bg-white/5 rounded-2xl animate-pulse" />)}
+              </div>
+            ) : stories.length === 0 ? (
+              <div className="text-center py-20">
+                <p className="text-4xl mb-3">✨</p>
+                <p className="text-white/40">還沒有人分享故事小卡</p>
+                <p className="text-xs text-white/25 mt-1">填完問卷後可以生成並分享你的故事</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {stories.map(s => <StoryMiniCard key={s.responseId} story={s} />)}
+              </div>
+            )}
+          </>
+        )}
+
+        {/* Creators tab */}
+        {activeTab === 'creators' && (
+          <>
+            <p className="text-xs text-white/30 mb-4">追蹤有趣的創作者，訂閱他們的最新動態</p>
+            {loading ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {[1,2,3,4,5,6].map(i => <div key={i} className="h-16 bg-white/5 rounded-2xl animate-pulse" />)}
+              </div>
+            ) : creators.length === 0 ? (
+              <div className="text-center py-20">
+                <p className="text-4xl mb-3">👥</p>
+                <p className="text-white/40">還沒有創作者</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {creators.map(u => <CreatorCard key={u.id} user={u} meId={meId} />)}
+              </div>
+            )}
+          </>
+        )}
+
       </div>
     </div>
   )

@@ -74,7 +74,17 @@ export default function MessagesPage() {
 
     fetch(`/api/admin/social/messages/${active.userId}`)
       .then(r => r.ok ? r.json() as Promise<{ messages: Message[] }> : null)
-      .then(d => { if (d?.messages) setMessages(d.messages) })
+      .then(d => {
+        if (d?.messages) {
+          setMessages(d.messages)
+          // Clear unread count for this conversation in the list
+          setConversations(prev => prev.map(c =>
+            c.userId === active.userId ? { ...c, unreadCount: 0 } : c
+          ))
+          // Notify BottomNav / FloatingChat to refresh unread badge
+          window.dispatchEvent(new CustomEvent('dm-read'))
+        }
+      })
       .catch(() => {})
       .finally(() => setMsgLoading(false))
 
@@ -139,9 +149,9 @@ export default function MessagesPage() {
   const initials = (name: string | null) => (name ?? '?').slice(0, 2).toUpperCase()
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white flex flex-col">
+    <div className="h-[100dvh] bg-slate-950 text-white flex flex-col overflow-hidden">
       {/* Header */}
-      <nav className="sticky top-0 z-10 bg-slate-950/90 backdrop-blur-md border-b border-white/8">
+      <nav className="shrink-0 bg-slate-950/90 backdrop-blur-md border-b border-white/8">
         <div className="max-w-2xl mx-auto px-4 py-3 flex items-center gap-3">
           {active ? (
             <button onClick={() => setActive(null)} className="flex items-center gap-2 text-sm text-white/50 hover:text-white md:hidden">
@@ -156,9 +166,9 @@ export default function MessagesPage() {
         </div>
       </nav>
 
-      <div className="flex-1 flex max-w-2xl mx-auto w-full">
+      <div className="flex-1 flex max-w-2xl mx-auto w-full overflow-hidden">
         {/* Conversation list — hidden on mobile when chat open */}
-        <div className={`${active ? 'hidden md:flex' : 'flex'} flex-col w-full md:w-72 md:border-r md:border-white/8 shrink-0`}>
+        <div className={`${active ? 'hidden md:flex' : 'flex'} flex-col w-full md:w-72 md:border-r md:border-white/8 shrink-0 overflow-y-auto`}>
           {loading ? (
             <div className="flex justify-center pt-16">
               <Loader2 className="w-6 h-6 text-white/30 animate-spin" />
@@ -200,8 +210,8 @@ export default function MessagesPage() {
 
         {/* Chat panel */}
         {active ? (
-          <div className="flex-1 flex flex-col">
-            {/* Messages */}
+          <div className="flex-1 flex flex-col overflow-hidden">
+            {/* Messages — scrollable content area */}
             <div className="flex-1 overflow-y-auto p-4 space-y-3">
               {msgLoading ? (
                 <div className="flex justify-center pt-10">
@@ -224,8 +234,10 @@ export default function MessagesPage() {
               <div ref={bottomRef} />
             </div>
 
-            {/* Input */}
-            <div className="p-3 border-t border-white/8 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))]">
+            {/* Input — fixed above BottomNav, shrinks with nav collapse */}
+            <div className="shrink-0 p-3 border-t border-white/8"
+              style={{ paddingBottom: 'calc(0.75rem + var(--bnav-h, 5rem))' }}
+            >
               <div className="flex items-center gap-2">
                 <input
                   value={input}

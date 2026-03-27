@@ -37,7 +37,7 @@ export function FloatingChat() {
       .catch(() => {})
   }, [])
 
-  // 定期拉未讀數
+  // 定期拉未讀數，並監聽 dm-read 事件立即刷新
   useEffect(() => {
     if (!me) return
     const load = () => {
@@ -48,7 +48,11 @@ export function FloatingChat() {
     }
     load()
     const t = setInterval(load, 30_000)
-    return () => clearInterval(t)
+    window.addEventListener('dm-read', load)
+    return () => {
+      clearInterval(t)
+      window.removeEventListener('dm-read', load)
+    }
   }, [me])
 
   // 打開時載入對話列表

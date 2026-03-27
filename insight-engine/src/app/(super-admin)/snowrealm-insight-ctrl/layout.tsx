@@ -30,6 +30,7 @@ export default function SuperAdminLayout({ children }: { children: ReactNode }) 
   const pathname = usePathname()
   const [menuOpen, setMenuOpen] = useState(false)
 
+
   const handleLogout = async () => {
     await fetch('/api/auth/logout', { method: 'POST' })
     window.location.href = '/super-login'
@@ -37,7 +38,7 @@ export default function SuperAdminLayout({ children }: { children: ReactNode }) 
 
   return (
     <div className="min-h-screen bg-slate-950 text-white">
-      <nav className="border-b border-slate-800 bg-slate-900/50 backdrop-blur-sm sticky top-0 z-50">
+      <nav className="border-b border-slate-800 bg-slate-900/50 backdrop-blur-sm sticky top-0 z-50 relative">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
           <div className="flex items-center justify-between gap-3 lg:contents">
             <span className="text-lg font-bold text-amber-400 shrink-0">⚡ SIE 系統控制台</span>
@@ -101,7 +102,7 @@ export default function SuperAdminLayout({ children }: { children: ReactNode }) 
         </div>
 
         {menuOpen && (
-          <div className="md:hidden border-t border-slate-800 bg-slate-900/95 backdrop-blur-sm">
+          <div className="md:hidden absolute left-0 right-0 top-full border-t border-slate-800 bg-slate-900/95 backdrop-blur-sm shadow-xl z-50">
             <div className="px-4 pr-6 py-3 flex flex-col gap-2">
               <p className="text-[10px] uppercase tracking-wider text-slate-500 px-3">營運</p>
               {NAV_OPERATIONS.map((item) => (

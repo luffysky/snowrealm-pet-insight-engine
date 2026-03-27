@@ -166,7 +166,11 @@ function SidebarGroup({
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
         </svg>
       </button>
-      {open && (
+      {/* max-height transition: groups expand/collapse smoothly without pushing page content */}
+      <div
+        className="overflow-hidden transition-[max-height] duration-200 ease-in-out"
+        style={{ maxHeight: open ? `${items.length * 44}px` : '0px' }}
+      >
         <div className="mt-0.5 space-y-0.5">
           {items.map(item => {
             const href = toHref(item.path, adminPrefix)
@@ -187,7 +191,7 @@ function SidebarGroup({
             )
           })}
         </div>
-      )}
+      </div>
     </div>
   )
 }
@@ -224,6 +228,16 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
 
   // Close sidebar on route change (mobile)
   useEffect(() => { setSidebarOpen(false) }, [pathname])
+
+  // Lock body scroll when mobile sidebar overlay is open
+  useEffect(() => {
+    if (sidebarOpen) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = ''
+    }
+    return () => { document.body.style.overflow = '' }
+  }, [sidebarOpen])
 
   const handleLogout = async () => {
     await fetch('/api/auth/logout', { method: 'POST' })

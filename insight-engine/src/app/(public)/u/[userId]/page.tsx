@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, Globe, Heart, MessageSquare, Loader2 } from 'lucide-react'
+import { ArrowLeft, Globe, Heart, MessageSquare, Loader2, X } from 'lucide-react'
 import { UserAlbum } from '@/components/social/UserAlbum'
 const InstagramIcon = ({ className }: { className?: string }) => (
   <svg className={className} viewBox="0 0 24 24" fill="currentColor">
@@ -42,6 +42,75 @@ interface UserProfile {
   }[]
 }
 
+interface FollowUser {
+  id: string
+  display_name: string | null
+  avatar_url: string | null
+}
+
+function FollowListModal({
+  type,
+  userId,
+  onClose,
+}: {
+  type: 'followers' | 'following'
+  userId: string
+  onClose: () => void
+}) {
+  const [users, setUsers] = useState<FollowUser[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    fetch(`/api/admin/social/follow?userId=${userId}&list=${type}`)
+      .then(r => r.ok ? r.json() as Promise<{ users: FollowUser[] }> : null)
+      .then(d => { if (d?.users) setUsers(d.users) })
+      .catch(() => {})
+      .finally(() => setLoading(false))
+  }, [userId, type])
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={onClose}>
+      <div
+        className="w-full max-w-sm bg-slate-900 border border-white/10 rounded-2xl overflow-hidden shadow-2xl"
+        onClick={e => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between px-4 py-3 border-b border-white/8">
+          <h3 className="text-sm font-semibold text-white/80">{type === 'followers' ? '粉絲' : '追蹤中'}</h3>
+          <button onClick={onClose} className="text-white/30 hover:text-white/60 transition-colors">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+        <div className="max-h-80 overflow-y-auto">
+          {loading ? (
+            <div className="flex justify-center py-8">
+              <Loader2 className="w-5 h-5 text-white/30 animate-spin" />
+            </div>
+          ) : users.length === 0 ? (
+            <p className="text-center text-white/25 text-sm py-8">還沒有{type === 'followers' ? '粉絲' : '追蹤的人'}</p>
+          ) : (
+            users.map(u => (
+              <Link
+                key={u.id}
+                href={`/u/${u.id}`}
+                onClick={onClose}
+                className="flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors"
+              >
+                <div className="w-9 h-9 rounded-full bg-gradient-to-br from-amber-500/30 to-purple-500/30 flex items-center justify-center text-sm font-bold text-white/80 overflow-hidden shrink-0">
+                  {u.avatar_url
+                    ? <img src={u.avatar_url} alt="" className="w-full h-full object-cover" />
+                    : (u.display_name ?? '?').charAt(0).toUpperCase()
+                  }
+                </div>
+                <span className="text-sm text-white/75 truncate">{u.display_name ?? '用戶'}</span>
+              </Link>
+            ))
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function UserProfilePage() {
   const { userId } = useParams() as { userId: string }
   const [profile, setProfile] = useState<UserProfile | null>(null)
@@ -49,6 +118,7 @@ export default function UserProfilePage() {
   const [meId, setMeId] = useState<string | null>(null)
   const [loginPrompt, setLoginPrompt] = useState(false)
   const [albumPhotos, setAlbumPhotos] = useState<{ id: string; url: string; caption: string | null; is_public: boolean; display_order: number; created_at: string }[]>([])
+  const [followModal, setFollowModal] = useState<'followers' | 'following' | null>(null)
 
   useEffect(() => {
     fetch('/api/auth/me')
@@ -93,6 +163,9 @@ export default function UserProfilePage() {
   return (
     <div className="min-h-screen bg-slate-950 text-white">
       <LoginPrompt open={loginPrompt} onClose={() => setLoginPrompt(false)} action="追蹤或私訊" />
+      {followModal && (
+        <FollowListModal type={followModal} userId={userId} onClose={() => setFollowModal(null)} />
+      )}
 
       {/* Nav */}
       <nav className="sticky top-0 z-10 bg-slate-950/90 backdrop-blur-md border-b border-white/8">
@@ -153,14 +226,20 @@ export default function UserProfilePage() {
               <p className="text-white font-semibold">{profile.posts.length}</p>
               <p className="text-white/35 text-xs">貼文</p>
             </div>
-            <div className="text-center">
+            <button
+              onClick={() => setFollowModal('followers')}
+              className="text-center hover:opacity-70 transition-opacity"
+            >
               <p className="text-white font-semibold">{profile.followers}</p>
               <p className="text-white/35 text-xs">粉絲</p>
-            </div>
-            <div className="text-center">
+            </button>
+            <button
+              onClick={() => setFollowModal('following')}
+              className="text-center hover:opacity-70 transition-opacity"
+            >
               <p className="text-white font-semibold">{profile.following}</p>
               <p className="text-white/35 text-xs">追蹤中</p>
-            </div>
+            </button>
           </div>
 
           {/* Action buttons */}

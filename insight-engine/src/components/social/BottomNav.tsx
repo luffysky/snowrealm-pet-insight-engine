@@ -27,13 +27,20 @@ export function BottomNav() {
 
   useEffect(() => {
     setMounted(true)
-    setCollapsed(localStorage.getItem(COLLAPSE_KEY) === 'true')
+    const isCollapsed = localStorage.getItem(COLLAPSE_KEY) === 'true'
+    setCollapsed(isCollapsed)
+    // Init CSS variable
+    const h = isCollapsed ? '1.75rem' : 'calc(4.75rem + env(safe-area-inset-bottom, 0px))'
+    document.documentElement.style.setProperty('--bnav-h', h)
   }, [])
 
   const toggleCollapse = () => {
     const next = !collapsed
     setCollapsed(next)
     localStorage.setItem(COLLAPSE_KEY, String(next))
+    // Expose BottomNav height as CSS variable so other pages can adapt
+    const h = next ? '1.75rem' : 'calc(4.75rem + env(safe-area-inset-bottom, 0px))'
+    document.documentElement.style.setProperty('--bnav-h', h)
   }
 
   useEffect(() => {
@@ -59,7 +66,12 @@ export function BottomNav() {
     }
     fetchUnread()
     const t = setInterval(fetchUnread, 30_000)
-    return () => clearInterval(t)
+    // Refresh immediately when a conversation is read
+    window.addEventListener('dm-read', fetchUnread)
+    return () => {
+      clearInterval(t)
+      window.removeEventListener('dm-read', fetchUnread)
+    }
   }, [me])
 
   const hidden = HIDDEN_PREFIXES.some(p => pathname.startsWith(p))

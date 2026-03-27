@@ -20,14 +20,53 @@ interface CountRow extends Record<string, unknown> {
   following: string
 }
 
-/** GET /api/admin/social/follow?userId=xxx — 取得追蹤統計 */
+interface UserRow extends Record<string, unknown> {
+  id: string
+  display_name: string | null
+  avatar_url: string | null
+}
+
+/** GET /api/admin/social/follow?userId=xxx — 取得追蹤統計
+ *  GET /api/admin/social/follow?userId=xxx&list=followers — 粉絲列表
+ *  GET /api/admin/social/follow?userId=xxx&list=following — 追蹤中列表
+ */
 export async function GET(req: NextRequest): Promise<NextResponse> {
   const ctx = await getTenantContext()
   if (!ctx.userId) return NextResponse.json({ error: '未登入' }, { status: 401 })
 
   const { searchParams } = new URL(req.url)
   const targetUserId = searchParams.get('userId') ?? ctx.userId
+  const list = searchParams.get('list')
 
+  // 回傳粉絲列表
+  if (list === 'followers') {
+    const users = await query<UserRow>(
+      `SELECT au.id, au.display_name, au.avatar_url
+       FROM user_follows uf
+       JOIN admin_users au ON au.id::text = uf.follower_id
+       WHERE uf.following_id = $1
+       ORDER BY uf.created_at DESC
+       LIMIT 100`,
+      [targetUserId]
+    )
+    return NextResponse.json({ users })
+  }
+
+  // 回傳追蹤中列表
+  if (list === 'following') {
+    const users = await query<UserRow>(
+      `SELECT au.id, au.display_name, au.avatar_url
+       FROM user_follows uf
+       JOIN admin_users au ON au.id::text = uf.following_id
+       WHERE uf.follower_id = $1
+       ORDER BY uf.created_at DESC
+       LIMIT 100`,
+      [targetUserId]
+    )
+    return NextResponse.json({ users })
+  }
+
+  // 預設：回傳統計數字
   const counts = await queryOne<CountRow>(
     `SELECT
       (SELECT COUNT(*) FROM user_follows WHERE following_id = $1) AS followers,

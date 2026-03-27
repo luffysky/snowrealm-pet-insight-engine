@@ -124,7 +124,9 @@
       "Bash(grep:*)",
       "Bash(cat \"D:/SnowRealmRebirth/snowrealm-insight-engine/insight-engine/src/app/\\(admin\\)/insight-admin/social/page.tsx\")",
       "Bash(cat:*)",
-      "Bash(/dev/null find:*)"
+      "Bash(/dev/null find:*)",
+      "Bash(for f:*)",
+      "Bash(PGPASSWORD=\"3n25zPNSZyU64T9QrAmxX817WGk0RYwc\" psql \"postgresql://postgres:3n25zPNSZyU64T9QrAmxX817WGk0RYwc@43.167.237.37:30465/postgres\" -c \"\\\\dt\")"
     ]
   }
 }
