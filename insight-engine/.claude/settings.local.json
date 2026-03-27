@@ -102,7 +102,10 @@
       "Bash(grep -v \"^$\")",
       "Bash(ls D:/SnowRealmRebirth/snowrealm-insight-engine/insight-engine/src/app/\\\\\\(public\\\\\\)/articles/)",
       "Bash(cat D:/SnowRealmRebirth/snowrealm-insight-engine/insight-engine/src/app/\\\\\\(public\\\\\\)/articles/[id]/page.tsx)",
-      "Bash(ls D:/SnowRealmRebirth/snowrealm-insight-engine/insight-engine/src/app/\\\\\\(admin\\\\\\)/insight-admin/profile/)"
+      "Bash(ls D:/SnowRealmRebirth/snowrealm-insight-engine/insight-engine/src/app/\\\\\\(admin\\\\\\)/insight-admin/profile/)",
+      "Bash(ls /d/SnowRealmRebirth/snowrealm-insight-engine/insight-engine/src/app/\\\\\\(admin\\\\\\)/insight-admin/profile/)",
+      "Bash(ls /d/SnowRealmRebirth/snowrealm-insight-engine/insight-engine/src/app/\\\\\\(admin\\\\\\)/insight-admin/messages/page.tsx)",
+      "Bash(psql \"postgresql://postgres:3n25zPNSZyU64T9QrAmxX817WGk0RYwc@43.167.237.37:30465/postgres\" -f supabase/migration_social_reports.sql)"
     ]
   }
 }
