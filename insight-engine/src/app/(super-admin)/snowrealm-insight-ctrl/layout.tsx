@@ -102,8 +102,11 @@ export default function SuperAdminLayout({ children }: { children: ReactNode }) 
         </div>
 
         {menuOpen && (
-          <div className="md:hidden absolute left-0 right-0 top-full border-t border-slate-800 bg-slate-900/95 backdrop-blur-sm shadow-xl z-50">
-            <div className="px-4 pr-6 py-3 flex flex-col gap-2">
+          <div
+            className="md:hidden absolute left-0 right-0 top-full border-t border-slate-800 bg-slate-900/95 backdrop-blur-sm shadow-xl z-50 overflow-y-auto"
+            style={{ maxHeight: 'calc(100dvh - 4rem - env(safe-area-inset-bottom, 20px))' }}
+          >
+            <div className="px-4 pr-6 py-3 pb-8 flex flex-col gap-2">
               <p className="text-[10px] uppercase tracking-wider text-slate-500 px-3">營運</p>
               {NAV_OPERATIONS.map((item) => (
                 <Link

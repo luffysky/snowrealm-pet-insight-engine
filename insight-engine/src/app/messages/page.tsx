@@ -2,7 +2,8 @@
 
 import { useEffect, useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, MessageCircle, Send, Loader2, X, Paperclip, Smile, ImageIcon, Music, File as FileIcon, Gift, Pencil } from 'lucide-react'
+import { ArrowLeft, MessageCircle, Send, Loader2, X, Paperclip, Smile, ImageIcon, Music, File as FileIcon, Gift, Pencil, Plus } from 'lucide-react'
+import { GifPicker } from '@/components/social/GifPicker'
 
 // ─── Emoji data ───
 const EMOJI_CATEGORIES = [
@@ -18,18 +19,49 @@ const EMOJI_CATEGORIES = [
 
 const STICKER_EMOJI = ['🥹','🥰','🤩','🥳','😭','😤','🤯','🫠','🥺','😴','🤗','🤣','😂','😆','😁','😊','🫡','🤔','😬','😏','🤫','😇','😈','👿','💀','🫶','❤️‍🔥','🔥','💯','✨']
 
+// Lightbox for full-size media view
+function Lightbox({ url, type, onClose }: { url: string; type: 'image' | 'video'; onClose: () => void }) {
+  return (
+    <div className="fixed inset-0 z-[200] bg-black/90 flex items-center justify-center p-4" onClick={onClose}>
+      <button onClick={onClose} className="absolute top-4 right-4 text-white/60 hover:text-white z-10">
+        <X className="w-7 h-7" />
+      </button>
+      {type === 'image' ? (
+        <img src={url} alt="" className="max-w-full max-h-full rounded-xl object-contain" onClick={e => e.stopPropagation()} />
+      ) : (
+        <video src={url} controls autoPlay className="max-w-full max-h-full rounded-xl" onClick={e => e.stopPropagation()} />
+      )}
+    </div>
+  )
+}
+
 // Render message content (text, image, video, audio, file, gif)
-function MessageContent({ content, edited }: { content: string; edited?: boolean }) {
+function MessageContent({ content, edited, onLightbox }: { content: string; edited?: boolean; onLightbox?: (url: string, type: 'image' | 'video') => void }) {
   if (content === '[已收回]') {
     return <p className="text-sm text-white/30 italic">已收回訊息</p>
   }
   if (content.startsWith('[img:') && content.endsWith(']')) {
     const url = content.slice(5, -1)
-    return <img src={url} alt="" className="max-w-full rounded-xl max-h-60 object-cover" />
+    return (
+      <img
+        src={url} alt=""
+        className="max-w-full rounded-xl max-h-60 object-cover cursor-pointer hover:opacity-90 transition-opacity"
+        onClick={() => onLightbox?.(url, 'image')}
+      />
+    )
   }
   if (content.startsWith('[video:') && content.endsWith(']')) {
     const url = content.slice(7, -1)
-    return <video src={url} controls className="max-w-full rounded-xl max-h-48" />
+    return (
+      <div className="relative group cursor-pointer" onClick={() => onLightbox?.(url, 'video')}>
+        <video src={url} className="max-w-full rounded-xl max-h-48 pointer-events-none" />
+        <div className="absolute inset-0 flex items-center justify-center rounded-xl bg-black/30 group-hover:bg-black/40 transition-colors">
+          <div className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center">
+            <span className="text-white text-lg ml-0.5">▶</span>
+          </div>
+        </div>
+      </div>
+    )
   }
   if (content.startsWith('[audio:') && content.endsWith(']')) {
     const url = content.slice(7, -1)
@@ -50,7 +82,13 @@ function MessageContent({ content, edited }: { content: string; edited?: boolean
   }
   if (content.startsWith('[gif:') && content.endsWith(']')) {
     const url = content.slice(5, -1)
-    return <img src={url} alt="GIF" className="max-w-full rounded-xl max-h-48" />
+    return (
+      <img
+        src={url} alt="GIF"
+        className="max-w-full rounded-xl max-h-48 cursor-pointer hover:opacity-90 transition-opacity"
+        onClick={() => onLightbox?.(url, 'image')}
+      />
+    )
   }
   // Check if it's a single big sticker emoji
   const isSticker = STICKER_EMOJI.includes(content.trim()) || (content.length <= 4 && /\p{Emoji}/u.test(content))
@@ -168,7 +206,8 @@ export default function MessagesPage() {
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [mediaPanel, setMediaPanel] = useState<'emoji' | 'attach' | 'gif' | null>(null)
   const [emojiCategory, setEmojiCategory] = useState(0)
-  const [gifSearch, setGifSearch] = useState('')
+  const [plusMenuOpen, setPlusMenuOpen] = useState(false)
+  const [lightbox, setLightbox] = useState<{ url: string; type: 'image' | 'video' } | null>(null)
   const [uploading, setUploading] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [replyTo, setReplyTo] = useState<Message | null>(null)
@@ -475,7 +514,7 @@ export default function MessagesPage() {
                         </div>
                       </div>
                     ) : (
-                      <MessageContent content={isRecalled ? '[已收回]' : bodyContent} edited={!!msg.editedAt} />
+                      <MessageContent content={isRecalled ? '[已收回]' : bodyContent} edited={!!msg.editedAt} onLightbox={(url, type) => setLightbox({ url, type })} />
                     )}
                     {!isEditing && (
                       <p className={`text-[10px] mt-1 flex items-center gap-1 ${msg.isMine ? 'text-amber-300/50 justify-end' : 'text-white/25'}`}>
@@ -544,19 +583,10 @@ export default function MessagesPage() {
 
                 {mediaPanel === 'gif' && (
                   <div className="p-3">
-                    <div className="flex items-center gap-2 mb-2">
-                      <input
-                        value={gifSearch}
-                        onChange={e => setGifSearch(e.target.value)}
-                        placeholder="貼上 GIF 網址..."
-                        className="flex-1 bg-white/5 border border-white/10 rounded-xl px-3 py-1.5 text-xs text-white placeholder-white/30 outline-none focus:border-sky-500/40"
-                      />
-                      <button
-                        onClick={() => { if (gifSearch.trim()) { sendContent(`[gif:${gifSearch.trim()}]`); setGifSearch(''); setMediaPanel(null) } }}
-                        className="px-3 py-1.5 bg-sky-500/20 border border-sky-400/30 rounded-xl text-sky-300 text-xs"
-                      >傳送</button>
-                    </div>
-                    <p className="text-[10px] text-white/25 text-center">貼上 Tenor / GIPHY 的 GIF 圖片網址</p>
+                    <GifPicker
+                      onSelect={(url) => { sendContent(`[gif:${url}]`); setMediaPanel(null) }}
+                      onClose={() => setMediaPanel(null)}
+                    />
                   </div>
                 )}
               </div>
@@ -577,24 +607,44 @@ export default function MessagesPage() {
 
             {/* Input bar */}
             <div className="shrink-0 px-2 py-2 border-t border-white/8">
+              {plusMenuOpen && <div className="fixed inset-0 z-10" onClick={() => setPlusMenuOpen(false)} />}
               <div className="flex items-center gap-1.5">
-                <button onClick={() => setMediaPanel(p => p === 'emoji' ? null : 'emoji')}
-                  className={`p-2 rounded-xl transition-colors ${mediaPanel === 'emoji' ? 'bg-amber-400/20 text-amber-300' : 'text-white/30 hover:text-white/60'}`}>
-                  <Smile className="w-5 h-5" />
-                </button>
-                <button onClick={() => setMediaPanel(p => p === 'attach' ? null : 'attach')}
-                  className={`p-2 rounded-xl transition-colors ${mediaPanel === 'attach' ? 'bg-sky-400/20 text-sky-300' : 'text-white/30 hover:text-white/60'}`}>
-                  {uploading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Paperclip className="w-5 h-5" />}
-                </button>
-                <button onClick={() => setMediaPanel(p => p === 'gif' ? null : 'gif')}
-                  className={`p-2 rounded-xl transition-colors ${mediaPanel === 'gif' ? 'bg-purple-400/20 text-purple-300' : 'text-white/30 hover:text-white/60'}`}>
-                  <Gift className="w-5 h-5" />
-                </button>
+                {/* + dropdown for emoji / attach / GIF */}
+                <div className="relative z-20">
+                  <button
+                    onClick={() => { setPlusMenuOpen(p => !p); setMediaPanel(null) }}
+                    className={`p-2 rounded-xl transition-colors ${plusMenuOpen ? 'bg-white/15 text-white' : 'text-white/30 hover:text-white/60'}`}
+                  >
+                    <Plus className="w-5 h-5" />
+                  </button>
+                  {plusMenuOpen && (
+                    <div className="absolute bottom-full left-0 mb-1.5 bg-slate-800/98 backdrop-blur-xl border border-white/12 rounded-2xl overflow-hidden shadow-2xl min-w-[140px]">
+                      <button
+                        onClick={() => { setMediaPanel(p => p === 'emoji' ? null : 'emoji'); setPlusMenuOpen(false) }}
+                        className="w-full flex items-center gap-2.5 px-4 py-2.5 hover:bg-white/8 text-sm text-white/80 transition-colors"
+                      >
+                        <Smile className="w-4 h-4" /> 表情 / 貼圖
+                      </button>
+                      <button
+                        onClick={() => { setMediaPanel(p => p === 'attach' ? null : 'attach'); setPlusMenuOpen(false) }}
+                        className="w-full flex items-center gap-2.5 px-4 py-2.5 hover:bg-white/8 text-sm text-white/80 transition-colors border-t border-white/8"
+                      >
+                        {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Paperclip className="w-4 h-4" />} 附件
+                      </button>
+                      <button
+                        onClick={() => { setMediaPanel(p => p === 'gif' ? null : 'gif'); setPlusMenuOpen(false) }}
+                        className="w-full flex items-center gap-2.5 px-4 py-2.5 hover:bg-white/8 text-sm text-white/80 transition-colors border-t border-white/8"
+                      >
+                        <Gift className="w-4 h-4" /> GIF
+                      </button>
+                    </div>
+                  )}
+                </div>
                 <input
                   value={input}
                   onChange={e => setInput(e.target.value)}
                   onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send() } }}
-                  onFocus={() => setMediaPanel(null)}
+                  onFocus={() => { setMediaPanel(null); setPlusMenuOpen(false) }}
                   placeholder="輸入訊息..."
                   className="flex-1 bg-white/5 border border-white/10 rounded-2xl px-4 py-2.5 text-sm text-white placeholder-white/25 outline-none focus:border-amber-400/30 transition-colors"
                 />
@@ -671,6 +721,9 @@ export default function MessagesPage() {
 
       {/* Draggable DM bubble */}
       {bubble && <DraggableBubble bubble={bubble} onClose={() => setBubble(null)} />}
+
+      {/* Lightbox */}
+      {lightbox && <Lightbox url={lightbox.url} type={lightbox.type} onClose={() => setLightbox(null)} />}
     </div>
   )
 }
