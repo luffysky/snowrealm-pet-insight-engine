@@ -75,8 +75,21 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       }, { status: 400 })
     }
 
+    // Determine correct content-type for R2 (browser sometimes sends empty MIME)
+    const mimeMap: Record<string, string> = {
+      jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', webp: 'image/webp',
+      gif: 'image/gif', heic: 'image/heic', heif: 'image/heif',
+      mp4: 'video/mp4', webm: 'video/webm', mov: 'video/quicktime',
+      avi: 'video/x-msvideo', mkv: 'video/x-matroska', '3gp': 'video/3gpp', m4v: 'video/x-m4v',
+      mp3: 'audio/mpeg', wav: 'audio/wav', aac: 'audio/aac',
+      m4a: 'audio/mp4', ogg: 'audio/ogg',
+      pdf: 'application/pdf', zip: 'application/zip', txt: 'text/plain',
+    }
+    const ext = file.name.split('.').pop()?.toLowerCase() ?? ''
+    const resolvedContentType = file.type || mimeMap[ext] || 'application/octet-stream'
+
     const buffer = Buffer.from(await file.arrayBuffer())
-    const url = await uploadToR2(buffer, file.name, file.type || 'application/octet-stream', 'dm')
+    const url = await uploadToR2(buffer, file.name, resolvedContentType, 'dm')
 
     return NextResponse.json({ url, mediaType, filename: file.name })
   } catch (err) {

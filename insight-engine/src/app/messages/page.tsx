@@ -1,8 +1,8 @@
 'use client'
 
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, MessageCircle, Send, Loader2, X, Paperclip, Smile, ImageIcon, Music, File as FileIcon, Gift, Pencil, Plus } from 'lucide-react'
+import { ArrowLeft, MessageCircle, Send, Loader2, X, Paperclip, Smile, ImageIcon, Music, File as FileIcon, Gift, Pencil, Plus, Palette, Play, Pause, Volume2 } from 'lucide-react'
 import { GifPicker } from '@/components/social/GifPicker'
 
 // ─── Emoji data ───
@@ -35,8 +35,96 @@ function Lightbox({ url, type, onClose }: { url: string; type: 'image' | 'video'
   )
 }
 
+// ─── Background theme presets ───
+const BG_PRESETS = [
+  { key: 'default',   label: '預設',   style: {} },
+  { key: 'midnight',  label: '深藍',   style: { background: 'linear-gradient(160deg,#0f172a 0%,#1e1b4b 100%)' } },
+  { key: 'forest',    label: '森林',   style: { background: 'linear-gradient(160deg,#0f2116 0%,#052e16 100%)' } },
+  { key: 'rose',      label: '玫瑰',   style: { background: 'linear-gradient(160deg,#1c0914 0%,#3b0a1e 100%)' } },
+  { key: 'slate',     label: '石板',   style: { background: 'linear-gradient(160deg,#0f1117 0%,#1e293b 100%)' } },
+  { key: 'amber',     label: '琥珀',   style: { background: 'linear-gradient(160deg,#1a0f00 0%,#2d1b00 100%)' } },
+  { key: 'custom',    label: '自訂',   style: {} },
+]
+
+const BG_STORAGE_KEY = 'dm_bg_theme'
+
+// ─── Custom Audio Player ───
+function AudioPlayer({ url, isMine }: { url: string; isMine: boolean }) {
+  const audioRef = useRef<HTMLAudioElement>(null)
+  const [playing, setPlaying] = useState(false)
+  const [current, setCurrent] = useState(0)
+  const [duration, setDuration] = useState(0)
+  const [loading, setLoading] = useState(true)
+
+  const toggle = () => {
+    const a = audioRef.current
+    if (!a) return
+    if (playing) { a.pause(); setPlaying(false) }
+    else { a.play().then(() => setPlaying(true)).catch(() => {}) }
+  }
+
+  const fmt = (s: number) => {
+    if (!isFinite(s)) return '0:00'
+    const m = Math.floor(s / 60)
+    const sec = Math.floor(s % 60)
+    return `${m}:${sec.toString().padStart(2, '0')}`
+  }
+
+  const pct = duration > 0 ? (current / duration) * 100 : 0
+
+  return (
+    <div className={`flex items-center gap-3 rounded-2xl px-3 py-2.5 w-[220px] ${isMine ? 'bg-white/15' : 'bg-white/8'}`}>
+      <audio
+        ref={audioRef}
+        src={url}
+        onLoadedMetadata={() => { setDuration(audioRef.current?.duration ?? 0); setLoading(false) }}
+        onTimeUpdate={() => setCurrent(audioRef.current?.currentTime ?? 0)}
+        onEnded={() => { setPlaying(false); setCurrent(0) }}
+        onError={() => setLoading(false)}
+        preload="metadata"
+        className="hidden"
+      />
+      <button
+        onClick={toggle}
+        className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 transition-colors ${
+          isMine ? 'bg-white/25 hover:bg-white/35' : 'bg-amber-500/30 hover:bg-amber-500/50'
+        }`}
+      >
+        {loading ? (
+          <Loader2 className="w-4 h-4 animate-spin text-white/60" />
+        ) : playing ? (
+          <Pause className="w-4 h-4 text-white" />
+        ) : (
+          <Play className="w-4 h-4 text-white ml-0.5" />
+        )}
+      </button>
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center justify-between mb-1.5">
+          <Volume2 className="w-3 h-3 text-white/40" />
+          <span className="text-[10px] text-white/50 tabular-nums">{fmt(playing ? current : duration)}</span>
+        </div>
+        {/* Progress bar */}
+        <div
+          className="h-1 rounded-full bg-white/15 cursor-pointer relative overflow-hidden"
+          onClick={e => {
+            if (!audioRef.current || !duration) return
+            const rect = e.currentTarget.getBoundingClientRect()
+            const ratio = (e.clientX - rect.left) / rect.width
+            audioRef.current.currentTime = ratio * duration
+          }}
+        >
+          <div
+            className={`h-full rounded-full transition-none ${isMine ? 'bg-white/70' : 'bg-amber-400'}`}
+            style={{ width: `${pct}%` }}
+          />
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // Render message content (text, image, video, audio, file, gif)
-function MessageContent({ content, edited, onLightbox }: { content: string; edited?: boolean; onLightbox?: (url: string, type: 'image' | 'video') => void }) {
+function MessageContent({ content, edited, isMine, onLightbox }: { content: string; edited?: boolean; isMine?: boolean; onLightbox?: (url: string, type: 'image' | 'video') => void }) {
   if (content === '[已收回]') {
     return <p className="text-sm text-white/30 italic">已收回訊息</p>
   }
@@ -63,19 +151,25 @@ function MessageContent({ content, edited, onLightbox }: { content: string; edit
   if (content.startsWith('[video:') && content.endsWith(']')) {
     const url = content.slice(7, -1)
     return (
-      <div className="relative group cursor-pointer" onClick={() => onLightbox?.(url, 'video')}>
-        <video src={url} className="max-w-full rounded-xl max-h-48 pointer-events-none" />
-        <div className="absolute inset-0 flex items-center justify-center rounded-xl bg-black/30 group-hover:bg-black/40 transition-colors">
-          <div className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center">
-            <span className="text-white text-lg ml-0.5">▶</span>
+      <div
+        className="relative group cursor-pointer rounded-2xl overflow-hidden max-w-[260px] bg-black"
+        onClick={() => onLightbox?.(url, 'video')}
+      >
+        <video src={url} className="w-full max-h-52 object-cover block pointer-events-none" preload="metadata" />
+        <div className="absolute inset-0 flex items-center justify-center bg-black/25 group-hover:bg-black/40 transition-colors">
+          <div className="w-12 h-12 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+            <Play className="w-5 h-5 text-white fill-white ml-0.5" />
           </div>
+        </div>
+        <div className="absolute bottom-2 right-2 bg-black/50 text-white/80 text-[10px] px-1.5 py-0.5 rounded-md backdrop-blur-sm">
+          影片
         </div>
       </div>
     )
   }
   if (content.startsWith('[audio:') && content.endsWith(']')) {
     const url = content.slice(7, -1)
-    return <audio src={url} controls className="w-full max-w-[220px]" />
+    return <AudioPlayer url={url} isMine={isMine ?? false} />
   }
   if (content.startsWith('[file:') && content.endsWith(']')) {
     const inner = content.slice(6, -1)
@@ -101,11 +195,23 @@ function MessageContent({ content, edited, onLightbox }: { content: string; edit
     )
   }
   // Check if it's a single big sticker emoji
-  const isSticker = STICKER_EMOJI.includes(content.trim()) || (content.length <= 4 && /\p{Emoji}/u.test(content))
-  if (isSticker && content.trim().length <= 4) {
+  const isSticker = STICKER_EMOJI.includes(content.trim()) || (content.trim().length <= 4 && /\p{Emoji}/u.test(content))
+  if (isSticker) {
     return <span className="text-5xl leading-none block">{content}</span>
   }
   return <p className={`text-sm break-words leading-relaxed ${edited ? 'font-semibold' : ''}`}>{content}</p>
+}
+
+/** Returns true when the content should render without a chat bubble background */
+function isNakedContent(content: string): boolean {
+  if (content === '[已收回]') return false
+  if (content.startsWith('[img:') || content.startsWith('[gif:') ||
+      content.startsWith('[video:') || content.startsWith('[audio:') ||
+      content.startsWith('[file:')) return true
+  const trimmed = content.trim()
+  // Single emoji sticker (≤ 4 chars, contains emoji)
+  if (trimmed.length <= 4 && /\p{Emoji}/u.test(trimmed)) return true
+  return false
 }
 
 // --- Draggable floating bubble ---
@@ -225,6 +331,9 @@ export default function MessagesPage() {
   const [msgMenu, setMsgMenu] = useState<{ msg: Message; x: number; y: number } | null>(null)
   const [editingMsg, setEditingMsg] = useState<{ id: string } | null>(null)
   const [editInput, setEditInput] = useState('')
+  const [bgKey, setBgKey] = useState('default')
+  const [bgCustomUrl, setBgCustomUrl] = useState('')
+  const [bgPanelOpen, setBgPanelOpen] = useState(false)
 
   useEffect(() => {
     fetch('/api/auth/me')
@@ -233,6 +342,12 @@ export default function MessagesPage() {
         if (!d?.userId) { router.push(`/login?redirect=/messages`); return }
         setMeId(d.userId)
       }).catch(() => {})
+    // Load saved bg theme
+    try {
+      const saved = JSON.parse(localStorage.getItem(BG_STORAGE_KEY) ?? '{}') as { key?: string; custom?: string }
+      if (saved.key) setBgKey(saved.key)
+      if (saved.custom) setBgCustomUrl(saved.custom)
+    } catch { /* ignore */ }
   }, [router])
 
   useEffect(() => {
@@ -450,6 +565,20 @@ export default function MessagesPage() {
     }).catch(() => {})
   }
 
+  const saveBg = useCallback((key: string, custom?: string) => {
+    setBgKey(key)
+    if (custom !== undefined) setBgCustomUrl(custom)
+    localStorage.setItem(BG_STORAGE_KEY, JSON.stringify({ key, custom: custom ?? bgCustomUrl }))
+  }, [bgCustomUrl])
+
+  const bgStyle = (): React.CSSProperties => {
+    if (bgKey === 'custom' && bgCustomUrl) {
+      return { backgroundImage: `url(${bgCustomUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' }
+    }
+    const preset = BG_PRESETS.find(p => p.key === bgKey)
+    return preset?.style ?? {}
+  }
+
   const formatTime = (iso: string) => {
     const d = new Date(iso)
     const now = new Date()
@@ -464,12 +593,12 @@ export default function MessagesPage() {
     <div className="h-[100dvh] bg-slate-950 text-white flex flex-col overflow-hidden">
       {/* 列表頂部導覽 — 開啟對話時隱藏 */}
       {!active && (
-        <nav className="shrink-0 bg-slate-950/90 backdrop-blur-md border-b border-white/8">
-          <div className="max-w-2xl mx-auto px-4 py-3 flex items-center gap-3">
-            <button onClick={() => router.back()} className="flex items-center gap-2 text-sm text-white/50 hover:text-white">
+        <nav className="shrink-0 bg-gradient-to-b from-slate-900 to-slate-950 border-b border-white/[0.06]">
+          <div className="max-w-2xl mx-auto px-4 py-4 flex items-center gap-3">
+            <button onClick={() => router.back()} className="text-white/40 hover:text-white transition-colors">
               <ArrowLeft className="w-4 h-4" />
             </button>
-            <h1 className="font-semibold">訊息</h1>
+            <h1 className="font-bold text-lg tracking-tight">訊息</h1>
           </div>
         </nav>
       )}
@@ -482,28 +611,41 @@ export default function MessagesPage() {
               <Loader2 className="w-6 h-6 text-white/30 animate-spin" />
             </div>
           ) : conversations.length === 0 ? (
-            <div className="text-center py-20 text-white/25">
-              <MessageCircle className="w-10 h-10 mx-auto mb-3 opacity-30" />
-              <p className="text-sm">還沒有訊息</p>
-              <p className="text-xs mt-1">前往別人的個人頁面發起對話</p>
+            <div className="text-center py-24 px-6 text-white/25">
+              <div className="w-14 h-14 rounded-2xl bg-white/5 flex items-center justify-center mx-auto mb-4">
+                <MessageCircle className="w-7 h-7 opacity-50" />
+              </div>
+              <p className="text-sm font-medium mb-1">還沒有訊息</p>
+              <p className="text-xs text-white/15">前往別人的個人頁面發起對話</p>
             </div>
           ) : (
-            <div className="divide-y divide-white/5">
+            <div className="py-2">
               {conversations.map(c => (
                 <button
                   key={c.userId}
                   onClick={() => openConversation(c)}
-                  className={`w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-white/[0.04] transition-colors ${active?.userId === c.userId ? 'bg-white/[0.06]' : ''}`}
+                  className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-all ${active?.userId === c.userId ? 'bg-white/[0.07]' : 'hover:bg-white/[0.03]'}`}
                 >
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-amber-500/30 to-purple-500/30 flex items-center justify-center text-sm font-bold text-white/70 overflow-hidden shrink-0">
-                    {c.avatarUrl ? <img src={c.avatarUrl} alt="" className="w-full h-full object-cover" /> : initials(c.displayName)}
+                  {/* Avatar */}
+                  <div className="relative shrink-0">
+                    <div className="w-12 h-12 rounded-full overflow-hidden">
+                      {c.avatarUrl
+                        ? <img src={c.avatarUrl} alt="" className="w-full h-full object-cover" />
+                        : <div className="w-full h-full bg-gradient-to-br from-amber-500/40 to-purple-600/40 flex items-center justify-center text-sm font-bold text-white/80">{initials(c.displayName)}</div>
+                      }
+                    </div>
+                    {c.unreadCount > 0 && (
+                      <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 bg-rose-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center leading-none">
+                        {c.unreadCount > 99 ? '99+' : c.unreadCount}
+                      </span>
+                    )}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium text-white/85 truncate">{c.displayName ?? '用戶'}</span>
-                      <span className="text-[10px] text-white/30 shrink-0 ml-2">{formatTime(c.lastMessageAt)}</span>
+                    <div className="flex items-baseline justify-between gap-2">
+                      <span className={`text-sm font-semibold truncate ${c.unreadCount > 0 ? 'text-white' : 'text-white/80'}`}>{c.displayName ?? '用戶'}</span>
+                      <span className="text-[11px] text-white/30 shrink-0 tabular-nums">{formatTime(c.lastMessageAt)}</span>
                     </div>
-                    <p className="text-xs text-white/40 truncate mt-0.5">{c.lastMessagePreview}</p>
+                    <p className={`text-xs truncate mt-0.5 ${c.unreadCount > 0 ? 'text-white/60 font-medium' : 'text-white/35'}`}>{c.lastMessagePreview}</p>
                   </div>
                   {c.unreadCount > 0 && (
                     <span className="min-w-[18px] h-[18px] px-1 bg-rose-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center shrink-0">
@@ -520,29 +662,107 @@ export default function MessagesPage() {
         {active ? (
           <div className="flex-1 flex flex-col min-h-0">
             {/* 名子層 — 頂部（手機 + 桌機都顯示） */}
-            <div className="shrink-0 bg-slate-950/90 backdrop-blur-md border-b border-white/8 px-4 py-3 flex items-center gap-3">
-              <button onClick={closeConversation} className="text-white/50 hover:text-white transition-colors">
+            <div className="shrink-0 bg-gradient-to-b from-slate-900/95 to-slate-950/95 backdrop-blur-xl border-b border-white/[0.06] px-4 py-3 flex items-center gap-3">
+              <button onClick={closeConversation} className="text-white/40 hover:text-white transition-colors p-1 -ml-1 rounded-lg hover:bg-white/8">
                 <ArrowLeft className="w-4 h-4" />
               </button>
-              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-amber-500/30 to-purple-500/30 flex items-center justify-center text-xs font-bold text-white/70 overflow-hidden shrink-0">
-                {active.avatarUrl ? <img src={active.avatarUrl} alt="" className="w-full h-full object-cover" /> : initials(active.displayName)}
+              <div className="w-9 h-9 rounded-full overflow-hidden shrink-0 ring-2 ring-white/10">
+                {active.avatarUrl
+                  ? <img src={active.avatarUrl} alt="" className="w-full h-full object-cover" />
+                  : <div className="w-full h-full bg-gradient-to-br from-amber-500/40 to-purple-600/40 flex items-center justify-center text-xs font-bold text-white/80">{initials(active.displayName)}</div>
+                }
               </div>
-              <span className="font-semibold flex-1 truncate">{active.displayName ?? '私訊'}</span>
+              <span className="font-semibold flex-1 truncate text-white">{active.displayName ?? '私訊'}</span>
+              <button
+                onClick={() => setBgPanelOpen(p => !p)}
+                className={`p-1.5 rounded-xl transition-colors ${bgPanelOpen ? 'bg-white/15 text-white' : 'text-white/30 hover:text-white/60'}`}
+                title="背景主題"
+              >
+                <Palette className="w-4 h-4" />
+              </button>
             </div>
 
+            {/* 背景主題面板 */}
+            {bgPanelOpen && (
+              <div className="shrink-0 bg-slate-900/95 backdrop-blur-xl border-b border-white/8 px-4 py-3">
+                <p className="text-[11px] text-white/40 mb-2.5 font-medium">聊天室背景</p>
+                <div className="flex flex-wrap gap-2 mb-3">
+                  {BG_PRESETS.filter(p => p.key !== 'custom').map(preset => (
+                    <button
+                      key={preset.key}
+                      onClick={() => saveBg(preset.key)}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all border ${
+                        bgKey === preset.key
+                          ? 'border-amber-400/60 text-amber-300 bg-amber-400/10'
+                          : 'border-white/10 text-white/50 hover:border-white/20 hover:text-white/70'
+                      }`}
+                      style={preset.key !== 'default' ? { ...preset.style, backgroundClip: 'padding-box' } : {}}
+                    >
+                      {preset.label}
+                    </button>
+                  ))}
+                </div>
+                {/* Custom image: URL input or local file */}
+                <div className="flex items-center gap-2">
+                  <input
+                    value={bgCustomUrl}
+                    onChange={e => setBgCustomUrl(e.target.value)}
+                    placeholder="貼上圖片網址 (https://...)"
+                    className="flex-1 bg-white/5 border border-white/10 rounded-xl px-3 py-1.5 text-xs text-white placeholder-white/25 outline-none focus:border-amber-400/40"
+                  />
+                  <button
+                    onClick={() => saveBg('custom', bgCustomUrl)}
+                    disabled={!bgCustomUrl.startsWith('http')}
+                    className="px-3 py-1.5 bg-amber-500/20 border border-amber-400/30 rounded-xl text-xs text-amber-300 hover:bg-amber-500/30 disabled:opacity-30 transition-colors shrink-0"
+                  >
+                    套用
+                  </button>
+                </div>
+                {/* Local file upload */}
+                <label className="mt-2 flex items-center gap-2 cursor-pointer w-fit">
+                  <span className="text-[11px] text-white/35 hover:text-white/60 transition-colors flex items-center gap-1.5">
+                    <ImageIcon className="w-3.5 h-3.5" /> 從裝置上傳圖片
+                  </span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={e => {
+                      const f = e.target.files?.[0]
+                      if (!f) return
+                      const reader = new FileReader()
+                      reader.onload = ev => {
+                        const url = ev.target?.result as string
+                        setBgCustomUrl(url)
+                        saveBg('custom', url)
+                      }
+                      reader.readAsDataURL(f)
+                    }}
+                  />
+                </label>
+              </div>
+            )}
+
             {/* 內容層 — 可捲動的訊息區 */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-3 min-h-0">
+            <div
+              className="flex-1 overflow-y-auto p-4 space-y-2 min-h-0 transition-all duration-500"
+              style={bgStyle()}
+            >
               {msgLoading ? (
                 <div className="flex justify-center pt-10">
                   <Loader2 className="w-5 h-5 text-white/30 animate-spin" />
                 </div>
               ) : messages.length === 0 ? (
-                <p className="text-center text-sm text-white/25 pt-10">開始對話吧 👋</p>
+                <div className="flex flex-col items-center justify-center h-full gap-3 text-white/20">
+                  <div className="text-4xl">💬</div>
+                  <p className="text-sm">開始對話吧</p>
+                </div>
               ) : messages.map(msg => {
                 const isRecalled = msg.content === '[已收回]'
                 const isEditing = editingMsg?.id === msg.id
                 const bodyContent = msg.content.includes('\n') ? msg.content.split('\n').slice(1).join('\n') : msg.content
                 const hasReply = msg.content.startsWith('[reply:')
+                const naked = !isEditing && isNakedContent(bodyContent)
                 return (
                 <div key={msg.id} className={`flex ${msg.isMine ? 'justify-end' : 'justify-start'}`}>
                   <div
@@ -551,9 +771,12 @@ export default function MessagesPage() {
                     onPointerLeave={cancelLongPress}
                     onPointerMove={cancelLongPress}
                     style={{ touchAction: 'pan-y' }}
-                    className={`max-w-[75%] rounded-2xl px-3.5 py-2.5 select-none cursor-default ${
-                      isRecalled ? 'bg-white/[0.04] text-white/30' :
-                      msg.isMine ? 'bg-amber-500/25 text-amber-100 rounded-br-sm' : 'bg-white/8 text-white/80 rounded-bl-sm'
+                    className={`max-w-[75%] rounded-2xl select-none cursor-default ${
+                      naked ? 'overflow-hidden' :
+                      isRecalled ? 'bg-white/[0.04] text-white/25 px-3.5 py-2.5 rounded-2xl' :
+                      msg.isMine
+                        ? 'bg-gradient-to-br from-amber-500 to-orange-600 text-white rounded-br-[6px] px-3.5 py-2.5 shadow-lg shadow-amber-500/20'
+                        : 'bg-slate-800 text-white/90 rounded-bl-[6px] px-3.5 py-2.5 border border-white/[0.06]'
                     }`}
                   >
                     {hasReply && !isRecalled && (() => {
@@ -574,7 +797,7 @@ export default function MessagesPage() {
                           }}
                           autoFocus
                           rows={2}
-                          className="w-full bg-transparent text-sm text-amber-100 resize-none outline-none min-w-[160px]"
+                          className="w-full bg-transparent text-sm text-white resize-none outline-none min-w-[160px]"
                         />
                         <div className="flex gap-3 mt-1.5">
                           <button onClick={() => saveEdit(msg.id)} className="text-[11px] text-amber-300 hover:text-amber-100 transition-colors">儲存</button>
@@ -582,10 +805,10 @@ export default function MessagesPage() {
                         </div>
                       </div>
                     ) : (
-                      <MessageContent content={isRecalled ? '[已收回]' : bodyContent} edited={!!msg.editedAt} onLightbox={(url, type) => setLightbox({ url, type })} />
+                      <MessageContent content={isRecalled ? '[已收回]' : bodyContent} edited={!!msg.editedAt} isMine={msg.isMine} onLightbox={(url, type) => setLightbox({ url, type })} />
                     )}
                     {!isEditing && (
-                      <p className={`text-[10px] mt-1 flex items-center gap-1 ${msg.isMine ? 'text-amber-300/50 justify-end' : 'text-white/25'}`}>
+                      <p className={`text-[10px] mt-1 flex items-center gap-1 ${naked ? (msg.isMine ? 'text-white/30 justify-end px-1' : 'text-white/25 px-1') : msg.isMine ? 'text-white/50 justify-end' : 'text-white/35'}`}>
                         {msg.editedAt && <span className="opacity-60">已編輯</span>}
                         <span>{formatTime(msg.createdAt)}</span>
                       </p>
@@ -667,12 +890,12 @@ export default function MessagesPage() {
 
             {/* 回覆預覽 */}
             {replyTo && (
-              <div className="flex items-center gap-2 px-3 py-2 bg-white/5 border-t border-white/8">
-                <div className="flex-1 border-l-2 border-amber-400/50 pl-2">
-                  <p className="text-[10px] text-amber-300/70">回覆</p>
+              <div className="flex items-center gap-2 px-4 py-2 bg-amber-500/8 border-t border-amber-500/15">
+                <div className="flex-1 border-l-2 border-amber-400/60 pl-2.5">
+                  <p className="text-[10px] font-semibold text-amber-400/80 mb-0.5">回覆</p>
                   <p className="text-xs text-white/50 truncate">{replyTo.content.slice(0, 50)}</p>
                 </div>
-                <button onClick={() => setReplyTo(null)} className="text-white/25 hover:text-white/50">
+                <button onClick={() => setReplyTo(null)} className="text-white/25 hover:text-white/50 p-1">
                   <X className="w-3.5 h-3.5" />
                 </button>
               </div>
@@ -689,66 +912,76 @@ export default function MessagesPage() {
             )}
 
             {/* 輸入欄 */}
-            <div className="px-2 pt-2 border-t border-white/8"
-              style={{ paddingBottom: 'max(0.5rem, env(safe-area-inset-bottom, 0.5rem))' }}
+            <div className="px-3 pt-2.5 bg-slate-950/80 border-t border-white/[0.06]"
+              style={{ paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom, 0.75rem))' }}
             >
               {plusMenuOpen && <div className="fixed inset-0 z-10" onClick={() => setPlusMenuOpen(false)} />}
-              <div className="flex items-center gap-1.5">
+              <div className="flex items-center gap-2">
                 {/* + dropdown for emoji / attach / GIF */}
-                <div className="relative z-20">
+                <div className="relative z-20 shrink-0">
                   <button
                     onClick={() => { setPlusMenuOpen(p => !p); setMediaPanel(null) }}
-                    className={`p-2 rounded-xl transition-colors ${plusMenuOpen ? 'bg-white/15 text-white' : 'text-white/30 hover:text-white/60'}`}
+                    className={`w-9 h-9 rounded-full flex items-center justify-center transition-all ${plusMenuOpen ? 'bg-amber-500/30 text-amber-300' : 'bg-white/8 text-white/40 hover:bg-white/12 hover:text-white/70'}`}
                   >
-                    <Plus className="w-5 h-5" />
+                    <Plus className="w-4 h-4" />
                   </button>
                   {plusMenuOpen && (
-                    <div className="absolute bottom-full left-0 mb-1.5 bg-slate-800/98 backdrop-blur-xl border border-white/12 rounded-2xl overflow-hidden shadow-2xl min-w-[140px]">
+                    <div className="absolute bottom-full left-0 mb-2 bg-slate-800/98 backdrop-blur-xl border border-white/12 rounded-2xl overflow-hidden shadow-2xl min-w-[145px]">
                       <button
                         onClick={() => { setMediaPanel(p => p === 'emoji' ? null : 'emoji'); setPlusMenuOpen(false) }}
-                        className="w-full flex items-center gap-2.5 px-4 py-2.5 hover:bg-white/8 text-sm text-white/80 transition-colors"
+                        className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-white/8 text-sm text-white/80 transition-colors"
                       >
-                        <Smile className="w-4 h-4" /> 表情 / 貼圖
+                        <Smile className="w-4 h-4 text-yellow-400" /> 表情 / 貼圖
                       </button>
                       <button
                         onClick={() => { setMediaPanel(p => p === 'attach' ? null : 'attach'); setPlusMenuOpen(false) }}
-                        className="w-full flex items-center gap-2.5 px-4 py-2.5 hover:bg-white/8 text-sm text-white/80 transition-colors border-t border-white/8"
+                        className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-white/8 text-sm text-white/80 transition-colors border-t border-white/8"
                       >
-                        {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Paperclip className="w-4 h-4" />} 附件
+                        {uploading ? <Loader2 className="w-4 h-4 animate-spin text-sky-400" /> : <Paperclip className="w-4 h-4 text-sky-400" />} 附件
                       </button>
                       <button
                         onClick={() => { setMediaPanel(p => p === 'gif' ? null : 'gif'); setPlusMenuOpen(false) }}
-                        className="w-full flex items-center gap-2.5 px-4 py-2.5 hover:bg-white/8 text-sm text-white/80 transition-colors border-t border-white/8"
+                        className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-white/8 text-sm text-white/80 transition-colors border-t border-white/8"
                       >
-                        <Gift className="w-4 h-4" /> GIF
+                        <Gift className="w-4 h-4 text-purple-400" /> GIF
                       </button>
                     </div>
                   )}
                 </div>
-                <input
-                  value={input}
-                  onChange={e => setInput(e.target.value)}
-                  onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send() } }}
-                  onFocus={() => { setMediaPanel(null); setPlusMenuOpen(false) }}
-                  placeholder="輸入訊息..."
-                  className="flex-1 bg-white/5 border border-white/10 rounded-2xl px-4 py-2.5 text-sm text-white placeholder-white/25 outline-none focus:border-amber-400/30 transition-colors"
-                />
-                <button
-                  onClick={send}
-                  disabled={!input.trim() || sending}
-                  className="p-2.5 bg-amber-500/25 border border-amber-400/30 rounded-xl text-amber-300 hover:bg-amber-500/35 transition-colors disabled:opacity-40"
-                >
-                  {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                </button>
+                {/* Input pill */}
+                <div className="flex-1 flex items-center bg-slate-800/80 border border-white/[0.08] rounded-3xl overflow-hidden focus-within:border-amber-500/40 transition-colors">
+                  <input
+                    value={input}
+                    onChange={e => setInput(e.target.value)}
+                    onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send() } }}
+                    onFocus={() => { setMediaPanel(null); setPlusMenuOpen(false) }}
+                    placeholder="輸入訊息..."
+                    className="flex-1 bg-transparent px-4 py-2.5 text-sm text-white placeholder-white/25 outline-none min-w-0"
+                  />
+                  <button
+                    onClick={send}
+                    disabled={!input.trim() || sending}
+                    className={`shrink-0 w-8 h-8 rounded-full mr-1 flex items-center justify-center transition-all ${
+                      input.trim() && !sending
+                        ? 'bg-gradient-to-br from-amber-500 to-orange-600 text-white shadow-md shadow-amber-500/30 scale-100'
+                        : 'bg-white/8 text-white/25 scale-90'
+                    }`}
+                  >
+                    {sending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+                  </button>
+                </div>
               </div>
             </div>
             </div>{/* end 輸入層 */}
           </div>
         ) : (
-          <div className="flex-1 hidden md:flex items-center justify-center text-white/20">
-            <div className="text-center">
-              <MessageCircle className="w-12 h-12 mx-auto mb-3 opacity-20" />
-              <p className="text-sm">選擇一個對話</p>
+          <div className="flex-1 hidden md:flex items-center justify-center">
+            <div className="text-center text-white/15">
+              <div className="w-16 h-16 rounded-3xl bg-white/5 flex items-center justify-center mx-auto mb-4">
+                <MessageCircle className="w-8 h-8" />
+              </div>
+              <p className="text-sm font-medium">選擇一個對話</p>
+              <p className="text-xs mt-1 text-white/10">或前往別人的個人頁面發起對話</p>
             </div>
           </div>
         )}
