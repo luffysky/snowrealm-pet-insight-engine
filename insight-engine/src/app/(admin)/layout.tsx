@@ -253,16 +253,16 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
         </Link>
         <button
           onClick={() => setSidebarCollapsed(c => !c)}
-          className="hidden lg:flex p-1 text-white/30 hover:text-white/60 transition-colors shrink-0"
+          className="hidden lg:flex items-center justify-center w-7 h-7 rounded-lg bg-white/8 hover:bg-white/16 border border-white/15 hover:border-white/30 text-white/60 hover:text-white transition-all shrink-0"
           title={sidebarCollapsed ? '展開側邊欄' : '收合側邊欄'}
         >
           {sidebarCollapsed ? (
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
             </svg>
           ) : (
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" />
             </svg>
           )}
         </button>
@@ -375,10 +375,10 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
         <header className="lg:hidden sticky top-0 z-30 bg-slate-950/60 backdrop-blur-xl border-b border-white/8 px-4 py-3 flex items-center gap-3">
           <button
             onClick={() => setSidebarOpen(true)}
-            className="text-slate-400 hover:text-white transition-colors"
+            className="flex items-center justify-center w-8 h-8 rounded-lg bg-white/8 hover:bg-white/16 border border-white/15 hover:border-white/30 text-white/70 hover:text-white transition-all"
           >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 6h16M4 12h16M4 18h16" />
             </svg>
           </button>
           <span className="text-sm font-semibold text-white/80 truncate">
