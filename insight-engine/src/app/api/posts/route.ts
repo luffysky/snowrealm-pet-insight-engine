@@ -9,7 +9,12 @@ export async function GET(request: NextRequest) {
   const offset = parseInt(searchParams.get('offset') ?? '0')
   const tag = searchParams.get('tag') ?? undefined
 
-  const posts = await getPosts({ type, limit, offset })
+  // 嘗試取得當前登入用戶，讓 myReaction / isBookmarked 正確回傳
+  const sessionToken = request.cookies.get('admin_session')?.value
+  const auth = sessionToken ? await verifyToken(sessionToken).catch(() => null) : null
+  const viewerId = auth?.sub
+
+  const posts = await getPosts({ type, limit, offset, viewerId })
 
   const filtered = tag ? posts.filter(p => p.tags.includes(tag)) : posts
 

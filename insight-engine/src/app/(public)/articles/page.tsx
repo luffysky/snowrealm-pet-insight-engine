@@ -17,22 +17,29 @@ const CATEGORIES = [
 ]
 
 function PostPreviewCard({ post }: { post: SocialPost }) {
+  const router = useRouter()
   const [copied, setCopied] = useState(false)
   const [showShare, setShowShare] = useState(false)
   const [bookmarked, setBookmarked] = useState(post.isBookmarked ?? false)
   const [bookmarking, setBookmarking] = useState(false)
+  const [liked, setLiked] = useState(!!(post.myReaction))
+  const [likesCount, setLikesCount] = useState(post.likesCount)
+  const [liking, setLiking] = useState(false)
   const postUrl = `/articles/${post.id}`
 
-  const copyLink = async () => {
+  const copyLink = async (e: React.MouseEvent) => {
+    e.stopPropagation()
     await navigator.clipboard.writeText(window.location.origin + postUrl)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
   }
 
   const toggleBookmark = async (e: React.MouseEvent) => {
-    e.preventDefault()
+    e.stopPropagation()
     if (bookmarking) return
     setBookmarking(true)
+    const next = !bookmarked
+    setBookmarked(next)
     try {
       const res = await fetch('/api/posts/bookmark', {
         method: 'POST',
@@ -40,9 +47,38 @@ function PostPreviewCard({ post }: { post: SocialPost }) {
         body: JSON.stringify({ postId: post.id }),
       })
       const data = await res.json() as { isBookmarked?: boolean; error?: string }
-      if (res.ok) setBookmarked(data.isBookmarked ?? !bookmarked)
+      if (res.ok) setBookmarked(data.isBookmarked ?? next)
+      else setBookmarked(!next)
     } finally {
       setBookmarking(false)
+    }
+  }
+
+  const toggleLike = async (e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (liking) return
+    setLiking(true)
+    const next = !liked
+    setLiked(next)
+    setLikesCount(c => next ? c + 1 : Math.max(0, c - 1))
+    try {
+      const res = await fetch('/api/admin/social/reactions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ postId: post.id, type: 'like' }),
+      })
+      if (res.ok) {
+        const data = await res.json() as { likesCount: number }
+        setLikesCount(data.likesCount)
+      } else {
+        setLiked(!next)
+        setLikesCount(c => next ? Math.max(0, c - 1) : c + 1)
+      }
+    } catch {
+      setLiked(!next)
+      setLikesCount(c => next ? Math.max(0, c - 1) : c + 1)
+    } finally {
+      setLiking(false)
     }
   }
 
@@ -50,7 +86,9 @@ function PostPreviewCard({ post }: { post: SocialPost }) {
   const timeStr = new Date(post.createdAt).toLocaleDateString('zh-TW', { month: 'short', day: 'numeric' })
 
   return (
-    <article className="bg-white/[0.04] backdrop-blur-xl border border-white/8 border-t-white/14 rounded-3xl overflow-hidden hover:border-white/16 hover:bg-white/[0.06] transition-all group shadow-[0_8px_32px_rgba(0,0,0,0.3),inset_0_1px_0_rgba(255,255,255,0.08)]">
+    <article
+      onClick={() => router.push(postUrl)}
+      className="bg-white/[0.04] backdrop-blur-xl border border-white/8 border-t-white/14 rounded-3xl overflow-hidden hover:border-white/16 hover:bg-white/[0.06] transition-all group shadow-[0_8px_32px_rgba(0,0,0,0.3),inset_0_1px_0_rgba(255,255,255,0.08)] cursor-pointer">
       {/* Video preview */}
       {post.videoUrl && (
         <div className="relative overflow-hidden h-48 bg-black">
@@ -103,17 +141,28 @@ function PostPreviewCard({ post }: { post: SocialPost }) {
 
         {/* Footer */}
         <div className="flex items-center justify-between pt-1 border-t border-white/5">
-          <div className="flex items-center gap-3">
-            <span className="flex items-center gap-1 text-xs text-white/30">
-              <Heart className="w-3.5 h-3.5" /> {post.likesCount}
-            </span>
-            <span className="flex items-center gap-1 text-xs text-white/30">
-              <MessageSquare className="w-3.5 h-3.5" /> {post.commentsCount}
-            </span>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={toggleLike}
+              disabled={liking}
+              className={`flex items-center gap-1 px-2 py-1 rounded-lg text-xs transition-colors ${
+                liked ? 'text-red-400 bg-red-400/10' : 'text-white/30 hover:text-red-400 hover:bg-white/5'
+              }`}
+            >
+              <Heart className={`w-3.5 h-3.5 ${liked ? 'fill-red-400' : ''}`} />
+              {likesCount > 0 && <span>{likesCount}</span>}
+            </button>
+            <button
+              onClick={e => { e.stopPropagation(); router.push(`${postUrl}#comments`) }}
+              className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs text-white/30 hover:text-blue-400 hover:bg-white/5 transition-colors"
+            >
+              <MessageSquare className="w-3.5 h-3.5" />
+              {post.commentsCount > 0 && <span>{post.commentsCount}</span>}
+            </button>
           </div>
           <div className="flex items-center gap-1">
             <div className="relative">
-              <button onClick={() => setShowShare(s => !s)}
+              <button onClick={e => { e.stopPropagation(); setShowShare(s => !s) }}
                 className="p-1.5 rounded-lg text-white/25 hover:text-white/60 hover:bg-white/5 transition-colors"
               >
                 <Share2 className="w-3.5 h-3.5" />
@@ -125,13 +174,13 @@ function PostPreviewCard({ post }: { post: SocialPost }) {
                     {copied ? '已複製' : '複製連結'}
                   </button>
                   <button
-                    onClick={() => window.open(`https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(window.location.origin + postUrl)}`)}
+                    onClick={e => { e.stopPropagation(); window.open(`https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(window.location.origin + postUrl)}`) }}
                     className="w-full flex items-center gap-2 px-3 py-2 text-xs text-white/60 hover:bg-white/5"
                   >
                     <span className="text-sm">💬</span> LINE
                   </button>
                   <button
-                    onClick={() => window.open(`https://twitter.com/intent/tweet?url=${encodeURIComponent(window.location.origin + postUrl)}&text=${encodeURIComponent(post.title ?? post.content.slice(0, 80))}`)}
+                    onClick={e => { e.stopPropagation(); window.open(`https://twitter.com/intent/tweet?url=${encodeURIComponent(window.location.origin + postUrl)}&text=${encodeURIComponent(post.title ?? post.content.slice(0, 80))}`) }}
                     className="w-full flex items-center gap-2 px-3 py-2 text-xs text-white/60 hover:bg-white/5"
                   >
                     <TwitterIcon className="w-3.5 h-3.5" /> Twitter
@@ -149,9 +198,6 @@ function PostPreviewCard({ post }: { post: SocialPost }) {
             >
               <Bookmark className={`w-3.5 h-3.5 ${bookmarked ? 'fill-current' : ''}`} />
             </button>
-            <Link href={postUrl} className="p-1.5 rounded-lg text-white/25 hover:text-amber-300 hover:bg-white/5 transition-colors">
-              <ExternalLink className="w-3.5 h-3.5" />
-            </Link>
           </div>
         </div>
       </div>
