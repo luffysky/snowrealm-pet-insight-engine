@@ -340,6 +340,29 @@ export default function HomePage() {
           </div>
         </div>
       </footer>
+
+      {/* 發文 FAB — 固定右下角，已登入才顯示 */}
+      <WriteFab />
     </div>
+  )
+}
+
+function WriteFab() {
+  const [show, setShow] = useState(false)
+  useEffect(() => {
+    fetch('/api/auth/me')
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (d?.userId) setShow(true) })
+      .catch(() => {})
+  }, [])
+  if (!show) return null
+  return (
+    <Link
+      href="/write"
+      className="fixed bottom-6 right-6 z-50 w-14 h-14 bg-sky-500 hover:bg-sky-400 text-white rounded-full shadow-lg shadow-sky-500/30 flex items-center justify-center text-2xl transition-all hover:scale-105 active:scale-95"
+      title="發布文章"
+    >
+      ✍️
+    </Link>
   )
 }

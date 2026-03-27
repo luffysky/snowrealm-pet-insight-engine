@@ -1,13 +1,18 @@
 'use client'
 
 import { useState, useRef } from 'react'
-import { Image as ImageIcon, Film, Send, X, Loader2, Tag, Globe, Lock, ChevronDown } from 'lucide-react'
+import { Image as ImageIcon, Film, Send, X, Loader2, Tag, Globe, Lock } from 'lucide-react'
 import { GifPicker } from './GifPicker'
 import { ImagePicker } from './ImagePicker'
 import { ArticleEditor, blocksToHtml, type ArticleBlock } from './ArticleEditor'
 import type { SocialPost } from '@/lib/socialEngine'
 
 type PostType = 'post' | 'article'
+
+interface UploadedVideo {
+  videoUrl: string
+  thumbnailUrl: string
+}
 
 interface PostComposerProps {
   authorName?: string
@@ -25,6 +30,8 @@ export function PostComposer({ authorName = '你', authorAvatar, onPosted, defau
   const [content, setContent] = useState('')
   const [blocks, setBlocks] = useState<ArticleBlock[]>([])
   const [images, setImages] = useState<{ url: string; alt?: string }[]>([])
+  const [video, setVideo] = useState<UploadedVideo | null>(null)
+  const [videoUploading, setVideoUploading] = useState(false)
   const [tags, setTags] = useState<string[]>([])
   const [tagInput, setTagInput] = useState('')
   const [isPublic, setIsPublic] = useState(true)
@@ -32,17 +39,34 @@ export function PostComposer({ authorName = '你', authorAvatar, onPosted, defau
   const [showImage, setShowImage] = useState(false)
   const [posting, setPosting] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
+  const videoRef = useRef<HTMLInputElement>(null)
 
   const initials = authorName.slice(0, 2).toUpperCase()
 
   const uploadImage = async (file: File): Promise<string> => {
     const fd = new FormData()
     fd.append('file', file)
-    fd.append('folder', 'social')
-    const res = await fetch('/api/admin/upload', { method: 'POST', body: fd })
+    const res = await fetch('/api/upload/media', { method: 'POST', body: fd })
     const data = await res.json() as { url?: string; error?: string }
     if (!data.url) throw new Error(data.error ?? '上傳失敗')
     return data.url
+  }
+
+  const handleVideoSelect = async (files: FileList | null) => {
+    if (!files?.[0]) return
+    const file = files[0]
+    setVideoUploading(true)
+    try {
+      const fd = new FormData()
+      fd.append('file', file)
+      const res = await fetch('/api/upload/video', { method: 'POST', body: fd })
+      const data = await res.json() as { videoUrl?: string; thumbnailUrl?: string; error?: string }
+      if (!data.videoUrl) throw new Error(data.error ?? '影片上傳失敗')
+      setVideo({ videoUrl: data.videoUrl, thumbnailUrl: data.thumbnailUrl ?? '' })
+      setImages([])
+    } finally {
+      setVideoUploading(false)
+    }
   }
 
   const addImage = (url: string) => {
@@ -69,7 +93,11 @@ export function PostComposer({ authorName = '你', authorAvatar, onPosted, defau
       const res = await fetch('/api/admin/social/posts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type, title: title.trim() || undefined, content: articleContent, images, tags, isPublic }),
+        body: JSON.stringify({
+          type, title: title.trim() || undefined, content: articleContent,
+          images, videoUrl: video?.videoUrl, videoThumbnailUrl: video?.thumbnailUrl,
+          tags, isPublic,
+        }),
       })
       if (res.ok) {
         const data = await res.json() as { post: SocialPost }
@@ -77,6 +105,7 @@ export function PostComposer({ authorName = '你', authorAvatar, onPosted, defau
         setTitle('')
         setBlocks([])
         setImages([])
+        setVideo(null)
         setTags([])
         setExpanded(compact)
         onPosted?.(data.post)
@@ -174,6 +203,18 @@ export function PostComposer({ authorName = '你', authorAvatar, onPosted, defau
         </div>
       )}
 
+      {/* Video preview */}
+      {video && (
+        <div className="relative rounded-xl overflow-hidden bg-black aspect-video max-h-40">
+          <video src={video.videoUrl} poster={video.thumbnailUrl} className="w-full h-full object-cover" controls />
+          <button onClick={() => setVideo(null)}
+            className="absolute top-1.5 right-1.5 w-6 h-6 bg-black/60 rounded-full flex items-center justify-center hover:bg-black/80 transition-colors"
+          >
+            <X className="w-3.5 h-3.5 text-white" />
+          </button>
+        </div>
+      )}
+
       {/* Tags */}
       {tags.length > 0 && (
         <div className="flex flex-wrap gap-1.5">
@@ -227,6 +268,21 @@ export function PostComposer({ authorName = '你', authorAvatar, onPosted, defau
               </div>
             )}
           </div>
+
+          {/* Video upload — post type only */}
+          {type === 'post' && (
+            <>
+              <input ref={videoRef} type="file" accept="video/*" className="hidden" onChange={e => handleVideoSelect(e.target.files)} />
+              <button
+                onClick={() => videoRef.current?.click()}
+                disabled={videoUploading || images.length > 0 || !!video}
+                className="p-2 rounded-xl text-white/30 hover:text-amber-300 hover:bg-white/5 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                title="上傳影片（30 秒以內）"
+              >
+                {videoUploading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Film className="w-5 h-5" />}
+              </button>
+            </>
+          )}
 
           {/* Tag input */}
           <div className="flex items-center gap-1">

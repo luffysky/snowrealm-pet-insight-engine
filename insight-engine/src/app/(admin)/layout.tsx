@@ -22,7 +22,7 @@ interface UserInfo {
 const KNOWN_ADMIN_PAGES = new Set([
   'ab', 'account', 'ai-settings', 'api-keys', 'broadcast', 'crosstab', 'export', 'funnel', 'insight', 'line-settings',
   'messages', 'my-responses', 'notification-rules', 'notification-styles', 'panel', 'profile', 'rich-menu',
-  'site-settings', 'story-wall', 'subscription', 'support', 'survey-templates', 'surveys', 'tag-rules', 'tags', 'team', 'templates', 'tenants',
+  'site-settings', 'social-posts', 'social-reports', 'story-wall', 'subscription', 'support', 'survey-templates', 'surveys', 'tag-rules', 'tags', 'team', 'templates', 'tenants',
   'theme-settings', 'utm', 'utm-links', 'upgrade', 'waitlist', 'webhooks', 'responses', 'zcoin',
 ])
 
@@ -64,6 +64,8 @@ const NAV_GROUPS = [
   {
     label: '社群',
     items: [
+      { path: '/social-posts', label: '社群貼文管理', icon: '📋' },
+      { path: '/social-reports', label: '檢舉管理', icon: '🚩' },
       { path: '/profile', label: '個人頁面', icon: '👤' },
       { path: '/messages', label: '私訊', icon: '💬' },
       { path: '/support', label: '客服中心', icon: '📬' },
@@ -314,6 +316,27 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
           />
         ))}
       </div>
+
+      {/* 前台快速連結 */}
+      {!sidebarCollapsed && (
+        <div className="border-t border-white/8 px-3 py-2 flex gap-1.5">
+          <a href="/articles" target="_blank" rel="noopener noreferrer"
+            className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs text-white/40 hover:text-white/70 hover:bg-white/5 transition-colors"
+          >
+            <span>🌐</span> 社群頁
+          </a>
+          <a href="/" target="_blank" rel="noopener noreferrer"
+            className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs text-white/40 hover:text-white/70 hover:bg-white/5 transition-colors"
+          >
+            <span>🏠</span> 首頁
+          </a>
+          <a href="/write" target="_blank" rel="noopener noreferrer"
+            className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs text-white/40 hover:text-white/70 hover:bg-white/5 transition-colors"
+          >
+            <span>✍️</span> 發文
+          </a>
+        </div>
+      )}
 
       {/* User info + logout */}
       {!sidebarCollapsed && (

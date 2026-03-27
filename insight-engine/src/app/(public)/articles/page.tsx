@@ -1,8 +1,9 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
+import { useSearchParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Search, TrendingUp, Heart, MessageSquare, Share2, Check, ExternalLink, PenSquare, Play } from 'lucide-react'
+import { Search, TrendingUp, Heart, MessageSquare, Share2, Check, ExternalLink, PenSquare, Play, Bookmark } from 'lucide-react'
 const TwitterIcon = ({ className }: { className?: string }) => (<svg className={className} viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>)
 import type { SocialPost } from '@/lib/socialEngine'
 import { CreatePostModal } from '@/components/public/CreatePostModal'
@@ -16,12 +17,31 @@ const CATEGORIES = [
 function PostPreviewCard({ post }: { post: SocialPost }) {
   const [copied, setCopied] = useState(false)
   const [showShare, setShowShare] = useState(false)
+  const [bookmarked, setBookmarked] = useState(post.isBookmarked ?? false)
+  const [bookmarking, setBookmarking] = useState(false)
   const postUrl = `/articles/${post.id}`
 
   const copyLink = async () => {
     await navigator.clipboard.writeText(window.location.origin + postUrl)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
+  }
+
+  const toggleBookmark = async (e: React.MouseEvent) => {
+    e.preventDefault()
+    if (bookmarking) return
+    setBookmarking(true)
+    try {
+      const res = await fetch('/api/posts/bookmark', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ postId: post.id }),
+      })
+      const data = await res.json() as { isBookmarked?: boolean; error?: string }
+      if (res.ok) setBookmarked(data.isBookmarked ?? !bookmarked)
+    } finally {
+      setBookmarking(false)
+    }
   }
 
   const initials = (post.authorName ?? '?').slice(0, 2).toUpperCase()
@@ -117,6 +137,16 @@ function PostPreviewCard({ post }: { post: SocialPost }) {
                 </div>
               )}
             </div>
+            <button
+              onClick={toggleBookmark}
+              disabled={bookmarking}
+              className={`p-1.5 rounded-lg transition-colors ${
+                bookmarked ? 'text-amber-400 hover:text-amber-300' : 'text-white/25 hover:text-amber-400 hover:bg-white/5'
+              }`}
+              title={bookmarked ? '取消收藏' : '收藏'}
+            >
+              <Bookmark className={`w-3.5 h-3.5 ${bookmarked ? 'fill-current' : ''}`} />
+            </button>
             <Link href={postUrl} className="p-1.5 rounded-lg text-white/25 hover:text-amber-300 hover:bg-white/5 transition-colors">
               <ExternalLink className="w-3.5 h-3.5" />
             </Link>
@@ -128,14 +158,27 @@ function PostPreviewCard({ post }: { post: SocialPost }) {
 }
 
 export default function ArticlesPage() {
+  const searchParams = useSearchParams()
+  const router = useRouter()
   const [posts, setPosts] = useState<SocialPost[]>([])
   const [loading, setLoading] = useState(true)
-  const [search, setSearch] = useState('')
+  const [search, setSearch] = useState(searchParams.get('tag') ? `#${searchParams.get('tag')}` : '')
   const [typeFilter, setTypeFilter] = useState('')
+  const [tagFilter, setTagFilter] = useState(searchParams.get('tag') ?? '')
   const [offset, setOffset] = useState(0)
   const [hasMore, setHasMore] = useState(true)
   const [showCreateModal, setShowCreateModal] = useState(false)
   const LIMIT = 12
+
+  // Sync tagFilter → URL
+  function applyTagFilter(tag: string) {
+    setTagFilter(tag)
+    setSearch(tag ? `#${tag}` : '')
+    const url = new URL(window.location.href)
+    if (tag) url.searchParams.set('tag', tag)
+    else url.searchParams.delete('tag')
+    router.replace(url.pathname + url.search, { scroll: false })
+  }
 
   const loadPosts = useCallback(async (reset = false) => {
     setLoading(true)
@@ -156,12 +199,13 @@ export default function ArticlesPage() {
 
   useEffect(() => { loadPosts(true) }, [typeFilter]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const filtered = search
-    ? posts.filter(p =>
-        p.content.toLowerCase().includes(search.toLowerCase()) ||
-        (p.title ?? '').toLowerCase().includes(search.toLowerCase()) ||
-        p.tags.some(t => t.toLowerCase().includes(search.toLowerCase()))
-      )
+  const filtered = (search || tagFilter)
+    ? posts.filter(p => {
+        const s = search.replace(/^#/, '').toLowerCase()
+        return p.content.toLowerCase().includes(s) ||
+          (p.title ?? '').toLowerCase().includes(s) ||
+          p.tags.some(t => t.toLowerCase().includes(s))
+      })
     : posts
 
   const trendingTags = Array.from(new Set(posts.flatMap(p => p.tags))).slice(0, 8)
@@ -206,7 +250,7 @@ export default function ArticlesPage() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
             <input
               value={search}
-              onChange={e => setSearch(e.target.value)}
+              onChange={e => { setSearch(e.target.value); if (!e.target.value) applyTagFilter('') }}
               placeholder="搜尋文章、標籤..."
               className="w-full pl-9 pr-4 py-2.5 glass-input rounded-xl text-sm text-white placeholder-white/30"
             />
@@ -231,8 +275,12 @@ export default function ArticlesPage() {
               <TrendingUp className="w-3.5 h-3.5" /> 熱門：
             </span>
             {trendingTags.map(t => (
-              <button key={t} onClick={() => setSearch(t)}
-                className="text-xs px-2.5 py-1 bg-white/5 border border-white/10 rounded-full text-white/50 hover:text-amber-300 hover:border-amber-400/30 transition-colors"
+              <button key={t} onClick={() => applyTagFilter(tagFilter === t ? '' : t)}
+                className={`text-xs px-2.5 py-1 border rounded-full transition-colors ${
+                  tagFilter === t
+                    ? 'bg-amber-500/10 border-amber-400/40 text-amber-300'
+                    : 'bg-white/5 border-white/10 text-white/50 hover:text-amber-300 hover:border-amber-400/30'
+                }`}
               >
                 #{t}
               </button>

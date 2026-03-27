@@ -13,14 +13,17 @@ const nextConfig: NextConfig = {
     JWT_SECRET: process.env.JWT_SECRET,
   },
   // ffmpeg 套件含 platform-specific binary，不能在 build 時 bundle
+  // serverExternalPackages 同時適用 webpack 和 Turbopack
   serverExternalPackages: [
     'fluent-ffmpeg',
     '@ffmpeg-installer/ffmpeg',
     '@ffprobe-installer/ffprobe',
   ],
+  // Next.js 16 預設啟用 Turbopack；加 turbopack: {} 避免 webpack config 衝突警告
+  turbopack: {},
   webpack: (config, { isServer }) => {
     if (isServer) {
-      // 讓 webpack 完全不分析這些模組，runtime 才 require
+      // fallback：使用 webpack 時也排除這些模組
       const externals = Array.isArray(config.externals) ? config.externals : []
       config.externals = [
         ...externals,

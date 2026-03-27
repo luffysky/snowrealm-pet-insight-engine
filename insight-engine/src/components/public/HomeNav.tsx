@@ -88,6 +88,20 @@ export function HomeNav() {
                 <span>📊</span> 進入後台
               </Link>
               <Link
+                href="/articles"
+                className="flex items-center gap-2 px-4 py-2 text-sm text-slate-600 hover:text-sky-600 hover:bg-sky-50 transition-colors"
+                onClick={() => setDropOpen(false)}
+              >
+                <span>🌐</span> 社群文章
+              </Link>
+              <Link
+                href="/write"
+                className="flex items-center gap-2 px-4 py-2 text-sm text-slate-600 hover:text-sky-600 hover:bg-sky-50 transition-colors"
+                onClick={() => setDropOpen(false)}
+              >
+                <span>✍️</span> 發布文章
+              </Link>
+              <Link
                 href="/zcoin-shop"
                 className="flex items-center gap-2 px-4 py-2 text-sm text-slate-600 hover:text-amber-600 hover:bg-amber-50 transition-colors"
                 onClick={() => setDropOpen(false)}

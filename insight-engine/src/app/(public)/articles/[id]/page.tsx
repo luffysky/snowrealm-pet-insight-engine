@@ -11,6 +11,7 @@ import { FollowButton } from '@/components/social/FollowButton'
 import { DMButton } from '@/components/social/DMButton'
 import type { SocialPost } from '@/lib/socialEngine'
 import type { ArticleBlock } from '@/components/social/ArticleEditor'
+import { VideoPlayer } from '@/components/public/VideoPlayer'
 
 function BlocksRenderer({ blocks }: { blocks: ArticleBlock[] }) {
   return (
@@ -126,8 +127,19 @@ export default function ArticleDetailPage() {
       </nav>
 
       <div className="max-w-2xl mx-auto px-4 py-8 space-y-6">
-        {/* Hero image */}
-        {post.images.length > 0 && (
+        {/* Hero video */}
+        {post.videoUrl && (
+          <div className="rounded-2xl overflow-hidden">
+            <VideoPlayer
+              src={post.videoUrl}
+              thumbnail={post.videoThumbnailUrl}
+              className="w-full"
+            />
+          </div>
+        )}
+
+        {/* Hero image (only if no video) */}
+        {!post.videoUrl && post.images.length > 0 && (
           <div className="rounded-2xl overflow-hidden max-h-80">
             <img src={post.images[0].url} alt="" className="w-full h-full object-cover" />
           </div>

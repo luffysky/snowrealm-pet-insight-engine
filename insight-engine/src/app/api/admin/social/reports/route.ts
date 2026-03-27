@@ -1,7 +1,71 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireRole } from '@/lib/tenant'
-import { execute, queryOne } from '@/lib/db'
+import { execute, query, queryOne } from '@/lib/db'
 import { notifyReport } from '@/lib/lineNotify'
+
+interface ReportRow extends Record<string, unknown> {
+  id: string
+  reporter_id: string
+  reporter_name: string
+  target_type: string
+  target_id: string
+  target_content: string | null
+  target_author_id: string | null
+  target_author_name: string | null
+  reason: string
+  description: string | null
+  status: string
+  reviewed_by: string | null
+  created_at: string
+}
+
+const REASON_LABELS: Record<string, string> = {
+  spam: '垃圾訊息', fraud: '詐騙', harassment: '騷擾',
+  inappropriate: '不當內容', violence: '暴力', privacy: '隱私洩漏',
+  copyright: '著作權侵犯', other: '其他',
+}
+
+/** GET /api/admin/social/reports — admin 查看所有舉報 */
+export async function GET(req: NextRequest): Promise<NextResponse> {
+  const roleCheck = await requireRole('viewer')
+  if (roleCheck instanceof NextResponse) return roleCheck
+
+  const { searchParams } = new URL(req.url)
+  const status = searchParams.get('status') ?? 'pending'
+  const limit = Math.min(parseInt(searchParams.get('limit') ?? '30'), 100)
+  const offset = parseInt(searchParams.get('offset') ?? '0')
+
+  const rows = await query<ReportRow>(
+    `SELECT * FROM social_reports WHERE status = $1 ORDER BY created_at DESC LIMIT $2 OFFSET $3`,
+    [status, limit, offset]
+  )
+
+  return NextResponse.json({
+    reports: rows.map(r => ({
+      ...r,
+      reasonLabel: REASON_LABELS[r.reason] ?? r.reason,
+    })),
+  })
+}
+
+/** PATCH /api/admin/social/reports — resolve/dismiss a report */
+export async function PATCH(req: NextRequest): Promise<NextResponse> {
+  const roleCheck = await requireRole('admin')
+  if (roleCheck instanceof NextResponse) return roleCheck
+
+  const { id, action } = await req.json() as { id: string; action: 'resolve' | 'dismiss' }
+  if (!id || !['resolve', 'dismiss'].includes(action)) {
+    return NextResponse.json({ error: '無效的操作' }, { status: 400 })
+  }
+
+  const status = action === 'resolve' ? 'resolved' : 'dismissed'
+  await execute(
+    `UPDATE social_reports SET status = $1, reviewed_by = $2, updated_at = NOW() WHERE id = $3`,
+    [status, roleCheck.userId, id]
+  )
+
+  return NextResponse.json({ ok: true, status })
+}
 
 /** POST /api/admin/social/reports — 提交檢舉 */
 export async function POST(req: NextRequest): Promise<NextResponse> {

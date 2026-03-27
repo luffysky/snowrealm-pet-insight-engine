@@ -30,6 +30,8 @@ export async function POST(request: NextRequest) {
     title?: string
     content: string
     images?: { url: string; alt?: string }[]
+    videoUrl?: string
+    videoThumbnailUrl?: string
     tags?: string[]
     isPublic?: boolean
     status?: 'published' | 'draft'
@@ -44,6 +46,8 @@ export async function POST(request: NextRequest) {
     title: body.title,
     content: body.content,
     images: body.images,
+    videoUrl: body.videoUrl,
+    videoThumbnailUrl: body.videoThumbnailUrl,
     tags: body.tags,
     isPublic: body.isPublic,
     status: body.status,
