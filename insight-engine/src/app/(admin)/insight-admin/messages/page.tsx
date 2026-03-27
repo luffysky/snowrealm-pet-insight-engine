@@ -4,7 +4,8 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import {
   Send, Loader2, ArrowLeft, MessageCircle, Search, MoreHorizontal,
   RotateCcw, Trash2, Bookmark, BookmarkCheck, Download, CheckSquare,
-  Square, Trash, UserPlus, Bell, Check, X, Users,
+  Square, Trash, UserPlus, Bell, Check, X, Users, Smile, Paperclip,
+  Phone, Video, Info, ChevronDown,
 } from 'lucide-react'
 
 interface Conversation {
@@ -57,13 +58,33 @@ interface AdminUser {
   role: string
 }
 
-const GlassPanel = ({ children, className = '' }: { children: React.ReactNode; className?: string }) => (
-  <div className={`p-px rounded-2xl bg-gradient-to-br from-white/20 via-white/5 to-purple-500/10 ${className}`}>
-    <div className="h-full rounded-[calc(1rem-1px)] bg-slate-900/80 backdrop-blur-xl overflow-hidden">
-      {children}
+// ── Avatar ──
+function Avatar({ name, url, size = 'md', online }: { name: string | null; url?: string | null; size?: 'sm' | 'md' | 'lg'; online?: boolean }) {
+  const dim = size === 'sm' ? 'w-8 h-8 text-xs' : size === 'lg' ? 'w-12 h-12 text-base' : 'w-10 h-10 text-sm'
+  const dot = size === 'sm' ? 'w-2 h-2 border' : 'w-2.5 h-2.5 border-2'
+  const initials = (name ?? '?').slice(0, 2).toUpperCase()
+  return (
+    <div className={`relative shrink-0 ${dim}`}>
+      <div className={`${dim} rounded-full bg-gradient-to-br from-amber-500/40 to-purple-600/40 flex items-center justify-center font-bold text-white/90 overflow-hidden ring-1 ring-white/10`}>
+        {url ? <img src={url} alt={name ?? ''} className="w-full h-full object-cover" /> : initials}
+      </div>
+      {online && (
+        <span className={`absolute bottom-0 right-0 ${dot} bg-emerald-400 rounded-full border-slate-900`} />
+      )}
     </div>
-  </div>
-)
+  )
+}
+
+// ── Date separator ──
+function DateSeparator({ date }: { date: string }) {
+  return (
+    <div className="flex items-center gap-3 my-4">
+      <div className="flex-1 h-px bg-white/6" />
+      <span className="text-[10px] text-white/25 px-2 py-0.5 bg-white/5 rounded-full">{date}</span>
+      <div className="flex-1 h-px bg-white/6" />
+    </div>
+  )
+}
 
 export default function MessagesPage() {
   const [conversations, setConversations] = useState<Conversation[]>([])
@@ -78,13 +99,11 @@ export default function MessagesPage() {
   const [showThread, setShowThread] = useState(false)
   const [activeTab, setActiveTab] = useState<'chats' | 'friends'>('chats')
 
-  // Message actions
   const [hoveredMsgId, setHoveredMsgId] = useState<string | null>(null)
   const [menuMsgId, setMenuMsgId] = useState<string | null>(null)
   const [selectMode, setSelectMode] = useState(false)
   const [selectedMsgIds, setSelectedMsgIds] = useState<Set<string>>(new Set())
 
-  // Friends
   const [friendRequests, setFriendRequests] = useState<FriendRequest[]>([])
   const [showAddFriend, setShowAddFriend] = useState(false)
   const [allUsers, setAllUsers] = useState<AdminUser[]>([])
@@ -171,7 +190,6 @@ export default function MessagesPage() {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
-  // Close menu when clicking outside
   useEffect(() => {
     const handler = () => setMenuMsgId(null)
     document.addEventListener('click', handler)
@@ -190,6 +208,7 @@ export default function MessagesPage() {
     const text = input.trim()
     setSending(true)
     setInput('')
+    if (textareaRef.current) textareaRef.current.style.height = 'auto'
     try {
       const res = await fetch('/api/admin/social/messages', {
         method: 'POST',
@@ -217,8 +236,6 @@ export default function MessagesPage() {
     } catch { /* ignore */ }
     finally { setSending(false) }
   }
-
-  // ── Message actions ──────────────────────────────────────────
 
   const recallMessage = async (msgId: string) => {
     if (!selected) return
@@ -279,8 +296,6 @@ export default function MessagesPage() {
     window.open(`/api/admin/social/messages/${selected.userId}?export=1`, '_blank')
   }
 
-  // ── Friend requests ──────────────────────────────────────────
-
   const loadAllUsers = async () => {
     try {
       const res = await fetch('/api/admin/social/friends?type=users')
@@ -314,8 +329,6 @@ export default function MessagesPage() {
     }
   }
 
-  // ── Helpers ──────────────────────────────────────────────────
-
   const formatTime = (iso: string) => {
     const d = new Date(iso)
     const now = new Date()
@@ -325,53 +338,72 @@ export default function MessagesPage() {
       : d.toLocaleDateString('zh-TW', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
   }
 
+  const formatDateLabel = (iso: string) => {
+    const d = new Date(iso)
+    const now = new Date()
+    const yesterday = new Date(now)
+    yesterday.setDate(now.getDate() - 1)
+    if (d.toDateString() === now.toDateString()) return '今天'
+    if (d.toDateString() === yesterday.toDateString()) return '昨天'
+    return d.toLocaleDateString('zh-TW', { year: 'numeric', month: 'long', day: 'numeric' })
+  }
+
   const filteredConvs = conversations.filter(c =>
     !search || (c.displayName ?? '').toLowerCase().includes(search.toLowerCase())
   )
 
-  const initials = (name: string | null) => (name ?? '?').slice(0, 2).toUpperCase()
-
-  const toggleSelectMsg = (id: string) => {
-    setSelectedMsgIds(prev => {
-      const next = new Set(prev)
-      next.has(id) ? next.delete(id) : next.add(id)
-      return next
-    })
-  }
-
   const isRecalled = (msg: Message) => !!msg.recalledAt || msg.content === '[已收回]'
+  const toggleSelectMsg = (id: string) => setSelectedMsgIds(prev => {
+    const next = new Set(prev); next.has(id) ? next.delete(id) : next.add(id); return next
+  })
+
+  // Group messages by date for separators
+  const messagesWithDates = messages.reduce<{ type: 'date' | 'msg'; date?: string; msg?: Message }[]>((acc, msg, i) => {
+    const prev = messages[i - 1]
+    const curDate = formatDateLabel(msg.createdAt)
+    const prevDate = prev ? formatDateLabel(prev.createdAt) : null
+    if (curDate !== prevDate) acc.push({ type: 'date', date: curDate })
+    acc.push({ type: 'msg', msg })
+    return acc
+  }, [])
 
   return (
     <div className="h-[calc(100vh-8rem)] flex flex-col">
-      <div className="mb-4 flex items-center gap-2">
+      {/* Page header */}
+      <div className="mb-4 flex items-center gap-3">
         {showThread && (
-          <button onClick={() => setShowThread(false)} className="md:hidden p-2 text-white/50 hover:text-white">
+          <button onClick={() => setShowThread(false)} className="md:hidden p-2 text-white/50 hover:text-white rounded-xl hover:bg-white/5 transition-colors">
             <ArrowLeft className="w-5 h-5" />
           </button>
         )}
-        <h1 className="text-xl font-bold text-white/90">私訊</h1>
+        <h1 className="text-xl font-bold text-white">私訊</h1>
         {friendRequests.length > 0 && (
-          <span className="flex items-center gap-1 px-2 py-0.5 bg-amber-500/20 border border-amber-400/30 rounded-full text-xs text-amber-300">
+          <span className="flex items-center gap-1.5 px-2.5 py-1 bg-amber-500/15 border border-amber-400/25 rounded-full text-xs text-amber-300 font-medium">
             <Bell className="w-3 h-3" />
             {friendRequests.length} 筆好友請求
           </span>
         )}
       </div>
 
-      <div className="flex-1 grid grid-cols-1 md:grid-cols-[280px_1fr] gap-4 min-h-0">
-        {/* Left panel */}
-        <GlassPanel className={`flex flex-col min-h-0 ${showThread ? 'hidden md:flex' : 'flex'}`}>
+      <div className="flex-1 grid grid-cols-1 md:grid-cols-[300px_1fr] gap-3 min-h-0">
+
+        {/* ── Left: Conversation list ── */}
+        <div className={`flex flex-col min-h-0 rounded-2xl overflow-hidden border border-white/[0.08] bg-gradient-to-b from-white/[0.04] to-white/[0.02] backdrop-blur-xl ${showThread ? 'hidden md:flex' : 'flex'}`}>
+
           {/* Tabs */}
-          <div className="flex border-b border-white/8">
+          <div className="flex px-2 pt-2 gap-1 shrink-0">
             {(['chats', 'friends'] as const).map(tab => (
-              <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-medium transition-colors ${
-                  activeTab === tab ? 'text-amber-300 border-b-2 border-amber-400' : 'text-white/40 hover:text-white/60'
+              <button key={tab} onClick={() => setActiveTab(tab)}
+                className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold transition-all ${
+                  activeTab === tab
+                    ? 'bg-amber-500/20 text-amber-300 shadow-[0_0_12px_rgba(245,158,11,0.15)]'
+                    : 'text-white/30 hover:text-white/60 hover:bg-white/5'
                 }`}
               >
-                {tab === 'chats' ? <><MessageCircle className="w-3.5 h-3.5" />對話</> : <><Users className="w-3.5 h-3.5" />好友</>}
+                {tab === 'chats'
+                  ? <><MessageCircle className="w-3.5 h-3.5" />對話</>
+                  : <><Users className="w-3.5 h-3.5" />好友</>
+                }
               </button>
             ))}
           </div>
@@ -379,74 +411,81 @@ export default function MessagesPage() {
           {activeTab === 'chats' ? (
             <>
               {/* Search */}
-              <div className="px-3 pt-3 pb-2">
+              <div className="px-3 pt-2 pb-1 shrink-0">
                 <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/25" />
                   <input
                     value={search}
                     onChange={e => setSearch(e.target.value)}
-                    placeholder="搜尋對話..."
-                    className="w-full pl-9 pr-3 py-2 bg-white/5 border border-white/10 rounded-xl text-sm text-white placeholder-white/25 outline-none focus:border-amber-400/30 transition-colors"
+                    placeholder="搜尋聯絡人..."
+                    className="w-full pl-8 pr-3 py-2 bg-white/5 border border-white/8 rounded-xl text-xs text-white placeholder-white/20 outline-none focus:border-amber-400/30 focus:bg-white/8 transition-all"
                   />
                 </div>
               </div>
-              <div className="flex-1 overflow-y-auto">
+
+              {/* Conversations */}
+              <div className="flex-1 overflow-y-auto px-2 pb-2 space-y-0.5">
                 {loadingConvs ? (
-                  <div className="flex justify-center py-8"><Loader2 className="w-5 h-5 text-white/30 animate-spin" /></div>
+                  <div className="flex justify-center py-10"><Loader2 className="w-5 h-5 text-white/25 animate-spin" /></div>
                 ) : filteredConvs.length === 0 ? (
-                  <div className="text-center py-12">
-                    <MessageCircle className="w-8 h-8 text-white/20 mx-auto mb-2" />
-                    <p className="text-sm text-white/30">還沒有對話</p>
+                  <div className="flex flex-col items-center py-14 text-center">
+                    <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center mb-3">
+                      <MessageCircle className="w-6 h-6 text-white/20" />
+                    </div>
+                    <p className="text-xs text-white/25">還沒有對話</p>
                   </div>
-                ) : filteredConvs.map(conv => (
-                  <button
-                    key={conv.userId}
-                    onClick={() => handleSelect(conv)}
-                    className={`w-full flex items-center gap-3 px-3 py-3 hover:bg-white/5 transition-colors text-left ${selected?.userId === conv.userId ? 'bg-amber-500/10 border-l-2 border-amber-400' : ''}`}
-                  >
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-amber-500/30 to-purple-500/30 flex items-center justify-center text-sm font-bold text-white/80 shrink-0 overflow-hidden">
-                      {conv.avatarUrl ? <img src={conv.avatarUrl} alt="" className="w-full h-full object-cover" /> : initials(conv.displayName)}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm font-medium text-white/80 truncate">{conv.displayName ?? '用戶'}</span>
-                        <span className="text-[10px] text-white/25 shrink-0 ml-2">{formatTime(conv.lastMessageAt)}</span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <p className="text-xs text-white/40 truncate">{conv.lastMessagePreview}</p>
-                        {conv.unreadCount > 0 && (
-                          <span className="ml-2 shrink-0 w-4 h-4 bg-amber-500 rounded-full text-[10px] text-slate-900 font-bold flex items-center justify-center">
-                            {conv.unreadCount}
+                ) : filteredConvs.map(conv => {
+                  const isActive = selected?.userId === conv.userId
+                  return (
+                    <button key={conv.userId} onClick={() => handleSelect(conv)}
+                      className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all text-left group ${
+                        isActive
+                          ? 'bg-amber-500/15 shadow-[0_0_0_1px_rgba(245,158,11,0.25)]'
+                          : 'hover:bg-white/[0.05]'
+                      }`}
+                    >
+                      <Avatar name={conv.displayName} url={conv.avatarUrl} online={isActive} />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between">
+                          <span className={`text-sm font-medium truncate ${isActive ? 'text-amber-200' : 'text-white/80'}`}>
+                            {conv.displayName ?? '用戶'}
                           </span>
-                        )}
+                          <span className="text-[10px] text-white/20 shrink-0 ml-2">{formatTime(conv.lastMessageAt)}</span>
+                        </div>
+                        <div className="flex items-center justify-between mt-0.5">
+                          <p className="text-xs text-white/35 truncate">{conv.lastMessagePreview || '...'}</p>
+                          {conv.unreadCount > 0 && (
+                            <span className="ml-2 shrink-0 min-w-[18px] h-[18px] bg-gradient-to-r from-amber-500 to-orange-400 rounded-full text-[10px] text-slate-900 font-bold flex items-center justify-center px-1">
+                              {conv.unreadCount}
+                            </span>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  </button>
-                ))}
+                    </button>
+                  )
+                })}
               </div>
             </>
           ) : (
-            /* Friends tab */
-            <div className="flex-1 overflow-y-auto">
+            /* ── Friends tab ── */
+            <div className="flex-1 overflow-y-auto px-3 py-2 space-y-3">
               {/* Incoming requests */}
               {friendRequests.length > 0 && (
-                <div className="px-3 pt-3 pb-1">
-                  <p className="text-xs text-white/40 font-medium mb-2">待接受的請求</p>
+                <div>
+                  <p className="text-[10px] text-white/30 font-semibold uppercase tracking-wider mb-1.5 px-1">待接受的請求</p>
                   {friendRequests.map(req => (
-                    <div key={req.id} className="flex items-center gap-2 mb-2 p-2 bg-white/5 rounded-xl">
-                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-amber-500/30 to-purple-500/30 flex items-center justify-center text-xs font-bold text-white/70 shrink-0 overflow-hidden">
-                        {req.from_avatar ? <img src={req.from_avatar} alt="" className="w-full h-full object-cover" /> : initials(req.from_name)}
-                      </div>
+                    <div key={req.id} className="flex items-center gap-2.5 p-2.5 bg-amber-500/5 border border-amber-400/10 rounded-xl mb-1.5">
+                      <Avatar name={req.from_name} url={req.from_avatar} size="sm" />
                       <div className="flex-1 min-w-0">
-                        <p className="text-xs font-medium text-white/80 truncate">{req.from_name ?? '用戶'}</p>
-                        {req.message && <p className="text-[10px] text-white/40 truncate">{req.message}</p>}
+                        <p className="text-xs font-semibold text-white/80 truncate">{req.from_name ?? '用戶'}</p>
+                        {req.message && <p className="text-[10px] text-white/35 truncate">{req.message}</p>}
                       </div>
                       <button onClick={() => respondFriendRequest(req.id, 'accept')}
-                        className="w-6 h-6 bg-emerald-500/20 hover:bg-emerald-500/40 border border-emerald-400/30 rounded-lg flex items-center justify-center transition-colors">
+                        className="w-7 h-7 bg-emerald-500/20 hover:bg-emerald-500/35 border border-emerald-400/25 rounded-lg flex items-center justify-center transition-colors">
                         <Check className="w-3.5 h-3.5 text-emerald-400" />
                       </button>
                       <button onClick={() => respondFriendRequest(req.id, 'decline')}
-                        className="w-6 h-6 bg-red-500/10 hover:bg-red-500/30 border border-red-400/20 rounded-lg flex items-center justify-center transition-colors">
+                        className="w-7 h-7 bg-red-500/10 hover:bg-red-500/25 border border-red-400/15 rounded-lg flex items-center justify-center transition-colors">
                         <X className="w-3.5 h-3.5 text-red-400" />
                       </button>
                     </div>
@@ -454,40 +493,37 @@ export default function MessagesPage() {
                 </div>
               )}
 
-              {/* Add friend button */}
-              <div className="px-3 py-2">
-                <button
-                  onClick={() => { setShowAddFriend(s => !s); if (!showAddFriend) loadAllUsers() }}
-                  className="w-full flex items-center gap-2 px-3 py-2 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-400/20 rounded-xl text-sm text-amber-300 transition-colors"
-                >
-                  <UserPlus className="w-4 h-4" />
-                  加好友
-                </button>
-              </div>
+              {/* Add friend */}
+              <button
+                onClick={() => { setShowAddFriend(s => !s); if (!showAddFriend) loadAllUsers() }}
+                className="w-full flex items-center gap-2 px-3 py-2.5 bg-gradient-to-r from-amber-500/10 to-orange-500/10 hover:from-amber-500/20 hover:to-orange-500/20 border border-amber-400/15 rounded-xl text-sm text-amber-300 transition-all font-medium"
+              >
+                <UserPlus className="w-4 h-4" />
+                <span>尋找並加好友</span>
+                <ChevronDown className={`w-3.5 h-3.5 ml-auto transition-transform ${showAddFriend ? 'rotate-180' : ''}`} />
+              </button>
 
               {showAddFriend && (
-                <div className="px-3 pb-3">
+                <div className="space-y-1.5">
                   <input
                     value={userSearch}
                     onChange={e => setUserSearch(e.target.value)}
-                    placeholder="搜尋用戶..."
-                    className="w-full px-3 py-1.5 bg-white/5 border border-white/10 rounded-xl text-sm text-white placeholder-white/25 outline-none mb-2"
+                    placeholder="搜尋用戶名稱..."
+                    className="w-full px-3 py-2 bg-white/5 border border-white/8 rounded-xl text-xs text-white placeholder-white/20 outline-none focus:border-amber-400/25"
                   />
-                  <div className="space-y-1 max-h-48 overflow-y-auto">
+                  <div className="space-y-1 max-h-52 overflow-y-auto">
                     {allUsers
                       .filter(u => u.id !== meId && (!userSearch || (u.display_name ?? '').toLowerCase().includes(userSearch.toLowerCase())))
                       .map(u => (
-                        <div key={u.id} className="flex items-center gap-2 p-1.5 rounded-lg hover:bg-white/5">
-                          <div className="w-7 h-7 rounded-full bg-gradient-to-br from-amber-500/20 to-purple-500/20 flex items-center justify-center text-xs font-bold text-white/60 shrink-0 overflow-hidden">
-                            {u.avatar_url ? <img src={u.avatar_url} alt="" className="w-full h-full object-cover" /> : initials(u.display_name)}
-                          </div>
+                        <div key={u.id} className="flex items-center gap-2.5 px-2 py-1.5 rounded-xl hover:bg-white/5 transition-colors">
+                          <Avatar name={u.display_name} url={u.avatar_url} size="sm" />
                           <span className="flex-1 text-xs text-white/70 truncate">{u.display_name ?? '用戶'}</span>
                           <button
                             onClick={() => sendFriendRequest(u.id)}
                             disabled={addingUserId === u.id}
-                            className="px-2 py-0.5 bg-amber-500/20 hover:bg-amber-500/40 border border-amber-400/20 rounded-lg text-[10px] text-amber-300 transition-colors disabled:opacity-50"
+                            className="px-2.5 py-1 bg-amber-500/15 hover:bg-amber-500/30 border border-amber-400/20 rounded-lg text-[10px] text-amber-300 font-medium transition-colors disabled:opacity-50"
                           >
-                            {addingUserId === u.id ? '...' : '邀請'}
+                            {addingUserId === u.id ? <Loader2 className="w-3 h-3 animate-spin" /> : '邀請'}
                           </button>
                         </div>
                       ))}
@@ -496,156 +532,138 @@ export default function MessagesPage() {
               )}
             </div>
           )}
-        </GlassPanel>
+        </div>
 
-        {/* Thread panel */}
-        <GlassPanel className={`flex flex-col min-h-0 ${!showThread && !selected ? 'hidden md:flex' : 'flex'}`}>
+        {/* ── Right: Thread ── */}
+        <div className={`flex flex-col min-h-0 rounded-2xl overflow-hidden border border-white/[0.08] bg-gradient-to-b from-[rgba(15,15,25,0.9)] to-[rgba(10,10,20,0.95)] backdrop-blur-xl ${!showThread && !selected ? 'hidden md:flex' : 'flex'}`}>
           {!selected ? (
-            <div className="flex-1 flex flex-col items-center justify-center text-center p-8">
-              <div className="w-16 h-16 rounded-full bg-gradient-to-br from-amber-500/20 to-purple-500/20 flex items-center justify-center mb-4">
-                <MessageCircle className="w-8 h-8 text-white/30" />
+            /* Empty state */
+            <div className="flex-1 flex flex-col items-center justify-center text-center p-10">
+              <div className="relative w-20 h-20 mb-6">
+                <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-amber-500/20 to-purple-600/20 blur-xl" />
+                <div className="relative w-20 h-20 rounded-3xl bg-gradient-to-br from-amber-500/15 to-purple-600/15 border border-white/10 flex items-center justify-center">
+                  <MessageCircle className="w-9 h-9 text-white/30" />
+                </div>
               </div>
-              <p className="text-white/40 text-sm">選擇一個對話開始聊天</p>
+              <p className="text-white/60 font-medium mb-1">選擇一個對話</p>
+              <p className="text-xs text-white/25">從左側選擇聯絡人開始聊天</p>
             </div>
           ) : (
             <>
-              {/* Thread header */}
-              <div className="flex items-center gap-2 px-4 py-3 border-b border-white/8">
-                <div className="w-9 h-9 rounded-full bg-gradient-to-br from-amber-500/30 to-purple-500/30 flex items-center justify-center text-sm font-bold text-white/80 overflow-hidden shrink-0">
-                  {selected.avatarUrl ? <img src={selected.avatarUrl} alt="" className="w-full h-full object-cover" /> : initials(selected.displayName)}
+              {/* ── Thread header ── */}
+              <div className="flex items-center gap-3 px-4 py-3 border-b border-white/8 shrink-0 bg-white/[0.02]">
+                <button onClick={() => setShowThread(false)} className="md:hidden text-white/40 hover:text-white p-1">
+                  <ArrowLeft className="w-5 h-5" />
+                </button>
+                <Avatar name={selected.displayName} url={selected.avatarUrl} online />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-white/90 leading-tight">{selected.displayName ?? '用戶'}</p>
+                  <div className="flex items-center gap-1 mt-0.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                    <p className="text-[10px] text-emerald-400/70 font-medium">即時連線</p>
+                  </div>
                 </div>
-                <div className="flex-1">
-                  <p className="text-sm font-semibold text-white/85">{selected.displayName ?? '用戶'}</p>
-                  <p className="text-[10px] text-emerald-400/60">● 即時訊息</p>
-                </div>
-                {/* Toolbar */}
+
+                {/* Header actions */}
                 <div className="flex items-center gap-1">
                   {selectMode ? (
                     <>
-                      <span className="text-xs text-white/40">{selectedMsgIds.size} 已選</span>
-                      <button
-                        onClick={bulkDelete}
-                        disabled={selectedMsgIds.size === 0}
-                        className="flex items-center gap-1 px-2 py-1 bg-red-500/20 hover:bg-red-500/40 border border-red-400/20 rounded-lg text-xs text-red-400 disabled:opacity-40 transition-colors"
+                      <span className="text-xs text-white/35 mr-1">{selectedMsgIds.size} 已選</span>
+                      <button onClick={bulkDelete} disabled={selectedMsgIds.size === 0}
+                        className="flex items-center gap-1 px-2.5 py-1.5 bg-red-500/15 hover:bg-red-500/30 border border-red-400/20 rounded-xl text-xs text-red-400 disabled:opacity-40 transition-colors font-medium"
                       >
-                        <Trash className="w-3 h-3" />批量刪除
+                        <Trash className="w-3 h-3" />刪除
                       </button>
-                      <button
-                        onClick={() => { setSelectMode(false); setSelectedMsgIds(new Set()) }}
-                        className="px-2 py-1 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-xs text-white/50 transition-colors"
+                      <button onClick={() => { setSelectMode(false); setSelectedMsgIds(new Set()) }}
+                        className="px-2.5 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-xs text-white/50 transition-colors"
                       >
                         取消
                       </button>
                     </>
                   ) : (
                     <>
-                      <button
-                        onClick={() => setSelectMode(true)}
-                        title="選取模式"
-                        className="p-1.5 rounded-lg text-white/30 hover:text-white/60 hover:bg-white/5 transition-colors"
+                      <button onClick={() => setSelectMode(true)} title="選取模式"
+                        className="p-2 rounded-xl text-white/25 hover:text-white/60 hover:bg-white/6 transition-colors"
                       >
                         <CheckSquare className="w-4 h-4" />
                       </button>
-                      <button
-                        onClick={exportMessages}
-                        title="匯出對話"
-                        className="p-1.5 rounded-lg text-white/30 hover:text-white/60 hover:bg-white/5 transition-colors"
+                      <button onClick={exportMessages} title="匯出對話"
+                        className="p-2 rounded-xl text-white/25 hover:text-white/60 hover:bg-white/6 transition-colors"
                       >
                         <Download className="w-4 h-4" />
+                      </button>
+                      <button className="p-2 rounded-xl text-white/25 hover:text-white/60 hover:bg-white/6 transition-colors">
+                        <Info className="w-4 h-4" />
                       </button>
                     </>
                   )}
                 </div>
               </div>
 
-              {/* Messages */}
-              <div className="flex-1 overflow-y-auto p-4 space-y-2">
+              {/* ── Messages ── */}
+              <div className="flex-1 overflow-y-auto px-4 py-3 space-y-1" style={{ scrollbarWidth: 'thin' }}>
                 {loadingMsgs ? (
-                  <div className="flex justify-center pt-8"><Loader2 className="w-5 h-5 text-white/30 animate-spin" /></div>
+                  <div className="flex justify-center pt-10"><Loader2 className="w-5 h-5 text-white/25 animate-spin" /></div>
                 ) : messages.length === 0 ? (
-                  <p className="text-center text-xs text-white/25 pt-8">開始對話吧 👋</p>
-                ) : messages.map(msg => {
+                  <div className="flex flex-col items-center justify-center h-full text-center py-10">
+                    <div className="text-3xl mb-3">👋</div>
+                    <p className="text-sm text-white/40">打個招呼開始聊天吧！</p>
+                  </div>
+                ) : messagesWithDates.map((item, i) => {
+                  if (item.type === 'date') return <DateSeparator key={`date-${i}`} date={item.date!} />
+
+                  const msg = item.msg!
                   const recalled = isRecalled(msg)
                   const isSelected = selectedMsgIds.has(msg.id)
+                  const isMine = msg.isMine
 
                   return (
                     <div
                       key={msg.id}
-                      className={`flex ${msg.isMine ? 'justify-end' : 'justify-start'} gap-2 group relative ${isSelected ? 'bg-amber-500/5 rounded-xl px-1' : ''}`}
+                      className={`flex items-end gap-2 group relative transition-colors ${
+                        isMine ? 'justify-end' : 'justify-start'
+                      } ${isSelected ? 'bg-amber-500/5 rounded-2xl px-2 -mx-2' : ''}`}
                       onMouseEnter={() => !selectMode && setHoveredMsgId(msg.id)}
                       onMouseLeave={() => { if (menuMsgId !== msg.id) setHoveredMsgId(null) }}
                     >
-                      {/* Select checkbox */}
+                      {/* Select */}
                       {selectMode && (
-                        <button
-                          onClick={() => toggleSelectMsg(msg.id)}
-                          className="self-center shrink-0 text-white/40"
-                        >
-                          {isSelected ? <CheckSquare className="w-4 h-4 text-amber-400" /> : <Square className="w-4 h-4" />}
+                        <button onClick={() => toggleSelectMsg(msg.id)} className="self-center text-white/35 shrink-0">
+                          {isSelected
+                            ? <CheckSquare className="w-4 h-4 text-amber-400" />
+                            : <Square className="w-4 h-4" />}
                         </button>
                       )}
 
-                      {!msg.isMine && (
-                        <div className="w-7 h-7 rounded-full bg-gradient-to-br from-amber-500/20 to-purple-500/20 flex items-center justify-center text-xs font-bold text-white/60 shrink-0 overflow-hidden self-end">
-                          {selected.avatarUrl ? <img src={selected.avatarUrl} alt="" className="w-full h-full object-cover" /> : initials(selected.displayName)}
-                        </div>
+                      {!isMine && <Avatar name={selected.displayName} url={selected.avatarUrl} size="sm" />}
+
+                      {/* Hover actions — other side */}
+                      {!selectMode && !recalled && (hoveredMsgId === msg.id || menuMsgId === msg.id) && isMine && (
+                        <MessageMenu msg={msg} onRecall={recallMessage} onSave={toggleSave} onDelete={deleteMessage}
+                          menuOpen={menuMsgId === msg.id} onToggleMenu={() => setMenuMsgId(menuMsgId === msg.id ? null : msg.id)} align="right" />
                       )}
 
-                      <div className={`max-w-[65%] sm:max-w-[70%]`}>
-                        <div className={`rounded-2xl px-3.5 py-2 text-sm leading-relaxed ${
+                      {/* Bubble */}
+                      <div className="max-w-[68%] sm:max-w-[72%] space-y-0.5">
+                        <div className={`px-3.5 py-2.5 text-sm leading-relaxed break-words ${
                           recalled
-                            ? 'bg-white/5 text-white/30 italic border border-white/5'
-                            : msg.isMine
-                              ? 'bg-gradient-to-br from-amber-500/30 to-orange-500/20 text-amber-100 rounded-br-sm border border-amber-400/20'
-                              : 'bg-white/8 text-white/80 rounded-bl-sm border border-white/8'
+                            ? 'bg-white/4 text-white/25 italic border border-white/6 rounded-2xl'
+                            : isMine
+                              ? 'bg-gradient-to-br from-amber-500 to-orange-400 text-white font-medium rounded-2xl rounded-br-sm shadow-[0_4px_12px_rgba(245,158,11,0.25)]'
+                              : 'bg-white/[0.08] text-white/85 rounded-2xl rounded-bl-sm border border-white/[0.08] shadow-[0_2px_8px_rgba(0,0,0,0.3)]'
                         }`}>
-                          <p className="break-words">{msg.content}</p>
+                          {msg.content}
                         </div>
-                        <div className={`flex items-center gap-2 mt-0.5 ${msg.isMine ? 'justify-end' : ''}`}>
-                          <p className="text-[10px] text-white/25">{formatTime(msg.createdAt)}</p>
-                          {msg.isSaved && <Bookmark className="w-2.5 h-2.5 text-amber-400/60" />}
+                        <div className={`flex items-center gap-1.5 ${isMine ? 'justify-end' : 'justify-start'} px-1`}>
+                          <span className="text-[10px] text-white/20">{formatTime(msg.createdAt)}</span>
+                          {msg.isSaved && <Bookmark className="w-2.5 h-2.5 text-amber-400/50" />}
                         </div>
                       </div>
 
-                      {/* Hover action menu (not in select mode, not recalled) */}
-                      {!selectMode && !recalled && (hoveredMsgId === msg.id || menuMsgId === msg.id) && (
-                        <div className={`self-center relative ${msg.isMine ? 'order-first' : ''}`}>
-                          <button
-                            onClick={(e) => { e.stopPropagation(); setMenuMsgId(menuMsgId === msg.id ? null : msg.id) }}
-                            className="p-1 rounded-lg text-white/30 hover:text-white/60 hover:bg-white/5 transition-colors"
-                          >
-                            <MoreHorizontal className="w-4 h-4" />
-                          </button>
-                          {menuMsgId === msg.id && (
-                            <div
-                              className={`absolute bottom-full mb-1 z-50 w-36 bg-slate-800/95 backdrop-blur-xl border border-white/15 rounded-xl shadow-xl overflow-hidden ${msg.isMine ? 'right-0' : 'left-0'}`}
-                              onClick={e => e.stopPropagation()}
-                            >
-                              {msg.isMine && (
-                                <button
-                                  onClick={() => recallMessage(msg.id)}
-                                  className="w-full flex items-center gap-2 px-3 py-2 text-xs text-white/70 hover:bg-amber-500/10 hover:text-amber-300 transition-colors"
-                                >
-                                  <RotateCcw className="w-3.5 h-3.5" />收回訊息
-                                </button>
-                              )}
-                              <button
-                                onClick={() => toggleSave(msg)}
-                                className="w-full flex items-center gap-2 px-3 py-2 text-xs text-white/70 hover:bg-amber-500/10 hover:text-amber-300 transition-colors"
-                              >
-                                {msg.isSaved ? <BookmarkCheck className="w-3.5 h-3.5 text-amber-400" /> : <Bookmark className="w-3.5 h-3.5" />}
-                                {msg.isSaved ? '取消保存' : '保存訊息'}
-                              </button>
-                              <div className="border-t border-white/8" />
-                              <button
-                                onClick={() => deleteMessage(msg.id)}
-                                className="w-full flex items-center gap-2 px-3 py-2 text-xs text-red-400/80 hover:bg-red-500/10 hover:text-red-400 transition-colors"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />刪除訊息
-                              </button>
-                            </div>
-                          )}
-                        </div>
+                      {/* Hover actions — same side */}
+                      {!selectMode && !recalled && (hoveredMsgId === msg.id || menuMsgId === msg.id) && !isMine && (
+                        <MessageMenu msg={msg} onRecall={recallMessage} onSave={toggleSave} onDelete={deleteMessage}
+                          menuOpen={menuMsgId === msg.id} onToggleMenu={() => setMenuMsgId(menuMsgId === msg.id ? null : msg.id)} align="left" />
                       )}
                     </div>
                   )
@@ -653,34 +671,102 @@ export default function MessagesPage() {
                 <div ref={bottomRef} />
               </div>
 
-              {/* Input */}
-              <div className="px-3 py-3 border-t border-white/8">
-                <div className="flex items-end gap-2 bg-white/5 border border-white/10 rounded-2xl px-3 py-2 focus-within:border-amber-400/30 transition-colors">
+              {/* ── Input bar ── */}
+              <div className="px-3 py-3 border-t border-white/8 shrink-0 bg-white/[0.02]">
+                <div className="flex items-end gap-2 bg-white/[0.06] border border-white/10 rounded-2xl px-1 pl-3 py-1.5 focus-within:border-amber-400/30 focus-within:bg-white/[0.08] transition-all">
+                  {/* Left icons */}
+                  <div className="flex items-center gap-0.5 self-end pb-1">
+                    <button className="p-1.5 text-white/20 hover:text-amber-300 hover:bg-white/5 rounded-xl transition-colors" title="表情符號">
+                      <Smile className="w-4 h-4" />
+                    </button>
+                    <button className="p-1.5 text-white/20 hover:text-amber-300 hover:bg-white/5 rounded-xl transition-colors" title="附加檔案">
+                      <Paperclip className="w-4 h-4" />
+                    </button>
+                  </div>
+
                   <textarea
                     ref={textareaRef}
                     value={input}
-                    onChange={e => setInput(e.target.value)}
+                    onChange={e => {
+                      setInput(e.target.value)
+                      e.target.style.height = 'auto'
+                      e.target.style.height = Math.min(e.target.scrollHeight, 96) + 'px'
+                    }}
                     onKeyDown={e => {
                       if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); void send() }
                     }}
-                    placeholder="輸入訊息... (Enter 送出，Shift+Enter 換行)"
+                    placeholder="輸入訊息..."
                     rows={1}
-                    className="flex-1 bg-transparent text-sm text-white placeholder-white/25 outline-none resize-none max-h-24 overflow-y-auto"
-                    style={{ minHeight: '24px' }}
+                    className="flex-1 bg-transparent text-sm text-white placeholder-white/20 outline-none resize-none overflow-y-auto py-1"
+                    style={{ minHeight: '22px', maxHeight: '96px' }}
                   />
+
                   <button
                     onClick={() => void send()}
                     disabled={!input.trim() || sending}
-                    className="shrink-0 w-8 h-8 bg-gradient-to-br from-amber-500 to-orange-500 rounded-xl flex items-center justify-center text-slate-900 disabled:opacity-40 hover:from-amber-400 hover:to-orange-400 transition-all shadow-md disabled:shadow-none"
+                    className={`shrink-0 self-end mb-1 w-9 h-9 rounded-xl flex items-center justify-center transition-all font-medium ${
+                      input.trim()
+                        ? 'bg-gradient-to-br from-amber-500 to-orange-400 text-white shadow-[0_4px_12px_rgba(245,158,11,0.3)] hover:shadow-[0_4px_16px_rgba(245,158,11,0.4)] hover:scale-105 active:scale-95'
+                        : 'bg-white/8 text-white/20 cursor-not-allowed'
+                    }`}
                   >
                     {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
                   </button>
                 </div>
+                <p className="text-center text-[10px] text-white/10 mt-1.5">Enter 送出 · Shift+Enter 換行</p>
               </div>
             </>
           )}
-        </GlassPanel>
+        </div>
       </div>
+    </div>
+  )
+}
+
+// ── Message context menu ──
+function MessageMenu({ msg, onRecall, onSave, onDelete, menuOpen, onToggleMenu, align }: {
+  msg: Message
+  onRecall: (id: string) => void
+  onSave: (msg: Message) => void
+  onDelete: (id: string) => void
+  menuOpen: boolean
+  onToggleMenu: () => void
+  align: 'left' | 'right'
+}) {
+  return (
+    <div className="self-center relative shrink-0">
+      <button
+        onClick={(e) => { e.stopPropagation(); onToggleMenu() }}
+        className="p-1.5 rounded-xl text-white/20 hover:text-white/60 hover:bg-white/8 transition-colors"
+      >
+        <MoreHorizontal className="w-3.5 h-3.5" />
+      </button>
+      {menuOpen && (
+        <div
+          className={`absolute bottom-full mb-1.5 z-50 w-38 bg-slate-800/98 backdrop-blur-2xl border border-white/12 rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.5)] overflow-hidden ${align === 'right' ? 'right-0' : 'left-0'}`}
+          onClick={e => e.stopPropagation()}
+        >
+          {msg.isMine && (
+            <button onClick={() => onRecall(msg.id)}
+              className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-xs text-white/65 hover:bg-amber-500/10 hover:text-amber-300 transition-colors"
+            >
+              <RotateCcw className="w-3.5 h-3.5" />收回訊息
+            </button>
+          )}
+          <button onClick={() => onSave(msg)}
+            className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-xs text-white/65 hover:bg-amber-500/10 hover:text-amber-300 transition-colors"
+          >
+            {msg.isSaved ? <BookmarkCheck className="w-3.5 h-3.5 text-amber-400" /> : <Bookmark className="w-3.5 h-3.5" />}
+            {msg.isSaved ? '取消保存' : '保存訊息'}
+          </button>
+          <div className="h-px bg-white/6 mx-2" />
+          <button onClick={() => onDelete(msg.id)}
+            className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-xs text-red-400/80 hover:bg-red-500/10 hover:text-red-400 transition-colors"
+          >
+            <Trash2 className="w-3.5 h-3.5" />刪除訊息
+          </button>
+        </div>
+      )}
     </div>
   )
 }
