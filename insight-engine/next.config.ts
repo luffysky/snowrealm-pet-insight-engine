@@ -8,10 +8,6 @@ const nextConfig: NextConfig = {
       { protocol: 'https', hostname: '*.r2.dev' },
     ],
   },
-  env: {
-    ADMIN_SECRET: process.env.ADMIN_SECRET,
-    JWT_SECRET: process.env.JWT_SECRET,
-  },
   // ffmpeg 套件含 platform-specific binary，不能在 build 時 bundle
   // serverExternalPackages 同時適用 webpack 和 Turbopack
   serverExternalPackages: [

@@ -4,24 +4,25 @@ import { encryptApiKey, decryptApiKey, maskApiKey } from '@/lib/aiCrypto'
 import { randomUUID } from 'crypto'
 import { getTenantContext, requireRole } from '@/lib/tenant'
 
-// ===== GET: 列出所有 AI provider configs（不回傳明文 key） =====
+// ===== GET: 列出所有 AI provider configs（不回傳明文 key，不載入加密欄位） =====
 export async function GET(): Promise<NextResponse> {
-  const { tenantId } = await getTenantContext()
+  const roleCheck = await requireRole('viewer')
+  if (roleCheck instanceof NextResponse) return roleCheck
+  const { tenantId } = roleCheck
   const rows = await query<{
     id: string
-    tenant_id: string
     provider: string
     display_name: string
     default_model: string
     is_primary: boolean
     is_active: boolean
+    has_key: boolean
     created_at: string
     updated_at: string
-    encrypted_api_key: string
   }>(
-    `SELECT id, tenant_id, provider, display_name, default_model,
+    `SELECT id, provider, display_name, default_model,
             is_primary, is_active, created_at, updated_at,
-            encrypted_api_key
+            (encrypted_api_key IS NOT NULL AND encrypted_api_key != '') AS has_key
      FROM ai_provider_configs
      WHERE tenant_id = $1
      ORDER BY is_primary DESC, created_at ASC`, [tenantId]
@@ -34,8 +35,8 @@ export async function GET(): Promise<NextResponse> {
     defaultModel: r.default_model,
     isPrimary: r.is_primary,
     isActive: r.is_active,
-    hasKey: !!r.encrypted_api_key,
-    maskedKey: r.encrypted_api_key ? '••••••••' : null,
+    hasKey: r.has_key,
+    maskedKey: r.has_key ? '••••••••' : null,
     createdAt: r.created_at,
     updatedAt: r.updated_at,
   }))

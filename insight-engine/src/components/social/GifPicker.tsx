@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { Search, X, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react'
 
-const GIPHY_API_KEY = process.env.NEXT_PUBLIC_GIPHY_API_KEY ?? 'wZFuRFTOarVmK5csuetJgRaxqQcRV7iS'
+const GIPHY_API_KEY = process.env.NEXT_PUBLIC_GIPHY_API_KEY ?? ''
 const GIFS_PER_PAGE = 12
 
 interface GifResult {
@@ -29,6 +29,7 @@ export function GifPicker({ onSelect, onClose }: GifPickerProps) {
   const searchRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
 
   const fetchGifs = async (q: string, off: number) => {
+    if (!GIPHY_API_KEY) { setGifs([]); setLoading(false); return }
     setLoading(true)
     try {
       const endpoint = q.trim()
