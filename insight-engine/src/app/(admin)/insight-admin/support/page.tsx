@@ -782,7 +782,7 @@ function NewTicketModal({
           />
         </ModalField>
 
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <ModalField label="分類">
             <select
               value={category}
@@ -808,7 +808,7 @@ function NewTicketModal({
           </ModalField>
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <ModalField label="來源">
             <select
               value={channel}

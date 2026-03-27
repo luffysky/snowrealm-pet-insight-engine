@@ -247,7 +247,7 @@ export default function SurveyTemplatesPage() {
           ))}
         </div>
 
-        <form onSubmit={handleSearchSubmit} className="flex gap-2 max-w-md">
+        <form onSubmit={handleSearchSubmit} className="flex flex-col sm:flex-row gap-2 w-full sm:max-w-md">
           <input
             type="text"
             value={searchInput}
