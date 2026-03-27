@@ -114,6 +114,7 @@ export default function StoryCreatePage() {
 
   // Panel states
   const [panel, setPanel] = useState<'bg' | 'text' | 'emoji' | 'poll' | 'music' | null>(null)
+  const [editingLayerId, setEditingLayerId] = useState<string | null>(null)
 
   // Text editor state
   const [textInput, setTextInput] = useState('')
@@ -134,17 +135,57 @@ export default function StoryCreatePage() {
   const activeLayer = layers.find(l => l.id === activeLayerId) ?? null
 
   // ── Layer actions ──────────────────────────────────────
+  // 開啟文字編輯面板（新增 or 編輯現有）
+  const openTextPanel = (layerId?: string) => {
+    if (layerId) {
+      const layer = layers.find(l => l.id === layerId) as TextLayer | undefined
+      if (layer && layer.type === 'text') {
+        setTextInput(layer.content)
+        setTextFont(layer.font)
+        setTextColor(layer.color)
+        setTextSize(layer.size)
+        setTextEffect(layer.effect)
+        setTextBold(layer.bold)
+        setTextItalic(layer.italic)
+        setEditingLayerId(layerId)
+      }
+    } else {
+      setTextInput('')
+      setTextFont('modern')
+      setTextColor('#ffffff')
+      setTextSize(28)
+      setTextEffect('none')
+      setTextBold(false)
+      setTextItalic(false)
+      setEditingLayerId(null)
+    }
+    setPanel('text')
+  }
+
   const addTextLayer = () => {
     if (!textInput.trim()) return
-    const layer: TextLayer = {
-      id: genId(), type: 'text',
-      content: textInput.trim(), font: textFont,
-      color: textColor, size: textSize,
-      effect: textEffect, x: 50, y: 50,
-      bold: textBold, italic: textItalic,
+    if (editingLayerId) {
+      // 更新現有 layer
+      setLayers(prev => prev.map(l => {
+        if (l.id !== editingLayerId) return l
+        return {
+          ...l, content: textInput.trim(), font: textFont,
+          color: textColor, size: textSize, effect: textEffect,
+          bold: textBold, italic: textItalic,
+        } as TextLayer
+      }))
+      setEditingLayerId(null)
+    } else {
+      const layer: TextLayer = {
+        id: genId(), type: 'text',
+        content: textInput.trim(), font: textFont,
+        color: textColor, size: textSize,
+        effect: textEffect, x: 50, y: 50,
+        bold: textBold, italic: textItalic,
+      }
+      setLayers(prev => [...prev, layer])
+      setActiveLayerId(layer.id)
     }
-    setLayers(prev => [...prev, layer])
-    setActiveLayerId(layer.id)
     setTextInput('')
     setPanel(null)
   }
@@ -272,6 +313,7 @@ export default function StoryCreatePage() {
               layer={layer}
               isActive={layer.id === activeLayerId}
               onSelect={() => setActiveLayerId(layer.id)}
+              onEdit={() => { setActiveLayerId(layer.id); openTextPanel(layer.id) }}
               onMove={(dx, dy) => moveLayer(layer.id, dx, dy)}
               fontCls={fontCls}
               effectCls={effectCls}
@@ -315,7 +357,16 @@ export default function StoryCreatePage() {
         ].map(item => (
           <button
             key={item.id}
-            onClick={() => setPanel(p => p === item.id ? null : item.id)}
+            onClick={() => {
+              if (item.id === 'text') {
+                // 如果選中了文字層，帶入現有內容；否則新增
+                const selTextId = activeLayer?.type === 'text' ? activeLayer.id : undefined
+                if (panel === 'text' && !selTextId) { setPanel(null); return }
+                openTextPanel(selTextId)
+              } else {
+                setPanel(p => p === item.id ? null : item.id)
+              }
+            }}
             className={`flex flex-col items-center gap-1 transition-colors ${panel === item.id ? 'text-amber-400' : 'text-white/50 hover:text-white'}`}
           >
             {item.icon}
@@ -410,7 +461,7 @@ export default function StoryCreatePage() {
                 disabled={!textInput.trim()}
                 className="w-full py-2.5 bg-amber-500 hover:bg-amber-400 disabled:opacity-40 text-slate-900 font-semibold rounded-xl text-sm transition-colors"
               >
-                加入畫布
+                {editingLayerId ? '✏️ 更新文字' : '加入畫布'}
               </button>
             </div>
           )}
@@ -472,12 +523,13 @@ interface DraggableLayerProps {
   layer: Layer
   isActive: boolean
   onSelect: () => void
+  onEdit: () => void
   onMove: (dx: number, dy: number) => void
   fontCls: (font: string) => string
   effectCls: (effect: string) => string
 }
 
-function DraggableLayer({ layer, isActive, onSelect, onMove, fontCls, effectCls }: DraggableLayerProps) {
+function DraggableLayer({ layer, isActive, onSelect, onEdit, onMove, fontCls, effectCls }: DraggableLayerProps) {
   const drag = useDrag(onMove)
 
   const baseStyle: React.CSSProperties = {
@@ -499,6 +551,7 @@ function DraggableLayer({ layer, isActive, onSelect, onMove, fontCls, effectCls 
         style={{ ...baseStyle, color: tl.color, fontSize: tl.size, fontWeight: tl.bold ? 700 : 400, fontStyle: tl.italic ? 'italic' : 'normal' }}
         className={`max-w-[80%] text-center whitespace-pre-wrap leading-tight px-2 py-1 ${fontCls(tl.font)} ${effectCls(tl.effect)} ${border}`}
         onClick={e => { e.stopPropagation(); onSelect() }}
+        onDoubleClick={e => { e.stopPropagation(); onEdit() }}
         {...drag}
       >
         {tl.content}
