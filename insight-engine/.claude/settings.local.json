@@ -105,7 +105,26 @@
       "Bash(ls D:/SnowRealmRebirth/snowrealm-insight-engine/insight-engine/src/app/\\\\\\(admin\\\\\\)/insight-admin/profile/)",
       "Bash(ls /d/SnowRealmRebirth/snowrealm-insight-engine/insight-engine/src/app/\\\\\\(admin\\\\\\)/insight-admin/profile/)",
       "Bash(ls /d/SnowRealmRebirth/snowrealm-insight-engine/insight-engine/src/app/\\\\\\(admin\\\\\\)/insight-admin/messages/page.tsx)",
-      "Bash(psql \"postgresql://postgres:3n25zPNSZyU64T9QrAmxX817WGk0RYwc@43.167.237.37:30465/postgres\" -f supabase/migration_social_reports.sql)"
+      "Bash(psql \"postgresql://postgres:3n25zPNSZyU64T9QrAmxX817WGk0RYwc@43.167.237.37:30465/postgres\" -f supabase/migration_social_reports.sql)",
+      "Bash(grep -r \"media_assets\\\\|user_follows\\\\|user_blocks\\\\|friend_requests\" /d/SnowRealmRebirth/snowrealm-insight-engine/insight-engine/supabase -type f)",
+      "Bash(psql:*)",
+      "Bash(ls \"D:\\\\SnowRealmRebirth\\\\snowrealm-insight-engine\\\\insight-engine\\\\src\\\\app\\\\\\(admin\\)\\\\insight-admin\")",
+      "Bash(tail:*)",
+      "Bash(where psql:*)",
+      "Bash(grep -n \"game_titles\\\\|result_config\\\\|done_config\\\\|branch_config\" src/app/api/admin/surveys/[id]/route.ts)",
+      "Bash(grep -n \"result_config\\\\|updateSurvey\\\\|body\\\\.\" src/app/api/admin/surveys/[id]/route.ts)",
+      "Bash(grep -n \"useThemeInteraction\" src/app/[org]/[slug]/OrgSurveyClient.tsx src/app/\\\\\\(public\\\\\\)/survey/[slug]/page.tsx src/app/\\\\\\(public\\\\\\)/survey/page.tsx)",
+      "Bash(grep -n \"useThemeInteraction\\\\|const.*config\\\\b\" src/app/\\\\\\(public\\\\\\)/survey/[slug]/page.tsx)",
+      "Bash(head -80 src/app/\\\\\\(admin\\\\\\)/insight-admin/subscription/page.tsx)",
+      "Bash(head -60 src/app/\\\\\\(public\\\\\\)/zcoin-shop/page.tsx)",
+      "Bash(grep -rn 'export const dynamic' D:/SnowRealmRebirth/snowrealm-insight-engine/insight-engine/src/app/[org])",
+      "Bash(git reset:*)",
+      "Bash(grep -n \"requireRole\" src/app/api/admin/ai-sentiment/route.ts src/app/api/admin/responses/[id]/route.ts src/app/api/admin/line/test/route.ts)",
+      "Bash(grep -l \"direct_messages\\\\|payment_logs\\\\|zcoin_wallet\" /d/SnowRealmRebirth/snowrealm-insight-engine/insight-engine/supabase/migrations/*.sql)",
+      "Bash(grep:*)",
+      "Bash(cat \"D:/SnowRealmRebirth/snowrealm-insight-engine/insight-engine/src/app/\\(admin\\)/insight-admin/social/page.tsx\")",
+      "Bash(cat:*)",
+      "Bash(/dev/null find:*)"
     ]
   }
 }
