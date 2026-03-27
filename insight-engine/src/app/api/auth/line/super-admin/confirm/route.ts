@@ -1,14 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { queryOne, execute } from '@/lib/db'
-import { signToken } from '@/lib/jwt'
-import { jwtVerify } from 'jose'
+import { signToken, verifyToken } from '@/lib/jwt'
 import { checkRateLimit } from '@/lib/rateLimit'
-
-interface PendingPayload {
-  lineUserId: string
-  adminUserId: string
-  purpose: string
-}
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
   const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown'
@@ -25,22 +18,16 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     if (!pin) return NextResponse.json({ error: '請輸入 PIN 碼' }, { status: 400 })
 
-    // Verify pending token
+    // Verify pending token (sub=adminUserId, name=lineUserId, role='sa_pending')
     const pendingToken = request.cookies.get('sa_pending')?.value
     if (!pendingToken) return NextResponse.json({ error: '驗證已過期，請重新登入' }, { status: 401 })
 
-    const secret = new TextEncoder().encode(process.env.JWT_SECRET || process.env.ADMIN_SECRET || 'fallback')
-    let payload: PendingPayload
-    try {
-      const { payload: p } = await jwtVerify(pendingToken, secret)
-      payload = p as unknown as PendingPayload
-    } catch {
+    const payload = await verifyToken(pendingToken)
+    if (!payload || payload.role !== 'sa_pending') {
       return NextResponse.json({ error: '驗證已過期，請重新登入' }, { status: 401 })
     }
 
-    if (payload.purpose !== 'sa_pending') {
-      return NextResponse.json({ error: '無效的驗證令牌' }, { status: 401 })
-    }
+    const adminUserId = payload.sub
 
     // Verify PIN against env var
     const correctPin = process.env.SUPER_ADMIN_PIN
@@ -54,7 +41,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         await execute(
           `INSERT INTO audit_logs (action, actor_id, details, created_at)
            VALUES ('super_admin_pin_failed', $1, $2, NOW())`,
-          [payload.adminUserId, JSON.stringify({ ip })]
+          [adminUserId, JSON.stringify({ ip })]
         )
       } catch { /* ignore */ }
       return NextResponse.json({ error: 'PIN 碼錯誤' }, { status: 401 })
@@ -65,7 +52,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       id: string; tenant_id: string; role: string; display_name: string
     }>(
       `SELECT id, tenant_id, role, display_name FROM admin_users WHERE id = $1 AND role = 'super_admin'`,
-      [payload.adminUserId],
+      [adminUserId],
     )
     if (!user) return NextResponse.json({ error: '帳號不存在' }, { status: 401 })
 

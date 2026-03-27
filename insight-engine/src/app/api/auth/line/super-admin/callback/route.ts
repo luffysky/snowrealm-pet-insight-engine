@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { queryOne, execute } from '@/lib/db'
-import { SignJWT } from 'jose'
+import { signToken } from '@/lib/jwt'
 
 interface LineTokenResponse {
   access_token: string
@@ -15,14 +15,10 @@ interface LineProfile {
   pictureUrl?: string
 }
 
-/** 簽發短命 pending token（5 分鐘，只含 LINE UID，不是完整 session） */
+/** 簽發短命 pending token（5 分鐘）
+ * sub = adminUserId, name = lineUserId, role = 'sa_pending' */
 async function signPendingToken(lineUserId: string, adminUserId: string): Promise<string> {
-  const secret = new TextEncoder().encode(process.env.JWT_SECRET || process.env.ADMIN_SECRET || 'fallback')
-  return new SignJWT({ lineUserId, adminUserId, purpose: 'sa_pending' })
-    .setProtectedHeader({ alg: 'HS256' })
-    .setIssuedAt()
-    .setExpirationTime('5m')
-    .sign(secret)
+  return signToken({ sub: adminUserId, name: lineUserId, role: 'sa_pending' }, 300)
 }
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
