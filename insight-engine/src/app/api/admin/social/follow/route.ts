@@ -2,6 +2,14 @@ import { NextRequest, NextResponse } from 'next/server'
 import { requireRole, getTenantContext } from '@/lib/tenant'
 import { query, queryOne, execute } from '@/lib/db'
 
+async function pushFollowNotification(userId: string, actorId: string) {
+  if (userId === actorId) return
+  await execute(
+    `INSERT INTO social_notifications (user_id, actor_id, type) VALUES ($1, $2, 'follow')`,
+    [userId, actorId]
+  ).catch(() => {})
+}
+
 interface FollowRow extends Record<string, unknown> {
   follower_id: string
   following_id: string
@@ -60,6 +68,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       `INSERT INTO user_follows (follower_id, following_id) VALUES ($1, $2) ON CONFLICT DO NOTHING`,
       [roleCheck.userId, targetUserId]
     )
+    await pushFollowNotification(targetUserId, roleCheck.userId)
     return NextResponse.json({ ok: true })
   } catch {
     return NextResponse.json({ error: '操作失敗' }, { status: 500 })

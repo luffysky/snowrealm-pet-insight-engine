@@ -1,5 +1,25 @@
 import { query, queryOne, execute } from '@/lib/db'
 
+// ===== Notification helper =====
+
+type NotifType = 'like' | 'comment' | 'follow' | 'story_reply' | 'poll_result'
+
+/** 寫入 social_notifications，自動略過「通知自己」 */
+async function pushNotification(params: {
+  userId: string    // 接收者
+  actorId: string   // 觸發者
+  type: NotifType
+  targetId?: string
+  targetTitle?: string
+}) {
+  if (params.userId === params.actorId) return   // 不通知自己
+  await execute(
+    `INSERT INTO social_notifications (user_id, actor_id, type, target_id, target_title)
+     VALUES ($1, $2, $3, $4, $5)`,
+    [params.userId, params.actorId, params.type, params.targetId ?? null, params.targetTitle ?? null]
+  ).catch(() => {}) // 通知失敗不影響主流程
+}
+
 // ===== Types =====
 
 export interface SocialPost {
@@ -274,7 +294,19 @@ export async function toggleReaction(postId: string, userId: string, type: strin
 
   await execute(`INSERT INTO social_reactions (post_id, user_id, type) VALUES ($1, $2, $3)`, [postId, userId, type])
   await execute(`UPDATE social_posts SET likes_count = likes_count + 1 WHERE id = $1`, [postId])
-  const p = await queryOne<{ likes_count: number }>(`SELECT likes_count FROM social_posts WHERE id = $1`, [postId])
+  const p = await queryOne<{ likes_count: number; user_id: string; content: string }>(
+    `SELECT likes_count, user_id, content FROM social_posts WHERE id = $1`, [postId]
+  )
+  // 通知貼文作者
+  if (p?.user_id) {
+    await pushNotification({
+      userId: p.user_id,
+      actorId: userId,
+      type: 'like',
+      targetId: postId,
+      targetTitle: p.content.slice(0, 40),
+    })
+  }
   return { action: 'added', likesCount: p?.likes_count ?? 0 }
 }
 
@@ -351,6 +383,19 @@ export async function createComment(data: {
     [data.postId, data.userId, data.content, data.gifUrl ?? null, data.parentId ?? null]
   )
   await execute(`UPDATE social_posts SET comments_count = comments_count + 1 WHERE id = $1`, [data.postId])
+  // 通知貼文作者
+  const post = await queryOne<{ user_id: string; content: string }>(
+    `SELECT user_id, content FROM social_posts WHERE id = $1`, [data.postId]
+  )
+  if (post?.user_id) {
+    await pushNotification({
+      userId: post.user_id,
+      actorId: data.userId,
+      type: 'comment',
+      targetId: data.postId,
+      targetTitle: post.content.slice(0, 40),
+    })
+  }
   return rowToComment(row!)
 }
 
