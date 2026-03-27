@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import { ThemeToggle } from './ThemeToggle'
 
 interface UserInfo {
@@ -13,6 +14,7 @@ interface UserInfo {
 }
 
 export function HomeNav() {
+  const pathname = usePathname()
   const [user, setUser] = useState<UserInfo | null>(null)
   const [zcoinBalance, setZcoinBalance] = useState<number | null>(null)
   const [dropOpen, setDropOpen] = useState(false)
@@ -144,7 +146,7 @@ export function HomeNav() {
         </>
       ) : (
         <>
-          <Link href="/login" className="text-sm text-sky-600/80 hover:text-sky-600 transition-colors px-2 py-1 font-medium">
+          <Link href={`/login?redirect=${encodeURIComponent(pathname)}`} className="text-sm text-sky-600/80 hover:text-sky-600 transition-colors px-2 py-1 font-medium">
             登入
           </Link>
           <Link href="/register" className="text-sm px-4 py-2 rounded-full bg-gradient-to-r from-sky-500 to-indigo-500 hover:from-sky-400 hover:to-indigo-400 text-white transition-all shadow-sm font-medium">

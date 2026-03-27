@@ -103,7 +103,7 @@ export default function InvitePage() {
 
         <p className="text-xs text-white/20">
           已有帳號？{' '}
-          <Link href="/login" className="text-white/40 hover:text-white/60 transition-colors underline">
+          <Link href={`/login?redirect=${encodeURIComponent(`/invite/${params.code}`)}`} className="text-white/40 hover:text-white/60 transition-colors underline">
             直接登入
           </Link>
         </p>

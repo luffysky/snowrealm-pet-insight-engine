@@ -245,7 +245,7 @@ export default function WritePage() {
     return (
       <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center gap-4">
         <p className="text-white/50">請先登入才能發文</p>
-        <Link href="/login" className="px-4 py-2 bg-sky-500 text-white rounded-xl text-sm font-medium hover:bg-sky-400 transition-colors">
+        <Link href="/login?redirect=/write" className="px-4 py-2 bg-sky-500 text-white rounded-xl text-sm font-medium hover:bg-sky-400 transition-colors">
           前往登入
         </Link>
       </div>

@@ -1,0 +1,39 @@
+{
+  "name": "SnowRealm Insight Engine",
+  "short_name": "Insight",
+  "description": "AI 智慧問卷引擎 — 建立問卷、分析數據、AI 洞察",
+  "start_url": "/explore",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#0f172a",
+  "orientation": "portrait-primary",
+  "lang": "zh-TW",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "探索",
+      "short_name": "探索",
+      "url": "/explore",
+      "icons": [{ "src": "/icon.svg", "sizes": "any" }]
+    },
+    {
+      "name": "社群",
+      "short_name": "社群",
+      "url": "/articles",
+      "icons": [{ "src": "/icon.svg", "sizes": "any" }]
+    },
+    {
+      "name": "訊息",
+      "short_name": "訊息",
+      "url": "/messages",
+      "icons": [{ "src": "/icon.svg", "sizes": "any" }]
+    }
+  ]
+}
