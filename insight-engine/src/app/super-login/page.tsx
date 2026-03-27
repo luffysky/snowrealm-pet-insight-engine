@@ -1,10 +1,10 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { Suspense, useState, useEffect, useRef } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { Loader2, Shield } from 'lucide-react'
 
-export default function SuperAdminLoginPage() {
+function SuperAdminLoginContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const step = searchParams.get('step')
@@ -154,5 +154,17 @@ export default function SuperAdminLoginPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function SuperAdminLoginPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-[#03050e] flex items-center justify-center">
+        <Loader2 className="w-6 h-6 text-cyan-400 animate-spin" />
+      </div>
+    }>
+      <SuperAdminLoginContent />
+    </Suspense>
   )
 }

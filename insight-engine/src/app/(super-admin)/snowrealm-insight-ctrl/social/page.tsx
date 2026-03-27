@@ -63,6 +63,52 @@ interface User {
   ban_reason?: string | null
 }
 
+/** 解析 DM content，渲染媒體而不是原始文字 */
+function renderDmContent(content: string) {
+  if (content === '[已收回]') return <span className="text-white/30 italic text-xs">（訊息已收回）</span>
+
+  // image
+  const imgMatch = content.match(/^\[img:(https?:\/\/[^\]]+)\]$/)
+  if (imgMatch) return (
+    <a href={imgMatch[1]} target="_blank" rel="noopener noreferrer">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={imgMatch[1]} alt="圖片" className="max-h-48 max-w-xs rounded-xl object-cover cursor-pointer hover:opacity-90 transition-opacity" />
+    </a>
+  )
+
+  // gif
+  const gifMatch = content.match(/^\[gif:(https?:\/\/[^\]]+)\]$/)
+  if (gifMatch) return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img src={gifMatch[1]} alt="GIF" className="max-h-40 max-w-xs rounded-xl" />
+  )
+
+  // video
+  const videoMatch = content.match(/^\[video:(https?:\/\/[^\]]+)\]$/)
+  if (videoMatch) return (
+    <video src={videoMatch[1]} controls className="max-h-48 max-w-xs rounded-xl" preload="metadata" />
+  )
+
+  // audio
+  const audioMatch = content.match(/^\[audio:(https?:\/\/[^\]]+)\]$/)
+  if (audioMatch) return (
+    <audio src={audioMatch[1]} controls className="w-full max-w-xs" />
+  )
+
+  // file
+  const fileMatch = content.match(/^\[file:(https?:\/\/[^\]]+)\|([^\]]+)\]$/)
+  if (fileMatch) return (
+    <a href={fileMatch[1]} target="_blank" rel="noopener noreferrer"
+      className="flex items-center gap-2 px-3 py-2 bg-white/5 border border-white/10 rounded-xl text-xs text-blue-300 hover:text-blue-200 hover:bg-white/10 transition-colors"
+    >
+      📎 {fileMatch[2]}
+    </a>
+  )
+
+  // plain text
+  return <span className="text-sm text-white/70 whitespace-pre-wrap break-words">{content}</span>
+}
+
 const REASON_LABELS: Record<string, string> = {
   spam: '🗑️ 垃圾訊息', fraud: '🚨 詐騙', harassment: '😡 騷擾/霸凌',
   inappropriate: '🔞 不當內容', violence: '⚔️ 暴力',
@@ -391,9 +437,9 @@ export default function SocialMonitorPage() {
                 <span className="text-white/70 font-medium">{dm.toName}</span>
                 <span className="ml-auto">{new Date(dm.createdAt).toLocaleString('zh-TW')}</span>
               </div>
-              <p className="text-sm text-white/70 bg-black/20 rounded-xl px-3 py-2">
-                {dm.content}
-              </p>
+              <div className="bg-black/20 rounded-xl px-3 py-2 min-h-[2rem]">
+                {renderDmContent(dm.content)}
+              </div>
             </div>
           ))}
         </div>
@@ -458,7 +504,7 @@ export default function SocialMonitorPage() {
             <h3 className="font-semibold text-white mb-4">審查檢舉 — {REASON_LABELS[selectedReport.reason]}</h3>
             {selectedReport.target_content && (
               <div className="bg-black/30 border border-white/5 rounded-xl p-3 text-xs text-white/50 mb-4">
-                {selectedReport.target_content}
+                {renderDmContent(selectedReport.target_content)}
               </div>
             )}
             <textarea
