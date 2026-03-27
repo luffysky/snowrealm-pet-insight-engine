@@ -9,7 +9,13 @@ export function getPool(): Pool {
     if (!connectionString) {
       throw new Error('Missing DATABASE_URL environment variable')
     }
-    _pool = new Pool({ connectionString, ssl: false, max: 10 })
+    _pool = new Pool({
+      connectionString,
+      ssl: false,
+      max: 20,
+      idleTimeoutMillis: 30000,
+      connectionTimeoutMillis: 5000,
+    })
   }
   return _pool
 }

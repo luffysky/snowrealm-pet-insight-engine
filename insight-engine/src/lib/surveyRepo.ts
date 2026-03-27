@@ -93,33 +93,40 @@ export async function getRandomVariant(slug: string): Promise<SurveyConfig | nul
 
 /** 取得 variant group 內所有問卷的比較統計 */
 export async function getVariantGroupStats(variantGroup: string, tenantId?: string) {
-  const surveys = await query<SurveyRow>(
+  interface StatRow extends Record<string, unknown> {
+    id: string; slug: string; title: string; total: string; completed: string
+  }
+  const rows = await query<StatRow>(
     tenantId
-      ? `SELECT * FROM surveys WHERE variant_group = $1 AND tenant_id = $2`
-      : `SELECT * FROM surveys WHERE variant_group = $1`,
+      ? `SELECT s.id, s.slug, s.title,
+                COUNT(r.id)::text AS total,
+                COUNT(r.id) FILTER (WHERE r.status = 'completed')::text AS completed
+         FROM surveys s
+         LEFT JOIN responses r ON r.survey_id = s.id
+         WHERE s.variant_group = $1 AND s.tenant_id = $2
+         GROUP BY s.id, s.slug, s.title`
+      : `SELECT s.id, s.slug, s.title,
+                COUNT(r.id)::text AS total,
+                COUNT(r.id) FILTER (WHERE r.status = 'completed')::text AS completed
+         FROM surveys s
+         LEFT JOIN responses r ON r.survey_id = s.id
+         WHERE s.variant_group = $1
+         GROUP BY s.id, s.slug, s.title`,
     tenantId ? [variantGroup, tenantId] : [variantGroup]
   )
 
-  const results = []
-  for (const s of surveys) {
-    const row = await queryOne<{ total: string; completed: string }>(
-      `SELECT COUNT(*)::text AS total,
-              COUNT(*) FILTER (WHERE status = 'completed')::text AS completed
-       FROM responses WHERE survey_id = $1`,
-      [s.id]
-    )
-    const total = parseInt(row?.total ?? '0', 10)
-    const completed = parseInt(row?.completed ?? '0', 10)
-    results.push({
-      surveyId: s.id,
-      slug: s.slug,
-      title: s.title,
+  return rows.map((row) => {
+    const total = parseInt(row.total, 10)
+    const completed = parseInt(row.completed, 10)
+    return {
+      surveyId: row.id,
+      slug: row.slug,
+      title: row.title,
       total,
       completed,
       completionRate: total > 0 ? completed / total : 0,
-    })
-  }
-  return results
+    }
+  })
 }
 
 /** 列出所有 variant group 名稱 */
@@ -195,14 +202,18 @@ export async function deleteSurvey(id: string): Promise<boolean> {
   return true
 }
 
-/** 重新排序問卷（更新 display_order） */
+/** 重新排序問卷（更新 display_order） — 單一 CASE WHEN 批次 UPDATE */
 export async function reorderSurveys(orderedIds: string[], tenantId: string): Promise<void> {
-  for (let i = 0; i < orderedIds.length; i++) {
-    await execute(
-      `UPDATE surveys SET display_order = $1 WHERE id = $2 AND tenant_id = $3`,
-      [i, orderedIds[i], tenantId]
-    )
-  }
+  if (orderedIds.length === 0) return
+  // 每個 id 對應一個 $i 佔位符，THEN 直接嵌入數字（整數無 injection 風險）
+  const cases = orderedIds.map((_, i) => `WHEN id = $${i + 1} THEN ${i}`).join(' ')
+  const tenantIdx = orderedIds.length + 1
+  const arrIdx = orderedIds.length + 2
+  await execute(
+    `UPDATE surveys SET display_order = CASE ${cases} ELSE display_order END
+     WHERE tenant_id = $${tenantIdx} AND id = ANY($${arrIdx}::uuid[])`,
+    [...orderedIds, tenantId, orderedIds]
+  )
 }
 
 /** 依 survey_id 取得題目，可依 route 過濾（預設全部） */
@@ -381,12 +392,15 @@ export async function reorderQuestions(
   surveyId: string,
   orderedIds: string[]
 ): Promise<void> {
-  for (let i = 0; i < orderedIds.length; i++) {
-    await execute(
-      `UPDATE questions SET order_index = $1 WHERE id = $2 AND survey_id = $3`,
-      [i, orderedIds[i], surveyId]
-    )
-  }
+  if (orderedIds.length === 0) return
+  const cases = orderedIds.map((_, i) => `WHEN id = $${i + 1} THEN ${i}`).join(' ')
+  const surveyIdx = orderedIds.length + 1
+  const arrIdx = orderedIds.length + 2
+  await execute(
+    `UPDATE questions SET order_index = CASE ${cases} ELSE order_index END
+     WHERE survey_id = $${surveyIdx} AND id = ANY($${arrIdx}::uuid[])`,
+    [...orderedIds, surveyId, orderedIds]
+  )
 }
 
 // ===== 轉換工具 =====
