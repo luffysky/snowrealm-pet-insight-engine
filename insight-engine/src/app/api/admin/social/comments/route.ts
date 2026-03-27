@@ -22,14 +22,14 @@ export async function POST(request: NextRequest) {
     parentId?: string
   }
 
-  if (!body.postId || !body.content?.trim()) {
+  if (!body.postId || (!body.content?.trim() && !body.gifUrl)) {
     return NextResponse.json({ error: '缺少必要欄位' }, { status: 400 })
   }
 
   const comment = await createComment({
     postId: body.postId,
     userId: ctx.userId,
-    content: body.content,
+    content: body.content?.trim() || '',
     gifUrl: body.gifUrl,
     parentId: body.parentId,
   })

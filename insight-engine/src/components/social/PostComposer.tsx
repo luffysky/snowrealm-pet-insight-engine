@@ -63,7 +63,7 @@ export function PostComposer({ authorName = '你', authorAvatar, onPosted, defau
   const submit = async () => {
     const isArticle = type === 'article'
     const articleContent = isArticle ? blocksToHtml(blocks) : content
-    if (isArticle ? blocks.length === 0 : !content.trim()) return
+    if (isArticle ? blocks.length === 0 : (!content.trim() && images.length === 0)) return
     setPosting(true)
     try {
       const res = await fetch('/api/admin/social/posts', {
