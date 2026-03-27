@@ -21,7 +21,7 @@ interface UserInfo {
 
 const KNOWN_ADMIN_PAGES = new Set([
   'ab', 'account', 'ai-settings', 'api-keys', 'broadcast', 'crosstab', 'export', 'funnel', 'insight', 'line-settings',
-  'my-responses', 'notification-rules', 'notification-styles', 'panel', 'profile', 'rich-menu',
+  'messages', 'my-responses', 'notification-rules', 'notification-styles', 'panel', 'profile', 'rich-menu',
   'site-settings', 'story-wall', 'subscription', 'support', 'survey-templates', 'surveys', 'tag-rules', 'tags', 'team', 'templates', 'tenants',
   'theme-settings', 'utm', 'utm-links', 'upgrade', 'waitlist', 'webhooks', 'responses', 'zcoin',
 ])
@@ -65,6 +65,7 @@ const NAV_GROUPS = [
     label: '社群',
     items: [
       { path: '/profile', label: '個人頁面', icon: '👤' },
+      { path: '/messages', label: '私訊', icon: '💬' },
       { path: '/support', label: '客服中心', icon: '📬' },
     ],
   },

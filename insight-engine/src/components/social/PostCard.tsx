@@ -1,12 +1,13 @@
 'use client'
 
 import { useState, useRef } from 'react'
-import { MoreHorizontal, Trash2, ExternalLink, Share2, ChevronLeft, ChevronRight, Check } from 'lucide-react'
+import { MoreHorizontal, Trash2, Share2, ChevronLeft, ChevronRight } from 'lucide-react'
 const TwitterIcon = ({ className }: { className?: string }) => (<svg className={className} viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>)
 import { InteractionBar } from './InteractionBar'
 import { CommentSection } from './CommentSection'
 import { FollowButton } from './FollowButton'
 import { DMButton } from './DMButton'
+import { SharePostModal } from './SharePostModal'
 import type { SocialPost } from '@/lib/socialEngine'
 
 interface PostCardProps {
@@ -22,8 +23,7 @@ export function PostCard({ post, currentUserId, onDeleted, showComments = false,
   const [menuOpen, setMenuOpen] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [imgIdx, setImgIdx] = useState(0)
-  const [showShare, setShowShare] = useState(false)
-  const [copied, setCopied] = useState(false)
+  const [showShareModal, setShowShareModal] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
 
   const isOwner = currentUserId === post.userId
@@ -38,24 +38,6 @@ export function PostCard({ post, currentUserId, onDeleted, showComments = false,
     } finally {
       setDeleting(false)
     }
-  }
-
-  const copyLink = async () => {
-    await navigator.clipboard.writeText(window.location.origin + postUrl)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
-  }
-
-  const shareToLine = () => {
-    window.open(`https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(window.location.origin + postUrl)}`, '_blank')
-  }
-
-  const shareToTwitter = () => {
-    window.open(`https://twitter.com/intent/tweet?url=${encodeURIComponent(window.location.origin + postUrl)}&text=${encodeURIComponent(post.title ?? post.content.slice(0, 100))}`, '_blank')
-  }
-
-  const shareToFb = () => {
-    window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.origin + postUrl)}`, '_blank')
   }
 
   const initials = (post.authorName ?? '?').slice(0, 2).toUpperCase()
@@ -97,31 +79,13 @@ export function PostCard({ post, currentUserId, onDeleted, showComments = false,
           </div>
         </div>
         <div className="flex items-center gap-1">
-          {/* Share dropdown */}
-          <div className="relative">
-            <button onClick={() => setShowShare(s => !s)}
-              className="p-1.5 rounded-lg text-white/30 hover:text-white/70 hover:bg-white/5 transition-colors"
-            >
-              <Share2 className="w-4 h-4" />
-            </button>
-            {showShare && (
-              <div className="absolute right-0 top-full mt-1 bg-slate-900/90 backdrop-blur-xl border border-white/10 rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.5)] z-50 py-1 min-w-[140px]" onMouseLeave={() => setShowShare(false)}>
-                <button onClick={copyLink} className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-white/70 hover:bg-white/5 transition-colors">
-                  {copied ? <Check className="w-4 h-4 text-emerald-400" /> : <ExternalLink className="w-4 h-4" />}
-                  {copied ? '已複製！' : '複製連結'}
-                </button>
-                <button onClick={shareToLine} className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-white/70 hover:bg-white/5 transition-colors">
-                  <span className="text-base leading-none">💬</span> LINE
-                </button>
-                <button onClick={shareToTwitter} className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-white/70 hover:bg-white/5 transition-colors">
-                  <TwitterIcon className="w-4 h-4" /> Twitter / X
-                </button>
-                <button onClick={shareToFb} className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-white/70 hover:bg-white/5 transition-colors">
-                  <span className="text-base leading-none">📘</span> Facebook
-                </button>
-              </div>
-            )}
-          </div>
+          {/* Share button */}
+          <button
+            onClick={() => setShowShareModal(true)}
+            className="p-1.5 rounded-lg text-white/30 hover:text-white/70 hover:bg-white/5 transition-colors"
+          >
+            <Share2 className="w-4 h-4" />
+          </button>
           {isOwner && (
             <div ref={menuRef} className="relative">
               <button onClick={() => setMenuOpen(s => !s)}
@@ -215,9 +179,11 @@ export function PostCard({ post, currentUserId, onDeleted, showComments = false,
           initialLikes={post.likesCount}
           initialComments={post.commentsCount}
           initialMyReaction={post.myReaction}
+          initialIsBookmarked={post.isBookmarked}
           onCommentClick={() => setExpanded(s => !s)}
           shareUrl={typeof window !== 'undefined' ? window.location.origin + postUrl : postUrl}
           shareTitle={post.title ?? post.content.slice(0, 80)}
+          onShareClick={() => setShowShareModal(true)}
         />
       </div>
 
@@ -226,6 +192,15 @@ export function PostCard({ post, currentUserId, onDeleted, showComments = false,
         <div className="px-4 pb-4 border-t border-white/5 pt-3">
           <CommentSection postId={post.id} currentUserId={currentUserId} />
         </div>
+      )}
+
+      {/* Share modal */}
+      {showShareModal && (
+        <SharePostModal
+          open={showShareModal}
+          onClose={() => setShowShareModal(false)}
+          post={post}
+        />
       )}
     </article>
   )

@@ -28,6 +28,28 @@ interface AuthMe {
   role: string
 }
 
+function parseHandle(input: string, domain: string): string {
+  const s = input.trim().replace(/^@/, '')
+  try {
+    const url = new URL(s.startsWith('http') ? s : `https://${s}`)
+    if (url.hostname.includes(domain)) {
+      return url.pathname.replace(/^\/+/, '').split('/')[0].split('?')[0]
+    }
+  } catch {}
+  return s
+    .replace(/^(?:https?:\/\/)?(?:www\.)?(?:instagram\.com|twitter\.com|x\.com)\//, '')
+    .split('/')[0]
+    .split('?')[0]
+}
+
+function ensureHttps(url: string): string {
+  if (!url) return url
+  const s = url.trim()
+  if (!s) return s
+  if (s.startsWith('http://') || s.startsWith('https://')) return s
+  return `https://${s}`
+}
+
 function ProfilePage() {
   const searchParams = useSearchParams()
   const viewingUserId = searchParams.get('userId')  // if set, we're viewing someone else's profile
@@ -105,10 +127,16 @@ function ProfilePage() {
   const handleSave = async () => {
     setSaving(true)
     try {
+      const normalized = {
+        ...form,
+        instagramHandle: form.instagramHandle ? parseHandle(form.instagramHandle, 'instagram') : '',
+        twitterHandle: form.twitterHandle ? parseHandle(form.twitterHandle, 'twitter') : '',
+        websiteUrl: form.websiteUrl ? ensureHttps(form.websiteUrl) : '',
+      }
       const res = await fetch('/api/admin/profile', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
+        body: JSON.stringify(normalized),
       })
       if (res.ok) {
         const data = await res.json() as { profile: UserProfile }
@@ -217,7 +245,7 @@ function ProfilePage() {
                 {profile?.bio && <p className="text-sm text-white/60 leading-relaxed">{profile.bio}</p>}
                 <div className="flex flex-wrap gap-3">
                   {profile?.websiteUrl && (
-                    <a href={profile.websiteUrl} target="_blank" rel="noreferrer"
+                    <a href={ensureHttps(profile.websiteUrl)} target="_blank" rel="noreferrer"
                       className="flex items-center gap-1.5 text-xs text-amber-400/70 hover:text-amber-300 transition-colors"
                     >
                       <LinkIcon className="w-3.5 h-3.5" /> {profile.websiteUrl.replace(/^https?:\/\//, '')}

@@ -22,6 +22,7 @@ export interface SocialPost {
   authorName?: string
   authorAvatar?: string
   myReaction?: string | null
+  isBookmarked?: boolean
 }
 
 export interface PostImage {
@@ -65,6 +66,7 @@ interface PostRow extends Record<string, unknown> {
   author_name: string | null
   author_avatar: string | null
   my_reaction: string | null
+  is_bookmarked?: boolean
 }
 
 function rowToPost(row: PostRow): SocialPost {
@@ -87,6 +89,7 @@ function rowToPost(row: PostRow): SocialPost {
     authorName: row.author_name ?? undefined,
     authorAvatar: row.author_avatar ?? undefined,
     myReaction: row.my_reaction,
+    isBookmarked: row.is_bookmarked ?? false,
   }
 }
 
@@ -119,7 +122,8 @@ export async function getPosts({
     `SELECT p.*,
       COALESCE(u.display_name, u.username) AS author_name,
       u.avatar_url AS author_avatar,
-      ${viewerId ? `(SELECT type FROM social_reactions WHERE user_id = '${viewerId}' AND post_id = p.id LIMIT 1) AS my_reaction` : 'NULL::text AS my_reaction'}
+      ${viewerId ? `(SELECT type FROM social_reactions WHERE user_id = '${viewerId}' AND post_id = p.id LIMIT 1) AS my_reaction` : 'NULL::text AS my_reaction'},
+      ${viewerId ? `EXISTS(SELECT 1 FROM social_bookmarks sb WHERE sb.post_id = p.id AND sb.user_id = '${viewerId}') AS is_bookmarked` : 'false AS is_bookmarked'}
      FROM social_posts p
      JOIN admin_users u ON u.id = p.user_id
      WHERE ${conditions.join(' AND ')}
@@ -136,7 +140,8 @@ export async function getPost(postId: string, viewerId?: string): Promise<Social
     `SELECT p.*,
       COALESCE(u.display_name, u.username) AS author_name,
       u.avatar_url AS author_avatar,
-      ${viewerId ? `(SELECT type FROM social_reactions WHERE user_id = '${viewerId}' AND post_id = p.id LIMIT 1) AS my_reaction` : 'NULL::text AS my_reaction'}
+      ${viewerId ? `(SELECT type FROM social_reactions WHERE user_id = '${viewerId}' AND post_id = p.id LIMIT 1) AS my_reaction` : 'NULL::text AS my_reaction'},
+      ${viewerId ? `EXISTS(SELECT 1 FROM social_bookmarks sb WHERE sb.post_id = p.id AND sb.user_id = '${viewerId}') AS is_bookmarked` : 'false AS is_bookmarked'}
      FROM social_posts p
      JOIN admin_users u ON u.id = p.user_id
      WHERE p.id = $1`,

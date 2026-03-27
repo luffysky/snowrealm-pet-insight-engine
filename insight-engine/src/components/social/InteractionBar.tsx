@@ -17,11 +17,14 @@ interface InteractionBarProps {
   initialLikes?: number
   initialComments?: number
   initialMyReaction?: string | null
+  initialIsBookmarked?: boolean
   onCommentClick?: () => void
+  onBookmarkChange?: (isBookmarked: boolean) => void
   shareUrl?: string
   shareTitle?: string
   compact?: boolean
   className?: string
+  onShareClick?: () => void
 }
 
 export function InteractionBar({
@@ -29,17 +32,21 @@ export function InteractionBar({
   initialLikes = 0,
   initialComments = 0,
   initialMyReaction = null,
+  initialIsBookmarked = false,
   onCommentClick,
+  onBookmarkChange,
   shareUrl,
   shareTitle,
   compact = false,
   className = '',
+  onShareClick,
 }: InteractionBarProps) {
   const [showReactions, setShowReactions] = useState(false)
   const [myReaction, setMyReaction] = useState<string | null>(initialMyReaction)
   const [likesCount, setLikesCount] = useState(initialLikes)
   const [isPending, setIsPending] = useState(false)
   const [copied, setCopied] = useState(false)
+  const [isBookmarked, setIsBookmarked] = useState(initialIsBookmarked)
   const hoverRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   const longRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   const isLongRef = useRef(false)
@@ -77,6 +84,10 @@ export function InteractionBar({
   }, [postId, myReaction, likesCount])
 
   const handleShare = useCallback(async () => {
+    if (onShareClick) {
+      onShareClick()
+      return
+    }
     const url = shareUrl ?? window.location.href
     if (navigator.share) {
       navigator.share({ title: shareTitle, url })
@@ -85,7 +96,23 @@ export function InteractionBar({
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
     }
-  }, [shareUrl, shareTitle])
+  }, [shareUrl, shareTitle, onShareClick])
+
+  const handleBookmark = useCallback(async () => {
+    const next = !isBookmarked
+    setIsBookmarked(next)
+    try {
+      const res = await fetch('/api/admin/social/bookmarks', {
+        method: next ? 'POST' : 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ postId }),
+      })
+      if (!res.ok) setIsBookmarked(!next)
+      else onBookmarkChange?.(next)
+    } catch {
+      setIsBookmarked(!next)
+    }
+  }, [postId, isBookmarked, onBookmarkChange])
 
   if (compact) {
     return (
@@ -167,6 +194,15 @@ export function InteractionBar({
       </div>
 
       <div className="flex items-center gap-0.5">
+        <button onClick={handleBookmark}
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-medium transition-colors ${
+            isBookmarked ? 'text-amber-400 bg-amber-500/10 hover:bg-amber-500/20' : 'text-white/40 hover:bg-white/5 hover:text-white/70'
+          }`}
+        >
+          <Bookmark className={`w-4 h-4 ${isBookmarked ? 'fill-amber-400' : ''}`} />
+          <span>{isBookmarked ? '已收藏' : '收藏'}</span>
+        </button>
+
         <button onClick={handleShare}
           className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-medium text-white/40 hover:bg-white/5 hover:text-white/70 transition-colors"
         >
