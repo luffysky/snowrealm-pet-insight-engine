@@ -12,6 +12,7 @@ import { CreatePostModal } from '@/components/public/CreatePostModal'
 import { LoginPrompt } from '@/components/social/LoginPrompt'
 import { FollowButton } from '@/components/social/FollowButton'
 import { PostShareCard } from '@/components/social/PostShareCard'
+import { StoryCircles } from '@/components/social/StoryCircles'
 
 const CATEGORIES = [
   { key: '', label: '全部', emoji: '✨' },
@@ -317,6 +318,11 @@ function ArticlesPageInner() {
       >
         <PenSquare className="w-6 h-6" />
       </button>
+
+      {/* Stories */}
+      <div className="border-b border-white/8">
+        <StoryCircles />
+      </div>
 
       {/* Hero */}
       <div className="relative bg-gradient-to-b from-slate-900/80 to-slate-950 border-b border-white/8 backdrop-blur-sm">
