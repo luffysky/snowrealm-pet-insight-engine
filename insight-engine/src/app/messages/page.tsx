@@ -196,6 +196,9 @@ export default function MessagesPage() {
   const [conversations, setConversations] = useState<Conversation[]>([])
   const [loading, setLoading] = useState(true)
   const [active, setActive] = useState<Conversation | null>(null)
+  const [pendingUserId, setPendingUserId] = useState<string | null>(() =>
+    typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('uid') : null
+  )
   const [messages, setMessages] = useState<Message[]>([])
   const [msgLoading, setMsgLoading] = useState(false)
   const [input, setInput] = useState('')
@@ -228,9 +231,30 @@ export default function MessagesPage() {
     if (!meId) return
     fetch('/api/admin/social/messages')
       .then(r => r.ok ? r.json() as Promise<{ conversations: Conversation[] }> : null)
-      .then(d => { if (d?.conversations) setConversations(d.conversations) })
+      .then(d => {
+        if (d?.conversations) {
+          setConversations(d.conversations)
+          // 從 URL ?uid= 恢復上次開啟的對話
+          if (pendingUserId) {
+            const found = d.conversations.find(c => c.userId === pendingUserId)
+            if (found) { setActive(found); setPendingUserId(null) }
+          }
+        }
+      })
       .finally(() => setLoading(false))
-  }, [meId])
+  }, [meId, pendingUserId])
+
+  // 同步 active 對話到 URL（讓重整後能恢復）
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const url = new URL(window.location.href)
+    if (active) {
+      url.searchParams.set('uid', active.userId)
+    } else {
+      url.searchParams.delete('uid')
+    }
+    window.history.replaceState(null, '', url.toString())
+  }, [active])
 
   useEffect(() => {
     if (!active || !meId) return
@@ -399,25 +423,17 @@ export default function MessagesPage() {
 
   return (
     <div className="h-[100dvh] bg-slate-950 text-white flex flex-col overflow-hidden">
-      {/* Header */}
-      <nav className="shrink-0 bg-slate-950/90 backdrop-blur-md border-b border-white/8">
+      {/* 列表頂部導覽 — 手機開啟對話時隱藏，桌機保留 */}
+      <nav className={`shrink-0 bg-slate-950/90 backdrop-blur-md border-b border-white/8 ${active ? 'hidden md:block' : ''}`}>
         <div className="max-w-2xl mx-auto px-4 py-3 flex items-center gap-3">
-          {active ? (
-            <button onClick={() => setActive(null)} className="flex items-center gap-2 text-sm text-white/50 hover:text-white md:hidden">
-              <ArrowLeft className="w-4 h-4" />
-            </button>
-          ) : (
-            <button onClick={() => router.back()} className="flex items-center gap-2 text-sm text-white/50 hover:text-white">
-              <ArrowLeft className="w-4 h-4" />
-            </button>
-          )}
-          <h1 className="font-semibold">{active ? (active.displayName ?? '私訊') : '訊息'}</h1>
+          <button onClick={() => router.back()} className="flex items-center gap-2 text-sm text-white/50 hover:text-white">
+            <ArrowLeft className="w-4 h-4" />
+          </button>
+          <h1 className="font-semibold">訊息</h1>
         </div>
       </nav>
 
-      <div className="flex-1 flex max-w-2xl mx-auto w-full overflow-hidden"
-        style={{ paddingBottom: 'var(--bnav-h, 5rem)' }}
-      >
+      <div className="flex-1 flex max-w-2xl mx-auto w-full min-h-0">
         {/* Conversation list — hidden on mobile when chat open */}
         <div className={`${active ? 'hidden md:flex' : 'flex'} flex-col w-full md:w-72 md:border-r md:border-white/8 shrink-0 overflow-y-auto`}>
           {loading ? (
@@ -461,9 +477,20 @@ export default function MessagesPage() {
 
         {/* Chat panel */}
         {active ? (
-          <div className="flex-1 flex flex-col overflow-hidden">
-            {/* Messages — scrollable content area */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-3">
+          <div className="flex-1 flex flex-col min-h-0">
+            {/* 名子層 — 手機版專屬頂部（桌機用全域 nav） */}
+            <div className="md:hidden shrink-0 bg-slate-950/90 backdrop-blur-md border-b border-white/8 px-4 py-3 flex items-center gap-3">
+              <button onClick={() => setActive(null)} className="text-white/50 hover:text-white transition-colors">
+                <ArrowLeft className="w-4 h-4" />
+              </button>
+              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-amber-500/30 to-purple-500/30 flex items-center justify-center text-xs font-bold text-white/70 overflow-hidden shrink-0">
+                {active.avatarUrl ? <img src={active.avatarUrl} alt="" className="w-full h-full object-cover" /> : initials(active.displayName)}
+              </div>
+              <span className="font-semibold flex-1 truncate">{active.displayName ?? '私訊'}</span>
+            </div>
+
+            {/* 內容層 — 可捲動的訊息區 */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-3 min-h-0">
               {msgLoading ? (
                 <div className="flex justify-center pt-10">
                   <Loader2 className="w-5 h-5 text-white/30 animate-spin" />
@@ -529,9 +556,11 @@ export default function MessagesPage() {
               <div ref={bottomRef} />
             </div>
 
-            {/* Media panels */}
+            {/* 輸入層 — 固定在底部（媒體面板 + 回覆預覽 + 輸入欄） */}
+            <div className="shrink-0">
+            {/* 媒體面板 */}
             {mediaPanel && (
-              <div className="shrink-0 border-t border-white/8 bg-slate-900/80">
+              <div className="border-t border-white/8 bg-slate-900/80">
                 {mediaPanel === 'emoji' && (
                   <div>
                     {/* Category tabs */}
@@ -592,9 +621,9 @@ export default function MessagesPage() {
               </div>
             )}
 
-            {/* Reply preview */}
+            {/* 回覆預覽 */}
             {replyTo && (
-              <div className="shrink-0 flex items-center gap-2 px-3 py-2 bg-white/5 border-t border-white/8">
+              <div className="flex items-center gap-2 px-3 py-2 bg-white/5 border-t border-white/8">
                 <div className="flex-1 border-l-2 border-amber-400/50 pl-2">
                   <p className="text-[10px] text-amber-300/70">回覆</p>
                   <p className="text-xs text-white/50 truncate">{replyTo.content.slice(0, 50)}</p>
@@ -605,8 +634,10 @@ export default function MessagesPage() {
               </div>
             )}
 
-            {/* Input bar */}
-            <div className="shrink-0 px-2 py-2 border-t border-white/8">
+            {/* 輸入欄 */}
+            <div className="px-2 pt-2 pb-2 border-t border-white/8"
+              style={{ paddingBottom: 'calc(max(0.5rem, env(safe-area-inset-bottom, 0px)) + var(--bnav-h, 0px))' }}
+            >
               {plusMenuOpen && <div className="fixed inset-0 z-10" onClick={() => setPlusMenuOpen(false)} />}
               <div className="flex items-center gap-1.5">
                 {/* + dropdown for emoji / attach / GIF */}
@@ -657,6 +688,7 @@ export default function MessagesPage() {
                 </button>
               </div>
             </div>
+            </div>{/* end 輸入層 */}
           </div>
         ) : (
           <div className="flex-1 hidden md:flex items-center justify-center text-white/20">
