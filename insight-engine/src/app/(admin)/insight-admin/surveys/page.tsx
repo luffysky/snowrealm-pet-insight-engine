@@ -17,6 +17,7 @@ interface SurveyRow {
   subtitle: string
   cover_title: string
   cover_subtitle: string
+  cover_image_url: string | null
   start_button_text: string
   done_title: string
   done_subtitle: string
@@ -27,6 +28,8 @@ interface SurveyRow {
   done_config?: Record<string, unknown> | null
   result_config?: ResultConfig | null
   is_primary: boolean
+  is_public_explore?: boolean
+  access_password?: string | null
   tenant_id: string
 }
 
@@ -279,6 +282,9 @@ export default function SurveysAdminPage() {
               } ${dragIdx === i ? 'opacity-40' : ''}`}
             >
               <span className="text-white/20 mr-1 text-xs select-none">⠿</span>
+              {s.cover_image_url && (
+                <img src={s.cover_image_url} alt="" className="w-5 h-5 rounded object-cover shrink-0 opacity-80" />
+              )}
               {s.is_primary && <span className="text-yellow-400" title="主問卷">⭐</span>}
               {s.title}
             </button>
@@ -379,7 +385,7 @@ function SurveyEditor({
         alert(data.error || '上傳失敗')
         return
       }
-      setForm((prev) => ({ ...prev, cover_image_url: data.url ?? null }))
+      setForm((prev) => ({ ...prev, cover_image_url: data.url ?? null } as typeof prev))
     } catch {
       alert('上傳失敗')
     } finally {
@@ -451,10 +457,10 @@ function SurveyEditor({
         og_title: form.og_title || null,
         og_description: form.og_description || null,
         og_image_url: form.og_image_url || null,
-        cover_image_url: (form as unknown as { cover_image_url?: string }).cover_image_url || null,
-        access_password: (form as unknown as { access_password?: string }).access_password || null,
+        cover_image_url: form.cover_image_url || null,
+        access_password: form.access_password || null,
         done_config: form.done_config ?? null,
-        is_public_explore: (form as unknown as { is_public_explore?: boolean }).is_public_explore ?? false,
+        is_public_explore: form.is_public_explore ?? false,
       }),
     })
     if (res.ok) {
@@ -639,10 +645,10 @@ function SurveyEditor({
           <div className="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-3">
             <label className="text-sm text-white/50 sm:w-20 sm:pt-1.5 shrink-0">封面圖片</label>
             <div className="flex-1 space-y-2">
-              {(form as unknown as { cover_image_url?: string }).cover_image_url && (
+              {form.cover_image_url && (
                 <div className="relative w-full max-w-xs">
                   <img
-                    src={(form as unknown as { cover_image_url?: string }).cover_image_url}
+                    src={form.cover_image_url}
                     alt="封面圖片預覽"
                     className="w-full max-h-40 object-cover rounded-lg border border-slate-700"
                   />
@@ -668,8 +674,8 @@ function SurveyEditor({
             <div className="flex-1 space-y-1">
               <input
                 type="text"
-                value={(form as unknown as { access_password?: string }).access_password ?? ''}
-                onChange={(e) => setForm(Object.assign({}, form, { access_password: e.target.value }) as typeof form)}
+                value={form.access_password ?? ''}
+                onChange={(e) => setForm({ ...form, access_password: e.target.value })}
                 placeholder="留空表示公開，填入則需輸入密碼才能開啟問卷"
                 className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-sm text-white/80"
               />
@@ -768,10 +774,8 @@ function SurveyEditor({
           <div className="pt-3 mt-1 border-t border-slate-700">
             <label className="flex items-center gap-2 cursor-pointer">
               <input type="checkbox" className="w-4 h-4 accent-cyan-500"
-                checked={!!(form as unknown as { is_public_explore?: boolean }).is_public_explore}
-                onChange={(e) => {
-                  setForm(Object.assign({}, form, { is_public_explore: e.target.checked }) as unknown as typeof form)
-                }} />
+                checked={!!form.is_public_explore}
+                onChange={(e) => setForm({ ...form, is_public_explore: e.target.checked })} />
               <span className="text-sm text-white/70">☐ 公開到探索頁（讓所有人瀏覽此問卷）</span>
             </label>
           </div>
