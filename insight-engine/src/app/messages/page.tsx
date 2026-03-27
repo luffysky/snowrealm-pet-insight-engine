@@ -1129,8 +1129,12 @@ export default function MessagesPage() {
             {replyTo && (
               <div className="flex items-center gap-2 px-4 py-2 bg-amber-500/8 border-t border-amber-500/15">
                 <div className="flex-1 border-l-2 border-amber-400/60 pl-2.5">
-                  <p className="text-[10px] font-semibold text-amber-400/80 mb-0.5">回覆</p>
-                  <p className="text-xs text-white/50 truncate">{replyTo.content.slice(0, 50)}</p>
+                  <p className="text-[10px] font-semibold text-amber-400/80 mb-0.5">
+                    回覆 {replyTo.isMine ? '自己' : (replyTo.fromName ?? '對方')}
+                  </p>
+                  <p className="text-xs text-white/50 truncate">
+                    {(replyTo.content.includes('\n') ? replyTo.content.split('\n').slice(1).join('\n') : replyTo.content).slice(0, 50)}
+                  </p>
                 </div>
                 <button onClick={() => setReplyTo(null)} className="text-white/25 hover:text-white/50 p-1">
                   <X className="w-3.5 h-3.5" />
@@ -1271,12 +1275,11 @@ export default function MessagesPage() {
             >
               <span>🫧</span> 懸浮球
             </button>
-            {msgMenu.msg.isMine && (
-              <button
+            <button
                 onClick={() => deleteMsg(msgMenu.msg.id)}
                 className="w-full flex items-center gap-3 px-4 py-3 hover:bg-rose-500/10 text-sm text-rose-400 text-left transition-colors border-t border-white/8"
               >
-                <span>🗑️</span> 刪除
+                <span>🗑️</span> {msgMenu.msg.isMine ? '刪除' : '從我這邊刪除'}
               </button>
             )}
           </div>
