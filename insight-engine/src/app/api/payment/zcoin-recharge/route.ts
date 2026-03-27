@@ -59,9 +59,7 @@ export async function GET(request: NextRequest) {
 
   try {
     const userId = auth.sub
-    const tenantId = (auth as Record<string, unknown> & { tenants?: { tid: string }[]; tid?: string }).tenants?.[0]?.tid
-      ?? (auth as Record<string, unknown> & { tid?: string }).tid
-      ?? 'default'
+    const tenantId = auth.tenants?.[0]?.tid ?? auth.tid ?? 'default'
 
     const userRow = await queryOne<{ username: string }>(
       `SELECT username FROM admin_users WHERE id = $1`,
