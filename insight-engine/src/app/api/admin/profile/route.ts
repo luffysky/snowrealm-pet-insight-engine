@@ -18,6 +18,8 @@ export async function PATCH(request: NextRequest) {
   const body = await request.json() as {
     displayName?: string
     avatarUrl?: string
+    bannerUrl?: string
+    profileTheme?: string
     bio?: string
     websiteUrl?: string
     instagramHandle?: string

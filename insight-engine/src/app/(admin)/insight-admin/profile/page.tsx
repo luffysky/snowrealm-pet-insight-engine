@@ -3,11 +3,10 @@
 import { useEffect, useState, useCallback, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
-import { Camera, Globe, Link as LinkIcon, Save, Loader2, Edit2, X } from 'lucide-react'
+import { Camera, Globe, Link as LinkIcon, Save, Loader2, Edit2, Image } from 'lucide-react'
 import { FollowButton } from '@/components/social/FollowButton'
 import { DMButton } from '@/components/social/DMButton'
 
-// Simple SVG icons for social platforms
 const InstagramIcon = ({ className }: { className?: string }) => (
   <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
     <rect width="20" height="20" x="2" y="2" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/>
@@ -26,6 +25,25 @@ interface AuthMe {
   userId: string
   userName: string
   role: string
+}
+
+const PROFILE_THEMES = [
+  { key: 'default', label: '預設', from: '#d97706', via: '#9333ea', to: '#2563eb' },
+  { key: 'ocean',   label: '海洋', from: '#2563eb', via: '#06b6d4', to: '#0d9488' },
+  { key: 'sunset',  label: '夕陽', from: '#f97316', via: '#ec4899', to: '#9333ea' },
+  { key: 'forest',  label: '森林', from: '#16a34a', via: '#10b981', to: '#0d9488' },
+  { key: 'night',   label: '夜空', from: '#1e293b', via: '#312e81', to: '#0f172a' },
+  { key: 'rose',    label: '玫瑰', from: '#e11d48', via: '#ec4899', to: '#a21caf' },
+  { key: 'gold',    label: '黃金', from: '#eab308', via: '#f59e0b', to: '#ea580c' },
+  { key: 'aurora',  label: '極光', from: '#7c3aed', via: '#8b5cf6', to: '#ec4899' },
+] as const
+
+type ThemeKey = typeof PROFILE_THEMES[number]['key']
+
+function getThemeStyle(key: string | null, bannerUrl: string | null): React.CSSProperties {
+  if (bannerUrl) return { backgroundImage: `url(${bannerUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' }
+  const theme = PROFILE_THEMES.find(t => t.key === key) ?? PROFILE_THEMES[0]
+  return { background: `linear-gradient(to right, ${theme.from}4d, ${theme.via}33, ${theme.to}66)` }
 }
 
 function parseHandle(input: string, domain: string): string {
@@ -52,7 +70,7 @@ function ensureHttps(url: string): string {
 
 function ProfilePage() {
   const searchParams = useSearchParams()
-  const viewingUserId = searchParams.get('userId')  // if set, we're viewing someone else's profile
+  const viewingUserId = searchParams.get('userId')
 
   const [me, setMe] = useState<AuthMe | null>(null)
   const [profile, setProfile] = useState<UserProfile | null>(null)
@@ -61,8 +79,10 @@ function ProfilePage() {
   const [editing, setEditing] = useState(false)
   const [saving, setSaving] = useState(false)
   const [uploading, setUploading] = useState(false)
+  const [bannerUploading, setBannerUploading] = useState(false)
   const [toast, setToast] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<'posts' | 'articles'>('posts')
+  const [showThemePicker, setShowThemePicker] = useState(false)
 
   const isOwnProfile = !viewingUserId || viewingUserId === me?.userId
 
@@ -85,12 +105,10 @@ function ProfilePage() {
       const meRes = await fetch('/api/auth/me')
       const meData = await meRes.json() as AuthMe
       setMe(meData)
-      // Load profile: viewed user's profile or own
       const profileUrl = viewingUserId ? `/api/admin/profile?userId=${viewingUserId}` : '/api/admin/profile'
       const profileRes = await fetch(profileUrl)
       const profileData = await profileRes.json() as { profile: UserProfile }
       setProfile(profileData.profile)
-      // Only pre-fill form for own profile
       if (!viewingUserId && profileData.profile) {
         setForm({
           displayName: profileData.profile.displayName ?? '',
@@ -174,8 +192,45 @@ function ProfilePage() {
     }
   }
 
+  const handleBannerUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setBannerUploading(true)
+    try {
+      const fd = new FormData()
+      fd.append('file', file)
+      fd.append('folder', 'banners')
+      const res = await fetch('/api/admin/upload', { method: 'POST', body: fd })
+      const data = await res.json() as { url?: string }
+      if (data.url) {
+        await fetch('/api/admin/profile', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ bannerUrl: data.url }),
+        })
+        setProfile(prev => prev ? { ...prev, bannerUrl: data.url! } : prev)
+        showToast('✅ 橫幅已更新')
+      }
+    } finally {
+      setBannerUploading(false)
+      e.target.value = ''
+    }
+  }
+
+  const handleThemeSelect = async (key: ThemeKey) => {
+    await fetch('/api/admin/profile', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ profileTheme: key, bannerUrl: null }),
+    })
+    setProfile(prev => prev ? { ...prev, profileTheme: key, bannerUrl: null } : prev)
+    setShowThemePicker(false)
+    showToast('✅ 主題已更新')
+  }
+
   const displayName = profile?.displayName || me?.userName || '用戶'
   const initials = displayName.slice(0, 2).toUpperCase()
+  const bannerStyle = getThemeStyle(profile?.profileTheme ?? null, profile?.bannerUrl ?? null)
 
   return (
     <div className="min-h-screen bg-slate-950 text-white">
@@ -191,7 +246,42 @@ function ProfilePage() {
         {/* Profile Card */}
         <div className="bg-gradient-to-br from-white/5 to-white/2 border border-white/10 rounded-3xl overflow-hidden">
           {/* Banner */}
-          <div className="h-24 bg-gradient-to-r from-amber-600/30 via-purple-600/20 to-blue-600/30" />
+          <div className="relative h-28 group" style={bannerStyle}>
+            {isOwnProfile && (
+              <div className="absolute inset-0 flex items-center justify-center gap-3 opacity-0 group-hover:opacity-100 transition-opacity bg-black/40">
+                <label className="flex items-center gap-1.5 px-3 py-1.5 bg-black/60 hover:bg-black/80 text-white text-xs rounded-lg cursor-pointer transition-colors">
+                  {bannerUploading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Camera className="w-3.5 h-3.5" />}
+                  上傳圖片
+                  <input type="file" accept="image/*" className="hidden" onChange={handleBannerUpload} />
+                </label>
+                <button
+                  onClick={() => setShowThemePicker(s => !s)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-black/60 hover:bg-black/80 text-white text-xs rounded-lg transition-colors"
+                >
+                  <Image className="w-3.5 h-3.5" />
+                  選擇主題
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Theme picker */}
+          {showThemePicker && isOwnProfile && (
+            <div className="px-4 py-3 bg-slate-900/80 border-b border-white/8">
+              <p className="text-xs text-white/40 mb-2">選擇主題色</p>
+              <div className="flex flex-wrap gap-2">
+                {PROFILE_THEMES.map(t => (
+                  <button
+                    key={t.key}
+                    onClick={() => handleThemeSelect(t.key)}
+                    className={`w-10 h-6 rounded-md border-2 transition-all ${profile?.profileTheme === t.key && !profile?.bannerUrl ? 'border-white scale-110' : 'border-transparent hover:border-white/40'}`}
+                    style={{ background: `linear-gradient(to right, ${t.from}, ${t.via}, ${t.to})` }}
+                    title={t.label}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
 
           <div className="px-6 pb-6 -mt-12">
             {/* Avatar */}
@@ -202,10 +292,12 @@ function ProfilePage() {
                     ? <img src={profile.avatarUrl} alt="" className="w-full h-full object-cover" />
                     : initials}
                 </div>
-                <label className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
-                  {uploading ? <Loader2 className="w-6 h-6 text-white animate-spin" /> : <Camera className="w-6 h-6 text-white" />}
-                  <input type="file" accept="image/*" className="hidden" onChange={handleAvatarUpload} />
-                </label>
+                {isOwnProfile && (
+                  <label className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
+                    {uploading ? <Loader2 className="w-6 h-6 text-white animate-spin" /> : <Camera className="w-6 h-6 text-white" />}
+                    <input type="file" accept="image/*" className="hidden" onChange={handleAvatarUpload} />
+                  </label>
+                )}
               </div>
               <div className="flex gap-2">
                 {isOwnProfile ? (
@@ -335,14 +427,16 @@ function ProfilePage() {
         </div>
 
         {/* Composer */}
-        <PostComposer
-          authorName={displayName}
-          authorAvatar={profile?.avatarUrl ?? undefined}
-          compact
-          onPosted={post => {
-            setPosts(prev => [post, ...prev])
-          }}
-        />
+        {isOwnProfile && (
+          <PostComposer
+            authorName={displayName}
+            authorAvatar={profile?.avatarUrl ?? undefined}
+            compact
+            onPosted={post => {
+              setPosts(prev => [post, ...prev])
+            }}
+          />
+        )}
 
         {/* Posts tabs */}
         <div className="flex border-b border-white/10">

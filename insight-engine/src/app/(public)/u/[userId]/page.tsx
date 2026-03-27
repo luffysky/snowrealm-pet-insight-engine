@@ -1,10 +1,102 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { useParams } from 'next/navigation'
+import { useEffect, useState, useRef, type ReactNode } from 'react'
+import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, Globe, Heart, MessageSquare, Loader2, X } from 'lucide-react'
+import { ArrowLeft, Globe, Heart, MessageSquare, Loader2, X, Settings, ChevronRight, Bell, MessageCircle, LayoutDashboard, BookOpen, Image, MoreHorizontal, Pencil, Trash2, Camera } from 'lucide-react'
 import { UserAlbum } from '@/components/social/UserAlbum'
+import { setFloatingChatEnabled, FLOATING_CHAT_ENABLED_KEY } from '@/components/social/FloatingChat'
+
+// ─── Profile sidebar (only shown for own profile) ───
+function ProfileSidebar({ onClose }: { onClose: () => void }) {
+  const [floatEnabled, setFloatEnabled] = useState(true)
+
+  useEffect(() => {
+    const v = localStorage.getItem(FLOATING_CHAT_ENABLED_KEY)
+    setFloatEnabled(v !== 'false')
+  }, [])
+
+  const toggleFloat = () => {
+    const next = !floatEnabled
+    setFloatEnabled(next)
+    setFloatingChatEnabled(next)
+  }
+
+  return (
+    <>
+      <div className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm" onClick={onClose} />
+      <div className="fixed right-0 top-0 bottom-0 z-50 w-72 bg-slate-900/98 border-l border-white/8 flex flex-col shadow-2xl">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-white/8 shrink-0">
+          <p className="text-sm font-semibold text-white/80">個人管理</p>
+          <button onClick={onClose} className="text-white/30 hover:text-white/60 transition-colors">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+        <div className="flex-1 overflow-y-auto py-2">
+          <SidebarSection label="創作">
+            <SidebarLink href="/write" icon={<BookOpen className="w-4 h-4" />} label="發布文章" onClick={onClose} />
+            <SidebarLink href="/articles" icon={<Image className="w-4 h-4" />} label="相簿 &amp; 動態" onClick={onClose} />
+          </SidebarSection>
+          <SidebarSection label="管理後台">
+            <SidebarLink href="/insight-admin" icon={<LayoutDashboard className="w-4 h-4" />} label="問卷後台" onClick={onClose} />
+          </SidebarSection>
+          <SidebarSection label="偏好設定">
+            <SidebarLink href="/messages" icon={<MessageCircle className="w-4 h-4" />} label="訊息設定" onClick={onClose} />
+            <SidebarLink href="/insight-admin/account" icon={<Bell className="w-4 h-4" />} label="通知設定" onClick={onClose} />
+          </SidebarSection>
+          <SidebarSection label="顯示設定">
+            <div className="flex items-center justify-between px-4 py-3">
+              <div className="flex items-center gap-3">
+                <span className="w-8 h-8 rounded-xl bg-sky-500/15 flex items-center justify-center text-sky-400">
+                  <MessageCircle className="w-4 h-4" />
+                </span>
+                <div>
+                  <p className="text-sm text-white/80">懸浮訊息球</p>
+                  <p className="text-[11px] text-white/35">可拖曳的快速訊息入口</p>
+                </div>
+              </div>
+              <button
+                onClick={toggleFloat}
+                className={`relative w-10 h-5 rounded-full transition-colors ${floatEnabled ? 'bg-sky-500' : 'bg-white/15'}`}
+              >
+                <span className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${floatEnabled ? 'translate-x-5' : 'translate-x-0.5'}`} />
+              </button>
+            </div>
+          </SidebarSection>
+        </div>
+        <div className="px-4 py-3 border-t border-white/8 shrink-0">
+          <p className="text-[11px] text-white/25 text-center">長按訊息可產生可拖曳懸浮球</p>
+        </div>
+      </div>
+    </>
+  )
+}
+
+function SidebarSection({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div className="mb-1">
+      <p className="px-4 py-2 text-[10px] font-semibold text-white/25 uppercase tracking-widest">{label}</p>
+      {children}
+    </div>
+  )
+}
+
+function SidebarLink({ href, icon, label, onClick }: { href: string; icon: React.ReactNode; label: string; onClick: () => void }) {
+  return (
+    <Link
+      href={href}
+      onClick={onClick}
+      className="flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors group"
+    >
+      <span className="w-8 h-8 rounded-xl bg-white/5 group-hover:bg-white/10 flex items-center justify-center text-white/40 group-hover:text-white/70 transition-colors">
+        {icon}
+      </span>
+      <span className="flex-1 text-sm text-white/70 group-hover:text-white/90 transition-colors">{label}</span>
+      <ChevronRight className="w-3.5 h-3.5 text-white/20 group-hover:text-white/40 transition-colors" />
+    </Link>
+  )
+}
+
 const InstagramIcon = ({ className }: { className?: string }) => (
   <svg className={className} viewBox="0 0 24 24" fill="currentColor">
     <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
@@ -19,10 +111,29 @@ import { FollowButton } from '@/components/social/FollowButton'
 import { DMButton } from '@/components/social/DMButton'
 import { LoginPrompt } from '@/components/social/LoginPrompt'
 
+const PROFILE_THEMES: Record<string, { from: string; via: string; to: string }> = {
+  default: { from: '#d97706', via: '#9333ea', to: '#2563eb' },
+  ocean:   { from: '#2563eb', via: '#06b6d4', to: '#0d9488' },
+  sunset:  { from: '#f97316', via: '#ec4899', to: '#9333ea' },
+  forest:  { from: '#16a34a', via: '#10b981', to: '#0d9488' },
+  night:   { from: '#1e293b', via: '#312e81', to: '#0f172a' },
+  rose:    { from: '#e11d48', via: '#ec4899', to: '#a21caf' },
+  gold:    { from: '#eab308', via: '#f59e0b', to: '#ea580c' },
+  aurora:  { from: '#7c3aed', via: '#8b5cf6', to: '#ec4899' },
+}
+
+function getBannerStyle(theme: string | null, bannerUrl: string | null): React.CSSProperties {
+  if (bannerUrl) return { backgroundImage: `url(${bannerUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' }
+  const t = PROFILE_THEMES[theme ?? 'default'] ?? PROFILE_THEMES['default']
+  return { background: `linear-gradient(to right, ${t.from}4d, ${t.via}33, ${t.to}66)` }
+}
+
 interface UserProfile {
   id: string
   name: string
   avatar: string | null
+  bannerUrl: string | null
+  profileTheme: string | null
   bio: string | null
   websiteUrl: string | null
   instagramHandle: string | null
@@ -48,15 +159,18 @@ interface FollowUser {
   avatar_url: string | null
 }
 
-function FollowListModal({
-  type,
-  userId,
-  onClose,
-}: {
-  type: 'followers' | 'following'
-  userId: string
-  onClose: () => void
-}) {
+interface Story {
+  id: string
+  user_id: string
+  user_name: string
+  user_avatar: string | null
+  canvas: Record<string, unknown>
+  expires_at: string
+  is_highlight: boolean
+  has_viewed: boolean
+}
+
+function FollowListModal({ type, userId, onClose }: { type: 'followers' | 'following'; userId: string; onClose: () => void }) {
   const [users, setUsers] = useState<FollowUser[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -70,36 +184,21 @@ function FollowListModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={onClose}>
-      <div
-        className="w-full max-w-sm bg-slate-900 border border-white/10 rounded-2xl overflow-hidden shadow-2xl"
-        onClick={e => e.stopPropagation()}
-      >
+      <div className="w-full max-w-sm bg-slate-900 border border-white/10 rounded-2xl overflow-hidden shadow-2xl" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between px-4 py-3 border-b border-white/8">
           <h3 className="text-sm font-semibold text-white/80">{type === 'followers' ? '粉絲' : '追蹤中'}</h3>
-          <button onClick={onClose} className="text-white/30 hover:text-white/60 transition-colors">
-            <X className="w-4 h-4" />
-          </button>
+          <button onClick={onClose} className="text-white/30 hover:text-white/60 transition-colors"><X className="w-4 h-4" /></button>
         </div>
         <div className="max-h-80 overflow-y-auto">
           {loading ? (
-            <div className="flex justify-center py-8">
-              <Loader2 className="w-5 h-5 text-white/30 animate-spin" />
-            </div>
+            <div className="flex justify-center py-8"><Loader2 className="w-5 h-5 text-white/30 animate-spin" /></div>
           ) : users.length === 0 ? (
             <p className="text-center text-white/25 text-sm py-8">還沒有{type === 'followers' ? '粉絲' : '追蹤的人'}</p>
           ) : (
             users.map(u => (
-              <Link
-                key={u.id}
-                href={`/u/${u.id}`}
-                onClick={onClose}
-                className="flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors"
-              >
+              <Link key={u.id} href={`/u/${u.id}`} onClick={onClose} className="flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors">
                 <div className="w-9 h-9 rounded-full bg-gradient-to-br from-amber-500/30 to-purple-500/30 flex items-center justify-center text-sm font-bold text-white/80 overflow-hidden shrink-0">
-                  {u.avatar_url
-                    ? <img src={u.avatar_url} alt="" className="w-full h-full object-cover" />
-                    : (u.display_name ?? '?').charAt(0).toUpperCase()
-                  }
+                  {u.avatar_url ? <img src={u.avatar_url} alt="" className="w-full h-full object-cover" /> : (u.display_name ?? '?').charAt(0).toUpperCase()}
                 </div>
                 <span className="text-sm text-white/75 truncate">{u.display_name ?? '用戶'}</span>
               </Link>
@@ -111,14 +210,33 @@ function FollowListModal({
   )
 }
 
+// Lightbox for avatar/images
+function AvatarLightbox({ src, onClose }: { src: string; onClose: () => void }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm" onClick={onClose}>
+      <button className="absolute top-4 right-4 text-white/60 hover:text-white" onClick={onClose}>
+        <X className="w-6 h-6" />
+      </button>
+      <img src={src} alt="" className="max-w-sm w-full max-h-[80vh] object-contain rounded-2xl shadow-2xl" onClick={e => e.stopPropagation()} />
+    </div>
+  )
+}
+
 export default function UserProfilePage() {
   const { userId } = useParams() as { userId: string }
+  const router = useRouter()
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [loading, setLoading] = useState(true)
   const [meId, setMeId] = useState<string | null>(null)
   const [loginPrompt, setLoginPrompt] = useState(false)
   const [albumPhotos, setAlbumPhotos] = useState<{ id: string; url: string; caption: string | null; is_public: boolean; display_order: number; created_at: string }[]>([])
   const [followModal, setFollowModal] = useState<'followers' | 'following' | null>(null)
+  const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [stories, setStories] = useState<Story[]>([])
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null)
+  const [avatarLightbox, setAvatarLightbox] = useState(false)
+  const [avatarUploading, setAvatarUploading] = useState(false)
+  const menuRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     fetch('/api/auth/me')
@@ -141,6 +259,57 @@ export default function UserProfilePage() {
       .catch(() => {})
   }, [userId])
 
+  useEffect(() => {
+    fetch(`/api/admin/social/stories?userId=${userId}`)
+      .then(r => r.ok ? r.json() as Promise<{ stories: Story[] }> : null)
+      .then(d => { if (d?.stories) setStories(d.stories) })
+      .catch(() => {})
+  }, [userId])
+
+  // Close post menu when clicking outside
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setOpenMenuId(null)
+      }
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
+
+  const handleDeletePost = async (postId: string) => {
+    if (!confirm('確定要刪除這篇貼文嗎？')) return
+    const res = await fetch(`/api/admin/social/posts/${postId}`, { method: 'DELETE' })
+    if (res.ok) {
+      setProfile(prev => prev ? { ...prev, posts: prev.posts.filter(p => p.id !== postId) } : prev)
+    }
+    setOpenMenuId(null)
+  }
+
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setAvatarUploading(true)
+    try {
+      const fd = new FormData()
+      fd.append('file', file)
+      fd.append('folder', 'avatars')
+      const res = await fetch('/api/admin/upload', { method: 'POST', body: fd })
+      const data = await res.json() as { url?: string }
+      if (data.url) {
+        await fetch('/api/admin/profile', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ avatarUrl: data.url }),
+        })
+        setProfile(prev => prev ? { ...prev, avatar: data.url! } : prev)
+      }
+    } finally {
+      setAvatarUploading(false)
+      e.target.value = ''
+    }
+  }
+
   if (loading) return (
     <div className="min-h-screen bg-slate-950 flex items-center justify-center">
       <Loader2 className="w-8 h-8 text-amber-400 animate-spin" />
@@ -159,13 +328,14 @@ export default function UserProfilePage() {
 
   const initials = profile.name.slice(0, 2).toUpperCase()
   const isMe = meId === userId
+  const bannerStyle = getBannerStyle(profile.profileTheme, profile.bannerUrl)
 
   return (
     <div className="min-h-screen bg-slate-950 text-white">
       <LoginPrompt open={loginPrompt} onClose={() => setLoginPrompt(false)} action="追蹤或私訊" />
-      {followModal && (
-        <FollowListModal type={followModal} userId={userId} onClose={() => setFollowModal(null)} />
-      )}
+      {followModal && <FollowListModal type={followModal} userId={userId} onClose={() => setFollowModal(null)} />}
+      {sidebarOpen && isMe && <ProfileSidebar onClose={() => setSidebarOpen(false)} />}
+      {avatarLightbox && profile.avatar && <AvatarLightbox src={profile.avatar} onClose={() => setAvatarLightbox(false)} />}
 
       {/* Nav */}
       <nav className="sticky top-0 z-10 bg-slate-950/90 backdrop-blur-md border-b border-white/8">
@@ -173,109 +343,137 @@ export default function UserProfilePage() {
           <Link href="/articles" className="flex items-center gap-2 text-sm text-white/50 hover:text-white transition-colors">
             <ArrowLeft className="w-4 h-4" /> 社群
           </Link>
+          {isMe && (
+            <button
+              onClick={() => setSidebarOpen(true)}
+              className="ml-auto p-1.5 text-white/30 hover:text-white/70 hover:bg-white/8 rounded-lg transition-colors"
+            >
+              <Settings className="w-4 h-4" />
+            </button>
+          )}
         </div>
       </nav>
 
       <div className="max-w-2xl mx-auto px-4 py-8 space-y-6">
         {/* Profile header */}
-        <div className="bg-white/[0.04] border border-white/8 rounded-3xl p-6 space-y-4">
-          <div className="flex items-start gap-4">
-            {/* Avatar */}
-            <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-amber-500/30 to-purple-500/30 flex items-center justify-center text-2xl font-bold text-white/80 overflow-hidden shrink-0">
-              {profile.avatar
-                ? <img src={profile.avatar} alt="" className="w-full h-full object-cover" />
-                : initials}
-            </div>
+        <div className="bg-white/[0.04] border border-white/8 rounded-3xl overflow-hidden">
+          {/* Banner */}
+          <div className="h-24" style={bannerStyle} />
 
-            <div className="flex-1 min-w-0">
-              <h1 className="text-xl font-bold text-white">{profile.name}</h1>
-              {profile.bio && (
-                <p className="text-sm text-white/50 mt-1 leading-relaxed">{profile.bio}</p>
-              )}
-
-              {/* Social links */}
-              <div className="flex items-center gap-3 mt-2 flex-wrap">
-                {profile.websiteUrl && (
-                  <a href={profile.websiteUrl} target="_blank" rel="noopener noreferrer"
-                    className="flex items-center gap-1 text-xs text-white/40 hover:text-amber-300 transition-colors"
-                  >
-                    <Globe className="w-3.5 h-3.5" /> 網站
-                  </a>
-                )}
-                {profile.instagramHandle && (
-                  <a href={`https://instagram.com/${profile.instagramHandle}`} target="_blank" rel="noopener noreferrer"
-                    className="flex items-center gap-1 text-xs text-white/40 hover:text-pink-400 transition-colors"
-                  >
-                    <InstagramIcon className="w-3.5 h-3.5" /> @{profile.instagramHandle}
-                  </a>
-                )}
-                {profile.twitterHandle && (
-                  <a href={`https://twitter.com/${profile.twitterHandle}`} target="_blank" rel="noopener noreferrer"
-                    className="flex items-center gap-1 text-xs text-white/40 hover:text-blue-400 transition-colors"
-                  >
-                    <TwitterIcon className="w-3.5 h-3.5" /> @{profile.twitterHandle}
-                  </a>
+          <div className="px-6 pb-6 -mt-10">
+            <div className="flex items-end justify-between mb-4">
+              {/* Avatar */}
+              <div className="relative group">
+                <div
+                  className={`w-20 h-20 rounded-2xl border-4 border-slate-950 bg-gradient-to-br from-amber-500/30 to-purple-500/30 flex items-center justify-center text-2xl font-bold text-white/80 overflow-hidden shrink-0 shadow-xl ${profile.avatar ? 'cursor-pointer' : ''}`}
+                  onClick={() => {
+                    if (isMe) return // isMe handled by label below
+                    if (profile.avatar) setAvatarLightbox(true)
+                  }}
+                >
+                  {profile.avatar
+                    ? <img src={profile.avatar} alt="" className="w-full h-full object-cover" />
+                    : initials}
+                </div>
+                {isMe && (
+                  <label className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
+                    {avatarUploading ? <Loader2 className="w-5 h-5 text-white animate-spin" /> : <Camera className="w-5 h-5 text-white" />}
+                    <input type="file" accept="image/*" className="hidden" onChange={handleAvatarUpload} />
+                  </label>
                 )}
               </div>
-            </div>
-          </div>
 
-          {/* Stats */}
-          <div className="flex items-center gap-6 text-sm">
-            <div className="text-center">
-              <p className="text-white font-semibold">{profile.posts.length}</p>
-              <p className="text-white/35 text-xs">貼文</p>
-            </div>
-            <button
-              onClick={() => setFollowModal('followers')}
-              className="text-center hover:opacity-70 transition-opacity"
-            >
-              <p className="text-white font-semibold">{profile.followers}</p>
-              <p className="text-white/35 text-xs">粉絲</p>
-            </button>
-            <button
-              onClick={() => setFollowModal('following')}
-              className="text-center hover:opacity-70 transition-opacity"
-            >
-              <p className="text-white font-semibold">{profile.following}</p>
-              <p className="text-white/35 text-xs">追蹤中</p>
-            </button>
-          </div>
-
-          {/* Action buttons */}
-          {!isMe && (
-            <div className="flex gap-2">
-              {meId ? (
-                <>
-                  <FollowButton targetUserId={userId} initialFollowing={profile.isFollowing} />
-                  <DMButton targetUserId={userId} targetName={profile.name} targetAvatar={profile.avatar ?? undefined} />
-                </>
+              {/* Edit / follow buttons */}
+              {isMe ? (
+                <Link href="/insight-admin/profile"
+                  className="px-4 py-1.5 bg-white/8 border border-white/12 text-white/60 rounded-xl text-sm hover:bg-white/12 transition-colors"
+                >
+                  編輯個人資料
+                </Link>
               ) : (
-                <>
-                  <button
-                    onClick={() => setLoginPrompt(true)}
-                    className="flex-1 py-2 bg-amber-500/20 border border-amber-400/30 text-amber-300 rounded-xl text-sm font-medium hover:bg-amber-500/30 transition-colors"
-                  >
-                    追蹤
-                  </button>
-                  <button
-                    onClick={() => setLoginPrompt(true)}
-                    className="flex-1 py-2 bg-white/8 border border-white/12 text-white/60 rounded-xl text-sm hover:bg-white/12 transition-colors"
-                  >
-                    私訊
-                  </button>
-                </>
+                <div className="flex gap-2">
+                  {meId ? (
+                    <>
+                      <FollowButton targetUserId={userId} initialFollowing={profile.isFollowing} />
+                      <DMButton targetUserId={userId} targetName={profile.name} targetAvatar={profile.avatar ?? undefined} />
+                    </>
+                  ) : (
+                    <>
+                      <button onClick={() => setLoginPrompt(true)} className="px-4 py-1.5 bg-amber-500/20 border border-amber-400/30 text-amber-300 rounded-xl text-sm font-medium hover:bg-amber-500/30 transition-colors">追蹤</button>
+                      <button onClick={() => setLoginPrompt(true)} className="px-4 py-1.5 bg-white/8 border border-white/12 text-white/60 rounded-xl text-sm hover:bg-white/12 transition-colors">私訊</button>
+                    </>
+                  )}
+                </div>
               )}
             </div>
-          )}
-          {isMe && (
-            <Link href="/insight-admin/profile"
-              className="block text-center py-2 bg-white/8 border border-white/12 text-white/60 rounded-xl text-sm hover:bg-white/12 transition-colors"
-            >
-              編輯個人資料
-            </Link>
-          )}
+
+            <h1 className="text-xl font-bold text-white">{profile.name}</h1>
+            {profile.bio && <p className="text-sm text-white/50 mt-1 leading-relaxed">{profile.bio}</p>}
+
+            {/* Social links */}
+            <div className="flex items-center gap-3 mt-2 flex-wrap">
+              {profile.websiteUrl && (
+                <a href={profile.websiteUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-xs text-white/40 hover:text-amber-300 transition-colors">
+                  <Globe className="w-3.5 h-3.5" /> 網站
+                </a>
+              )}
+              {profile.instagramHandle && (
+                <a href={`https://instagram.com/${profile.instagramHandle}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-xs text-white/40 hover:text-pink-400 transition-colors">
+                  <InstagramIcon className="w-3.5 h-3.5" /> @{profile.instagramHandle}
+                </a>
+              )}
+              {profile.twitterHandle && (
+                <a href={`https://twitter.com/${profile.twitterHandle}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-xs text-white/40 hover:text-blue-400 transition-colors">
+                  <TwitterIcon className="w-3.5 h-3.5" /> @{profile.twitterHandle}
+                </a>
+              )}
+            </div>
+
+            {/* Stats */}
+            <div className="flex items-center gap-6 text-sm mt-3">
+              <div className="text-center">
+                <p className="text-white font-semibold">{profile.posts.length}</p>
+                <p className="text-white/35 text-xs">貼文</p>
+              </div>
+              <button onClick={() => setFollowModal('followers')} className="text-center hover:opacity-70 transition-opacity">
+                <p className="text-white font-semibold">{profile.followers}</p>
+                <p className="text-white/35 text-xs">粉絲</p>
+              </button>
+              <button onClick={() => setFollowModal('following')} className="text-center hover:opacity-70 transition-opacity">
+                <p className="text-white font-semibold">{profile.following}</p>
+                <p className="text-white/35 text-xs">追蹤中</p>
+              </button>
+            </div>
+          </div>
         </div>
+
+        {/* Stories row */}
+        {stories.length > 0 && (
+          <div>
+            <h2 className="text-sm font-semibold text-white/40 uppercase tracking-wider px-1 mb-3">限時動態</h2>
+            <div className="flex gap-3 overflow-x-auto pb-1 scrollbar-hide">
+              {stories.map(story => (
+                <Link
+                  key={story.id}
+                  href={`/story/view?storyId=${story.id}&userId=${userId}`}
+                  className="flex flex-col items-center gap-1.5 shrink-0"
+                >
+                  <div className={`w-16 h-16 rounded-2xl overflow-hidden border-2 ${story.has_viewed ? 'border-white/15' : 'border-amber-400'} p-0.5`}>
+                    <div className="w-full h-full rounded-xl overflow-hidden bg-slate-800">
+                      {story.user_avatar
+                        ? <img src={story.user_avatar} alt="" className="w-full h-full object-cover" />
+                        : <div className="w-full h-full flex items-center justify-center text-white/40 text-xs">動態</div>
+                      }
+                    </div>
+                  </div>
+                  <span className="text-[10px] text-white/40 truncate max-w-[4rem]">
+                    {story.is_highlight ? '精選' : new Date(story.expires_at).getTime() > Date.now() ? '限時' : '已過期'}
+                  </span>
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Album */}
         <UserAlbum userId={userId} isOwner={isMe} initialPhotos={albumPhotos} />
@@ -290,25 +488,48 @@ export default function UserProfilePage() {
             </div>
           ) : (
             profile.posts.map(post => (
-              <Link key={post.id} href={`/articles/${post.id}`}
-                className="block bg-white/[0.03] border border-white/8 rounded-2xl p-4 hover:bg-white/[0.06] hover:border-white/14 transition-all"
-              >
-                {post.title && (
-                  <p className="font-semibold text-white/85 mb-1 line-clamp-1">{post.title}</p>
+              <div key={post.id} className="relative group">
+                <Link href={`/articles/${post.id}`}
+                  className="block bg-white/[0.03] border border-white/8 rounded-2xl p-4 hover:bg-white/[0.06] hover:border-white/14 transition-all"
+                >
+                  {post.title && <p className="font-semibold text-white/85 mb-1 line-clamp-1 pr-8">{post.title}</p>}
+                  <p className="text-sm text-white/55 leading-relaxed line-clamp-2 pr-8">{post.content}</p>
+                  <div className="flex items-center gap-4 mt-3 text-xs text-white/25">
+                    <span className="flex items-center gap-1"><Heart className="w-3.5 h-3.5" /> {post.likesCount}</span>
+                    <span className="flex items-center gap-1"><MessageSquare className="w-3.5 h-3.5" /> {post.commentsCount}</span>
+                    <span className="ml-auto">{new Date(post.createdAt).toLocaleDateString('zh-TW', { month: 'short', day: 'numeric' })}</span>
+                  </div>
+                </Link>
+
+                {/* Three-dot menu for own posts */}
+                {isMe && (
+                  <div className="absolute top-3 right-3" ref={openMenuId === post.id ? menuRef : undefined}>
+                    <button
+                      onClick={e => { e.preventDefault(); e.stopPropagation(); setOpenMenuId(openMenuId === post.id ? null : post.id) }}
+                      className="p-1.5 text-white/30 hover:text-white/70 hover:bg-white/10 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
+                    >
+                      <MoreHorizontal className="w-4 h-4" />
+                    </button>
+                    {openMenuId === post.id && (
+                      <div className="absolute right-0 top-full mt-1 w-36 bg-slate-800 border border-white/10 rounded-xl shadow-xl overflow-hidden z-10" onClick={e => e.stopPropagation()}>
+                        <Link
+                          href={`/articles/${post.id}/edit`}
+                          onClick={() => setOpenMenuId(null)}
+                          className="flex items-center gap-2.5 px-3 py-2.5 text-sm text-white/70 hover:bg-white/8 transition-colors"
+                        >
+                          <Pencil className="w-3.5 h-3.5" /> 編輯貼文
+                        </Link>
+                        <button
+                          onClick={() => handleDeletePost(post.id)}
+                          className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm text-red-400 hover:bg-red-500/10 transition-colors"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" /> 刪除貼文
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 )}
-                <p className="text-sm text-white/55 leading-relaxed line-clamp-2">{post.content}</p>
-                <div className="flex items-center gap-4 mt-3 text-xs text-white/25">
-                  <span className="flex items-center gap-1">
-                    <Heart className="w-3.5 h-3.5" /> {post.likesCount}
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <MessageSquare className="w-3.5 h-3.5" /> {post.commentsCount}
-                  </span>
-                  <span className="ml-auto">
-                    {new Date(post.createdAt).toLocaleDateString('zh-TW', { month: 'short', day: 'numeric' })}
-                  </span>
-                </div>
-              </Link>
+              </div>
             ))
           )}
         </div>

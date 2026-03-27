@@ -125,7 +125,7 @@ export async function GET(req: NextRequest) {
     })
   }
 
-  if (type === 'users') {
+  if (type === 'users' || type === 'creators') {
     // 熱門創作者：按粉絲數 + 貼文數排序
     const rows = await query<UserRow>(
       `SELECT au.id, au.display_name, au.avatar_url,

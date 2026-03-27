@@ -7,6 +7,8 @@ interface UserRow extends Record<string, unknown> {
   username: string
   display_name: string | null
   avatar_url: string | null
+  banner_url: string | null
+  profile_theme: string | null
   bio: string | null
   website_url: string | null
   instagram_handle: string | null
@@ -20,7 +22,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ user
   const { userId } = await params
 
   const user = await queryOne<UserRow>(
-    `SELECT u.id, u.username, u.display_name, u.avatar_url, u.bio, u.website_url,
+    `SELECT u.id, u.username, u.display_name, u.avatar_url, u.banner_url, u.profile_theme, u.bio, u.website_url,
             u.instagram_handle, u.twitter_handle,
             COALESCE(u.is_profile_public, true) AS is_profile_public,
             (SELECT COUNT(*) FROM user_follows WHERE following_id = u.id)::int AS followers,
@@ -55,6 +57,8 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ user
     id: user.id,
     name: user.display_name ?? user.username,
     avatar: user.avatar_url,
+    bannerUrl: user.banner_url,
+    profileTheme: user.profile_theme,
     bio: user.bio,
     websiteUrl: user.website_url,
     instagramHandle: user.instagram_handle,

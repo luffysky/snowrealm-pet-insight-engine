@@ -15,6 +15,33 @@ interface Conversation {
 
 // 這些路徑不顯示（已有完整 DM 介面）
 const HIDDEN_PREFIXES = ['/messages', '/login', '/register', '/super-login', '/api', '/story/create', '/write']
+const POS_KEY = 'floating_chat_pos'
+const ENABLED_KEY = 'floating_chat_enabled'
+const BTN = 48   // button size px
+const DRAG_THRESHOLD = 6
+
+// Constrain to 20%–80% of viewport height
+function clamp(x: number, y: number): { x: number; y: number } {
+  if (typeof window === 'undefined') return { x, y }
+  const vw = window.innerWidth
+  const vh = window.innerHeight
+  return {
+    x: Math.max(0, Math.min(vw - BTN, x)),
+    y: Math.max(vh * 0.2, Math.min(vh * 0.8 - BTN, y)),
+  }
+}
+
+function getInitialPos(): { x: number; y: number } {
+  if (typeof window === 'undefined') return { x: 300, y: 500 }
+  try {
+    const saved = localStorage.getItem(POS_KEY)
+    if (saved) {
+      const p = JSON.parse(saved) as { x: number; y: number }
+      return clamp(p.x, p.y)
+    }
+  } catch { /* ignore */ }
+  return clamp(window.innerWidth - BTN - 16, window.innerHeight - BTN - 90)
+}
 
 export function FloatingChat() {
   const router = useRouter()
@@ -26,9 +53,24 @@ export function FloatingChat() {
   const [quickTo, setQuickTo] = useState<Conversation | null>(null)
   const [input, setInput] = useState('')
   const [sending, setSending] = useState(false)
+  const [enabled, setEnabled] = useState(true)
+  const [pos, setPos] = useState<{ x: number; y: number } | null>(null)
   const panelRef = useRef<HTMLDivElement>(null)
+  const dragging = useRef(false)
+  const didDrag = useRef(false)
+  const dragOffset = useRef({ dx: 0, dy: 0 })
 
   const hidden = HIDDEN_PREFIXES.some(p => pathname.startsWith(p))
+
+  // Init position + enabled state (client only)
+  useEffect(() => {
+    setPos(getInitialPos())
+    const v = localStorage.getItem(ENABLED_KEY)
+    setEnabled(v !== 'false')
+    const handler = (e: Event) => setEnabled((e as CustomEvent<boolean>).detail)
+    window.addEventListener('floating-chat-toggle', handler)
+    return () => window.removeEventListener('floating-chat-toggle', handler)
+  }, [])
 
   useEffect(() => {
     fetch('/api/auth/me')
@@ -37,7 +79,6 @@ export function FloatingChat() {
       .catch(() => {})
   }, [])
 
-  // 定期拉未讀數，並監聽 dm-read 事件立即刷新
   useEffect(() => {
     if (!me) return
     const load = () => {
@@ -49,13 +90,9 @@ export function FloatingChat() {
     load()
     const t = setInterval(load, 30_000)
     window.addEventListener('dm-read', load)
-    return () => {
-      clearInterval(t)
-      window.removeEventListener('dm-read', load)
-    }
+    return () => { clearInterval(t); window.removeEventListener('dm-read', load) }
   }, [me])
 
-  // 打開時載入對話列表
   useEffect(() => {
     if (!open || !me) return
     fetch('/api/admin/social/messages')
@@ -66,7 +103,6 @@ export function FloatingChat() {
       .catch(() => {})
   }, [open, me])
 
-  // 點外面關閉
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (panelRef.current && !panelRef.current.contains(e.target as Node)) {
@@ -91,6 +127,36 @@ export function FloatingChat() {
     setQuickTo(null)
   }
 
+  const onBtnPointerDown = (e: React.PointerEvent<HTMLButtonElement>) => {
+    dragging.current = true
+    didDrag.current = false
+    const p = pos ?? getInitialPos()
+    dragOffset.current = { dx: e.clientX - p.x, dy: e.clientY - p.y }
+    ;(e.currentTarget as HTMLElement).setPointerCapture(e.pointerId)
+    e.preventDefault()
+  }
+
+  const onBtnPointerMove = (e: React.PointerEvent<HTMLButtonElement>) => {
+    if (!dragging.current) return
+    const p = pos ?? getInitialPos()
+    const dx = e.clientX - (p.x + dragOffset.current.dx)
+    const dy = e.clientY - (p.y + dragOffset.current.dy)
+    if (!didDrag.current && Math.hypot(dx, dy) > DRAG_THRESHOLD) didDrag.current = true
+    if (!didDrag.current) return
+    const next = clamp(e.clientX - dragOffset.current.dx, e.clientY - dragOffset.current.dy)
+    setPos(next)
+    try { localStorage.setItem(POS_KEY, JSON.stringify(next)) } catch { /* ignore */ }
+  }
+
+  const onBtnPointerUp = (e: React.PointerEvent<HTMLButtonElement>) => {
+    dragging.current = false
+    e.currentTarget.releasePointerCapture(e.pointerId)
+    if (!didDrag.current) {
+      setOpen(o => !o)
+      setQuickTo(null)
+    }
+  }
+
   const formatTime = (iso: string) => {
     const diff = Date.now() - new Date(iso).getTime()
     const m = Math.floor(diff / 60_000)
@@ -100,20 +166,26 @@ export function FloatingChat() {
     return `${Math.floor(h / 24)}d`
   }
 
-  if (hidden || !me) return null
+  if (hidden || !me || !pos || !enabled) return null
+
+  // Panel opens to the left (or above if near right edge)
+  const panelOnLeft = pos.x > (typeof window !== 'undefined' ? window.innerWidth / 2 : 200)
 
   return (
     <div
       ref={panelRef}
-      className="fixed z-40 flex flex-col items-end gap-2"
-      style={{
-        right: '1rem',
-        bottom: 'calc(5.5rem + env(safe-area-inset-bottom, 0px))',
-      }}
+      style={{ position: 'fixed', left: pos.x, top: pos.y, zIndex: 40, touchAction: 'none' }}
     >
-      {/* 展開面板 */}
+      {/* 展開面板 — absolute positioned relative to button */}
       {open && (
-        <div className="w-72 bg-slate-900/95 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl shadow-black/40 overflow-hidden">
+        <div
+          className="absolute w-72 bg-slate-900/95 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl shadow-black/40 overflow-hidden"
+          style={{
+            bottom: `${BTN + 8}px`,
+            right: panelOnLeft ? 0 : 'auto',
+            left: panelOnLeft ? 'auto' : 0,
+          }}
+        >
           {/* Header */}
           <div className="flex items-center justify-between px-4 py-3 border-b border-white/8">
             <p className="text-sm font-semibold text-white/80">訊息</p>
@@ -197,23 +269,26 @@ export function FloatingChat() {
         </div>
       )}
 
-      {/* Floating trigger button */}
+      {/* Floating trigger button — draggable */}
       <button
-        onClick={() => { setOpen(o => !o); setQuickTo(null) }}
-        className="relative w-12 h-12 rounded-full shadow-xl shadow-black/30
+        onPointerDown={onBtnPointerDown}
+        onPointerMove={onBtnPointerMove}
+        onPointerUp={onBtnPointerUp}
+        style={{ width: BTN, height: BTN, touchAction: 'none', cursor: dragging.current ? 'grabbing' : 'grab' }}
+        className="relative rounded-full shadow-xl shadow-black/30
                    flex items-center justify-center
                    bg-gradient-to-br from-sky-500 to-indigo-600
                    hover:from-sky-400 hover:to-indigo-500
-                   active:scale-95 transition-all"
+                   active:scale-95 transition-colors select-none"
       >
         {open
-          ? <X className="w-5 h-5 text-white" />
-          : <MessageCircle className="w-5 h-5 text-white" />
+          ? <X className="w-5 h-5 text-white pointer-events-none" />
+          : <MessageCircle className="w-5 h-5 text-white pointer-events-none" />
         }
         {!open && unread > 0 && (
           <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1
                            bg-rose-500 text-white text-[9px] font-bold rounded-full
-                           flex items-center justify-center leading-none shadow-md">
+                           flex items-center justify-center leading-none shadow-md pointer-events-none">
             {unread > 99 ? '99+' : unread}
           </span>
         )}
@@ -232,3 +307,12 @@ function Avatar({ user, size }: { user: Pick<Conversation, 'displayName' | 'avat
     </div>
   )
 }
+
+/** Call this to toggle the floating chat bubble visibility (for user settings) */
+export function setFloatingChatEnabled(enabled: boolean) {
+  try { localStorage.setItem(ENABLED_KEY, String(enabled)) } catch { /* ignore */ }
+  // Dispatch event so the component re-checks
+  window.dispatchEvent(new CustomEvent('floating-chat-toggle', { detail: enabled }))
+}
+
+export { ENABLED_KEY as FLOATING_CHAT_ENABLED_KEY }

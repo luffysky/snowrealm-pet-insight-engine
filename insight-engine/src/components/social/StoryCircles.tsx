@@ -75,16 +75,36 @@ export function StoryCircles() {
     <div className="flex items-center gap-4 px-4 py-3 overflow-x-auto scrollbar-hide">
       {/* My story / Add */}
       <div className="flex flex-col items-center gap-1 shrink-0">
-        <button
-          onClick={() => router.push('/story/create')}
-          className="relative w-14 h-14"
-        >
-          <div className={`w-14 h-14 rounded-full ${myHasStory ? 'p-[2px] bg-gradient-to-br from-amber-400 to-pink-500' : 'bg-white/10'} flex items-center justify-center overflow-hidden`}>
-            <div className="w-full h-full rounded-full bg-slate-950 flex items-center justify-center overflow-hidden">
+        {myHasStory ? (
+          /* Has stories: clicking views them; small + badge to add new */
+          <div className="relative w-14 h-14">
+            <button
+              onClick={() => router.push(`/story/view?userId=${meId}`)}
+              className="w-14 h-14"
+            >
+              <div className="w-14 h-14 rounded-full p-[2px] bg-gradient-to-br from-amber-400 to-pink-500 flex items-center justify-center overflow-hidden">
+                <div className="w-full h-full rounded-full bg-slate-950 flex items-center justify-center overflow-hidden">
+                  <span className="text-xs font-bold text-white/70">我</span>
+                </div>
+              </div>
+            </button>
+            <button
+              onClick={() => router.push('/story/create')}
+              className="absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full bg-amber-500 border-2 border-slate-950 flex items-center justify-center"
+            >
+              <Plus className="w-3 h-3 text-slate-900 stroke-[3]" />
+            </button>
+          </div>
+        ) : (
+          <button
+            onClick={() => router.push('/story/create')}
+            className="w-14 h-14"
+          >
+            <div className="w-14 h-14 rounded-full bg-white/10 flex items-center justify-center overflow-hidden">
               <Plus className="w-5 h-5 text-white/60" />
             </div>
-          </div>
-        </button>
+          </button>
+        )}
         <span className="text-[10px] text-white/40">你的</span>
       </div>
 

@@ -414,6 +414,8 @@ export interface UserProfile {
   username: string
   displayName: string | null
   avatarUrl: string | null
+  bannerUrl: string | null
+  profileTheme: string | null
   bio: string | null
   websiteUrl: string | null
   instagramHandle: string | null
@@ -426,6 +428,8 @@ interface ProfileRow extends Record<string, unknown> {
   username: string
   display_name: string | null
   avatar_url: string | null
+  banner_url: string | null
+  profile_theme: string | null
   bio: string | null
   website_url: string | null
   instagram_handle: string | null
@@ -435,7 +439,7 @@ interface ProfileRow extends Record<string, unknown> {
 
 export async function getProfile(userId: string): Promise<UserProfile | null> {
   const row = await queryOne<ProfileRow>(
-    `SELECT id, username, display_name, avatar_url, bio, website_url, instagram_handle, twitter_handle, is_profile_public
+    `SELECT id, username, display_name, avatar_url, banner_url, profile_theme, bio, website_url, instagram_handle, twitter_handle, is_profile_public
      FROM admin_users WHERE id = $1`,
     [userId]
   )
@@ -445,6 +449,8 @@ export async function getProfile(userId: string): Promise<UserProfile | null> {
     username: row.username,
     displayName: row.display_name,
     avatarUrl: row.avatar_url,
+    bannerUrl: row.banner_url,
+    profileTheme: row.profile_theme,
     bio: row.bio,
     websiteUrl: row.website_url,
     instagramHandle: row.instagram_handle,
@@ -460,6 +466,8 @@ export async function updateProfile(userId: string, data: Partial<Omit<UserProfi
 
   if (data.displayName !== undefined) { fields.push(`display_name = $${i++}`); params.push(data.displayName) }
   if (data.avatarUrl !== undefined) { fields.push(`avatar_url = $${i++}`); params.push(data.avatarUrl) }
+  if (data.bannerUrl !== undefined) { fields.push(`banner_url = $${i++}`); params.push(data.bannerUrl) }
+  if (data.profileTheme !== undefined) { fields.push(`profile_theme = $${i++}`); params.push(data.profileTheme) }
   if (data.bio !== undefined) { fields.push(`bio = $${i++}`); params.push(data.bio) }
   if (data.websiteUrl !== undefined) { fields.push(`website_url = $${i++}`); params.push(data.websiteUrl) }
   if (data.instagramHandle !== undefined) { fields.push(`instagram_handle = $${i++}`); params.push(data.instagramHandle) }

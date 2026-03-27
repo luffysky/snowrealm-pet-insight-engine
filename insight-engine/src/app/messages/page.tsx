@@ -50,6 +50,16 @@ function MessageContent({ content, edited, onLightbox }: { content: string; edit
       />
     )
   }
+  if (content.startsWith('[gif:') && content.endsWith(']')) {
+    const url = content.slice(5, -1)
+    return (
+      <img
+        src={url} alt="GIF"
+        className="max-w-full rounded-xl max-h-60 object-cover cursor-pointer hover:opacity-90 transition-opacity"
+        onClick={() => onLightbox?.(url, 'image')}
+      />
+    )
+  }
   if (content.startsWith('[video:') && content.endsWith(']')) {
     const url = content.slice(7, -1)
     return (
@@ -209,6 +219,7 @@ export default function MessagesPage() {
   const [plusMenuOpen, setPlusMenuOpen] = useState(false)
   const [lightbox, setLightbox] = useState<{ url: string; type: 'image' | 'video' } | null>(null)
   const [uploading, setUploading] = useState(false)
+  const [uploadError, setUploadError] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [replyTo, setReplyTo] = useState<Message | null>(null)
   const [msgMenu, setMsgMenu] = useState<{ msg: Message; x: number; y: number } | null>(null)
@@ -335,11 +346,19 @@ export default function MessagesPage() {
   const uploadFile = async (file: File) => {
     if (!active) return
     setUploading(true)
+    setUploadError(null)
+    // Reset file input so the same file can be re-selected after error
+    if (fileInputRef.current) fileInputRef.current.value = ''
     const fd = new FormData()
     fd.append('file', file)
     try {
       const res = await fetch('/api/admin/social/messages/upload', { method: 'POST', body: fd })
-      if (!res.ok) return
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({})) as { error?: string }
+        setUploadError(errData.error ?? `上傳失敗（${res.status}）`)
+        setTimeout(() => setUploadError(null), 4000)
+        return
+      }
       const { url, mediaType, filename } = await res.json() as { url: string; mediaType: string; filename: string }
       let content = ''
       if (mediaType === 'img') content = `[img:${url}]`
@@ -347,6 +366,9 @@ export default function MessagesPage() {
       else if (mediaType === 'audio') content = `[audio:${url}]`
       else content = `[file:${filename}|${url}]`
       await sendContent(content)
+    } catch {
+      setUploadError('上傳失敗，請檢查網路連線')
+      setTimeout(() => setUploadError(null), 4000)
     } finally {
       setUploading(false)
     }
@@ -440,15 +462,17 @@ export default function MessagesPage() {
 
   return (
     <div className="h-[100dvh] bg-slate-950 text-white flex flex-col overflow-hidden">
-      {/* 列表頂部導覽 — 手機開啟對話時隱藏，桌機保留 */}
-      <nav className={`shrink-0 bg-slate-950/90 backdrop-blur-md border-b border-white/8 ${active ? 'hidden md:block' : ''}`}>
-        <div className="max-w-2xl mx-auto px-4 py-3 flex items-center gap-3">
-          <button onClick={() => router.back()} className="flex items-center gap-2 text-sm text-white/50 hover:text-white">
-            <ArrowLeft className="w-4 h-4" />
-          </button>
-          <h1 className="font-semibold">訊息</h1>
-        </div>
-      </nav>
+      {/* 列表頂部導覽 — 開啟對話時隱藏 */}
+      {!active && (
+        <nav className="shrink-0 bg-slate-950/90 backdrop-blur-md border-b border-white/8">
+          <div className="max-w-2xl mx-auto px-4 py-3 flex items-center gap-3">
+            <button onClick={() => router.back()} className="flex items-center gap-2 text-sm text-white/50 hover:text-white">
+              <ArrowLeft className="w-4 h-4" />
+            </button>
+            <h1 className="font-semibold">訊息</h1>
+          </div>
+        </nav>
+      )}
 
       <div className="flex-1 flex max-w-2xl mx-auto w-full min-h-0">
         {/* Conversation list — hidden on mobile when chat open */}
@@ -495,8 +519,8 @@ export default function MessagesPage() {
         {/* Chat panel */}
         {active ? (
           <div className="flex-1 flex flex-col min-h-0">
-            {/* 名子層 — 手機版專屬頂部（桌機用全域 nav） */}
-            <div className="md:hidden shrink-0 bg-slate-950/90 backdrop-blur-md border-b border-white/8 px-4 py-3 flex items-center gap-3">
+            {/* 名子層 — 頂部（手機 + 桌機都顯示） */}
+            <div className="shrink-0 bg-slate-950/90 backdrop-blur-md border-b border-white/8 px-4 py-3 flex items-center gap-3">
               <button onClick={closeConversation} className="text-white/50 hover:text-white transition-colors">
                 <ArrowLeft className="w-4 h-4" />
               </button>
@@ -651,9 +675,19 @@ export default function MessagesPage() {
               </div>
             )}
 
+            {/* Upload error toast */}
+            {uploadError && (
+              <div className="px-3 py-2 bg-rose-500/15 border-t border-rose-500/20 flex items-center gap-2">
+                <span className="text-xs text-rose-300 flex-1">{uploadError}</span>
+                <button onClick={() => setUploadError(null)} className="text-rose-400/60 hover:text-rose-300">
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            )}
+
             {/* 輸入欄 */}
-            <div className="px-2 pt-2 pb-2 border-t border-white/8"
-              style={{ paddingBottom: 'calc(max(0.5rem, env(safe-area-inset-bottom, 0px)) + var(--bnav-h, 0px))' }}
+            <div className="px-2 pt-2 border-t border-white/8"
+              style={{ paddingBottom: 'max(0.5rem, env(safe-area-inset-bottom, 0.5rem))' }}
             >
               {plusMenuOpen && <div className="fixed inset-0 z-10" onClick={() => setPlusMenuOpen(false)} />}
               <div className="flex items-center gap-1.5">

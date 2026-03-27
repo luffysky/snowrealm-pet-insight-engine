@@ -351,7 +351,8 @@ function WriteFab() {
   return (
     <Link
       href="/write"
-      className="fixed bottom-6 right-6 z-50 w-14 h-14 bg-sky-500 hover:bg-sky-400 text-white rounded-full shadow-lg shadow-sky-500/30 flex items-center justify-center text-2xl transition-all hover:scale-105 active:scale-95"
+      className="fixed z-50 w-14 h-14 bg-sky-500 hover:bg-sky-400 text-white rounded-full shadow-lg shadow-sky-500/30 flex items-center justify-center text-2xl transition-all hover:scale-105 active:scale-95"
+      style={{ bottom: 'calc(var(--bnav-h, 4.75rem) + 1rem)', left: '1rem' }}
       title="發布文章"
     >
       ✍️

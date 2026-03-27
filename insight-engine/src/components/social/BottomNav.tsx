@@ -8,7 +8,8 @@ import { Home, Newspaper, Plus, MessageCircle, User, X, PenSquare, Clapperboard 
 // Only hide on full-screen creation / auth flows
 const HIDDEN_PREFIXES = [
   '/login', '/register', '/super-login', '/forgot-password',
-  '/story/create', '/write', '/api', '/privacy', '/terms', '/cookies',
+  '/story/create', '/story/view', '/write', '/api', '/privacy', '/terms', '/cookies',
+  '/messages',
 ]
 
 const COLLAPSE_KEY = 'bottomnav_collapsed'
@@ -75,6 +76,9 @@ export function BottomNav() {
   }, [me])
 
   const hidden = HIDDEN_PREFIXES.some(p => pathname.startsWith(p))
+  useEffect(() => {
+    if (hidden) document.documentElement.style.setProperty('--bnav-h', '0px')
+  }, [hidden])
   if (!mounted || hidden) return null
 
   const isActive = (path: string) => {
