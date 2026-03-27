@@ -135,7 +135,10 @@ export function DMButton({ targetUserId, targetName, targetAvatar }: DMButtonPro
       </button>
 
       {open && (
-        <div className="fixed bottom-4 right-4 z-50 w-80 h-96 flex flex-col bg-slate-900/95 border border-white/10 rounded-2xl shadow-2xl backdrop-blur-xl overflow-hidden">
+        <div
+          className="fixed right-4 z-50 w-80 h-96 flex flex-col bg-slate-900/95 border border-white/10 rounded-2xl shadow-2xl backdrop-blur-xl overflow-hidden"
+          style={{ bottom: 'calc(5.5rem + env(safe-area-inset-bottom, 0px))' }}
+        >
           {/* Header */}
           <div className="flex items-center gap-2 px-4 py-3 border-b border-white/8 shrink-0">
             <div className="w-7 h-7 rounded-full bg-gradient-to-br from-amber-500/30 to-purple-500/30 flex items-center justify-center text-xs font-bold text-white/80 overflow-hidden shrink-0">
