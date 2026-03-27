@@ -126,6 +126,8 @@ export interface SurveyConfig {
   coverImageUrl?: string
   /** 是否有存取密碼（不回傳明文密碼） */
   hasPassword?: boolean
+  /** AI 生成的填答進度稱號（5 個，由低到高） */
+  gameTitles?: string[]
   /** 分流規則（若無則所有題目順序顯示） */
   branchConfig?: BranchConfig
   /** 完成頁設定 */

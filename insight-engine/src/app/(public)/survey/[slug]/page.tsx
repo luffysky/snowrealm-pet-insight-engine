@@ -265,7 +265,7 @@ function SurveyFlow({
   })
 
   const { pendingMilestone, dismissMilestone, milestoneCount, game } =
-    useThemeInteraction(theme, totalSteps, currentStep)
+    useThemeInteraction(theme, totalSteps, currentStep, config.gameTitles)
 
   // Card flip 方向追蹤
   const [flipDir, setFlipDir] = useState<'next' | 'prev'>('next')

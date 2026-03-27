@@ -22,6 +22,7 @@ interface SurveyRow extends Record<string, unknown> {
   branch_config: string | null
   done_config: Record<string, unknown> | null
   result_config: Record<string, unknown> | null
+  game_titles: string[] | null
   is_public_explore: boolean | null
   created_at: string
   updated_at: string
@@ -257,6 +258,7 @@ export async function updateSurvey(
     og_image_url: string | null
     done_config: Record<string, unknown> | null
     result_config: Record<string, unknown> | null
+    game_titles: string[] | null
     is_public_explore: boolean | null
   }>
 ): Promise<number> {
@@ -267,7 +269,7 @@ export async function updateSurvey(
     'start_button_text',
     'done_title', 'done_subtitle',
     'variant_group', 'scheduled_start', 'scheduled_end',
-    'branch_config', 'done_config', 'result_config',
+    'branch_config', 'done_config', 'result_config', 'game_titles',
     'og_title', 'og_description', 'og_image_url',
     'is_public_explore',
   ]
@@ -277,7 +279,7 @@ export async function updateSurvey(
 
   for (const key of allowed) {
     if (key in data) {
-      const jsonKeys = ['branch_config', 'done_config', 'result_config']
+      const jsonKeys = ['branch_config', 'done_config', 'result_config', 'game_titles']
       const val = jsonKeys.includes(key)
         ? (data[key as keyof typeof data] ? JSON.stringify(data[key as keyof typeof data]) : null)
         : data[key as keyof typeof data]
@@ -435,6 +437,7 @@ function toSurveyConfig(survey: SurveyRow, questions: QuestionRow[]): SurveyConf
     coverSubtitle: survey.cover_subtitle,
     coverImageUrl: survey.cover_image_url ?? undefined,
     hasPassword: !!(survey.access_password),
+    gameTitles: survey.game_titles ?? undefined,
     startButtonText: survey.start_button_text,
     doneTitle: survey.done_title,
     doneSubtitle: survey.done_subtitle,

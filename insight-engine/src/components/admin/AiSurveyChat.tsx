@@ -56,6 +56,10 @@ async function createSurveyFromAi(data: AiGeneratedSurvey): Promise<string> {
     patchBody.result_config = data.resultConfig
   }
 
+  if (data.gameTitles?.length) {
+    patchBody.game_titles = data.gameTitles
+  }
+
   await fetch(`/api/admin/surveys/${surveyId}`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },

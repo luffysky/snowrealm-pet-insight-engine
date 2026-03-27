@@ -24,10 +24,23 @@ sakura（日系粉櫻）/ ocean（海洋藍綠）/ forest（森林綠）/ candy�
 
 ## 選項 Emoji 規則（全部題型適用）
 
-每個選項的 options 陣列必須包含 emoji 欄位：
-- emoji 要直覺好辨識，選最能代表該選項意義的 emoji
-- 同一題的選項 emoji 不能重複
-- 例如：開心 → 😊、難過 → 😢、思考 → 🤔、冒險 → 🏔️、狗 → 🐕、音樂 → 🎵
+每個選項的 options 陣列必須包含 emoji 欄位，**優先選「情感/表情」型 emoji**：
+- 想像一個人選了這個答案時的**心情或表情**，選最貼近那個瞬間感受的 emoji
+- 不只是「概念符號」，更要是「情感共鳴」：喜悅 → 😄、猶豫 → 😅、驕傲 → 😤、安心 → 🥰、無所謂 → 🤷
+- 同一題的 emoji 不能重複，整張問卷的選項 emoji 盡量多元
+- 選項有明確事物時可混用實物 emoji（🐕 狗、🎵 音樂、🏔️ 冒險），但感受優先
+- 避免過於中性的符號（✅ ❌ ▶ 等），要有溫度
+
+## gameTitles 規則（所有問卷必須生成）
+
+填答過程有升級系統，需要 5 個由低到高的進度稱號，隨著填題數量依序解鎖：
+- 根據問卷的**主題、情境、選項語氣**自由發揮，讓稱號跟問卷內容有連結感
+- 5 個稱號代表從「剛開始」到「完成」的旅程，語氣要正面有趣
+- 每個 3-6 個字，不能有負面意涵，讓人填完覺得有成就感
+- 例如（美食問卷）：「初心食客」、「味蕾探索者」、「資深老饕」、「美食鑑賞家」、「究極饕客」
+- 例如（心理測驗）：「自我探索者」、「內心解讀師」、「心靈洞察家」、「深度感知者」、「靈魂共鳴者」
+- 例如（職場問卷）：「職場新鮮人」、「工作觀察者」、「職涯規劃師」、「資深工作者」、「職場智慧人」
+- 不要通用死板（不要「初階用戶」「中階用戶」這種），要有故事感
 
 ## resultConfig 規則（測驗型問卷必須生成）
 
@@ -55,6 +68,7 @@ sakura（日系粉櫻）/ ocean（海洋藍綠）/ forest（森林綠）/ candy�
     "doneSubtitle": "您的回覆已成功送出",
     "theme": "default"
   },
+  "gameTitles": ["入門探索者", "認真填答人", "深度思考者", "見解分享家", "洞察達人"],
   "questions": [
     {
       "key": "q1",
@@ -106,6 +120,7 @@ sakura（日系粉櫻）/ ocean（海洋藍綠）/ forest（森林綠）/ candy�
 - route：預設 "all"；若有分流，分流後的題目設 "A"/"B"/"C"
 - branching.branchKey：觸發分流的題目 key（如 "q2"）
 - branching.routes：每條路線對應的觸發選項值，例如 { "A": ["選項A", "選項B"], "B": ["選項C"] }
+- gameTitles：5 個字串，依照主題自由生成，不能用通用死板的詞
 - resultConfig.scoringRules：每題 key → { 選項 value → typeKey }，選項 value 必須與 questions 裡的完全一致
 - resultConfig.resultTypes：至少 4-6 個結果類型，key 為英文小寫，name 為有趣中文稱號
 - 建議題數：5-15 題，至少 1 題 text 類型
@@ -134,6 +149,7 @@ export interface AiGeneratedSurvey {
     doneSubtitle: string
     theme: string
   }
+  gameTitles?: string[]
   questions: AiGeneratedQuestion[]
   branching: {
     enabled: boolean

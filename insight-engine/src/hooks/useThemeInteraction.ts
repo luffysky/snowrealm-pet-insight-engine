@@ -80,6 +80,7 @@ export function useThemeInteraction(
   theme: SurveyTheme,
   totalSteps: number,
   currentStep: number,
+  gameTitles?: string[],
 ) {
   const [unlocked, setUnlocked] = useState<Set<string>>(new Set())
   const [pending, setPending] = useState<ThemeMilestone | null>(null)
@@ -139,7 +140,7 @@ export function useThemeInteraction(
       xp: gXp,
       maxXp: gLv * 100,
       level: gLv,
-      playerTitle: GAME_TITLES[Math.min(gLv - 1, GAME_TITLES.length - 1)],
+      playerTitle: (gameTitles?.length ? gameTitles : GAME_TITLES)[Math.min(gLv - 1, (gameTitles?.length || GAME_TITLES.length) - 1)],
       xpSparkle: sparkle,
     } : null,
   }

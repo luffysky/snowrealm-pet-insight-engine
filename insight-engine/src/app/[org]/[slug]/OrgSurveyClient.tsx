@@ -327,7 +327,7 @@ function SurveyFlow({
   })
 
   const { pendingMilestone, dismissMilestone, milestoneCount, game } =
-    useThemeInteraction(theme, totalSteps, currentStep)
+    useThemeInteraction(theme, totalSteps, currentStep, config.gameTitles)
 
   const [flipDir, setFlipDir] = useState<'next' | 'prev'>('next')
   const prevStepRef = useRef(currentStep)
