@@ -196,9 +196,6 @@ export default function MessagesPage() {
   const [conversations, setConversations] = useState<Conversation[]>([])
   const [loading, setLoading] = useState(true)
   const [active, setActive] = useState<Conversation | null>(null)
-  const [pendingUserId, setPendingUserId] = useState<string | null>(() =>
-    typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('uid') : null
-  )
   const [messages, setMessages] = useState<Message[]>([])
   const [msgLoading, setMsgLoading] = useState(false)
   const [input, setInput] = useState('')
@@ -234,27 +231,36 @@ export default function MessagesPage() {
       .then(d => {
         if (d?.conversations) {
           setConversations(d.conversations)
-          // 從 URL ?uid= 恢復上次開啟的對話
-          if (pendingUserId) {
-            const found = d.conversations.find(c => c.userId === pendingUserId)
-            if (found) { setActive(found); setPendingUserId(null) }
+          // 從 URL ?uid= 恢復對話（重整或分享連結）
+          const uid = typeof window !== 'undefined'
+            ? new URLSearchParams(window.location.search).get('uid')
+            : null
+          if (uid) {
+            const found = d.conversations.find(c => c.userId === uid)
+            if (found) setActive(found)
           }
         }
       })
       .finally(() => setLoading(false))
-  }, [meId, pendingUserId])
+  }, [meId])
 
-  // 同步 active 對話到 URL（讓重整後能恢復）
+  // 監聽瀏覽器上一頁/下一頁（popstate）
   useEffect(() => {
-    if (typeof window === 'undefined') return
-    const url = new URL(window.location.href)
-    if (active) {
-      url.searchParams.set('uid', active.userId)
-    } else {
-      url.searchParams.delete('uid')
+    const onPop = () => {
+      const uid = new URLSearchParams(window.location.search).get('uid')
+      if (!uid) {
+        setActive(null)
+      } else {
+        setConversations(prev => {
+          const found = prev.find(c => c.userId === uid)
+          if (found) setActive(found)
+          return prev
+        })
+      }
     }
-    window.history.replaceState(null, '', url.toString())
-  }, [active])
+    window.addEventListener('popstate', onPop)
+    return () => window.removeEventListener('popstate', onPop)
+  }, [])
 
   useEffect(() => {
     if (!active || !meId) return
@@ -307,6 +313,17 @@ export default function MessagesPage() {
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
+
+  // 開啟對話：pushState 加一筆歷史，這樣返回時能回到列表
+  const openConversation = (conv: Conversation) => {
+    setActive(conv)
+    window.history.pushState(null, '', `/messages?uid=${conv.userId}`)
+  }
+
+  // 關閉對話：使用 router.back() 讓瀏覽器回到上一頁歷史（/messages 列表）
+  const closeConversation = () => {
+    router.back()
+  }
 
   const send = async () => {
     if (!input.trim() || sending || !active) return
@@ -451,7 +468,7 @@ export default function MessagesPage() {
               {conversations.map(c => (
                 <button
                   key={c.userId}
-                  onClick={() => setActive(c)}
+                  onClick={() => openConversation(c)}
                   className={`w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-white/[0.04] transition-colors ${active?.userId === c.userId ? 'bg-white/[0.06]' : ''}`}
                 >
                   <div className="w-10 h-10 rounded-full bg-gradient-to-br from-amber-500/30 to-purple-500/30 flex items-center justify-center text-sm font-bold text-white/70 overflow-hidden shrink-0">
@@ -480,7 +497,7 @@ export default function MessagesPage() {
           <div className="flex-1 flex flex-col min-h-0">
             {/* 名子層 — 手機版專屬頂部（桌機用全域 nav） */}
             <div className="md:hidden shrink-0 bg-slate-950/90 backdrop-blur-md border-b border-white/8 px-4 py-3 flex items-center gap-3">
-              <button onClick={() => setActive(null)} className="text-white/50 hover:text-white transition-colors">
+              <button onClick={closeConversation} className="text-white/50 hover:text-white transition-colors">
                 <ArrowLeft className="w-4 h-4" />
               </button>
               <div className="w-8 h-8 rounded-full bg-gradient-to-br from-amber-500/30 to-purple-500/30 flex items-center justify-center text-xs font-bold text-white/70 overflow-hidden shrink-0">
