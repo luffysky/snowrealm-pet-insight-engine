@@ -124,23 +124,8 @@ export default function HomePage() {
           </div>
         </div>
 
-        <nav className="hidden items-center gap-3 md:flex">
-          <Link href="/explore" className="rounded-full border border-white/30 bg-white/20 px-4 py-2 text-sm text-slate-600 backdrop-blur-xl transition hover:bg-white/35">
-            熱門測驗
-          </Link>
-          <Link href="/explore" className="rounded-full border border-white/30 bg-white/20 px-4 py-2 text-sm text-slate-600 backdrop-blur-xl transition hover:bg-white/35">
-            探索問卷
-          </Link>
-          <HomeNav />
-        </nav>
-
-        {/* 手機版 */}
-        <div className="flex items-center gap-2 md:hidden min-w-0 overflow-hidden">
-          <Link href="/explore" className="shrink-0 rounded-full border border-white/30 bg-white/20 px-3 py-1.5 text-xs text-slate-600 backdrop-blur-xl">
-            探索
-          </Link>
-          <HomeNav />
-        </div>
+        {/* 所有導覽收入球形下拉按鈕 */}
+        <HomeNav />
       </header>
 
       <main className="relative z-10 mx-auto max-w-7xl px-5 pb-16 md:px-8 lg:px-10">

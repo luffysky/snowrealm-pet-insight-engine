@@ -5,17 +5,15 @@ import { usePathname, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Home, Newspaper, Plus, MessageCircle, User, X, PenSquare, Clapperboard } from 'lucide-react'
 
-// 不顯示 bottom nav 的路徑前綴
+// Only hide on full-screen creation / auth flows
 const HIDDEN_PREFIXES = [
-  '/insight-admin', '/snowrealm-insight-ctrl', '/login', '/register',
-  '/super-login', '/forgot-password', '/write', '/story/create',
-  '/api', '/privacy', '/terms', '/cookies',
+  '/login', '/register', '/super-login', '/forgot-password',
+  '/story/create', '/write', '/api', '/privacy', '/terms', '/cookies',
 ]
 
-interface UserInfo {
-  userId: string
-  userName: string
-}
+const COLLAPSE_KEY = 'bottomnav_collapsed'
+
+interface UserInfo { userId: string; userName: string }
 
 export function BottomNav() {
   const pathname = usePathname()
@@ -24,19 +22,28 @@ export function BottomNav() {
   const [unreadDm, setUnreadDm] = useState(0)
   const [unreadNotif, setUnreadNotif] = useState(0)
   const [createOpen, setCreateOpen] = useState(false)
+  const [collapsed, setCollapsed] = useState(false)
+  const [mounted, setMounted] = useState(false)
 
-  const hidden = HIDDEN_PREFIXES.some(p => pathname.startsWith(p))
+  useEffect(() => {
+    setMounted(true)
+    setCollapsed(localStorage.getItem(COLLAPSE_KEY) === 'true')
+  }, [])
+
+  const toggleCollapse = () => {
+    const next = !collapsed
+    setCollapsed(next)
+    localStorage.setItem(COLLAPSE_KEY, String(next))
+  }
 
   useEffect(() => {
     fetch('/api/auth/me')
       .then(r => r.ok ? r.json() : null)
       .then((d: { userId?: string; userName?: string } | null) => {
         if (d?.userId) setMe({ userId: d.userId, userName: d.userName ?? '' })
-      })
-      .catch(() => {})
+      }).catch(() => {})
   }, [])
 
-  // 未讀訊息 + 通知數
   useEffect(() => {
     if (!me) return
     const fetchUnread = () => {
@@ -48,42 +55,71 @@ export function BottomNav() {
         .then(r => r.ok ? r.json() : null)
         .then((d: { notifications?: { readAt: string | null }[] } | null) => {
           if (d?.notifications) setUnreadNotif(d.notifications.filter(n => !n.readAt).length)
-        })
-        .catch(() => {})
+        }).catch(() => {})
     }
     fetchUnread()
-    const t = setInterval(fetchUnread, 30000)
+    const t = setInterval(fetchUnread, 30_000)
     return () => clearInterval(t)
   }, [me])
 
-  if (hidden) return null
+  const hidden = HIDDEN_PREFIXES.some(p => pathname.startsWith(p))
+  if (!mounted || hidden) return null
 
   const isActive = (path: string) => {
-    if (path === '/') return pathname === '/'
     if (path === '/u') return pathname.startsWith('/u/')
     return pathname.startsWith(path)
   }
 
   const tabCls = (path: string) =>
     `flex flex-col items-center justify-center gap-0.5 flex-1 py-2 transition-colors ${
-      isActive(path)
-        ? 'text-amber-400'
-        : 'text-white/35 hover:text-white/70 dark:text-slate-400/70'
+      isActive(path) ? 'text-amber-400' : 'text-white/35 hover:text-white/70'
     }`
 
   const labelCls = 'text-[10px] font-medium leading-none'
 
   return (
     <>
-      {/* Spacer so page content isn't hidden behind nav */}
-      <div className="h-[calc(4rem+env(safe-area-inset-bottom,0px))] md:hidden" aria-hidden />
+      {/* Spacer — shrinks when collapsed so content fills available space */}
+      <div
+        aria-hidden
+        className="transition-all duration-300"
+        style={{
+          height: collapsed
+            ? '1.75rem'
+            : 'calc(4.75rem + env(safe-area-inset-bottom, 0px))',
+        }}
+      />
 
-      {/* Nav bar */}
-      <nav className="fixed bottom-0 left-0 right-0 z-50 md:hidden">
-        {/* Glassmorphism background */}
-        <div className="bg-slate-950/90 dark:bg-slate-950/95 backdrop-blur-xl border-t border-white/8
-                        pb-[env(safe-area-inset-bottom,0px)]">
-          <div className="flex items-stretch h-16 max-w-lg mx-auto px-2">
+      {/* Nav container */}
+      <nav
+        className="fixed bottom-0 left-0 right-0 z-50"
+        style={{
+          transform: collapsed
+            ? 'translateY(calc(4rem + env(safe-area-inset-bottom, 0px)))'
+            : 'translateY(0)',
+          transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+        }}
+      >
+        {/* Collapse handle — always visible */}
+        <div className="flex justify-center bg-slate-950/80 backdrop-blur-2xl border-t border-white/[0.07] pt-1 pb-0.5">
+          <button
+            onClick={toggleCollapse}
+            aria-label={collapsed ? '展開導覽列' : '收起導覽列'}
+            className="group flex items-center justify-center w-12 h-5 rounded-full hover:bg-white/10 transition-colors"
+          >
+            <div
+              className="w-9 h-1 rounded-full bg-white/20 group-hover:bg-white/40 transition-colors"
+              style={{ transform: collapsed ? 'scaleY(-1)' : 'none', transition: 'transform 0.3s' }}
+            />
+          </button>
+        </div>
+
+        {/* Tab row */}
+        <div
+          className="bg-slate-950/90 backdrop-blur-2xl pb-[env(safe-area-inset-bottom,0px)]"
+          style={{ overflow: 'visible' }}
+        >
+          <div className="flex items-stretch h-16 max-w-lg mx-auto px-2" style={{ overflow: 'visible' }}>
 
             {/* 探索 */}
             <Link href="/explore" className={tabCls('/explore')}>
@@ -97,23 +133,21 @@ export function BottomNav() {
               <span className={labelCls}>社群</span>
             </Link>
 
-            {/* 發布 — 中間大按鈕 */}
-            <div className="flex items-center justify-center flex-1">
+            {/* 發布 — 中間懸浮按鈕，上移 */}
+            <div className="flex items-center justify-center flex-1" style={{ overflow: 'visible' }}>
               <button
                 onClick={() => setCreateOpen(true)}
                 className="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500
-                           flex items-center justify-center shadow-lg shadow-amber-500/30
+                           flex items-center justify-center shadow-lg shadow-amber-500/25
                            hover:scale-105 active:scale-95 transition-transform"
+                style={{ transform: 'translateY(-10px)' }}
               >
                 <Plus className="w-6 h-6 text-slate-900 stroke-[2.5]" />
               </button>
             </div>
 
             {/* 訊息 */}
-            <button
-              onClick={() => router.push('/messages')}
-              className={`${tabCls('/messages')} relative`}
-            >
+            <button onClick={() => router.push('/messages')} className={`${tabCls('/messages')} relative`}>
               <div className="relative">
                 <MessageCircle className="w-5 h-5" strokeWidth={isActive('/messages') ? 2.5 : 1.8} />
                 {unreadDm > 0 && (
@@ -151,7 +185,7 @@ export function BottomNav() {
       {/* Create modal */}
       {createOpen && (
         <div
-          className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-end md:items-center justify-center p-4"
+          className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-4"
           onClick={() => setCreateOpen(false)}
         >
           <div
