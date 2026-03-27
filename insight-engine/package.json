@@ -28,6 +28,7 @@
     "react": "19.2.3",
     "react-colorful": "^5.6.1",
     "react-dom": "19.2.3",
+    "react-image-crop": "^11.0.10",
     "recharts": "^3.8.0",
     "sharp": "^0.34.5",
     "three": "^0.183.2",
