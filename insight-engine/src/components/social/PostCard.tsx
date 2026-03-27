@@ -1,10 +1,12 @@
 'use client'
 
 import { useState, useRef } from 'react'
-import { MoreHorizontal, Trash2, Edit2, ExternalLink, Share2, ChevronLeft, ChevronRight, MessageSquare, Check } from 'lucide-react'
+import { MoreHorizontal, Trash2, ExternalLink, Share2, ChevronLeft, ChevronRight, Check } from 'lucide-react'
 const TwitterIcon = ({ className }: { className?: string }) => (<svg className={className} viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>)
 import { InteractionBar } from './InteractionBar'
 import { CommentSection } from './CommentSection'
+import { FollowButton } from './FollowButton'
+import { DMButton } from './DMButton'
 import type { SocialPost } from '@/lib/socialEngine'
 
 interface PostCardProps {
@@ -67,14 +69,22 @@ export function PostCard({ post, currentUserId, onDeleted, showComments = false,
     <article className="bg-white/[0.04] backdrop-blur-xl border border-white/8 border-t-white/14 rounded-3xl overflow-hidden hover:border-white/15 hover:bg-white/[0.06] transition-all shadow-[0_8px_32px_rgba(0,0,0,0.4)]">
       {/* Header */}
       <div className="flex items-start justify-between px-4 pt-4 pb-2">
-        <div className="flex items-center gap-2.5">
-          <div className="w-9 h-9 rounded-full bg-gradient-to-br from-amber-500/30 to-purple-500/30 flex items-center justify-center text-sm font-bold text-white/80 shrink-0 overflow-hidden">
+        <div className="flex items-center gap-2.5 flex-1 min-w-0">
+          <a href={`?userId=${post.userId}`} className="w-9 h-9 rounded-full bg-gradient-to-br from-amber-500/30 to-purple-500/30 flex items-center justify-center text-sm font-bold text-white/80 shrink-0 overflow-hidden hover:ring-2 hover:ring-amber-400/40 transition-all">
             {post.authorAvatar
               ? <img src={post.authorAvatar} alt="" className="w-full h-full object-cover" />
               : initials}
-          </div>
-          <div>
-            <p className="text-sm font-semibold text-white/80">{post.authorName ?? '用戶'}</p>
+          </a>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <a href={`?userId=${post.userId}`} className="text-sm font-semibold text-white/80 hover:text-white transition-colors">{post.authorName ?? '用戶'}</a>
+              {!isOwner && post.userId && (
+                <div className="flex items-center gap-1.5">
+                  <FollowButton targetUserId={post.userId} compact />
+                  <DMButton targetUserId={post.userId} targetName={post.authorName ?? '用戶'} targetAvatar={post.authorAvatar} />
+                </div>
+              )}
+            </div>
             <div className="flex items-center gap-1.5">
               <span className="text-xs text-white/30">{timeStr}</span>
               {post.type === 'article' && (
@@ -143,9 +153,16 @@ export function PostCard({ post, currentUserId, onDeleted, showComments = false,
 
       {/* Content */}
       <div className="px-4 pb-2">
-        <p className="text-sm text-white/70 leading-relaxed whitespace-pre-wrap break-words">
-          {post.content}
-        </p>
+        {post.type === 'article' ? (
+          <div
+            className="prose prose-invert prose-sm max-w-none text-white/70 leading-relaxed [&_p]:mb-2 [&_h1]:text-white/90 [&_h2]:text-white/80 [&_h3]:text-white/75 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_a]:text-amber-400 [&_a:hover]:text-amber-300 [&_strong]:text-white/85 [&_blockquote]:border-l-2 [&_blockquote]:border-amber-400/40 [&_blockquote]:pl-3 [&_blockquote]:text-white/50 [&_img]:rounded-xl [&_img]:max-h-64 [&_img]:object-cover [&_mark]:bg-amber-400/20 [&_mark]:text-amber-200 [&_mark]:rounded-sm"
+            dangerouslySetInnerHTML={{ __html: post.content }}
+          />
+        ) : (
+          <p className="text-sm text-white/70 leading-relaxed whitespace-pre-wrap break-words">
+            {post.content}
+          </p>
+        )}
       </div>
 
       {/* Tags */}

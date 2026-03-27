@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { Search, X, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react'
 
-const GIPHY_API_KEY = 'dc6zaTOxFJmzC'
+const GIPHY_API_KEY = process.env.NEXT_PUBLIC_GIPHY_API_KEY ?? 'wZFuRFTOarVmK5csuetJgRaxqQcRV7iS'
 const GIFS_PER_PAGE = 12
 
 interface GifResult {
