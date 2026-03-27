@@ -63,49 +63,19 @@ export function HomeNav() {
       <button
         onClick={handleSphereClick}
         aria-label="選單"
-        className={`relative flex items-center gap-2 rounded-full select-none
+        className={`relative w-9 h-9 rounded-full select-none flex items-center justify-center
                     hover:brightness-110 active:scale-95 transition-[transform,filter]
                     ${spinning ? 'animate-sphere-pop' : ''}`}
         style={{
           background: 'radial-gradient(circle at 36% 32%, rgba(255,255,255,0.88) 0%, #7dd3fc 38%, #3b82f6 68%, #1e3a8a 100%)',
           boxShadow: '0 4px 18px rgba(59,130,246,0.45), inset 0 -4px 8px rgba(0,0,0,0.18), inset 0 4px 8px rgba(255,255,255,0.35)',
-          padding: user ? '5px 14px 5px 7px' : '7px',
-          minWidth: user ? undefined : '36px',
-          height: '36px',
         }}
       >
         {/* Shine highlight */}
-        <span
-          aria-hidden
-          className="absolute left-2 top-1.5 w-2 h-1 rounded-full bg-white/55 blur-[1px]"
-          style={{ pointerEvents: 'none' }}
-        />
-
-        {user ? (
-          <>
-            {/* Avatar initial */}
-            <span
-              className="relative z-10 w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0"
-              style={{
-                background: 'radial-gradient(circle at 40% 35%, rgba(255,255,255,0.6), transparent 70%)',
-                backgroundColor: 'rgba(255,255,255,0.15)',
-                backdropFilter: 'blur(4px)',
-              }}
-            >
-              {user.userName.charAt(0).toUpperCase()}
-            </span>
-            <span className="relative z-10 text-white text-sm font-semibold max-w-[80px] truncate drop-shadow-sm">
-              {user.userName}
-            </span>
-          </>
-        ) : (
-          /* Hamburger for logged-out */
-          <span className="relative z-10 flex flex-col gap-[4px] items-center justify-center w-4">
-            <span className="w-4 h-0.5 bg-white rounded-full block" />
-            <span className="w-3 h-0.5 bg-white rounded-full block" />
-            <span className="w-4 h-0.5 bg-white rounded-full block" />
-          </span>
-        )}
+        <span aria-hidden className="absolute left-2 top-1.5 w-2 h-1 rounded-full bg-white/55 blur-[1px]" style={{ pointerEvents: 'none' }} />
+        <span className="relative z-10 text-white text-sm font-bold drop-shadow-sm">
+          {user ? user.userName.charAt(0).toUpperCase() : '☰'}
+        </span>
       </button>
 
       {/* Dropdown */}
