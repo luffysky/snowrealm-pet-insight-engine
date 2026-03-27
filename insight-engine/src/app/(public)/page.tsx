@@ -14,34 +14,40 @@ const ThreeCanvas = dynamic(() => import('@/components/public/HomeThreeCanvas'),
 
 const quizCards = [
   {
+    emoji: '🪞',
     title: '你是不是其實讓人有壓力？',
-    subtitle: '3 分鐘，看見別人不敢告訴你的那一面',
-    badge: '最熱門',
+    subtitle: '說說你平常怎麼跟人相處，說不定會看見一個自己從沒注意過的地方。',
+    badge: '人際關係',
+    href: '/explore',
   },
   {
-    title: '你的戀愛致命弱點是什麼？',
-    subtitle: '有點刺但不傷人，結果讓人忍不住傳給朋友',
-    badge: '情緒共鳴',
+    emoji: '💛',
+    title: '你的愛，有多少是在照顧自己的？',
+    subtitle: '在關係裡習慣配合別人的你，有時候可能忘了自己也需要被接住。',
+    badge: '自我認識',
+    href: '/explore',
   },
   {
-    title: '朋友眼中的你，跟你想的一樣嗎？',
-    subtitle: '把你沒看見的自己，變成一張值得收藏的小卡',
-    badge: '故事感',
+    emoji: '✨',
+    title: '你最被低估的特質是什麼？',
+    subtitle: '有些優點你根本沒當回事，但身邊的人可能早就注意到了。',
+    badge: '故事卡片',
+    href: '/explore',
   },
 ]
 
 const storyWall = [
   {
-    title: '原來我在朋友眼中是那個總是先道歉的人',
-    desc: '你以為你在包容，別人覺得你其實是在逃避。',
+    quote: '「原來我那麼在意別人的眼光」',
+    desc: '填完才意識到，我好多決定都是怕讓人失望，不是真的想要。',
   },
   {
-    title: '你以為你很主動，但別人覺得你有距離感',
-    desc: '有些事，別人看得比你清楚。',
+    quote: '「我以為我很獨立，但其實只是習慣了不麻煩人」',
+    desc: '不麻煩別人和不需要別人，是兩件不一樣的事。',
   },
   {
-    title: '測完才知道，我最被低估的是觀察力',
-    desc: '你不是沒有才華，只是還沒被看見。',
+    quote: '「那個問題讓我停下來想了很久」',
+    desc: '從來沒有人這樣問過我，連我自己也沒有。',
   },
 ]
 
@@ -147,21 +153,21 @@ export default function HomePage() {
             className="order-2 lg:order-1"
           >
             <div className="inline-flex flex-wrap items-center gap-2">
-              <CuteBadge>AI 智慧問卷</CuteBadge>
-              <CuteBadge>認知落差引擎</CuteBadge>
+              <CuteBadge>免費填答</CuteBadge>
+              <CuteBadge>自我探索</CuteBadge>
               <CuteBadge>Story Card</CuteBadge>
             </div>
 
             <h1 className="mt-5 max-w-2xl text-4xl font-black leading-tight tracking-tight text-slate-800 md:text-6xl md:leading-[1.06]">
-              不是每份測驗，
+              有些問題，
               <span className="block bg-gradient-to-r from-sky-600 via-cyan-500 to-violet-500 bg-clip-text text-transparent">
-                都能讓人忍不住分享。
+                你可能從沒問過自己。
               </span>
             </h1>
 
             <p className="mt-5 max-w-xl text-base leading-7 text-slate-600 md:text-lg">
-              從一個好玩的小問卷開始，看見你沒看見的自己。
-              不是冷冰冰的功能介紹，是一個讓人想點、想玩、想收藏的認知入口。
+              填一填，說不定會看見一個陌生又熟悉的自己。
+              每份問卷最後會給你一張專屬的故事卡片，可以收藏，也可以傳給懂你的人。
             </p>
 
             <div className="mt-4 inline-flex items-center rounded-full border border-white/35 bg-white/25 px-4 py-2 text-sm text-slate-600 shadow-[0_12px_30px_rgba(145,188,255,0.14)] backdrop-blur-xl">
@@ -190,7 +196,7 @@ export default function HomePage() {
               {[
                 { value: '3 分鐘', label: '快速完成' },
                 { value: '可收藏', label: 'Story Card' },
-                { value: '不硬銷', label: '先玩再說' },
+                { value: '放心填', label: '不追蹤身份' },
               ].map((item) => (
                 <div
                   key={item.label}
@@ -219,10 +225,10 @@ export default function HomePage() {
               <div className="pointer-events-none absolute bottom-4 left-4 right-4 rounded-[28px] border border-white/35 bg-white/28 p-4 shadow-[0_14px_40px_rgba(255,255,255,0.12)] backdrop-blur-2xl md:p-5">
                 <div className="flex items-start justify-between gap-4">
                   <div>
-                    <p className="text-xs font-semibold tracking-[0.2em] text-sky-700/75">FEATURED CARD</p>
-                    <h3 className="mt-2 text-lg font-bold text-slate-800 md:text-2xl">你最被低估的是觀察力</h3>
+                    <p className="text-xs font-semibold tracking-[0.2em] text-sky-700/75">你的故事卡片</p>
+                    <h3 className="mt-2 text-lg font-bold text-slate-800 md:text-2xl">你最被低估的，是觀察力</h3>
                     <p className="mt-2 text-sm leading-6 text-slate-600 md:text-base">
-                      你不是沒有才華，只是還沒被看見。測完才知道，你早就看懂了。
+                      你早就看懂很多事了，只是習慣不說。
                     </p>
                   </div>
                   <div className="hidden rounded-2xl border border-white/35 bg-white/35 p-3 md:block">
@@ -238,8 +244,8 @@ export default function HomePage() {
         <section className="mt-12 md:mt-16">
           <div className="mb-5 flex items-end justify-between gap-3">
             <div>
-              <p className="text-sm font-semibold tracking-[0.18em] text-sky-700/75">HOT QUIZZES</p>
-              <h2 className="mt-2 text-2xl font-black text-slate-800 md:text-3xl">先放讓人會上癮的問卷</h2>
+              <p className="text-sm font-semibold tracking-[0.18em] text-sky-700/75">最近大家在問自己的幾件事</p>
+              <h2 className="mt-2 text-2xl font-black text-slate-800 md:text-3xl">你想先從哪一個開始？</h2>
             </div>
             <Link href="/explore" className="hidden rounded-full border border-white/30 bg-white/25 px-4 py-2 text-sm text-slate-600 backdrop-blur-xl transition hover:bg-white/35 md:block">
               看更多
@@ -255,13 +261,16 @@ export default function HomePage() {
                 transition={{ duration: 0.55, delay: 0.1 + index * 0.08 }}
                 className="group rounded-[28px] border border-white/30 bg-white/18 p-5 shadow-[0_16px_40px_rgba(122,162,230,0.14)] backdrop-blur-2xl transition hover:-translate-y-1 hover:bg-white/24"
               >
-                <span className="inline-flex rounded-full border border-white/40 bg-white/32 px-3 py-1 text-xs font-semibold text-pink-600">
-                  {card.badge}
-                </span>
+                <div className="flex items-center justify-between">
+                  <span className="text-2xl">{card.emoji}</span>
+                  <span className="inline-flex rounded-full border border-white/40 bg-white/32 px-3 py-1 text-xs font-semibold text-sky-600">
+                    {card.badge}
+                  </span>
+                </div>
                 <h3 className="mt-4 text-xl font-bold leading-8 text-slate-800">{card.title}</h3>
                 <p className="mt-3 text-sm leading-6 text-slate-600">{card.subtitle}</p>
-                <Link href="/explore" className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-sky-700 transition group-hover:gap-3">
-                  立刻開始
+                <Link href={card.href} className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-sky-700 transition group-hover:gap-3">
+                  去填填看
                   <ChevronRight className="h-4 w-4" />
                 </Link>
               </motion.div>
@@ -272,48 +281,46 @@ export default function HomePage() {
         {/* 故事牆 + CTA */}
         <section className="mt-12 grid gap-4 lg:grid-cols-[1.05fr_0.95fr]">
           <div className="rounded-[30px] border border-white/30 bg-white/18 p-6 shadow-[0_16px_40px_rgba(122,162,230,0.12)] backdrop-blur-2xl">
-            <p className="text-sm font-semibold tracking-[0.18em] text-sky-700/75">SOCIAL PROOF</p>
-            <h2 className="mt-2 text-2xl font-black text-slate-800 md:text-3xl">大家正在收藏的故事牆</h2>
+            <p className="text-sm font-semibold tracking-[0.18em] text-sky-700/75">填完之後，他們這樣說</p>
+            <h2 className="mt-2 text-2xl font-black text-slate-800 md:text-3xl">有些答案，填完才知道</h2>
             <div className="mt-5 space-y-3">
-              {storyWall.map((item, idx) => (
-                <div key={item.title} className="rounded-[24px] border border-white/30 bg-white/22 p-4">
-                  <div className="flex items-start justify-between gap-4">
-                    <div>
-                      <h3 className="text-base font-bold text-slate-800 md:text-lg">{item.title}</h3>
-                      <p className="mt-2 text-sm leading-6 text-slate-600">{item.desc}</p>
-                    </div>
-                    <span className="rounded-full bg-pink-100 px-3 py-1 text-xs font-semibold text-pink-600">
-                      #{idx + 1}
-                    </span>
-                  </div>
+              {storyWall.map((item) => (
+                <div key={item.quote} className="rounded-[24px] border border-white/30 bg-white/22 p-4">
+                  <p className="text-base font-bold text-slate-800 md:text-lg leading-snug">{item.quote}</p>
+                  <p className="mt-2 text-sm leading-6 text-slate-500">{item.desc}</p>
                 </div>
               ))}
             </div>
+            <Link href="/explore" className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-sky-700 transition hover:gap-3">
+              看更多故事牆
+              <ChevronRight className="h-4 w-4" />
+            </Link>
           </div>
 
           <div className="rounded-[30px] border border-white/30 bg-gradient-to-br from-white/24 to-white/14 p-6 shadow-[0_16px_40px_rgba(122,162,230,0.12)] backdrop-blur-2xl">
-            <p className="text-sm font-semibold tracking-[0.18em] text-sky-700/75">GENTLE CTA</p>
-            <h2 className="mt-2 text-2xl font-black text-slate-800 md:text-3xl">先讓人好奇，再讓人留下</h2>
+            <p className="text-sm font-semibold tracking-[0.18em] text-sky-700/75">每一份問卷，都會給你一張卡片</p>
+            <h2 className="mt-2 text-2xl font-black text-slate-800 md:text-3xl">不只是測驗，是你的一小片故事</h2>
             <p className="mt-4 text-sm leading-7 text-slate-600 md:text-base">
-              首頁不要一直講功能。先給一個好玩、有共鳴、會讓人想試的入口。
-              等他玩了一陣子、收藏了幾張卡片、開始有感覺，之後再慢慢把更深的世界打開。
+              填完之後，我們會用你的回答生成一張專屬的故事卡片。
+              不是評分，不是排名，是一個只屬於你的小畫面。
+              有時候看到的，會讓你想傳給那個最懂你的人。
             </p>
             <div className="mt-6 rounded-[24px] border border-white/30 bg-white/24 p-4">
               <div className="flex items-center gap-3 text-slate-700">
-                <div className="rounded-2xl bg-violet-100 p-2">
-                  <Brain className="h-4 w-4 text-violet-500" />
+                <div className="rounded-2xl bg-sky-100 p-2">
+                  <Brain className="h-4 w-4 text-sky-500" />
                 </div>
                 <div>
-                  <p className="text-sm font-bold">首頁任務只有一個</p>
-                  <p className="text-xs text-slate-500">讓人點進第一份問卷，不是看功能介紹。</p>
+                  <p className="text-sm font-bold">你的答案，只有你知道</p>
+                  <p className="text-xs text-slate-500">所有回答只用來生成你的故事，不做其他用途。</p>
                 </div>
               </div>
             </div>
             <Link
-              href="/register"
-              className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-pink-400 via-sky-400 to-violet-400 px-5 py-4 text-base font-semibold text-white shadow-[0_18px_40px_rgba(132,163,255,0.34)] transition hover:scale-[1.01]"
+              href="/explore"
+              className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-sky-400 via-cyan-400 to-violet-400 px-5 py-4 text-base font-semibold text-white shadow-[0_18px_40px_rgba(132,163,255,0.34)] transition hover:scale-[1.01]"
             >
-              做出第一張會被分享的卡片
+              去填一份看看
               <ChevronRight className="h-4 w-4" />
             </Link>
           </div>
