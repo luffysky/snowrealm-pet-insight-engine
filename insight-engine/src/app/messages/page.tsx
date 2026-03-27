@@ -331,6 +331,8 @@ export default function MessagesPage() {
   const [msgMenu, setMsgMenu] = useState<{ msg: Message; x: number; y: number } | null>(null)
   const [editingMsg, setEditingMsg] = useState<{ id: string } | null>(null)
   const [editInput, setEditInput] = useState('')
+  const [hoveredMsgId, setHoveredMsgId] = useState<string | null>(null)
+  const [forwardingMsg, setForwardingMsg] = useState<Message | null>(null)
   const [bgKey, setBgKey] = useState('default')
   const [bgCustomUrl, setBgCustomUrl] = useState('')
   const [bgPanelOpen, setBgPanelOpen] = useState(false)
@@ -513,15 +515,60 @@ export default function MessagesPage() {
     finally { setSending(false) }
   }
 
+  const openMenu = (msg: Message, x: number, y: number) => {
+    setMsgMenu({ msg, x, y })
+  }
+
   const startLongPress = (e: React.PointerEvent, msg: Message) => {
     const { clientX, clientY } = e
     longPressTimer.current = setTimeout(() => {
-      setMsgMenu({ msg, x: clientX, y: clientY })
+      openMenu(msg, clientX, clientY)
     }, 500)
   }
 
   const cancelLongPress = () => {
     if (longPressTimer.current) clearTimeout(longPressTimer.current)
+  }
+
+  const handleContextMenu = (e: React.MouseEvent, msg: Message) => {
+    e.preventDefault()
+    openMenu(msg, e.clientX, e.clientY)
+  }
+
+  const forwardMsgTo = async (targetUserId: string, targetDisplayName: string | null) => {
+    if (!forwardingMsg || !active) return
+    const rawContent = forwardingMsg.content.includes('\n')
+      ? forwardingMsg.content.split('\n').slice(1).join('\n')
+      : forwardingMsg.content
+    if (rawContent === '[已收回]' || rawContent === '[已刪除]') return
+
+    const fwdContent = `[轉傳自 ${forwardingMsg.fromName ?? '對方'}]\n${rawContent}`
+    const targetName = targetDisplayName ?? targetUserId.slice(0, 8)
+    setForwardingMsg(null)
+
+    // If forwarding to current conversation, append locally
+    if (targetUserId === active.userId) {
+      const optimistic: Message = {
+        id: `fwd-${Date.now()}`,
+        content: fwdContent,
+        createdAt: new Date().toISOString(),
+        isMine: true,
+        fromName: null,
+        fromAvatar: null,
+        editedAt: null,
+      }
+      setMessages(prev => [...prev, optimistic])
+    }
+
+    await fetch(`/api/admin/social/messages/${targetUserId}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ content: fwdContent }),
+    }).catch(() => {})
+
+    if (targetUserId !== active.userId) {
+      alert(`已轉傳給 ${targetName}`)
+    }
   }
 
   const deleteMsg = (msgId: string) => {
@@ -764,12 +811,38 @@ export default function MessagesPage() {
                 const hasReply = msg.content.startsWith('[reply:')
                 const naked = !isEditing && isNakedContent(bodyContent)
                 return (
-                <div key={msg.id} className={`flex ${msg.isMine ? 'justify-end' : 'justify-start'}`}>
+                <div
+                  key={msg.id}
+                  className={`flex ${msg.isMine ? 'justify-end' : 'justify-start'} group/msgrow`}
+                  onMouseEnter={() => setHoveredMsgId(msg.id)}
+                  onMouseLeave={() => setHoveredMsgId(null)}
+                >
+                  {/* Hover quick actions — left side for mine, right side for others */}
+                  {!isEditing && !isRecalled && hoveredMsgId === msg.id && (
+                    <div className={`flex items-center gap-1 self-center mx-1.5 ${msg.isMine ? 'order-first' : 'order-last'}`}>
+                      <button
+                        onClick={() => setReplyTo(msg)}
+                        title="回覆"
+                        className="p-1.5 rounded-full hover:bg-white/10 text-white/40 hover:text-white/80 transition-colors"
+                      >↩</button>
+                      <button
+                        onClick={() => { setForwardingMsg(msg); setMsgMenu(null) }}
+                        title="轉傳"
+                        className="p-1.5 rounded-full hover:bg-white/10 text-white/40 hover:text-white/80 transition-colors text-sm"
+                      >↪</button>
+                      <button
+                        onClick={e => openMenu(msg, e.clientX, e.clientY)}
+                        title="更多"
+                        className="p-1.5 rounded-full hover:bg-white/10 text-white/40 hover:text-white/80 transition-colors"
+                      >⋯</button>
+                    </div>
+                  )}
                   <div
                     onPointerDown={e => !isEditing && startLongPress(e, msg)}
                     onPointerUp={cancelLongPress}
                     onPointerLeave={cancelLongPress}
                     onPointerMove={cancelLongPress}
+                    onContextMenu={e => !isEditing && handleContextMenu(e, msg)}
                     style={{ touchAction: 'pan-y' }}
                     className={`max-w-[75%] rounded-2xl select-none cursor-default ${
                       naked ? 'overflow-hidden' :
@@ -1020,6 +1093,14 @@ export default function MessagesPage() {
                 <span>🔄</span> 收回
               </button>
             )}
+            {msgMenu.msg.content !== '[已收回]' && (
+              <button
+                onClick={() => { setForwardingMsg(msgMenu.msg); setMsgMenu(null) }}
+                className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/8 text-sm text-white/80 text-left transition-colors border-t border-white/8"
+              >
+                <span>↪️</span> 轉傳
+              </button>
+            )}
             <button
               onClick={() => { setBubble({ content: msgMenu.msg.content, x: msgMenu.x - 110, y: msgMenu.y - 60 }); setMsgMenu(null) }}
               className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/8 text-sm text-white/80 text-left transition-colors border-t border-white/8"
@@ -1043,6 +1124,58 @@ export default function MessagesPage() {
 
       {/* Lightbox */}
       {lightbox && <Lightbox url={lightbox.url} type={lightbox.type} onClose={() => setLightbox(null)} />}
+
+      {/* Forward Modal */}
+      {forwardingMsg && (
+        <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center p-4" onClick={() => setForwardingMsg(null)}>
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+          <div
+            className="relative z-10 w-full max-w-sm bg-slate-900 border border-white/10 rounded-3xl shadow-2xl overflow-hidden"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between px-5 py-4 border-b border-white/8">
+              <p className="font-semibold text-white text-sm">↪️ 轉傳訊息</p>
+              <button onClick={() => setForwardingMsg(null)} className="text-white/40 hover:text-white/70">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            {/* preview */}
+            <div className="mx-5 my-3 px-3 py-2 bg-white/5 border border-white/8 rounded-xl text-xs text-white/40 truncate">
+              {forwardingMsg.content.includes('\n')
+                ? forwardingMsg.content.split('\n').slice(1).join('\n').slice(0, 60)
+                : forwardingMsg.content.slice(0, 60)}
+              {forwardingMsg.content.length > 60 && '…'}
+            </div>
+            <p className="text-xs text-white/30 px-5 mb-2">選擇要轉傳的對話：</p>
+            <div className="max-h-64 overflow-y-auto pb-4">
+              {conversations.map(conv => (
+                <button
+                  key={conv.userId}
+                  onClick={() => forwardMsgTo(conv.userId, conv.displayName)}
+                  className="w-full flex items-center gap-3 px-5 py-3 hover:bg-white/5 transition-colors text-left"
+                >
+                  <div className="w-9 h-9 rounded-full bg-gradient-to-br from-amber-500/30 to-purple-500/30 flex items-center justify-center shrink-0 overflow-hidden text-sm font-bold text-white/80">
+                    {conv.avatarUrl
+                      // eslint-disable-next-line @next/next/no-img-element
+                      ? <img src={conv.avatarUrl} alt="" className="w-full h-full object-cover" />
+                      : (conv.displayName ?? '?').slice(0, 2).toUpperCase()}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-white/80 truncate">{conv.displayName ?? '用戶'}</p>
+                    {conv.lastMessagePreview && <p className="text-xs text-white/30 truncate">{conv.lastMessagePreview.slice(0, 30)}</p>}
+                  </div>
+                  {conv.userId === active?.userId && (
+                    <span className="text-[10px] text-amber-400/60 shrink-0">目前對話</span>
+                  )}
+                </button>
+              ))}
+              {conversations.length === 0 && (
+                <p className="text-center text-sm text-white/30 py-6">沒有其他對話</p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
