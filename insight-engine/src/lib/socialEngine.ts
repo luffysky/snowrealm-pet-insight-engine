@@ -10,6 +10,8 @@ export interface SocialPost {
   title: string | null
   content: string
   images: PostImage[]
+  videoUrl?: string | null
+  videoThumbnailUrl?: string | null
   tags: string[]
   status: 'published' | 'draft'
   isPublic: boolean
@@ -55,6 +57,8 @@ interface PostRow extends Record<string, unknown> {
   title: string | null
   content: string
   images: PostImage[] | null
+  video_url: string | null
+  video_thumbnail_url: string | null
   tags: string[] | null
   status: string
   is_public: boolean
@@ -78,6 +82,8 @@ function rowToPost(row: PostRow): SocialPost {
     title: row.title,
     content: row.content,
     images: (row.images as PostImage[]) ?? [],
+    videoUrl: row.video_url,
+    videoThumbnailUrl: row.video_thumbnail_url,
     tags: row.tags ?? [],
     status: row.status as 'published' | 'draft',
     isPublic: row.is_public,
@@ -160,13 +166,15 @@ export async function createPost(data: {
   title?: string
   content: string
   images?: PostImage[]
+  videoUrl?: string
+  videoThumbnailUrl?: string
   tags?: string[]
   isPublic?: boolean
   status?: 'published' | 'draft'
 }): Promise<SocialPost> {
   const row = await queryOne<PostRow>(
-    `INSERT INTO social_posts (tenant_id, user_id, type, title, content, images, tags, is_public, status)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING *,
+    `INSERT INTO social_posts (tenant_id, user_id, type, title, content, images, video_url, video_thumbnail_url, tags, is_public, status)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING *,
      (SELECT COALESCE(display_name, username) FROM admin_users WHERE id = $2) AS author_name,
      (SELECT avatar_url FROM admin_users WHERE id = $2) AS author_avatar,
      NULL::text AS my_reaction`,
@@ -174,6 +182,8 @@ export async function createPost(data: {
       data.tenantId, data.userId, data.type,
       data.title ?? null, data.content,
       JSON.stringify(data.images ?? []),
+      data.videoUrl ?? null,
+      data.videoThumbnailUrl ?? null,
       data.tags ?? [],
       data.isPublic ?? true,
       data.status ?? 'published',

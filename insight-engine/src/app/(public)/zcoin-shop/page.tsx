@@ -195,10 +195,10 @@ interface RechargePackage {
 }
 
 const RECHARGE_PACKAGES: RechargePackage[] = [
-  { id: 'starter', zcoin: 30, ntd: 30 },
-  { id: 'basic', zcoin: 100, ntd: 90, badge: '最划算', badgeColor: 'bg-emerald-500' },
-  { id: 'popular', zcoin: 350, ntd: 290, badge: '推薦', badgeColor: 'bg-amber-500' },
-  { id: 'value', zcoin: 900, ntd: 690, badge: '超值', badgeColor: 'bg-purple-500' },
+  { id: 'starter', zcoin: 150, ntd: 30 },
+  { id: 'basic', zcoin: 500, ntd: 90, badge: '最划算', badgeColor: 'bg-emerald-500' },
+  { id: 'popular', zcoin: 1750, ntd: 290, badge: '推薦', badgeColor: 'bg-amber-500' },
+  { id: 'value', zcoin: 4500, ntd: 690, badge: '超值', badgeColor: 'bg-purple-500' },
 ]
 
 // ===== 工具函式 =====

@@ -5,10 +5,10 @@ import { upgradePlan } from '@/lib/subscriptionEngine'
 import { earnZcoin } from '@/lib/zcoinEngine'
 
 const ZCOIN_PACKAGES: Record<string, number> = {
-  zcoin_starter: 30,
-  zcoin_basic:   100,
-  zcoin_popular: 350,
-  zcoin_value:   900,
+  zcoin_starter: 150,
+  zcoin_basic:   500,
+  zcoin_popular: 1750,
+  zcoin_value:   4500,
 }
 
 const MERCHANT_ID = process.env.MIG_MERCHANT_ID || process.env.NEWEBPAY_MERCHANT_ID || ''

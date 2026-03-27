@@ -2,9 +2,10 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import Link from 'next/link'
-import { Search, TrendingUp, Heart, MessageSquare, Share2, Check, ExternalLink } from 'lucide-react'
+import { Search, TrendingUp, Heart, MessageSquare, Share2, Check, ExternalLink, PenSquare, Play } from 'lucide-react'
 const TwitterIcon = ({ className }: { className?: string }) => (<svg className={className} viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>)
 import type { SocialPost } from '@/lib/socialEngine'
+import { CreatePostModal } from '@/components/public/CreatePostModal'
 
 const CATEGORIES = [
   { key: '', label: '全部', emoji: '✨' },
@@ -28,8 +29,21 @@ function PostPreviewCard({ post }: { post: SocialPost }) {
 
   return (
     <article className="bg-white/[0.04] backdrop-blur-xl border border-white/8 border-t-white/14 rounded-3xl overflow-hidden hover:border-white/16 hover:bg-white/[0.06] transition-all group shadow-[0_8px_32px_rgba(0,0,0,0.3),inset_0_1px_0_rgba(255,255,255,0.08)]">
+      {/* Video preview */}
+      {post.videoUrl && (
+        <div className="relative overflow-hidden h-48 bg-black">
+          <img src={post.videoThumbnailUrl ?? ''} alt="" className="w-full h-full object-cover" />
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="w-12 h-12 bg-black/50 rounded-full flex items-center justify-center border border-white/20">
+              <Play className="w-5 h-5 text-white fill-white ml-0.5" />
+            </div>
+          </div>
+          <span className="absolute bottom-2 right-2 bg-black/60 text-white text-xs px-2 py-0.5 rounded-full">🎬 影片</span>
+        </div>
+      )}
+
       {/* Image preview */}
-      {post.images.length > 0 && (
+      {!post.videoUrl && post.images.length > 0 && (
         <div className="relative overflow-hidden h-48">
           <img src={post.images[0].url} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
           {post.images.length > 1 && (
@@ -120,6 +134,7 @@ export default function ArticlesPage() {
   const [typeFilter, setTypeFilter] = useState('')
   const [offset, setOffset] = useState(0)
   const [hasMore, setHasMore] = useState(true)
+  const [showCreateModal, setShowCreateModal] = useState(false)
   const LIMIT = 12
 
   const loadPosts = useCallback(async (reset = false) => {
@@ -151,8 +166,29 @@ export default function ArticlesPage() {
 
   const trendingTags = Array.from(new Set(posts.flatMap(p => p.tags))).slice(0, 8)
 
+  function handlePostCreated(newPost: SocialPost) {
+    setPosts(prev => [newPost, ...prev])
+  }
+
   return (
     <div className="min-h-screen bg-slate-950 text-white">
+      {/* Create post modal */}
+      {showCreateModal && (
+        <CreatePostModal
+          onClose={() => setShowCreateModal(false)}
+          onCreated={handlePostCreated}
+        />
+      )}
+
+      {/* FAB */}
+      <button
+        onClick={() => setShowCreateModal(true)}
+        className="fixed bottom-6 right-6 z-40 w-14 h-14 bg-amber-500 hover:bg-amber-400 text-slate-900 rounded-full shadow-lg shadow-amber-500/30 flex items-center justify-center transition-all hover:scale-105 active:scale-95"
+        title="發文"
+      >
+        <PenSquare className="w-6 h-6" />
+      </button>
+
       {/* Hero */}
       <div className="relative bg-gradient-to-b from-slate-900/80 to-slate-950 border-b border-white/8 backdrop-blur-sm">
         <div className="absolute inset-0 bg-gradient-to-br from-amber-600/5 via-transparent to-purple-600/5 pointer-events-none" />
