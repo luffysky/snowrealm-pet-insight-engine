@@ -605,38 +605,42 @@ export default function MessagesPage() {
 
   const forwardMsgTo = async (targetUserId: string, targetDisplayName: string | null) => {
     if (!forwardingMsg || !active) return
+    // Strip existing forward prefix to avoid nested [轉傳自...][轉傳自...]
     const rawContent = forwardingMsg.content.includes('\n')
       ? forwardingMsg.content.split('\n').slice(1).join('\n')
       : forwardingMsg.content
     if (rawContent === '[已收回]' || rawContent === '[已刪除]') return
 
-    const fwdContent = `[轉傳自 ${forwardingMsg.fromName ?? '對方'}]\n${rawContent}`
+    const senderLabel = forwardingMsg.isMine ? '我' : (forwardingMsg.fromName ?? '對方')
+    const fwdContent = `[轉傳自 ${senderLabel}]\n${rawContent}`
     const targetName = targetDisplayName ?? targetUserId.slice(0, 8)
     setForwardingMsg(null)
 
-    // If forwarding to current conversation, append locally
-    if (targetUserId === active.userId) {
-      const optimistic: Message = {
-        id: `fwd-${Date.now()}`,
-        content: fwdContent,
-        createdAt: new Date().toISOString(),
-        isMine: true,
-        fromName: null,
-        fromAvatar: null,
-        editedAt: null,
+    try {
+      // Use the correct endpoint: POST /api/admin/social/messages with { toUserId, content }
+      const res = await fetch('/api/admin/social/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ toUserId: targetUserId, content: fwdContent }),
+      })
+      if (res.ok) {
+        const data = await res.json() as { message: { id: string; createdAt: string } }
+        // Only add to current view if forwarding within same conversation
+        if (targetUserId === active.userId) {
+          setMessages(prev => [...prev, {
+            id: data.message.id,
+            content: fwdContent,
+            createdAt: data.message.createdAt,
+            isMine: true,
+            fromName: null,
+            fromAvatar: null,
+            editedAt: null,
+          }])
+        } else {
+          alert(`已轉傳給 ${targetName}`)
+        }
       }
-      setMessages(prev => [...prev, optimistic])
-    }
-
-    await fetch(`/api/admin/social/messages/${targetUserId}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ content: fwdContent }),
-    }).catch(() => {})
-
-    if (targetUserId !== active.userId) {
-      alert(`已轉傳給 ${targetName}`)
-    }
+    } catch { /* ignore */ }
   }
 
   const deleteMsg = (msgId: string) => {
