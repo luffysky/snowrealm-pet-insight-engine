@@ -68,7 +68,7 @@ function CoverContent({ config, themeSettings, slug }: { config: SurveyConfig; t
             />
           )}
           <div className="space-y-4">
-            <h1 className={`text-2xl md:text-3xl font-bold leading-snug ${questionTitleClass[theme]}`}>
+            <h1 className={`text-xl sm:text-2xl md:text-3xl font-bold leading-snug ${questionTitleClass[theme]}`}>
               {config.coverTitle}
             </h1>
             {config.subtitle && (

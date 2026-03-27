@@ -147,7 +147,56 @@ export function ResponseTable({
         </div>
       )}
 
-      <div className="overflow-x-auto">
+      {/* 手機卡片視圖 */}
+      <div className="sm:hidden divide-y divide-slate-700/30">
+        {responses.map((response) => (
+          <div key={response.id} className={`px-4 py-3 space-y-2 ${selected.has(response.id) ? 'bg-t-accent-bg' : ''}`}>
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 min-w-0">
+                <StatusBadge status={response.status} />
+                <span className="text-xs text-slate-400 shrink-0">{formatDateTime(response.submittedAt ?? response.createdAt)}</span>
+              </div>
+              <div className="flex items-center gap-3 shrink-0">
+                {batchMode && (
+                  <input
+                    type="checkbox"
+                    checked={selected.has(response.id)}
+                    onChange={() => toggleOne(response.id)}
+                    className="w-4 h-4 rounded border-slate-600 bg-slate-700 accent-t-accent"
+                  />
+                )}
+                <Link href={`${basePath}/responses/${response.id}`} className="text-t-accent text-sm py-1">查看</Link>
+                {confirmId === response.id ? (
+                  <span className="flex gap-2">
+                    <button onClick={() => handleDelete(response.id)} disabled={deletingId === response.id} className="text-red-400 text-xs py-1 cursor-pointer">
+                      {deletingId === response.id ? '中...' : '確認'}
+                    </button>
+                    <button onClick={() => setConfirmId(null)} className="text-slate-500 text-xs py-1 cursor-pointer">取消</button>
+                  </span>
+                ) : (
+                  <button onClick={() => { setBatchMode(true); setSelected(new Set([response.id])) }} className="text-red-500/60 text-xs py-1 cursor-pointer">刪除</button>
+                )}
+              </div>
+            </div>
+            {(response.utmSource ?? response.source) && (
+              <p className="text-xs text-slate-500">來源：{response.utmSource ?? response.source}</p>
+            )}
+            {response.tags.length > 0 && (
+              <div className="flex flex-wrap gap-1">
+                {response.tags.slice(0, 4).map((tag, i) => (
+                  <span key={`${tag.key}-${tag.value}-${i}`} className="px-2 py-0.5 bg-slate-700/50 text-slate-300 rounded text-xs">
+                    {tag.key}: {tag.value}
+                  </span>
+                ))}
+                {response.tags.length > 4 && <span className="text-xs text-slate-500">+{response.tags.length - 4}</span>}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {/* 桌機表格視圖 */}
+      <div className="hidden sm:block overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-slate-700/50">
@@ -286,6 +335,7 @@ export function ResponseTable({
             ))}
           </tbody>
         </table>
+      </div>
       </div>
 
       {showPagination && totalPages > 1 && (

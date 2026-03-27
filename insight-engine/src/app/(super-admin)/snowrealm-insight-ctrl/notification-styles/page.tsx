@@ -129,7 +129,7 @@ export default function NotificationStylesPage() {
               <span className="text-sm text-slate-400">啟用</span>
             </label>
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm text-slate-400 mb-1">標題列顏色</label>
               <div className="flex items-center gap-2">
@@ -179,7 +179,7 @@ export default function NotificationStylesPage() {
               className="w-full bg-slate-900 border border-slate-700 text-white rounded-lg px-3 py-2 text-sm font-mono"
             />
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm text-slate-400 mb-1">按鈕文字</label>
               <input

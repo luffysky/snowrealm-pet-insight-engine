@@ -135,7 +135,7 @@ export default function HomePage() {
         </nav>
 
         {/* 手機版 */}
-        <div className="flex items-center gap-2 md:hidden">
+        <div className="flex items-center gap-2 md:hidden mr-1">
           <Link href="/explore" className="rounded-full border border-white/30 bg-white/20 px-3 py-1.5 text-xs text-slate-600 backdrop-blur-xl">
             探索
           </Link>
@@ -158,7 +158,7 @@ export default function HomePage() {
               <CuteBadge>Story Card</CuteBadge>
             </div>
 
-            <h1 className="mt-5 max-w-2xl text-4xl font-black leading-tight tracking-tight text-slate-800 md:text-6xl md:leading-[1.06]">
+            <h1 className="mt-5 max-w-2xl text-3xl font-black leading-tight tracking-tight text-slate-800 sm:text-4xl md:text-6xl md:leading-[1.06]">
               有些問題，
               <span className="block bg-gradient-to-r from-sky-600 via-cyan-500 to-violet-500 bg-clip-text text-transparent">
                 你可能從沒問過自己。
@@ -245,14 +245,14 @@ export default function HomePage() {
           <div className="mb-5 flex items-end justify-between gap-3">
             <div>
               <p className="text-sm font-semibold tracking-[0.18em] text-sky-700/75">最近大家在問自己的幾件事</p>
-              <h2 className="mt-2 text-2xl font-black text-slate-800 md:text-3xl">你想先從哪一個開始？</h2>
+              <h2 className="mt-2 text-xl font-black text-slate-800 sm:text-2xl md:text-3xl">你想先從哪一個開始？</h2>
             </div>
             <Link href="/explore" className="hidden rounded-full border border-white/30 bg-white/25 px-4 py-2 text-sm text-slate-600 backdrop-blur-xl transition hover:bg-white/35 md:block">
               看更多
             </Link>
           </div>
 
-          <div className="grid gap-4 md:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
             {quizCards.map((card, index) => (
               <motion.div
                 key={card.title}

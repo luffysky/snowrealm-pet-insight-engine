@@ -72,7 +72,7 @@ export function HomeNav() {
           </button>
 
           {dropOpen && (
-            <div className="absolute top-full right-0 mt-2 w-52 bg-white/95 backdrop-blur-xl border border-sky-100/80 shadow-xl shadow-sky-100/30 rounded-2xl py-2 z-50">
+            <div className="absolute top-full right-0 mt-2 w-52 max-w-[calc(100vw-2rem)] bg-white/95 backdrop-blur-xl border border-sky-100/80 shadow-xl shadow-sky-100/30 rounded-2xl py-2 z-50">
               <div className="px-4 py-2.5 border-b border-sky-50 mb-1">
                 <p className="text-sm font-semibold text-slate-800 truncate">{user.userName}</p>
                 <p className="text-xs text-slate-400 truncate mt-0.5">{user.tenantName ?? user.tenantId}</p>

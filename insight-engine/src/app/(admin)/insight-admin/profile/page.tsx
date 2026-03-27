@@ -273,7 +273,7 @@ function ProfilePage() {
               </div>
             ) : (
               <div className="space-y-3">
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label className="text-xs text-white/40 mb-1 block">顯示名稱</label>
                     <input value={form.displayName} onChange={e => setForm(p => ({ ...p, displayName: e.target.value }))}
@@ -297,7 +297,7 @@ function ProfilePage() {
                     className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-xl text-sm text-white placeholder-white/20 outline-none focus:border-amber-400/40 resize-none"
                   />
                 </div>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label className="text-xs text-white/40 mb-1 flex items-center gap-1"><InstagramIcon className="w-3 h-3 text-pink-400" /> Instagram</label>
                     <input value={form.instagramHandle} onChange={e => setForm(p => ({ ...p, instagramHandle: e.target.value }))}
