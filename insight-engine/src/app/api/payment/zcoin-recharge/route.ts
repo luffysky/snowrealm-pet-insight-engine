@@ -76,7 +76,7 @@ export async function GET(request: NextRequest) {
       description: `Z幣儲值 ${pkg.zcoin} 枚（NT$${pkg.ntd}）`,
     })
 
-    // 記錄 pending payment
+    // 記錄 pending payment（plan 欄位供 notify webhook 識別付款類型）
     await queryOne(
       `INSERT INTO payment_logs (tenant_id, trade_no, amount, status, provider, raw_response)
        VALUES ($1, $2, $3, 'pending', 'newebpay', $4)
@@ -85,7 +85,7 @@ export async function GET(request: NextRequest) {
         tenantId,
         paymentData.orderNo,
         pkg.ntd,
-        JSON.stringify({ zcoin: pkg.zcoin, packageId, userId }),
+        JSON.stringify({ plan: `zcoin_${packageId}`, zcoin: pkg.zcoin, packageId, userId }),
       ]
     )
 
