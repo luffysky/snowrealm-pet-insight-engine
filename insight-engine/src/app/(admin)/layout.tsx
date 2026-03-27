@@ -108,6 +108,7 @@ function SidebarGroup({
   accent,
   accentBg,
   defaultOpen = true,
+  collapsed = false,
 }: {
   label: string
   items: { path: string; label: string; icon: string }[]
@@ -116,6 +117,7 @@ function SidebarGroup({
   accent: string
   accentBg: string
   defaultOpen?: boolean
+  collapsed?: boolean
 }) {
   const [open, setOpen] = useState(defaultOpen)
   const hasActive = items.some(i => {
@@ -126,6 +128,30 @@ function SidebarGroup({
   useEffect(() => {
     if (hasActive) setOpen(true)
   }, [hasActive])
+
+  // Collapsed mode: show only icons, no labels or group headers
+  if (collapsed) {
+    return (
+      <div className="space-y-1">
+        {items.map(item => {
+          const href = toHref(item.path, adminPrefix)
+          const isActive = item.path === '' ? pathname === adminPrefix : pathname.startsWith(href)
+          return (
+            <Link
+              key={href}
+              href={href}
+              title={item.label}
+              className={`flex items-center justify-center w-10 h-10 mx-auto rounded-xl transition-colors ${
+                isActive ? `${accentBg} ${accent}` : 'text-slate-400 hover:text-white hover:bg-white/5'
+              }`}
+            >
+              <span className="text-lg leading-none">{item.icon}</span>
+            </Link>
+          )
+        })}
+      </div>
+    )
+  }
 
   return (
     <div>
@@ -177,6 +203,7 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
   const tc = ADMIN_THEME_COLORS[theme]
   const cssVars = THEME_CSS_VALUES[theme] as React.CSSProperties
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [user, setUser] = useState<UserInfo | null>(null)
   const pathname = usePathname()
   const router = useRouter()
@@ -214,23 +241,44 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
 
   const SidebarContent = (
     <div className="flex flex-col h-full">
-      {/* Logo + title */}
-      <div className="px-4 py-4 border-b border-white/8">
-        <Link href={adminPrefix} className="flex items-center gap-2">
-          <span className="text-lg">✦</span>
-          <span className="text-sm font-bold text-white/90 truncate">
-            {user?.adminTitle || 'Insight Engine'}
-          </span>
+      {/* Logo + title + collapse toggle */}
+      <div className="px-4 py-4 border-b border-white/8 flex items-center justify-between">
+        <Link href={adminPrefix} className="flex items-center gap-2 min-w-0">
+          <span className="text-lg shrink-0">✦</span>
+          {!sidebarCollapsed && (
+            <span className="text-sm font-bold text-white/90 truncate">
+              {user?.adminTitle || 'Insight Engine'}
+            </span>
+          )}
         </Link>
-        {user?.platformPartner && (
-          <span className="mt-1.5 inline-block text-xs font-semibold px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/30">
-            🌟 平台禮遇
-          </span>
-        )}
+        <button
+          onClick={() => setSidebarCollapsed(c => !c)}
+          className="hidden lg:flex p-1 text-white/30 hover:text-white/60 transition-colors shrink-0"
+          title={sidebarCollapsed ? '展開側邊欄' : '收合側邊欄'}
+        >
+          {sidebarCollapsed ? (
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+          ) : (
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+          )}
+        </button>
       </div>
 
+      {/* Platform partner badge */}
+      {!sidebarCollapsed && user?.platformPartner && (
+        <div className="px-4 pt-2">
+          <span className="inline-block text-xs font-semibold px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/30">
+            🌟 平台禮遇
+          </span>
+        </div>
+      )}
+
       {/* 問卷選擇器 */}
-      {surveys.length > 0 && (
+      {!sidebarCollapsed && surveys.length > 0 && (
         <div className="px-3 py-3 border-b border-white/8">
           <p className="text-xs text-slate-500 mb-1.5">當前問卷</p>
           <select
@@ -262,35 +310,38 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
             accent={tc.accent}
             accentBg={tc.accentBg}
             defaultOpen={i < 3}
+            collapsed={sidebarCollapsed}
           />
         ))}
       </div>
 
       {/* User info + logout */}
-      <div className="border-t border-white/8 px-3 py-3 space-y-2">
-        {user?.tenants && user.tenants.length > 1 && (
-          <select
-            value={user.tenantId}
-            onChange={e => handleSwitchTenant(e.target.value)}
-            className="w-full bg-white/5 border border-white/10 text-slate-300 rounded-lg px-2.5 py-1.5 text-xs cursor-pointer focus:outline-none"
-          >
-            {user.tenants.map(t => (
-              <option key={t.slug} value={t.slug} className="bg-slate-900">{t.name}</option>
-            ))}
-          </select>
-        )}
-        {user && (
-          <div className="flex items-center justify-between">
-            <div className="min-w-0">
-              <p className="text-xs text-slate-300 truncate">{user.userName}</p>
-              <p className="text-[10px] text-slate-500">{displayRole} · {user.tenantName ?? user.tenantId}</p>
+      {!sidebarCollapsed && (
+        <div className="border-t border-white/8 px-3 py-3 space-y-2">
+          {user?.tenants && user.tenants.length > 1 && (
+            <select
+              value={user.tenantId}
+              onChange={e => handleSwitchTenant(e.target.value)}
+              className="w-full bg-white/5 border border-white/10 text-slate-300 rounded-lg px-2.5 py-1.5 text-xs cursor-pointer focus:outline-none"
+            >
+              {user.tenants.map(t => (
+                <option key={t.slug} value={t.slug} className="bg-slate-900">{t.name}</option>
+              ))}
+            </select>
+          )}
+          {user && (
+            <div className="flex items-center justify-between">
+              <div className="min-w-0">
+                <p className="text-xs text-slate-300 truncate">{user.userName}</p>
+                <p className="text-[10px] text-slate-500">{displayRole} · {user.tenantName ?? user.tenantId}</p>
+              </div>
+              <button onClick={handleLogout} className="text-xs text-slate-500 hover:text-red-400 transition-colors shrink-0 ml-2">
+                登出
+              </button>
             </div>
-            <button onClick={handleLogout} className="text-xs text-slate-500 hover:text-red-400 transition-colors shrink-0 ml-2">
-              登出
-            </button>
-          </div>
-        )}
-      </div>
+          )}
+        </div>
+      )}
     </div>
   )
 
@@ -308,17 +359,18 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
 
       {/* Sidebar */}
       <aside className={`
-        fixed top-0 left-0 h-full w-60 z-50
+        fixed top-0 left-0 h-full z-50
         glass-sidebar
-        transition-transform duration-300 ease-in-out
+        transition-all duration-300 ease-in-out
         ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
         lg:translate-x-0
+        ${sidebarCollapsed ? 'w-14' : 'w-60'}
       `}>
         {SidebarContent}
       </aside>
 
       {/* Main content */}
-      <div className="lg:pl-60 min-h-screen flex flex-col">
+      <div className={`min-h-screen flex flex-col transition-all duration-300 ${sidebarCollapsed ? 'lg:pl-14' : 'lg:pl-60'}`}>
         {/* Mobile top bar */}
         <header className="lg:hidden sticky top-0 z-30 bg-slate-950/60 backdrop-blur-xl border-b border-white/8 px-4 py-3 flex items-center gap-3">
           <button

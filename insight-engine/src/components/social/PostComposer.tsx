@@ -4,7 +4,7 @@ import { useState, useRef } from 'react'
 import { Image as ImageIcon, Film, Send, X, Loader2, Tag, Globe, Lock, ChevronDown } from 'lucide-react'
 import { GifPicker } from './GifPicker'
 import { ImagePicker } from './ImagePicker'
-import { ArticleEditor, type ArticleBlock } from './ArticleEditor'
+import { ArticleEditor, blocksToHtml, type ArticleBlock } from './ArticleEditor'
 import type { SocialPost } from '@/lib/socialEngine'
 
 type PostType = 'post' | 'article'
@@ -62,7 +62,7 @@ export function PostComposer({ authorName = '你', authorAvatar, onPosted, defau
 
   const submit = async () => {
     const isArticle = type === 'article'
-    const articleContent = isArticle ? JSON.stringify(blocks) : content
+    const articleContent = isArticle ? blocksToHtml(blocks) : content
     if (isArticle ? blocks.length === 0 : !content.trim()) return
     setPosting(true)
     try {

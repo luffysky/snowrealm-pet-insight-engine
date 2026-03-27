@@ -153,6 +153,46 @@ function SortableBlock({ block, onChange, onDelete, onUpload }: {
   )
 }
 
+// --- HTML conversion utilities ---
+
+export function blocksToHtml(blocks: ArticleBlock[]): string {
+  return blocks.map(block => {
+    switch (block.type) {
+      case 'text':
+        return block.textContent ?? ''
+      case 'image':
+        return `<figure class="article-block-image">${
+          block.imageUrl ? `<img src="${block.imageUrl}" alt="${block.imageCaption ?? ''}" style="border-radius:12px;max-width:100%;object-fit:cover;max-height:320px" />` : ''
+        }${
+          block.imageCaption ? `<figcaption style="font-size:12px;color:rgba(255,255,255,0.4);margin-top:4px;text-align:center">${block.imageCaption}</figcaption>` : ''
+        }</figure>`
+      case 'image-text':
+        return `<div class="article-block-image-text" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:start">${
+          block.imageUrl ? `<figure><img src="${block.imageUrl}" style="border-radius:12px;width:100%;object-fit:cover;max-height:200px" /></figure>` : '<figure></figure>'
+        }<div>${block.textContent ?? ''}</div></div>`
+      case 'text-image':
+        return `<div class="article-block-text-image" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:start"><div>${
+          block.textContent ?? ''
+        }</div>${
+          block.imageUrl ? `<figure><img src="${block.imageUrl}" style="border-radius:12px;width:100%;object-fit:cover;max-height:200px" /></figure>` : '<figure></figure>'
+        }</div>`
+      default:
+        return ''
+    }
+  }).filter(Boolean).join('\n')
+}
+
+/** Parse content that may be JSON blocks or plain HTML */
+export function parseArticleContent(content: string): string {
+  try {
+    const parsed = JSON.parse(content)
+    if (Array.isArray(parsed)) {
+      return blocksToHtml(parsed as ArticleBlock[])
+    }
+  } catch { /* not JSON, treat as HTML */ }
+  return content
+}
+
 // --- Main editor ---
 const BLOCK_TYPES: { type: ArticleBlock['type']; label: string; icon: React.ReactNode }[] = [
   { type: 'text', label: '文字段落', icon: <FileText className="w-3.5 h-3.5" /> },
