@@ -5,10 +5,13 @@ export const dynamic = 'force-dynamic'
 import { useEffect, useState, useCallback, Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Search, TrendingUp, Heart, MessageSquare, Share2, Check, ExternalLink, PenSquare, Play, Bookmark } from 'lucide-react'
+import { Search, TrendingUp, Heart, MessageSquare, Share2, Check, PenSquare, Play, Bookmark, UserPlus, ExternalLink, X, ZoomIn } from 'lucide-react'
 const TwitterIcon = ({ className }: { className?: string }) => (<svg className={className} viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>)
 import type { SocialPost } from '@/lib/socialEngine'
 import { CreatePostModal } from '@/components/public/CreatePostModal'
+import { LoginPrompt } from '@/components/social/LoginPrompt'
+import { FollowButton } from '@/components/social/FollowButton'
+import { PostShareCard } from '@/components/social/PostShareCard'
 
 const CATEGORIES = [
   { key: '', label: '全部', emoji: '✨' },
@@ -16,7 +19,7 @@ const CATEGORIES = [
   { key: 'article', label: '長文章', emoji: '📝' },
 ]
 
-function PostPreviewCard({ post }: { post: SocialPost }) {
+function PostPreviewCard({ post, meId }: { post: SocialPost; meId: string | null }) {
   const router = useRouter()
   const [copied, setCopied] = useState(false)
   const [showShare, setShowShare] = useState(false)
@@ -24,8 +27,13 @@ function PostPreviewCard({ post }: { post: SocialPost }) {
   const [bookmarking, setBookmarking] = useState(false)
   const [liked, setLiked] = useState(!!(post.myReaction))
   const [likesCount, setLikesCount] = useState(post.likesCount)
+  const [commentsCount, setCommentsCount] = useState(post.commentsCount)
   const [liking, setLiking] = useState(false)
+  const [loginPrompt, setLoginPrompt] = useState(false)
+  const [lightboxUrl, setLightboxUrl] = useState<string | null>(null)
+  const [showShareCard, setShowShareCard] = useState(false)
   const postUrl = `/articles/${post.id}`
+  const isOwn = meId === post.userId
 
   const copyLink = async (e: React.MouseEvent) => {
     e.stopPropagation()
@@ -46,6 +54,7 @@ function PostPreviewCard({ post }: { post: SocialPost }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ postId: post.id }),
       })
+      if (res.status === 401) { setBookmarked(!next); setLoginPrompt(true); return }
       const data = await res.json() as { isBookmarked?: boolean; error?: string }
       if (res.ok) setBookmarked(data.isBookmarked ?? next)
       else setBookmarked(!next)
@@ -67,6 +76,10 @@ function PostPreviewCard({ post }: { post: SocialPost }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ postId: post.id, type: 'like' }),
       })
+      if (res.status === 401) {
+        setLiked(!next); setLikesCount(c => next ? Math.max(0, c - 1) : c + 1)
+        setLoginPrompt(true); return
+      }
       if (res.ok) {
         const data = await res.json() as { likesCount: number }
         setLikesCount(data.likesCount)
@@ -86,6 +99,24 @@ function PostPreviewCard({ post }: { post: SocialPost }) {
   const timeStr = new Date(post.createdAt).toLocaleDateString('zh-TW', { month: 'short', day: 'numeric' })
 
   return (
+    <>
+    <LoginPrompt open={loginPrompt} onClose={() => setLoginPrompt(false)} />
+    {/* Lightbox */}
+    {lightboxUrl && (
+      <div className="fixed inset-0 z-[300] bg-black/95 flex items-center justify-center" onClick={() => setLightboxUrl(null)}>
+        <button className="absolute top-4 right-4 p-2 text-white/60 hover:text-white bg-white/10 rounded-full" onClick={() => setLightboxUrl(null)}>
+          <X className="w-5 h-5" />
+        </button>
+        <a href={lightboxUrl} download className="absolute top-4 right-16 p-2 text-white/60 hover:text-white bg-white/10 rounded-full" onClick={e => e.stopPropagation()}>
+          <ZoomIn className="w-5 h-5" />
+        </a>
+        <img src={lightboxUrl} alt="" className="max-w-full max-h-full object-contain rounded-lg" onClick={e => e.stopPropagation()} />
+      </div>
+    )}
+    {/* Share card */}
+    {showShareCard && (
+      <PostShareCard post={post} onClose={() => setShowShareCard(false)} />
+    )}
     <article
       onClick={() => router.push(postUrl)}
       className="bg-white/[0.04] backdrop-blur-xl border border-white/8 border-t-white/14 rounded-3xl overflow-hidden hover:border-white/16 hover:bg-white/[0.06] transition-all group shadow-[0_8px_32px_rgba(0,0,0,0.3),inset_0_1px_0_rgba(255,255,255,0.08)] cursor-pointer">
@@ -104,7 +135,7 @@ function PostPreviewCard({ post }: { post: SocialPost }) {
 
       {/* Image preview */}
       {!post.videoUrl && post.images.length > 0 && (
-        <div className="relative overflow-hidden h-48">
+        <div className="relative overflow-hidden h-48 cursor-zoom-in" onClick={e => { e.stopPropagation(); setLightboxUrl(post.images[0].url) }}>
           <img src={post.images[0].url} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
           {post.images.length > 1 && (
             <span className="absolute top-2 right-2 bg-black/60 text-white text-xs px-2 py-0.5 rounded-full">+{post.images.length - 1}</span>
@@ -114,11 +145,29 @@ function PostPreviewCard({ post }: { post: SocialPost }) {
 
       <div className="p-4 space-y-3">
         {/* Author */}
-        <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-full bg-gradient-to-br from-amber-500/30 to-purple-500/30 flex items-center justify-center text-xs font-bold text-white/80 overflow-hidden shrink-0">
+        <div className="flex items-center gap-2 flex-wrap">
+          <Link href={`/u/${post.userId}`} onClick={e => e.stopPropagation()}
+            className="w-7 h-7 rounded-full bg-gradient-to-br from-amber-500/30 to-purple-500/30 flex items-center justify-center text-xs font-bold text-white/80 overflow-hidden shrink-0 hover:ring-2 hover:ring-amber-400/30 transition-all"
+          >
             {post.authorAvatar ? <img src={post.authorAvatar} alt="" className="w-full h-full object-cover" /> : initials}
-          </div>
-          <span className="text-xs text-white/50 font-medium">{post.authorName ?? '用戶'}</span>
+          </Link>
+          <Link href={`/u/${post.userId}`} onClick={e => e.stopPropagation()}
+            className="text-xs text-white/50 font-medium hover:text-white/80 transition-colors"
+          >{post.authorName ?? '用戶'}</Link>
+          {!isOwn && post.userId && (
+            meId ? (
+              <div onClick={e => e.stopPropagation()}>
+                <FollowButton targetUserId={post.userId} compact onLoginRequired={() => setLoginPrompt(true)} />
+              </div>
+            ) : (
+              <button
+                onClick={e => { e.stopPropagation(); setLoginPrompt(true) }}
+                className="flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] text-amber-400/70 border border-amber-400/25 rounded-full hover:bg-amber-400/10 transition-colors"
+              >
+                <UserPlus className="w-2.5 h-2.5" /> 追蹤
+              </button>
+            )
+          )}
           <span className="text-xs text-white/25">·</span>
           <span className="text-xs text-white/30">{timeStr}</span>
           {post.type === 'article' && (
@@ -157,37 +206,16 @@ function PostPreviewCard({ post }: { post: SocialPost }) {
               className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs text-white/30 hover:text-blue-400 hover:bg-white/5 transition-colors"
             >
               <MessageSquare className="w-3.5 h-3.5" />
-              {post.commentsCount > 0 && <span>{post.commentsCount}</span>}
+              {commentsCount > 0 && <span>{commentsCount}</span>}
             </button>
           </div>
           <div className="flex items-center gap-1">
-            <div className="relative">
-              <button onClick={e => { e.stopPropagation(); setShowShare(s => !s) }}
-                className="p-1.5 rounded-lg text-white/25 hover:text-white/60 hover:bg-white/5 transition-colors"
-              >
-                <Share2 className="w-3.5 h-3.5" />
-              </button>
-              {showShare && (
-                <div className="absolute right-0 bottom-full mb-1 bg-slate-900/90 backdrop-blur-xl border border-white/10 rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.5)] z-50 py-1 min-w-[130px]" onMouseLeave={() => setShowShare(false)}>
-                  <button onClick={copyLink} className="w-full flex items-center gap-2 px-3 py-2 text-xs text-white/60 hover:bg-white/5">
-                    {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <ExternalLink className="w-3.5 h-3.5" />}
-                    {copied ? '已複製' : '複製連結'}
-                  </button>
-                  <button
-                    onClick={e => { e.stopPropagation(); window.open(`https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(window.location.origin + postUrl)}`) }}
-                    className="w-full flex items-center gap-2 px-3 py-2 text-xs text-white/60 hover:bg-white/5"
-                  >
-                    <span className="text-sm">💬</span> LINE
-                  </button>
-                  <button
-                    onClick={e => { e.stopPropagation(); window.open(`https://twitter.com/intent/tweet?url=${encodeURIComponent(window.location.origin + postUrl)}&text=${encodeURIComponent(post.title ?? post.content.slice(0, 80))}`) }}
-                    className="w-full flex items-center gap-2 px-3 py-2 text-xs text-white/60 hover:bg-white/5"
-                  >
-                    <TwitterIcon className="w-3.5 h-3.5" /> Twitter
-                  </button>
-                </div>
-              )}
-            </div>
+            <button
+              onClick={e => { e.stopPropagation(); setShowShareCard(true) }}
+              className="p-1.5 rounded-lg text-white/25 hover:text-white/60 hover:bg-white/5 transition-colors"
+            >
+              <Share2 className="w-3.5 h-3.5" />
+            </button>
             <button
               onClick={toggleBookmark}
               disabled={bookmarking}
@@ -202,6 +230,7 @@ function PostPreviewCard({ post }: { post: SocialPost }) {
         </div>
       </div>
     </article>
+    </>
   )
 }
 
@@ -216,7 +245,15 @@ function ArticlesPageInner() {
   const [offset, setOffset] = useState(0)
   const [hasMore, setHasMore] = useState(true)
   const [showCreateModal, setShowCreateModal] = useState(false)
+  const [meId, setMeId] = useState<string | null>(null)
   const LIMIT = 12
+
+  useEffect(() => {
+    fetch('/api/auth/me')
+      .then(r => r.ok ? r.json() as Promise<{ id?: string }> : null)
+      .then(d => { if (d?.id) setMeId(d.id) })
+      .catch(() => {})
+  }, [])
 
   // Sync tagFilter → URL
   function applyTagFilter(tag: string) {
@@ -349,7 +386,7 @@ function ArticlesPageInner() {
         ) : (
           <>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {filtered.map(post => <PostPreviewCard key={post.id} post={post} />)}
+              {filtered.map(post => <PostPreviewCard key={post.id} post={post} meId={meId} />)}
             </div>
             {hasMore && !search && (
               <div className="flex justify-center mt-8">

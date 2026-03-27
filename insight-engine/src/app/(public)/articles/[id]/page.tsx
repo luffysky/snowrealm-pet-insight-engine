@@ -3,17 +3,18 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, MessageSquare, Clock, Eye, ExternalLink, Check, Loader2 } from 'lucide-react'
+import { ArrowLeft, MessageSquare, Clock, Eye, ExternalLink, Check, Loader2, Download, X } from 'lucide-react'
 const TwitterIcon = ({ className }: { className?: string }) => (<svg className={className} viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>)
 import { InteractionBar } from '@/components/social/InteractionBar'
 import { CommentSection } from '@/components/social/CommentSection'
 import { FollowButton } from '@/components/social/FollowButton'
 import { DMButton } from '@/components/social/DMButton'
+import { PostShareCard } from '@/components/social/PostShareCard'
 import type { SocialPost } from '@/lib/socialEngine'
 import type { ArticleBlock } from '@/components/social/ArticleEditor'
 import { VideoPlayer } from '@/components/public/VideoPlayer'
 
-function BlocksRenderer({ blocks }: { blocks: ArticleBlock[] }) {
+function BlocksRenderer({ blocks, onImageClick }: { blocks: ArticleBlock[]; onImageClick?: (url: string) => void }) {
   return (
     <div className="space-y-4">
       {blocks.map(block => (
@@ -23,7 +24,8 @@ function BlocksRenderer({ blocks }: { blocks: ArticleBlock[] }) {
           )}
           {block.type === 'image' && block.imageUrl && (
             <div className="space-y-1">
-              <img src={block.imageUrl} alt={block.imageCaption ?? ''} className="w-full rounded-xl object-cover max-h-96" />
+              <img src={block.imageUrl} alt={block.imageCaption ?? ''} className="w-full rounded-xl object-cover max-h-96 cursor-zoom-in"
+                onClick={() => onImageClick?.(block.imageUrl!)} />
               {block.imageCaption && <p className="text-xs text-white/35 text-center">{block.imageCaption}</p>}
             </div>
           )}
@@ -31,13 +33,15 @@ function BlocksRenderer({ blocks }: { blocks: ArticleBlock[] }) {
             <div className="grid grid-cols-2 gap-4 items-start">
               {block.type === 'image-text' ? (
                 <>
-                  {block.imageUrl && <img src={block.imageUrl} alt="" className="rounded-xl w-full object-cover" />}
+                  {block.imageUrl && <img src={block.imageUrl} alt="" className="rounded-xl w-full object-cover cursor-zoom-in"
+                    onClick={() => onImageClick?.(block.imageUrl!)} />}
                   <div className="prose prose-invert prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: block.textContent ?? '' }} />
                 </>
               ) : (
                 <>
                   <div className="prose prose-invert prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: block.textContent ?? '' }} />
-                  {block.imageUrl && <img src={block.imageUrl} alt="" className="rounded-xl w-full object-cover" />}
+                  {block.imageUrl && <img src={block.imageUrl} alt="" className="rounded-xl w-full object-cover cursor-zoom-in"
+                    onClick={() => onImageClick?.(block.imageUrl!)} />}
                 </>
               )}
             </div>
@@ -55,6 +59,9 @@ export default function ArticleDetailPage() {
   const [commentsOpen, setCommentsOpen] = useState(false)
   const [copied, setCopied] = useState(false)
   const [meId, setMeId] = useState<string | null>(null)
+  const [commentsCount, setCommentsCount] = useState(0)
+  const [lightboxUrl, setLightboxUrl] = useState<string | null>(null)
+  const [showShareCard, setShowShareCard] = useState(false)
 
   useEffect(() => {
     fetch('/api/auth/me')
@@ -66,7 +73,7 @@ export default function ArticleDetailPage() {
   useEffect(() => {
     fetch(`/api/posts/${id}`)
       .then(r => r.ok ? r.json() as Promise<{ post: SocialPost }> : null)
-      .then(d => { if (d?.post) setPost(d.post) })
+      .then(d => { if (d?.post) { setPost(d.post); setCommentsCount(d.post.commentsCount) } })
       .finally(() => setLoading(false))
   }, [id])
 
@@ -97,6 +104,21 @@ export default function ArticleDetailPage() {
 
   return (
     <div className="min-h-screen bg-slate-950 text-white">
+      {/* Image lightbox */}
+      {lightboxUrl && (
+        <div className="fixed inset-0 z-[300] bg-black/95 flex items-center justify-center" onClick={() => setLightboxUrl(null)}>
+          <button className="absolute top-4 right-4 p-2 text-white/60 hover:text-white bg-white/10 rounded-full" onClick={() => setLightboxUrl(null)}>
+            <X className="w-5 h-5" />
+          </button>
+          <a href={lightboxUrl} download className="absolute top-4 right-16 p-2 text-white/60 hover:text-white bg-white/10 rounded-full" title="下載圖片" onClick={e => e.stopPropagation()}>
+            <Download className="w-5 h-5" />
+          </a>
+          <img src={lightboxUrl} alt="" className="max-w-full max-h-full object-contain rounded-lg" onClick={e => e.stopPropagation()} />
+        </div>
+      )}
+      {/* Share card */}
+      {showShareCard && <PostShareCard post={post} onClose={() => setShowShareCard(false)} />}
+
       {/* Back nav */}
       <nav className="sticky top-0 z-10 bg-slate-950/90 backdrop-blur-md border-b border-white/8">
         <div className="max-w-2xl mx-auto px-4 py-3 flex items-center justify-between">
@@ -104,23 +126,16 @@ export default function ArticleDetailPage() {
             <ArrowLeft className="w-4 h-4" /> 社群文章
           </Link>
           <div className="flex items-center gap-2">
+            <button onClick={() => setShowShareCard(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-500/20 border border-amber-400/30 rounded-xl text-xs text-amber-300 hover:bg-amber-500/30 transition-colors"
+            >
+              📤 分享
+            </button>
             <button onClick={copyLink}
               className="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 border border-white/10 rounded-xl text-xs text-white/50 hover:text-white hover:bg-white/10 transition-colors"
             >
               {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <ExternalLink className="w-3.5 h-3.5" />}
-              {copied ? '已複製' : '複製連結'}
-            </button>
-            <button
-              onClick={() => window.open(`https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(window.location.href)}`)}
-              className="px-3 py-1.5 bg-emerald-500/20 border border-emerald-400/20 rounded-xl text-xs text-emerald-400 hover:bg-emerald-500/30 transition-colors"
-            >
-              💬 LINE 分享
-            </button>
-            <button
-              onClick={() => window.open(`https://twitter.com/intent/tweet?url=${encodeURIComponent(window.location.href)}&text=${encodeURIComponent(post.title ?? post.content.slice(0, 80))}`)}
-              className="px-3 py-1.5 bg-blue-500/15 border border-blue-400/20 rounded-xl text-xs text-blue-400 hover:bg-blue-500/25 transition-colors"
-            >
-              <TwitterIcon className="w-3.5 h-3.5 inline -mt-0.5" /> Twitter
+              {copied ? '已複製' : '連結'}
             </button>
           </div>
         </div>
@@ -140,7 +155,7 @@ export default function ArticleDetailPage() {
 
         {/* Hero image (only if no video) */}
         {!post.videoUrl && post.images.length > 0 && (
-          <div className="rounded-2xl overflow-hidden max-h-80">
+          <div className="rounded-2xl overflow-hidden max-h-80 cursor-zoom-in" onClick={() => setLightboxUrl(post.images[0].url)}>
             <img src={post.images[0].url} alt="" className="w-full h-full object-cover" />
           </div>
         )}
@@ -190,7 +205,7 @@ export default function ArticleDetailPage() {
           let blocks: ArticleBlock[] | null = null
           try { blocks = JSON.parse(post.content) as ArticleBlock[]; if (!Array.isArray(blocks)) blocks = null } catch { blocks = null }
           return blocks ? (
-            <BlocksRenderer blocks={blocks} />
+            <BlocksRenderer blocks={blocks} onImageClick={setLightboxUrl} />
           ) : (
             <div className="prose prose-invert prose-sm max-w-none">
               <p className="text-white/75 leading-relaxed whitespace-pre-wrap text-base">{post.content}</p>
@@ -202,7 +217,8 @@ export default function ArticleDetailPage() {
         {post.images.length > 1 && (
           <div className={`grid gap-2 ${post.images.length === 2 ? 'grid-cols-2' : 'grid-cols-2 sm:grid-cols-3'}`}>
             {post.images.slice(1).map((img, i) => (
-              <img key={i} src={img.url} alt={img.alt ?? ''} className="rounded-xl object-cover aspect-square w-full" />
+              <img key={i} src={img.url} alt={img.alt ?? ''} className="rounded-xl object-cover aspect-square w-full cursor-zoom-in"
+                onClick={() => setLightboxUrl(img.url)} />
             ))}
           </div>
         )}
@@ -212,9 +228,10 @@ export default function ArticleDetailPage() {
           <InteractionBar
             postId={post.id}
             initialLikes={post.likesCount}
-            initialComments={post.commentsCount}
+            initialComments={commentsCount}
             initialMyReaction={post.myReaction}
             onCommentClick={() => setCommentsOpen(s => !s)}
+            onShareClick={() => setShowShareCard(true)}
             shareUrl={typeof window !== 'undefined' ? window.location.href : ''}
             shareTitle={post.title ?? post.content.slice(0, 80)}
           />
@@ -224,9 +241,9 @@ export default function ArticleDetailPage() {
         {commentsOpen && (
           <div className="border-t border-white/8 pt-4">
             <h3 className="text-sm font-semibold text-white/60 mb-4 flex items-center gap-2">
-              <MessageSquare className="w-4 h-4" /> 留言 ({post.commentsCount})
+              <MessageSquare className="w-4 h-4" /> 留言 ({commentsCount})
             </h3>
-            <CommentSection postId={post.id} />
+            <CommentSection postId={post.id} onCommentAdded={() => setCommentsCount(c => c + 1)} />
           </div>
         )}
 

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useCallback } from 'react'
+import { useState, useRef, useCallback, useEffect } from 'react'
 import { Heart, MessageSquare, Bookmark, Share2, ThumbsUp, Loader2, Check } from 'lucide-react'
 
 const REACTIONS = [
@@ -20,6 +20,7 @@ interface InteractionBarProps {
   initialIsBookmarked?: boolean
   onCommentClick?: () => void
   onBookmarkChange?: (isBookmarked: boolean) => void
+  onCommentAdded?: () => void
   shareUrl?: string
   shareTitle?: string
   compact?: boolean
@@ -35,6 +36,7 @@ export function InteractionBar({
   initialIsBookmarked = false,
   onCommentClick,
   onBookmarkChange,
+  onCommentAdded,
   shareUrl,
   shareTitle,
   compact = false,
@@ -44,9 +46,13 @@ export function InteractionBar({
   const [showReactions, setShowReactions] = useState(false)
   const [myReaction, setMyReaction] = useState<string | null>(initialMyReaction)
   const [likesCount, setLikesCount] = useState(initialLikes)
+  const [commentsCount, setCommentsCount] = useState(initialComments)
   const [isPending, setIsPending] = useState(false)
   const [copied, setCopied] = useState(false)
   const [isBookmarked, setIsBookmarked] = useState(initialIsBookmarked)
+
+  // Sync commentsCount when parent updates it (e.g. after comment submitted)
+  useEffect(() => { setCommentsCount(initialComments) }, [initialComments])
   const hoverRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   const longRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   const isLongRef = useRef(false)
@@ -127,7 +133,7 @@ export function InteractionBar({
           className="flex items-center gap-1 text-xs text-white/30 hover:text-blue-400 transition-colors"
         >
           <MessageSquare className="w-3.5 h-3.5" />
-          {initialComments > 0 && <span>{initialComments}</span>}
+          {commentsCount > 0 && <span>{commentsCount}</span>}
         </button>
       </div>
     )

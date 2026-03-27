@@ -8,9 +8,10 @@ interface FollowButtonProps {
   initialFollowing?: boolean
   initialCount?: number
   compact?: boolean
+  onLoginRequired?: () => void
 }
 
-export function FollowButton({ targetUserId, initialFollowing = false, initialCount, compact = false }: FollowButtonProps) {
+export function FollowButton({ targetUserId, initialFollowing = false, initialCount, compact = false, onLoginRequired }: FollowButtonProps) {
   const [following, setFollowing] = useState(initialFollowing)
   const [count, setCount] = useState(initialCount)
   const [loading, setLoading] = useState(false)
@@ -24,6 +25,7 @@ export function FollowButton({ targetUserId, initialFollowing = false, initialCo
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ targetUserId }),
       })
+      if (res.status === 401) { onLoginRequired?.(); return }
       if (res.ok) {
         setFollowing(f => !f)
         setCount(c => c !== undefined ? (following ? c - 1 : c + 1) : undefined)

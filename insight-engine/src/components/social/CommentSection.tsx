@@ -11,6 +11,7 @@ interface CommentSectionProps {
   postId: string
   currentUserId?: string
   className?: string
+  onCommentAdded?: () => void
 }
 
 interface CommentInputProps {
@@ -226,7 +227,7 @@ function CommentItem({
   )
 }
 
-export function CommentSection({ postId, currentUserId, className = '' }: CommentSectionProps) {
+export function CommentSection({ postId, currentUserId, className = '', onCommentAdded }: CommentSectionProps) {
   const [comments, setComments] = useState<SocialComment[]>([])
   const [loading, setLoading] = useState(true)
   const [replyTarget, setReplyTarget] = useState<string | null>(null)
@@ -249,7 +250,7 @@ export function CommentSection({ postId, currentUserId, className = '' }: Commen
 
   return (
     <div className={`space-y-4 ${className}`}>
-      <CommentInput postId={postId} onSubmitted={loadComments} />
+      <CommentInput postId={postId} onSubmitted={() => { loadComments(); onCommentAdded?.() }} />
       {loading ? (
         <div className="flex justify-center py-4">
           <Loader2 className="w-5 h-5 text-white/20 animate-spin" />
