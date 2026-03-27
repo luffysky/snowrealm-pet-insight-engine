@@ -336,7 +336,6 @@ export function ResponseTable({
           </tbody>
         </table>
       </div>
-      </div>
 
       {showPagination && totalPages > 1 && (
         <div className="flex justify-center items-center gap-4 p-4 border-t border-slate-700/50">
