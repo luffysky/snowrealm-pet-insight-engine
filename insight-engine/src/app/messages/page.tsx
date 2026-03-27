@@ -35,18 +35,81 @@ function Lightbox({ url, type, onClose }: { url: string; type: 'image' | 'video'
   )
 }
 
-// ─── Background theme presets ───
-const BG_PRESETS = [
-  { key: 'default',   label: '預設',   style: {} },
-  { key: 'midnight',  label: '深藍',   style: { background: 'linear-gradient(160deg,#0f172a 0%,#1e1b4b 100%)' } },
-  { key: 'forest',    label: '森林',   style: { background: 'linear-gradient(160deg,#0f2116 0%,#052e16 100%)' } },
-  { key: 'rose',      label: '玫瑰',   style: { background: 'linear-gradient(160deg,#1c0914 0%,#3b0a1e 100%)' } },
-  { key: 'slate',     label: '石板',   style: { background: 'linear-gradient(160deg,#0f1117 0%,#1e293b 100%)' } },
-  { key: 'amber',     label: '琥珀',   style: { background: 'linear-gradient(160deg,#1a0f00 0%,#2d1b00 100%)' } },
-  { key: 'custom',    label: '自訂',   style: {} },
+// ─── Chat themes (background + bubble colours) ───
+interface ChatTheme {
+  key: string; label: string; emoji: string
+  bg: React.CSSProperties
+  myBg: string; myText: string; myShadow?: string
+  theirBg: string; theirText: string; theirBorder?: string
+}
+
+const CHAT_THEMES: ChatTheme[] = [
+  {
+    key: 'default', label: '預設', emoji: '🌑',
+    bg: {},
+    myBg: 'linear-gradient(135deg,#f59e0b,#ea580c)', myText: '#fff', myShadow: '0 4px 14px rgba(245,158,11,.3)',
+    theirBg: 'rgba(30,41,59,.95)', theirText: 'rgba(255,255,255,.9)', theirBorder: '1px solid rgba(255,255,255,.06)',
+  },
+  {
+    key: 'midnight', label: '深夜', emoji: '🌌',
+    bg: { background: 'linear-gradient(160deg,#0f172a 0%,#1e1b4b 100%)' },
+    myBg: 'linear-gradient(135deg,#3b82f6,#6366f1)', myText: '#fff', myShadow: '0 4px 14px rgba(59,130,246,.3)',
+    theirBg: 'rgba(30,27,75,.7)', theirText: 'rgba(255,255,255,.85)', theirBorder: '1px solid rgba(99,102,241,.15)',
+  },
+  {
+    key: 'aurora', label: '極光', emoji: '🌈',
+    bg: { background: 'linear-gradient(160deg,#0d1117 0%,#0d2338 35%,#0a1f1a 70%,#0d1117 100%)' },
+    myBg: 'linear-gradient(135deg,#06b6d4,#0891b2)', myText: '#fff', myShadow: '0 4px 14px rgba(6,182,212,.3)',
+    theirBg: 'rgba(6,78,59,.5)', theirText: 'rgba(255,255,255,.85)', theirBorder: '1px solid rgba(6,182,212,.15)',
+  },
+  {
+    key: 'rose', label: '玫瑰', emoji: '🌹',
+    bg: { background: 'linear-gradient(160deg,#1c0914 0%,#3b0a1e 100%)' },
+    myBg: 'linear-gradient(135deg,#f43f5e,#e11d48)', myText: '#fff', myShadow: '0 4px 14px rgba(244,63,94,.3)',
+    theirBg: 'rgba(59,10,30,.7)', theirText: 'rgba(255,255,255,.85)', theirBorder: '1px solid rgba(244,63,94,.15)',
+  },
+  {
+    key: 'forest', label: '森林', emoji: '🌲',
+    bg: { background: 'linear-gradient(160deg,#0f2116 0%,#052e16 100%)' },
+    myBg: 'linear-gradient(135deg,#10b981,#059669)', myText: '#fff', myShadow: '0 4px 14px rgba(16,185,129,.3)',
+    theirBg: 'rgba(5,46,22,.7)', theirText: 'rgba(255,255,255,.85)', theirBorder: '1px solid rgba(16,185,129,.12)',
+  },
+  {
+    key: 'amber', label: '琥珀', emoji: '🟡',
+    bg: { background: 'linear-gradient(160deg,#1a0f00 0%,#2d1b00 100%)' },
+    myBg: 'linear-gradient(135deg,#f59e0b,#d97706)', myText: '#1a0f00', myShadow: '0 4px 14px rgba(245,158,11,.25)',
+    theirBg: 'rgba(45,27,0,.8)', theirText: 'rgba(255,255,255,.85)', theirBorder: '1px solid rgba(245,158,11,.1)',
+  },
+  {
+    key: 'neon', label: '霓虹', emoji: '⚡',
+    bg: { background: 'linear-gradient(160deg,#020617 0%,#0c0a1e 100%)' },
+    myBg: 'linear-gradient(135deg,#22d3ee,#0891b2)', myText: '#000', myShadow: '0 0 22px rgba(34,211,238,.45)',
+    theirBg: 'rgba(12,10,30,.85)', theirText: 'rgba(34,211,238,.9)', theirBorder: '1px solid rgba(34,211,238,.2)',
+  },
+  {
+    key: 'purple', label: '紫晶', emoji: '💜',
+    bg: { background: 'linear-gradient(160deg,#1a0533 0%,#2d1058 100%)' },
+    myBg: 'linear-gradient(135deg,#a855f7,#7c3aed)', myText: '#fff', myShadow: '0 4px 14px rgba(168,85,247,.35)',
+    theirBg: 'rgba(45,16,88,.7)', theirText: 'rgba(255,255,255,.85)', theirBorder: '1px solid rgba(168,85,247,.15)',
+  },
+  {
+    key: 'coral', label: '珊瑚', emoji: '🪸',
+    bg: { background: 'linear-gradient(160deg,#1a0a07 0%,#3b1208 100%)' },
+    myBg: 'linear-gradient(135deg,#fb923c,#f97316)', myText: '#fff', myShadow: '0 4px 14px rgba(251,146,60,.3)',
+    theirBg: 'rgba(59,18,8,.7)', theirText: 'rgba(255,255,255,.85)', theirBorder: '1px solid rgba(251,146,60,.12)',
+  },
+  {
+    key: 'slate', label: '石板', emoji: '🩶',
+    bg: { background: 'linear-gradient(160deg,#0f1117 0%,#1e293b 100%)' },
+    myBg: 'linear-gradient(135deg,#64748b,#475569)', myText: '#fff', myShadow: '0 4px 14px rgba(100,116,139,.25)',
+    theirBg: 'rgba(30,41,59,.8)', theirText: 'rgba(255,255,255,.85)', theirBorder: '1px solid rgba(255,255,255,.06)',
+  },
 ]
 
-const BG_STORAGE_KEY = 'dm_bg_theme'
+interface BgEffects { blur: number; brightness: number; dim: number; saturate: number; hue: number }
+const DEFAULT_EFFECTS: BgEffects = { blur: 0, brightness: 100, dim: 0, saturate: 100, hue: 0 }
+
+const THEME_STORAGE_KEY = 'dm_chat_theme'
 
 // ─── Custom Audio Player ───
 function AudioPlayer({ url, isMine }: { url: string; isMine: boolean }) {
@@ -333,9 +396,11 @@ export default function MessagesPage() {
   const [editInput, setEditInput] = useState('')
   const [hoveredMsgId, setHoveredMsgId] = useState<string | null>(null)
   const [forwardingMsg, setForwardingMsg] = useState<Message | null>(null)
-  const [bgKey, setBgKey] = useState('default')
+  const [themeKey, setThemeKey] = useState('default')
   const [bgCustomUrl, setBgCustomUrl] = useState('')
-  const [bgPanelOpen, setBgPanelOpen] = useState(false)
+  const [effects, setEffects] = useState<BgEffects>(DEFAULT_EFFECTS)
+  const [themePanelOpen, setThemePanelOpen] = useState(false)
+  const [themeTab, setThemeTab] = useState<'theme' | 'bg' | 'fx'>('theme')
 
   useEffect(() => {
     fetch('/api/auth/me')
@@ -344,11 +409,14 @@ export default function MessagesPage() {
         if (!d?.userId) { router.push(`/login?redirect=/messages`); return }
         setMeId(d.userId)
       }).catch(() => {})
-    // Load saved bg theme
+    // Load saved chat theme
     try {
-      const saved = JSON.parse(localStorage.getItem(BG_STORAGE_KEY) ?? '{}') as { key?: string; custom?: string }
-      if (saved.key) setBgKey(saved.key)
+      const saved = JSON.parse(localStorage.getItem(THEME_STORAGE_KEY) ?? '{}') as {
+        themeKey?: string; custom?: string; effects?: Partial<BgEffects>
+      }
+      if (saved.themeKey) setThemeKey(saved.themeKey)
       if (saved.custom) setBgCustomUrl(saved.custom)
+      if (saved.effects) setEffects(e => ({ ...e, ...saved.effects }))
     } catch { /* ignore */ }
   }, [router])
 
@@ -612,18 +680,41 @@ export default function MessagesPage() {
     }).catch(() => {})
   }
 
-  const saveBg = useCallback((key: string, custom?: string) => {
-    setBgKey(key)
-    if (custom !== undefined) setBgCustomUrl(custom)
-    localStorage.setItem(BG_STORAGE_KEY, JSON.stringify({ key, custom: custom ?? bgCustomUrl }))
-  }, [bgCustomUrl])
+  const persist = useCallback((k: string, c: string, fx: BgEffects) => {
+    localStorage.setItem(THEME_STORAGE_KEY, JSON.stringify({ themeKey: k, custom: c, effects: fx }))
+  }, [])
 
-  const bgStyle = (): React.CSSProperties => {
-    if (bgKey === 'custom' && bgCustomUrl) {
+  const applyTheme = useCallback((key: string) => {
+    setThemeKey(key)
+    persist(key, bgCustomUrl, effects)
+  }, [bgCustomUrl, effects, persist])
+
+  const applyCustomBg = useCallback((url: string) => {
+    setBgCustomUrl(url)
+    persist(themeKey, url, effects)
+  }, [themeKey, effects, persist])
+
+  const applyEffects = useCallback((next: BgEffects) => {
+    setEffects(next)
+    persist(themeKey, bgCustomUrl, next)
+  }, [themeKey, bgCustomUrl, persist])
+
+  const activeTheme = CHAT_THEMES.find(t => t.key === themeKey) ?? CHAT_THEMES[0]
+
+  const bgLayerStyle = (): React.CSSProperties => {
+    if (bgCustomUrl) {
       return { backgroundImage: `url(${bgCustomUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' }
     }
-    const preset = BG_PRESETS.find(p => p.key === bgKey)
-    return preset?.style ?? {}
+    return activeTheme.bg
+  }
+
+  const fxFilter = (): string => {
+    const parts: string[] = []
+    if (effects.blur > 0)          parts.push(`blur(${effects.blur}px)`)
+    if (effects.brightness !== 100) parts.push(`brightness(${effects.brightness}%)`)
+    if (effects.saturate !== 100)   parts.push(`saturate(${effects.saturate}%)`)
+    if (effects.hue !== 0)          parts.push(`hue-rotate(${effects.hue}deg)`)
+    return parts.join(' ') || 'none'
   }
 
   const formatTime = (iso: string) => {
@@ -721,80 +812,137 @@ export default function MessagesPage() {
               </div>
               <span className="font-semibold flex-1 truncate text-white">{active.displayName ?? '私訊'}</span>
               <button
-                onClick={() => setBgPanelOpen(p => !p)}
-                className={`p-1.5 rounded-xl transition-colors ${bgPanelOpen ? 'bg-white/15 text-white' : 'text-white/30 hover:text-white/60'}`}
-                title="背景主題"
+                onClick={() => setThemePanelOpen(p => !p)}
+                className={`p-1.5 rounded-xl transition-colors ${themePanelOpen ? 'bg-white/15 text-white' : 'text-white/30 hover:text-white/60'}`}
+                title="主題與背景"
               >
                 <Palette className="w-4 h-4" />
               </button>
             </div>
 
-            {/* 背景主題面板 */}
-            {bgPanelOpen && (
-              <div className="shrink-0 bg-slate-900/95 backdrop-blur-xl border-b border-white/8 px-4 py-3">
-                <p className="text-[11px] text-white/40 mb-2.5 font-medium">聊天室背景</p>
-                <div className="flex flex-wrap gap-2 mb-3">
-                  {BG_PRESETS.filter(p => p.key !== 'custom').map(preset => (
-                    <button
-                      key={preset.key}
-                      onClick={() => saveBg(preset.key)}
-                      className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all border ${
-                        bgKey === preset.key
-                          ? 'border-amber-400/60 text-amber-300 bg-amber-400/10'
-                          : 'border-white/10 text-white/50 hover:border-white/20 hover:text-white/70'
-                      }`}
-                      style={preset.key !== 'default' ? { ...preset.style, backgroundClip: 'padding-box' } : {}}
-                    >
-                      {preset.label}
-                    </button>
+            {/* ── 主題面板 ── */}
+            {themePanelOpen && (
+              <div className="shrink-0 bg-slate-950/96 backdrop-blur-2xl border-b border-white/8">
+                {/* Tabs */}
+                <div className="flex border-b border-white/6">
+                  {([['theme','🎨 主題'],['bg','🖼️ 背景'],['fx','✨ 濾鏡']] as const).map(([k,l]) => (
+                    <button key={k} onClick={() => setThemeTab(k)}
+                      className={`flex-1 py-2.5 text-xs font-medium transition-colors ${themeTab === k ? 'text-white border-b-2 border-amber-400' : 'text-white/35 hover:text-white/60'}`}
+                    >{l}</button>
                   ))}
                 </div>
-                {/* Custom image: URL input or local file */}
-                <div className="flex items-center gap-2">
-                  <input
-                    value={bgCustomUrl}
-                    onChange={e => setBgCustomUrl(e.target.value)}
-                    placeholder="貼上圖片網址 (https://...)"
-                    className="flex-1 bg-white/5 border border-white/10 rounded-xl px-3 py-1.5 text-xs text-white placeholder-white/25 outline-none focus:border-amber-400/40"
-                  />
-                  <button
-                    onClick={() => saveBg('custom', bgCustomUrl)}
-                    disabled={!bgCustomUrl.startsWith('http')}
-                    className="px-3 py-1.5 bg-amber-500/20 border border-amber-400/30 rounded-xl text-xs text-amber-300 hover:bg-amber-500/30 disabled:opacity-30 transition-colors shrink-0"
-                  >
-                    套用
-                  </button>
-                </div>
-                {/* Local file upload */}
-                <label className="mt-2 flex items-center gap-2 cursor-pointer w-fit">
-                  <span className="text-[11px] text-white/35 hover:text-white/60 transition-colors flex items-center gap-1.5">
-                    <ImageIcon className="w-3.5 h-3.5" /> 從裝置上傳圖片
-                  </span>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={e => {
-                      const f = e.target.files?.[0]
-                      if (!f) return
-                      const reader = new FileReader()
-                      reader.onload = ev => {
-                        const url = ev.target?.result as string
-                        setBgCustomUrl(url)
-                        saveBg('custom', url)
-                      }
-                      reader.readAsDataURL(f)
-                    }}
-                  />
-                </label>
+
+                {/* ── Tab: 主題 ── */}
+                {themeTab === 'theme' && (
+                  <div className="px-4 py-3">
+                    <div className="grid grid-cols-5 gap-2">
+                      {CHAT_THEMES.map(t => (
+                        <button key={t.key} onClick={() => applyTheme(t.key)}
+                          className={`flex flex-col items-center gap-1.5 p-2 rounded-2xl border transition-all ${
+                            themeKey === t.key
+                              ? 'border-amber-400/60 bg-amber-400/8'
+                              : 'border-white/8 hover:border-white/20'
+                          }`}
+                        >
+                          {/* mini preview: bg + two bubbles */}
+                          <div className="w-10 h-8 rounded-xl overflow-hidden relative flex items-center justify-center gap-0.5 px-1"
+                            style={t.bg.background ? { background: (t.bg as { background: string }).background } : { background: '#0f172a' }}
+                          >
+                            <div className="h-2.5 rounded-full w-3" style={{ background: t.theirBg.includes('rgba') ? t.theirBg : t.theirBg }} />
+                            <div className="h-2.5 rounded-full w-4 ml-auto" style={{ background: t.myBg }} />
+                          </div>
+                          <span className="text-[10px] text-white/60">{t.label}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* ── Tab: 背景 ── */}
+                {themeTab === 'bg' && (
+                  <div className="px-4 py-3 space-y-2.5">
+                    <div className="flex items-center gap-2">
+                      <input
+                        value={bgCustomUrl}
+                        onChange={e => setBgCustomUrl(e.target.value)}
+                        placeholder="貼上圖片網址 (https://...)"
+                        className="flex-1 bg-white/5 border border-white/10 rounded-xl px-3 py-1.5 text-xs text-white placeholder-white/25 outline-none focus:border-amber-400/40"
+                      />
+                      <button
+                        onClick={() => applyCustomBg(bgCustomUrl)}
+                        disabled={!bgCustomUrl.startsWith('http')}
+                        className="px-3 py-1.5 bg-amber-500/20 border border-amber-400/30 rounded-xl text-xs text-amber-300 hover:bg-amber-500/30 disabled:opacity-30 transition-colors shrink-0"
+                      >套用</button>
+                    </div>
+                    <label className="flex items-center gap-1.5 cursor-pointer w-fit">
+                      <span className="text-[11px] text-white/35 hover:text-white/60 transition-colors flex items-center gap-1.5">
+                        <ImageIcon className="w-3.5 h-3.5" /> 從裝置上傳圖片
+                      </span>
+                      <input type="file" accept="image/*" className="hidden"
+                        onChange={e => {
+                          const f = e.target.files?.[0]; if (!f) return
+                          const reader = new FileReader()
+                          reader.onload = ev => { const url = ev.target?.result as string; setBgCustomUrl(url); applyCustomBg(url) }
+                          reader.readAsDataURL(f)
+                        }}
+                      />
+                    </label>
+                    {bgCustomUrl && (
+                      <button onClick={() => { setBgCustomUrl(''); persist(themeKey, '', effects) }}
+                        className="text-[11px] text-red-400/60 hover:text-red-400 transition-colors">
+                        ✕ 清除自訂背景
+                      </button>
+                    )}
+                  </div>
+                )}
+
+                {/* ── Tab: 濾鏡 ── */}
+                {themeTab === 'fx' && (
+                  <div className="px-4 py-3 space-y-3">
+                    {([
+                      ['blur',       '模糊',   0,   20,  1,   'px'],
+                      ['brightness', '亮度',   50, 150,  1,   '%'],
+                      ['dim',        '暗化',   0,   80,  1,   '%'],
+                      ['saturate',   '飽和度', 0,  200,  1,   '%'],
+                      ['hue',        '色調',   0,  360,  1,   '°'],
+                    ] as [keyof BgEffects, string, number, number, number, string][]).map(([k, label, min, max, step, unit]) => (
+                      <div key={k} className="flex items-center gap-3">
+                        <span className="text-[11px] text-white/40 w-14 shrink-0">{label}</span>
+                        <input type="range" min={min} max={max} step={step} value={effects[k]}
+                          onChange={e => applyEffects({ ...effects, [k]: Number(e.target.value) })}
+                          className="flex-1 accent-amber-400 h-1.5"
+                        />
+                        <span className="text-[11px] text-white/30 w-10 text-right tabular-nums shrink-0">
+                          {effects[k]}{unit}
+                        </span>
+                      </div>
+                    ))}
+                    <button onClick={() => applyEffects(DEFAULT_EFFECTS)}
+                      className="text-[11px] text-white/30 hover:text-white/60 transition-colors mt-1">
+                      ↺ 重設濾鏡
+                    </button>
+                  </div>
+                )}
               </div>
             )}
 
-            {/* 內容層 — 可捲動的訊息區 */}
-            <div
-              className="flex-1 overflow-y-auto p-4 space-y-2 min-h-0 transition-all duration-500"
-              style={bgStyle()}
-            >
+            {/* 內容層 — 帶分層背景的可捲動訊息區 */}
+            <div className="flex-1 min-h-0 overflow-hidden relative">
+              {/* 背景層（套用濾鏡，blur 時外擴避免邊緣模糊） */}
+              <div
+                className="absolute pointer-events-none z-0 transition-all duration-500"
+                style={{
+                  inset: effects.blur > 0 ? `-${effects.blur * 3}px` : '0',
+                  filter: fxFilter(),
+                  ...bgLayerStyle(),
+                }}
+              />
+              {/* 暗化遮罩 */}
+              {effects.dim > 0 && (
+                <div className="absolute inset-0 z-[1] pointer-events-none" style={{ background: `rgba(0,0,0,${effects.dim / 100})` }} />
+              )}
+              {/* 訊息捲動區 */}
+              <div className="absolute inset-0 z-[2] overflow-y-auto p-4 space-y-2">
               {msgLoading ? (
                 <div className="flex justify-center pt-10">
                   <Loader2 className="w-5 h-5 text-white/30 animate-spin" />
@@ -843,13 +991,24 @@ export default function MessagesPage() {
                     onPointerLeave={cancelLongPress}
                     onPointerMove={cancelLongPress}
                     onContextMenu={e => !isEditing && handleContextMenu(e, msg)}
-                    style={{ touchAction: 'pan-y' }}
+                    style={{
+                      touchAction: 'pan-y',
+                      ...(naked || isRecalled ? {} : msg.isMine ? {
+                        background: activeTheme.myBg,
+                        color: activeTheme.myText,
+                        boxShadow: activeTheme.myShadow ?? 'none',
+                      } : {
+                        background: activeTheme.theirBg,
+                        color: activeTheme.theirText,
+                        border: activeTheme.theirBorder ?? 'none',
+                      }),
+                    }}
                     className={`max-w-[75%] rounded-2xl select-none cursor-default ${
                       naked ? 'overflow-hidden' :
-                      isRecalled ? 'bg-white/[0.04] text-white/25 px-3.5 py-2.5 rounded-2xl' :
+                      isRecalled ? 'bg-white/[0.04] text-white/25 px-3.5 py-2.5' :
                       msg.isMine
-                        ? 'bg-gradient-to-br from-amber-500 to-orange-600 text-white rounded-br-[6px] px-3.5 py-2.5 shadow-lg shadow-amber-500/20'
-                        : 'bg-slate-800 text-white/90 rounded-bl-[6px] px-3.5 py-2.5 border border-white/[0.06]'
+                        ? 'rounded-br-[6px] px-3.5 py-2.5'
+                        : 'rounded-bl-[6px] px-3.5 py-2.5'
                     }`}
                   >
                     {hasReply && !isRecalled && (() => {
@@ -891,7 +1050,8 @@ export default function MessagesPage() {
                 )
               })}
               <div ref={bottomRef} />
-            </div>
+              </div>{/* end scroll area */}
+            </div>{/* end layered bg wrapper */}
 
             {/* 輸入層 — 固定在底部（媒體面板 + 回覆預覽 + 輸入欄） */}
             <div className="shrink-0">
