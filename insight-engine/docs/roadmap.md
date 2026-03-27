@@ -18,6 +18,10 @@
 | Bug 6：Z 幣商店未登入 | `/api/zcoin` 改為直接讀 JWT cookie，不依賴 middleware header |
 | Feature 1：個人頁面相簿 | DB + API + 元件，3 欄網格 + Lightbox + 公開/私人切換 |
 | 共用認證修正 | `register/page.tsx` 支援 `?redirect=` 參數 |
+| SOCIAL-1：Bottom Nav | `BottomNav.tsx` 完成，掛入 `layout.tsx`，未讀 DM badge 輪詢，create modal |
+| SOCIAL-1：訊息頁面 | `/messages` 對話列表 + 即時聊天（SSE），手機/桌面響應式 |
+| SOCIAL-4：通知 API | `social_notifications` 表 + API（GET/PATCH），通知頁面 `/notifications` |
+| 未讀訊息 API | `/api/admin/social/messages/unread` |
 
 ---
 
@@ -43,7 +47,7 @@
 
 ## 🟠 社群 UX 全面升級（核心開發中）
 
-### SOCIAL-1：Bottom Navigation Bar
+### ~~SOCIAL-1：Bottom Navigation Bar~~ ✅ 已完成
 底部導覽列，手機版專用（`md:hidden`）。
 
 ```
