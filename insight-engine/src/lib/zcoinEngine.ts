@@ -24,7 +24,7 @@ export const ZCOIN_SPEND = {
   SPECIAL_THEME: 30,
 } as const
 
-type EarnReason = 'survey_complete' | 'share' | 'invite' | 'daily_login' | 'milestone'
+type EarnReason = 'survey_complete' | 'share' | 'invite' | 'daily_login' | 'milestone' | 'recharge'
 type SpendReason = 'unlock_template' | 'ai_usage' | 'decoration' | 'special_theme'
 type TxReason = EarnReason | SpendReason
 

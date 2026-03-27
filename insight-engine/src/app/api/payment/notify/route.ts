@@ -86,7 +86,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
           await earnZcoin({
             userId: meta.userId,
             amount: zcoinAmount,
-            reason: 'milestone',
+            reason: 'recharge',
             referenceId: orderNo,
           })
         }

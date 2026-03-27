@@ -5,8 +5,9 @@ import {
   Send, Loader2, ArrowLeft, MessageCircle, Search, MoreHorizontal,
   RotateCcw, Trash2, Bookmark, BookmarkCheck, Download, CheckSquare,
   Square, Trash, UserPlus, Bell, Check, X, Users, Smile, Paperclip,
-  Phone, Video, Info, ChevronDown, Mic, MicOff, Music,
+  Phone, Video, Info, ChevronDown, Mic, MicOff, Music, Palette,
 } from 'lucide-react'
+import { BgPicker, ChatBgLayer, type BgId, CHAT_BACKGROUNDS } from '@/components/admin/chat-bg'
 
 interface Conversation {
   userId: string
@@ -130,6 +131,15 @@ export default function MessagesPage() {
   const [stickerPackIdx, setStickerPackIdx] = useState(0)
   const [loadingStickers, setLoadingStickers] = useState(false)
 
+  // ── Chat background ──
+  const BG_KEY = 'insight_chat_bg'
+  const BG_CUSTOM_KEY = 'insight_chat_bg_custom'
+  const BG_OWNED_KEY = 'insight_chat_bg_owned'
+  const [chatBgId, setChatBgId] = useState<BgId>('default')
+  const [chatCustomUrl, setChatCustomUrl] = useState<string | undefined>()
+  const [bgOwned, setBgOwned] = useState<Set<BgId>>(new Set())
+  const [zcoinBalance, setZcoinBalance] = useState(0)
+
   const bottomRef = useRef<HTMLDivElement>(null)
   const esRef = useRef<EventSource | null>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
@@ -155,6 +165,24 @@ export default function MessagesPage() {
   }, [])
 
   useEffect(() => { loadConversations() }, [loadConversations])
+
+  // Load chat background from localStorage
+  useEffect(() => {
+    const saved = localStorage.getItem(BG_KEY) as BgId | null
+    if (saved) setChatBgId(saved)
+    const savedCustom = localStorage.getItem(BG_CUSTOM_KEY)
+    if (savedCustom) setChatCustomUrl(savedCustom)
+    const savedOwned = localStorage.getItem(BG_OWNED_KEY)
+    if (savedOwned) {
+      try { setBgOwned(new Set(JSON.parse(savedOwned) as BgId[])) } catch { /* ignore */ }
+    }
+    // Fetch Z幣 balance
+    fetch('/api/zcoin')
+      .then(r => r.ok ? r.json() as Promise<{ balance: { balance: number } }> : null)
+      .then(d => { if (d?.balance?.balance != null) setZcoinBalance(d.balance.balance) })
+      .catch(() => {})
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const loadFriendRequests = useCallback(async () => {
     try {
@@ -225,6 +253,40 @@ export default function MessagesPage() {
     setShowThread(true)
     setSelectMode(false)
     setSelectedMsgIds(new Set())
+  }
+
+  // ── Background handlers ──
+  const handleBgSelect = (id: BgId) => {
+    setChatBgId(id)
+    localStorage.setItem(BG_KEY, id)
+  }
+
+  const handleBgUpload = async (file: File) => {
+    const form = new FormData()
+    form.append('file', file)
+    const res = await fetch('/api/admin/upload', { method: 'POST', body: form })
+    if (!res.ok) throw new Error('上傳失敗')
+    const data = await res.json() as { url: string }
+    setChatBgId('custom')
+    setChatCustomUrl(data.url)
+    localStorage.setItem(BG_KEY, 'custom')
+    localStorage.setItem(BG_CUSTOM_KEY, data.url)
+  }
+
+  const handleBgPurchase = async (def: { id: BgId; price: number; name: string }) => {
+    const res = await fetch('/api/zcoin/spend', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ amount: def.price, reason: 'decoration', referenceId: `bg_${def.id}` }),
+    })
+    const data = await res.json() as { ok?: boolean; error?: string; newBalance?: number }
+    if (!res.ok || !data.ok) throw new Error(data.error ?? '購買失敗')
+    const next = new Set(bgOwned)
+    next.add(def.id)
+    setBgOwned(next)
+    setZcoinBalance(data.newBalance ?? zcoinBalance - def.price)
+    localStorage.setItem(BG_OWNED_KEY, JSON.stringify([...next]))
+    handleBgSelect(def.id)
   }
 
   const send = async () => {
@@ -755,6 +817,15 @@ export default function MessagesPage() {
                       >
                         <Download className="w-4 h-4" />
                       </button>
+                      <BgPicker
+                        current={chatBgId}
+                        customUrl={chatCustomUrl}
+                        owned={bgOwned}
+                        zcoinBalance={zcoinBalance}
+                        onSelect={handleBgSelect}
+                        onUpload={handleBgUpload}
+                        onPurchase={handleBgPurchase}
+                      />
                       <button className="p-2 rounded-xl text-white/25 hover:text-white/60 hover:bg-white/6 transition-colors">
                         <Info className="w-4 h-4" />
                       </button>
@@ -764,7 +835,10 @@ export default function MessagesPage() {
               </div>
 
               {/* ── Messages ── */}
-              <div className="flex-1 overflow-y-auto px-4 py-3 space-y-1" style={{ scrollbarWidth: 'thin' }}>
+              <div className="flex-1 overflow-y-auto relative" style={{ scrollbarWidth: 'thin' }}>
+                {/* Dynamic background */}
+                <ChatBgLayer bgId={chatBgId} customUrl={chatCustomUrl} />
+                <div className="relative z-10 px-4 py-3 space-y-1">
                 {loadingMsgs ? (
                   <div className="flex justify-center pt-10"><Loader2 className="w-5 h-5 text-white/25 animate-spin" /></div>
                 ) : messages.length === 0 ? (
@@ -862,7 +936,8 @@ export default function MessagesPage() {
                     </div>
                   )
                 })}
-                <div ref={bottomRef} />
+                  <div ref={bottomRef} />
+                </div>
               </div>
 
               {/* ── Sticker picker ── */}
