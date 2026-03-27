@@ -9,6 +9,7 @@ function RegisterForm() {
   const searchParams = useSearchParams()
   const inviteToken = searchParams.get('invite')
   const referralCode = searchParams.get('ref')
+  const redirectTo = searchParams.get('redirect')
 
   const [step, setStep] = useState<Step>('form')
   const [email, setEmail] = useState('')
@@ -133,7 +134,7 @@ function RegisterForm() {
       })
       const data = await res.json()
       if (res.ok) {
-        window.location.href = `/insight-admin/${data.slug || slug}`
+        window.location.href = redirectTo || `/insight-admin/${data.slug || slug}`
         return
       } else {
         setError(data.error || '註冊失敗')

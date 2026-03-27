@@ -32,14 +32,19 @@ export function PostShareCard({ post, onClose }: PostShareCardProps) {
       const canvas = await html2canvas(cardRef.current, {
         scale: 2,
         useCORS: true,
+        allowTaint: true,
         backgroundColor: '#0f172a',
       })
+      const dataUrl = canvas.toDataURL('image/png')
       const link = document.createElement('a')
       link.download = `post-${post.id.slice(0, 8)}.png`
-      link.href = canvas.toDataURL('image/png')
+      link.href = dataUrl
+      document.body.appendChild(link)
       link.click()
-    } catch {
-      // fallback: copy link
+      document.body.removeChild(link)
+    } catch (err) {
+      console.error('[PostShareCard] 儲存失敗:', err)
+      alert('儲存圖片失敗，請嘗試長按圖片另存')
     } finally {
       setSaving(false)
     }

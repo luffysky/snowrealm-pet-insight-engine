@@ -135,8 +135,8 @@ export default function HomePage() {
         </nav>
 
         {/* 手機版 */}
-        <div className="flex items-center gap-2 md:hidden mr-1">
-          <Link href="/explore" className="rounded-full border border-white/30 bg-white/20 px-3 py-1.5 text-xs text-slate-600 backdrop-blur-xl">
+        <div className="flex items-center gap-2 md:hidden min-w-0 overflow-hidden">
+          <Link href="/explore" className="shrink-0 rounded-full border border-white/30 bg-white/20 px-3 py-1.5 text-xs text-slate-600 backdrop-blur-xl">
             探索
           </Link>
           <HomeNav />

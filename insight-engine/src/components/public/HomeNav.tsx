@@ -55,18 +55,18 @@ export function HomeNav() {
         <>
           <button
             onClick={() => setDropOpen(!dropOpen)}
-            className="flex items-center gap-2 bg-white/70 hover:bg-white/90 border border-sky-200/60 shadow-sm rounded-full pl-1.5 pr-3 py-1.5 transition-all backdrop-blur-sm cursor-pointer"
+            className="flex items-center gap-1.5 min-w-0 max-w-[180px] bg-white/70 hover:bg-white/90 border border-sky-200/60 shadow-sm rounded-full pl-1.5 pr-2.5 py-1.5 transition-all backdrop-blur-sm cursor-pointer"
           >
-            <div className="w-7 h-7 bg-gradient-to-br from-sky-400 to-indigo-500 rounded-full flex items-center justify-center text-white text-xs font-bold shadow-sm">
+            <div className="w-7 h-7 shrink-0 bg-gradient-to-br from-sky-400 to-indigo-500 rounded-full flex items-center justify-center text-white text-xs font-bold shadow-sm">
               {user.userName.charAt(0).toUpperCase()}
             </div>
-            <span className="text-sm text-slate-700 font-medium">{user.userName}</span>
+            <span className="text-sm text-slate-700 font-medium truncate max-w-[5rem]">{user.userName}</span>
             {zcoinBalance !== null && (
-              <span className="text-xs bg-amber-100 text-amber-600 border border-amber-200 rounded-full px-1.5 py-0.5 font-semibold">
+              <span className="hidden sm:inline-flex shrink-0 text-xs bg-amber-100 text-amber-600 border border-amber-200 rounded-full px-1.5 py-0.5 font-semibold">
                 🪙 {zcoinBalance}
               </span>
             )}
-            <svg className={`w-3 h-3 text-slate-400 transition-transform ${dropOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className={`w-3 h-3 shrink-0 text-slate-400 transition-transform ${dropOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
             </svg>
           </button>

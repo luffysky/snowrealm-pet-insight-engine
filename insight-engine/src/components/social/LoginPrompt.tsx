@@ -2,6 +2,7 @@
 
 import { X } from 'lucide-react'
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 
 interface LoginPromptProps {
   open: boolean
@@ -10,6 +11,9 @@ interface LoginPromptProps {
 }
 
 export function LoginPrompt({ open, onClose, action = '互動' }: LoginPromptProps) {
+  const pathname = usePathname()
+  const redirectParam = `?redirect=${encodeURIComponent(pathname)}`
+
   if (!open) return null
 
   return (
@@ -32,13 +36,13 @@ export function LoginPrompt({ open, onClose, action = '互動' }: LoginPromptPro
         </div>
         <div className="flex gap-3">
           <Link
-            href="/login"
+            href={`/login${redirectParam}`}
             className="flex-1 text-center py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-900 font-semibold rounded-xl text-sm transition-colors"
           >
             登入
           </Link>
           <Link
-            href="/register"
+            href={`/register${redirectParam}`}
             className="flex-1 text-center py-2.5 bg-white/8 border border-white/12 hover:bg-white/12 text-white/70 rounded-xl text-sm transition-colors"
           >
             免費註冊

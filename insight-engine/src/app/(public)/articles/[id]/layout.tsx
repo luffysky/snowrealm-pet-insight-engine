@@ -1,6 +1,10 @@
 import { type Metadata } from 'next'
 import { getPost } from '@/lib/socialEngine'
 
+export const dynamic = 'force-dynamic'
+
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL ?? 'https://insight.snowrealm.pet'
+
 export async function generateMetadata(
   { params }: { params: Promise<{ id: string }> }
 ): Promise<Metadata> {
@@ -14,6 +18,7 @@ export async function generateMetadata(
   const title = post.title ?? post.content.slice(0, 60)
   const description = post.content.slice(0, 160)
   const image = post.images?.[0]?.url
+  const pageUrl = `${BASE_URL}/articles/${id}`
 
   return {
     title: `${title} | SnowRealm Insight`,
@@ -22,7 +27,9 @@ export async function generateMetadata(
       title,
       description,
       type: 'article',
-      ...(image ? { images: [{ url: image, width: 1200, height: 630 }] } : {}),
+      url: pageUrl,
+      siteName: 'SnowRealm Insight',
+      ...(image ? { images: [{ url: image, width: 1200, height: 630, alt: title }] } : {}),
     },
     twitter: {
       card: image ? 'summary_large_image' : 'summary',

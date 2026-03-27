@@ -1,11 +1,21 @@
 import { NextResponse } from 'next/server'
-import { getTenantContext } from '@/lib/tenant'
+import { cookies } from 'next/headers'
+import { verifyToken } from '@/lib/jwt'
 import { getOrCreateWallet, getTransactionHistory, earnZcoin, spendZcoin } from '@/lib/zcoinEngine'
+
+async function getAuthContext() {
+  const cookieStore = await cookies()
+  const token = cookieStore.get('admin_session')?.value
+  if (!token) return null
+  const payload = await verifyToken(token)
+  if (!payload) return null
+  return { userId: payload.sub as string, tenantId: (payload.tid as string) || 'default' }
+}
 
 /** GET /api/zcoin — 取得當前餘額與交易歷史 */
 export async function GET() {
-  const ctx = await getTenantContext()
-  if (!ctx.userId) {
+  const ctx = await getAuthContext()
+  if (!ctx) {
     return NextResponse.json({ error: '未登入' }, { status: 401 })
   }
 
@@ -27,8 +37,8 @@ export async function GET() {
 
 /** POST /api/zcoin — 發起交易（earn 或 spend） */
 export async function POST(req: Request) {
-  const ctx = await getTenantContext()
-  if (!ctx.userId) {
+  const ctx = await getAuthContext()
+  if (!ctx) {
     return NextResponse.json({ error: '未登入' }, { status: 401 })
   }
 
