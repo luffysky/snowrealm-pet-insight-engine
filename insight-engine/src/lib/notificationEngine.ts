@@ -21,6 +21,7 @@ interface TriggerContext {
   responseId: string
   surveySlug: string
   surveyId?: string
+  tenantId?: string
   tags: { key: string; value: string }[]
   lineUserId?: string
 }
@@ -31,9 +32,14 @@ interface TriggerContext {
  */
 export async function evaluateNotificationRules(ctx: TriggerContext): Promise<void> {
   try {
-    const rules = await query<NotificationRule>(
-      `SELECT * FROM notification_rules WHERE is_active = true`
-    )
+    const rules = ctx.tenantId
+      ? await query<NotificationRule>(
+          `SELECT * FROM notification_rules WHERE is_active = true AND tenant_id = $1`,
+          [ctx.tenantId]
+        )
+      : await query<NotificationRule>(
+          `SELECT * FROM notification_rules WHERE is_active = true`
+        )
 
     for (const rule of rules) {
       // 如果規則綁定特定 survey，跳過不符合的

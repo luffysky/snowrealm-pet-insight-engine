@@ -122,14 +122,22 @@ export async function getPosts({
   if (userId) { conditions.push(`p.user_id = $${i++}`); params.push(userId) }
   if (type) { conditions.push(`p.type = $${i++}`); params.push(type) }
 
+  let viewerReactionExpr = 'NULL::text AS my_reaction'
+  let viewerBookmarkExpr = 'false AS is_bookmarked'
+  if (viewerId) {
+    viewerReactionExpr = `(SELECT type FROM social_reactions WHERE user_id = $${i++} AND post_id = p.id LIMIT 1) AS my_reaction`
+    params.push(viewerId)
+    viewerBookmarkExpr = `EXISTS(SELECT 1 FROM social_bookmarks sb WHERE sb.post_id = p.id AND sb.user_id = $${i++}) AS is_bookmarked`
+    params.push(viewerId)
+  }
   params.push(limit, offset)
 
   const rows = await query<PostRow>(
     `SELECT p.*,
       COALESCE(u.display_name, u.username) AS author_name,
       u.avatar_url AS author_avatar,
-      ${viewerId ? `(SELECT type FROM social_reactions WHERE user_id = '${viewerId}' AND post_id = p.id LIMIT 1) AS my_reaction` : 'NULL::text AS my_reaction'},
-      ${viewerId ? `EXISTS(SELECT 1 FROM social_bookmarks sb WHERE sb.post_id = p.id AND sb.user_id = '${viewerId}') AS is_bookmarked` : 'false AS is_bookmarked'}
+      ${viewerReactionExpr},
+      ${viewerBookmarkExpr}
      FROM social_posts p
      JOIN admin_users u ON u.id = p.user_id
      WHERE ${conditions.join(' AND ')}
@@ -142,16 +150,25 @@ export async function getPosts({
 }
 
 export async function getPost(postId: string, viewerId?: string): Promise<SocialPost | null> {
+  const params: unknown[] = [postId]
+  let viewerReactionExpr = 'NULL::text AS my_reaction'
+  let viewerBookmarkExpr = 'false AS is_bookmarked'
+  if (viewerId) {
+    viewerReactionExpr = `(SELECT type FROM social_reactions WHERE user_id = $2 AND post_id = p.id LIMIT 1) AS my_reaction`
+    viewerBookmarkExpr = `EXISTS(SELECT 1 FROM social_bookmarks sb WHERE sb.post_id = p.id AND sb.user_id = $3) AS is_bookmarked`
+    params.push(viewerId, viewerId)
+  }
+
   const row = await queryOne<PostRow>(
     `SELECT p.*,
       COALESCE(u.display_name, u.username) AS author_name,
       u.avatar_url AS author_avatar,
-      ${viewerId ? `(SELECT type FROM social_reactions WHERE user_id = '${viewerId}' AND post_id = p.id LIMIT 1) AS my_reaction` : 'NULL::text AS my_reaction'},
-      ${viewerId ? `EXISTS(SELECT 1 FROM social_bookmarks sb WHERE sb.post_id = p.id AND sb.user_id = '${viewerId}') AS is_bookmarked` : 'false AS is_bookmarked'}
+      ${viewerReactionExpr},
+      ${viewerBookmarkExpr}
      FROM social_posts p
      JOIN admin_users u ON u.id = p.user_id
      WHERE p.id = $1`,
-    [postId]
+    params
   )
   if (!row) return null
 
