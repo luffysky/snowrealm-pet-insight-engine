@@ -4,6 +4,7 @@ import { useState, useRef } from 'react'
 import { Image as ImageIcon, Film, Send, X, Loader2, Tag, Globe, Lock, ChevronDown } from 'lucide-react'
 import { GifPicker } from './GifPicker'
 import { ImagePicker } from './ImagePicker'
+import { ArticleEditor, type ArticleBlock } from './ArticleEditor'
 import type { SocialPost } from '@/lib/socialEngine'
 
 type PostType = 'post' | 'article'
@@ -22,6 +23,7 @@ export function PostComposer({ authorName = '你', authorAvatar, onPosted, defau
   const [type, setType] = useState<PostType>(defaultType)
   const [title, setTitle] = useState('')
   const [content, setContent] = useState('')
+  const [blocks, setBlocks] = useState<ArticleBlock[]>([])
   const [images, setImages] = useState<{ url: string; alt?: string }[]>([])
   const [tags, setTags] = useState<string[]>([])
   const [tagInput, setTagInput] = useState('')
@@ -59,18 +61,21 @@ export function PostComposer({ authorName = '你', authorAvatar, onPosted, defau
   }
 
   const submit = async () => {
-    if (!content.trim()) return
+    const isArticle = type === 'article'
+    const articleContent = isArticle ? JSON.stringify(blocks) : content
+    if (isArticle ? blocks.length === 0 : !content.trim()) return
     setPosting(true)
     try {
       const res = await fetch('/api/admin/social/posts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type, title: title.trim() || undefined, content, images, tags, isPublic }),
+        body: JSON.stringify({ type, title: title.trim() || undefined, content: articleContent, images, tags, isPublic }),
       })
       if (res.ok) {
         const data = await res.json() as { post: SocialPost }
         setContent('')
         setTitle('')
+        setBlocks([])
         setImages([])
         setTags([])
         setExpanded(compact)
@@ -141,13 +146,17 @@ export function PostComposer({ authorName = '你', authorAvatar, onPosted, defau
       )}
 
       {/* Content */}
-      <textarea
-        value={content}
-        onChange={e => setContent(e.target.value)}
-        placeholder={type === 'post' ? '分享你的想法、問卷結果、靈感...' : '開始撰寫文章內容...'}
-        rows={type === 'article' ? 6 : 3}
-        className="w-full px-3 py-2 bg-transparent text-white/80 placeholder-white/25 outline-none resize-none text-sm leading-relaxed"
-      />
+      {type === 'article' ? (
+        <ArticleEditor blocks={blocks} onChange={setBlocks} onUpload={uploadImage} />
+      ) : (
+        <textarea
+          value={content}
+          onChange={e => setContent(e.target.value)}
+          placeholder="分享你的想法、問卷結果、靈感..."
+          rows={3}
+          className="w-full px-3 py-2 bg-transparent text-white/80 placeholder-white/25 outline-none resize-none text-sm leading-relaxed"
+        />
+      )}
 
       {/* Images preview */}
       {images.length > 0 && (
@@ -233,12 +242,17 @@ export function PostComposer({ authorName = '你', authorAvatar, onPosted, defau
         </div>
 
         <div className="flex items-center gap-2">
-          <span className={`text-xs ${content.length > 480 ? 'text-red-400' : 'text-white/20'}`}>
-            {content.length}{type === 'post' ? '/500' : ''}
-          </span>
+          {type === 'post' && (
+            <span className={`text-xs ${content.length > 480 ? 'text-red-400' : 'text-white/20'}`}>
+              {content.length}/500
+            </span>
+          )}
+          {type === 'article' && (
+            <span className="text-xs text-white/20">{blocks.length} 個區塊</span>
+          )}
           <button
             onClick={submit}
-            disabled={posting || !content.trim()}
+            disabled={posting || (type === 'article' ? blocks.length === 0 : !content.trim())}
             className="flex items-center gap-1.5 px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-900 font-semibold rounded-xl text-sm transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           >
             {posting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}

@@ -1,8 +1,11 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, Suspense } from 'react'
+import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Camera, Globe, Link as LinkIcon, Save, Loader2, Edit2, X } from 'lucide-react'
+import { FollowButton } from '@/components/social/FollowButton'
+import { DMButton } from '@/components/social/DMButton'
 
 // Simple SVG icons for social platforms
 const InstagramIcon = ({ className }: { className?: string }) => (
@@ -25,7 +28,10 @@ interface AuthMe {
   role: string
 }
 
-export default function ProfilePage() {
+function ProfilePage() {
+  const searchParams = useSearchParams()
+  const viewingUserId = searchParams.get('userId')  // if set, we're viewing someone else's profile
+
   const [me, setMe] = useState<AuthMe | null>(null)
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [posts, setPosts] = useState<SocialPost[]>([])
@@ -35,6 +41,8 @@ export default function ProfilePage() {
   const [uploading, setUploading] = useState(false)
   const [toast, setToast] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<'posts' | 'articles'>('posts')
+
+  const isOwnProfile = !viewingUserId || viewingUserId === me?.id
 
   const [form, setForm] = useState({
     displayName: '',
@@ -169,18 +177,31 @@ export default function ProfilePage() {
                 </label>
               </div>
               <div className="flex gap-2">
-                <Link href="/articles" target="_blank"
-                  className="flex items-center gap-1.5 px-3 py-1.5 border border-white/15 rounded-xl text-xs text-white/60 hover:text-white hover:border-white/30 transition-colors"
-                >
-                  <Globe className="w-3.5 h-3.5" /> 公開頁面
-                </Link>
-                <button onClick={() => setEditing(s => !s)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-colors ${
-                    editing ? 'bg-white/10 text-white/60' : 'bg-amber-500/20 border border-amber-400/30 text-amber-300 hover:bg-amber-500/30'
-                  }`}
-                >
-                  <Edit2 className="w-3.5 h-3.5" /> {editing ? '取消' : '編輯資料'}
-                </button>
+                {isOwnProfile ? (
+                  <>
+                    <Link href="/articles" target="_blank"
+                      className="flex items-center gap-1.5 px-3 py-1.5 border border-white/15 rounded-xl text-xs text-white/60 hover:text-white hover:border-white/30 transition-colors"
+                    >
+                      <Globe className="w-3.5 h-3.5" /> 公開頁面
+                    </Link>
+                    <button onClick={() => setEditing(s => !s)}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-colors ${
+                        editing ? 'bg-white/10 text-white/60' : 'bg-amber-500/20 border border-amber-400/30 text-amber-300 hover:bg-amber-500/30'
+                      }`}
+                    >
+                      <Edit2 className="w-3.5 h-3.5" /> {editing ? '取消' : '編輯資料'}
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <FollowButton targetUserId={viewingUserId!} />
+                    <DMButton
+                      targetUserId={viewingUserId!}
+                      targetName={profile?.displayName ?? '用戶'}
+                      targetAvatar={profile?.avatarUrl ?? undefined}
+                    />
+                  </>
+                )}
               </div>
             </div>
 
@@ -324,5 +345,13 @@ export default function ProfilePage() {
         )}
       </div>
     </div>
+  )
+}
+
+export default function ProfilePageWrapper() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-slate-950" />}>
+      <ProfilePage />
+    </Suspense>
   )
 }

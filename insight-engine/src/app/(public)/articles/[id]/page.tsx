@@ -7,7 +7,45 @@ import { ArrowLeft, MessageSquare, Clock, Eye, ExternalLink, Check, Loader2 } fr
 const TwitterIcon = ({ className }: { className?: string }) => (<svg className={className} viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>)
 import { InteractionBar } from '@/components/social/InteractionBar'
 import { CommentSection } from '@/components/social/CommentSection'
+import { FollowButton } from '@/components/social/FollowButton'
+import { DMButton } from '@/components/social/DMButton'
 import type { SocialPost } from '@/lib/socialEngine'
+import type { ArticleBlock } from '@/components/social/ArticleEditor'
+
+function BlocksRenderer({ blocks }: { blocks: ArticleBlock[] }) {
+  return (
+    <div className="space-y-4">
+      {blocks.map(block => (
+        <div key={block.id}>
+          {block.type === 'text' && (
+            <div className="prose prose-invert prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: block.textContent ?? '' }} />
+          )}
+          {block.type === 'image' && block.imageUrl && (
+            <div className="space-y-1">
+              <img src={block.imageUrl} alt={block.imageCaption ?? ''} className="w-full rounded-xl object-cover max-h-96" />
+              {block.imageCaption && <p className="text-xs text-white/35 text-center">{block.imageCaption}</p>}
+            </div>
+          )}
+          {(block.type === 'image-text' || block.type === 'text-image') && (
+            <div className="grid grid-cols-2 gap-4 items-start">
+              {block.type === 'image-text' ? (
+                <>
+                  {block.imageUrl && <img src={block.imageUrl} alt="" className="rounded-xl w-full object-cover" />}
+                  <div className="prose prose-invert prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: block.textContent ?? '' }} />
+                </>
+              ) : (
+                <>
+                  <div className="prose prose-invert prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: block.textContent ?? '' }} />
+                  {block.imageUrl && <img src={block.imageUrl} alt="" className="rounded-xl w-full object-cover" />}
+                </>
+              )}
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  )
+}
 
 export default function ArticleDetailPage() {
   const { id } = useParams() as { id: string }
@@ -15,6 +53,14 @@ export default function ArticleDetailPage() {
   const [loading, setLoading] = useState(true)
   const [commentsOpen, setCommentsOpen] = useState(false)
   const [copied, setCopied] = useState(false)
+  const [meId, setMeId] = useState<string | null>(null)
+
+  useEffect(() => {
+    fetch('/api/auth/me')
+      .then(r => r.ok ? r.json() as Promise<{ id?: string }> : null)
+      .then(d => { if (d?.id) setMeId(d.id) })
+      .catch(() => {/* not logged in */})
+  }, [])
 
   useEffect(() => {
     fetch(`/api/posts/${id}`)
@@ -98,13 +144,19 @@ export default function ArticleDetailPage() {
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500/30 to-purple-500/30 flex items-center justify-center text-sm font-bold text-white/80 overflow-hidden shrink-0">
               {post.authorAvatar ? <img src={post.authorAvatar} alt="" className="w-full h-full object-cover" /> : initials}
             </div>
-            <div>
+            <div className="flex-1">
               <p className="text-sm font-semibold text-white/80">{post.authorName ?? '用戶'}</p>
               <div className="flex items-center gap-2 text-xs text-white/30">
                 <span className="flex items-center gap-0.5"><Clock className="w-3 h-3" /> {timeStr}</span>
                 <span className="flex items-center gap-0.5"><Eye className="w-3 h-3" /> {post.viewsCount} 閱讀</span>
               </div>
             </div>
+            {meId && meId !== post.userId && (
+              <div className="flex items-center gap-2">
+                <FollowButton targetUserId={post.userId} />
+                <DMButton targetUserId={post.userId} targetName={post.authorName ?? '用戶'} targetAvatar={post.authorAvatar} />
+              </div>
+            )}
           </div>
 
           {/* Tags */}
@@ -121,10 +173,18 @@ export default function ArticleDetailPage() {
           )}
         </div>
 
-        {/* Content */}
-        <div className="prose prose-invert prose-sm max-w-none">
-          <p className="text-white/75 leading-relaxed whitespace-pre-wrap text-base">{post.content}</p>
-        </div>
+        {/* Content — blocks or plain text */}
+        {(() => {
+          let blocks: ArticleBlock[] | null = null
+          try { blocks = JSON.parse(post.content) as ArticleBlock[]; if (!Array.isArray(blocks)) blocks = null } catch { blocks = null }
+          return blocks ? (
+            <BlocksRenderer blocks={blocks} />
+          ) : (
+            <div className="prose prose-invert prose-sm max-w-none">
+              <p className="text-white/75 leading-relaxed whitespace-pre-wrap text-base">{post.content}</p>
+            </div>
+          )
+        })()}
 
         {/* More images */}
         {post.images.length > 1 && (
