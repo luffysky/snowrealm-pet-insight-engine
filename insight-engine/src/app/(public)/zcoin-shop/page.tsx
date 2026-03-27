@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import Link from 'next/link'
 
 // ===== 邀請連結元件 =====
@@ -92,6 +92,135 @@ interface DailyTask {
   isCompleted: boolean
 }
 
+// ===== 簽到卡片 =====
+
+function CheckInCard({
+  task,
+  onCheckedIn,
+}: {
+  task: DailyTask | undefined
+  onCheckedIn: () => void
+}) {
+  const [checking, setChecking] = useState(false)
+  const [justChecked, setJustChecked] = useState(false)
+  const [toast, setToastMsg] = useState<string | null>(null)
+
+  const isCheckedIn = task?.isCompleted ?? false
+  const reward = task?.reward ?? 2
+
+  async function handleCheckIn() {
+    if (isCheckedIn || checking) return
+    setChecking(true)
+    try {
+      const res = await fetch('/api/zcoin/tasks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ taskId: 'daily_login' }),
+      })
+      const data = await res.json() as { success?: boolean; earned?: number; message?: string; error?: string }
+      if (res.ok && data.success) {
+        setJustChecked(true)
+        setToastMsg(`🎉 簽到成功！+${data.earned ?? reward} Z幣`)
+        onCheckedIn()
+      } else {
+        setToastMsg(data.error ?? '簽到失敗，請稍後再試')
+      }
+    } catch {
+      setToastMsg('網路錯誤，請稍後再試')
+    } finally {
+      setChecking(false)
+      setTimeout(() => setToastMsg(null), 3000)
+    }
+  }
+
+  const done = isCheckedIn || justChecked
+
+  return (
+    <div
+      id="checkin"
+      className={`relative rounded-2xl p-5 mb-6 border transition-all ${
+        done
+          ? 'bg-emerald-900/20 border-emerald-500/25'
+          : 'bg-gradient-to-r from-blue-900/30 to-violet-900/25 border-blue-500/25'
+      }`}
+    >
+      {/* Toast */}
+      {toast && (
+        <div className="absolute -top-8 left-1/2 -translate-x-1/2 text-xs font-semibold text-amber-300 whitespace-nowrap animate-bounce">
+          {toast}
+        </div>
+      )}
+
+      <div className="flex items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div
+            className={`w-12 h-12 rounded-2xl flex items-center justify-center text-2xl shrink-0 ${
+              done ? 'bg-emerald-500/20' : 'bg-blue-500/20'
+            }`}
+          >
+            {done ? '✅' : '📅'}
+          </div>
+          <div>
+            <p className="font-semibold text-white text-sm">每日簽到</p>
+            <p className="text-xs text-white/40 mt-0.5">
+              {done ? '今日已完成，明天再來' : `簽到領 +${reward} Z幣，每天都有`}
+            </p>
+          </div>
+        </div>
+
+        <button
+          onClick={handleCheckIn}
+          disabled={done || checking}
+          className={`shrink-0 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all ${
+            done
+              ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/20 cursor-default'
+              : checking
+              ? 'bg-blue-500/20 text-blue-300 border border-blue-400/30 cursor-wait'
+              : 'bg-blue-500 hover:bg-blue-400 text-white shadow-lg shadow-blue-500/20 active:scale-95'
+          }`}
+        >
+          {checking ? (
+            <span className="flex items-center gap-1.5">
+              <span className="w-3.5 h-3.5 border-2 border-blue-300/50 border-t-white rounded-full animate-spin" />
+              簽到中
+            </span>
+          ) : done ? (
+            '已簽到'
+          ) : (
+            '立即簽到'
+          )}
+        </button>
+      </div>
+
+      {/* 進度點 — 周視圖 */}
+      <div className="mt-4 flex justify-center gap-2">
+        {['一', '二', '三', '四', '五', '六', '日'].map((day, i) => {
+          const today = new Date().getDay()
+          // 0=日, 換成 1=一 ... 7=日
+          const todayIdx = today === 0 ? 6 : today - 1
+          const isDone = i < todayIdx || (i === todayIdx && done)
+          const isToday = i === todayIdx
+          return (
+            <div key={day} className="flex flex-col items-center gap-1">
+              <div
+                className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-medium transition-all ${
+                  isDone
+                    ? 'bg-emerald-500/30 text-emerald-300 border border-emerald-500/40'
+                    : isToday && !done
+                    ? 'bg-blue-500/20 text-blue-300 border border-blue-400/40 ring-1 ring-blue-400/30'
+                    : 'bg-white/5 text-white/20 border border-white/10'
+                }`}
+              >
+                {isDone ? '✓' : isToday ? '今' : day}
+              </div>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
 // ===== 廣告觀看 =====
 
 interface AdQuota {
@@ -120,10 +249,7 @@ function AdWatchSection({ onEarned }: { onEarned: () => void }) {
     setCountdown(3)
     const tick = setInterval(() => {
       setCountdown(n => {
-        if (n <= 1) {
-          clearInterval(tick)
-          return 0
-        }
+        if (n <= 1) { clearInterval(tick); return 0 }
         return n - 1
       })
     }, 1000)
@@ -173,7 +299,6 @@ function AdWatchSection({ onEarned }: { onEarned: () => void }) {
           ) : quota.canWatch ? `+${quota.reward} 觀看` : '已達上限'}
         </button>
       </div>
-      {/* 進度條 */}
       <div className="h-1 bg-white/5 rounded-full overflow-hidden">
         <div
           className="h-full bg-amber-400/40 rounded-full transition-all"
@@ -201,13 +326,9 @@ const RECHARGE_PACKAGES: RechargePackage[] = [
   { id: 'value', zcoin: 4500, ntd: 690, badge: '超值', badgeColor: 'bg-purple-500' },
 ]
 
-// ===== 工具函式 =====
-
 function calcPerCoin(ntd: number, zcoin: number): string {
   return (ntd / zcoin).toFixed(2)
 }
-
-// ===== 元件 =====
 
 function BalanceCard({ balance }: { balance: BalanceData | null }) {
   return (
@@ -312,6 +433,87 @@ function RechargeCard({ pkg }: { pkg: RechargePackage }) {
   )
 }
 
+// ===== 賺幣指南（可互動版）=====
+
+const EARN_GUIDE = [
+  {
+    emoji: '✅',
+    label: '完成問卷',
+    amount: '+1',
+    desc: '每完成一份問卷獲得',
+    action: 'survey',
+  },
+  {
+    emoji: '📤',
+    label: '分享結果',
+    amount: '+5',
+    desc: '分享故事卡片到社群',
+    action: 'survey',
+  },
+  {
+    emoji: '🤝',
+    label: '邀請好友',
+    amount: '+10',
+    desc: '好友成功加入後發放',
+    action: 'referral',
+  },
+  {
+    emoji: '📅',
+    label: '每日簽到',
+    amount: '+2',
+    desc: '每天登入簽到一次',
+    action: 'checkin',
+  },
+  {
+    emoji: '👁️',
+    label: '觀看廣告',
+    amount: '+2',
+    desc: '每日最多 10 次',
+    action: 'ads',
+  },
+  {
+    emoji: '🎉',
+    label: '里程碑獎勵',
+    amount: '+50',
+    desc: '累計回覆滿 100 筆',
+    action: 'milestone',
+  },
+] as const
+
+type EarnAction = typeof EARN_GUIDE[number]['action']
+
+interface EarnGuideProps {
+  onAction: (action: EarnAction) => void
+}
+
+function EarnGuide({ onAction }: EarnGuideProps) {
+  return (
+    <div className="bg-white/5 border border-white/10 rounded-xl overflow-hidden">
+      {EARN_GUIDE.map((item, idx) => (
+        <button
+          key={item.label}
+          onClick={() => onAction(item.action)}
+          className={`w-full flex items-center justify-between px-4 py-3 text-left hover:bg-white/5 active:bg-white/8 transition-colors ${
+            idx !== EARN_GUIDE.length - 1 ? 'border-b border-white/5' : ''
+          }`}
+        >
+          <div className="flex items-center gap-3">
+            <span className="text-lg w-6 text-center">{item.emoji}</span>
+            <div>
+              <p className="text-sm text-white/70">{item.label}</p>
+              <p className="text-xs text-white/30">{item.desc}</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <span className="text-sm font-medium text-amber-300">{item.amount}</span>
+            <span className="text-white/20 text-xs">→</span>
+          </div>
+        </button>
+      ))}
+    </div>
+  )
+}
+
 // ===== 主頁面 =====
 
 export default function ZcoinShopPage() {
@@ -322,6 +524,10 @@ export default function ZcoinShopPage() {
   const [completing, setCompleting] = useState<string | null>(null)
   const [toast, setToast] = useState<string | null>(null)
 
+  const checkinRef = useRef<HTMLDivElement>(null)
+  const adsRef = useRef<HTMLDivElement>(null)
+  const referralRef = useRef<HTMLDivElement>(null)
+
   const showToast = (msg: string) => {
     setToast(msg)
     setTimeout(() => setToast(null), 2500)
@@ -330,9 +536,7 @@ export default function ZcoinShopPage() {
   const fetchBalance = useCallback(() => {
     fetch('/api/zcoin')
       .then((r) => (r.ok ? (r.json() as Promise<{ balance: BalanceData }>) : null))
-      .then((d) => {
-        if (d?.balance) setBalance(d.balance)
-      })
+      .then((d) => { if (d?.balance) setBalance(d.balance) })
       .catch(() => {})
       .finally(() => setLoadingBalance(false))
   }, [])
@@ -340,9 +544,7 @@ export default function ZcoinShopPage() {
   const fetchTasks = useCallback(() => {
     fetch('/api/zcoin/tasks')
       .then((r) => (r.ok ? (r.json() as Promise<{ tasks: DailyTask[] }>) : null))
-      .then((d) => {
-        if (d?.tasks) setTasks(d.tasks)
-      })
+      .then((d) => { if (d?.tasks) setTasks(d.tasks) })
       .catch(() => {})
       .finally(() => setLoadingTasks(false))
   }, [])
@@ -351,6 +553,11 @@ export default function ZcoinShopPage() {
     fetchBalance()
     fetchTasks()
   }, [fetchBalance, fetchTasks])
+
+  function handleRefresh() {
+    fetchBalance()
+    fetchTasks()
+  }
 
   const handleCompleteTask = async (taskId: string) => {
     setCompleting(taskId)
@@ -375,7 +582,30 @@ export default function ZcoinShopPage() {
     }
   }
 
-  const completedCount = tasks.filter((t) => t.isCompleted).length
+  function handleEarnAction(action: EarnAction) {
+    switch (action) {
+      case 'checkin':
+        checkinRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        break
+      case 'ads':
+        adsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        break
+      case 'referral':
+        referralRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        break
+      case 'survey':
+        window.location.href = '/snowrealm-pet/maoxingtianxia-mvp-survey'
+        break
+      case 'milestone':
+        showToast('🎉 累計回覆滿 100 筆自動發放')
+        break
+    }
+  }
+
+  // 把 daily_login 從任務列表分離出來
+  const loginTask = tasks.find(t => t.id === 'daily_login')
+  const otherTasks = tasks.filter(t => t.id !== 'daily_login')
+  const completedOtherCount = otherTasks.filter((t) => t.isCompleted).length
 
   return (
     <div className="min-h-screen bg-slate-950 text-white">
@@ -407,28 +637,26 @@ export default function ZcoinShopPage() {
           <BalanceCard balance={balance} />
         )}
 
-        {/* 每日任務 */}
-        <section className="mb-8">
-          <div className="flex items-center justify-between mb-3">
-            <p className="text-sm font-medium text-white/70">每日任務</p>
-            {!loadingTasks && tasks.length > 0 && (
-              <span className="text-xs text-white/30">
-                {completedCount}/{tasks.length} 完成
-              </span>
-            )}
-          </div>
-
+        {/* 每日簽到 */}
+        <div ref={checkinRef}>
           {loadingTasks ? (
-            <div className="space-y-2">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="h-16 bg-white/5 rounded-xl animate-pulse" />
-              ))}
-            </div>
-          ) : tasks.length === 0 ? (
-            <p className="text-white/30 text-sm text-center py-6">請先登入以查看每日任務</p>
+            <div className="h-32 bg-white/5 rounded-2xl mb-6 animate-pulse" />
           ) : (
+            <CheckInCard task={loginTask} onCheckedIn={handleRefresh} />
+          )}
+        </div>
+
+        {/* 其他每日任務 */}
+        {!loadingTasks && otherTasks.length > 0 && (
+          <section id="tasks" className="mb-8">
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-sm font-medium text-white/70">其他每日任務</p>
+              <span className="text-xs text-white/30">
+                {completedOtherCount}/{otherTasks.length} 完成
+              </span>
+            </div>
             <div className="space-y-2">
-              {tasks.map((task) => (
+              {otherTasks.map((task) => (
                 <TaskItem
                   key={task.id}
                   task={task}
@@ -437,16 +665,16 @@ export default function ZcoinShopPage() {
                 />
               ))}
             </div>
-          )}
-        </section>
+          </section>
+        )}
 
         {/* 觀看廣告 */}
-        <section className="mb-8">
+        <section id="ads" className="mb-8" ref={adsRef}>
           <AdWatchSection onEarned={fetchBalance} />
         </section>
 
         {/* Z幣充值方案 */}
-        <section className="mb-8">
+        <section id="recharge" className="mb-8">
           <p className="text-sm font-medium text-white/70 mb-3">充值 Z幣</p>
           <div className="grid grid-cols-2 gap-3">
             {RECHARGE_PACKAGES.map((pkg) => (
@@ -459,32 +687,14 @@ export default function ZcoinShopPage() {
         </section>
 
         {/* 邀請好友 */}
-        <section className="mb-8">
+        <section id="referral" className="mb-8" ref={referralRef}>
           <ReferralSection onEarned={fetchBalance} />
         </section>
 
-        {/* 如何賺取 Z幣 */}
-        <section>
+        {/* 如何賺取 Z幣（互動版）*/}
+        <section className="mb-6">
           <p className="text-sm font-medium text-white/70 mb-3">如何賺取 Z幣</p>
-          <div className="bg-white/5 border border-white/10 rounded-xl p-4">
-            <div className="space-y-2 text-sm">
-              {[
-                ['✅', '完成問卷', '+1'],
-                ['📤', '分享結果', '+5'],
-                ['🤝', '邀請好友', '+10'],
-                ['📅', '每日登入', '+2'],
-                ['👁️', '觀看廣告', '+2'],
-                ['🎉', '里程碑獎勵', '+50'],
-              ].map(([emoji, label, amt]) => (
-                <div key={label} className="flex items-center justify-between text-white/60">
-                  <span>
-                    {emoji} {label}
-                  </span>
-                  <span className="text-amber-300 font-medium">{amt}</span>
-                </div>
-              ))}
-            </div>
-          </div>
+          <EarnGuide onAction={handleEarnAction} />
         </section>
       </div>
     </div>
