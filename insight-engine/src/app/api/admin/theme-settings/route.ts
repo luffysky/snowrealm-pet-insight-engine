@@ -65,7 +65,7 @@ export async function POST(request: Request) {
     : ['default']
   if (!safeAvailable.includes(safeDefault)) safeAvailable.unshift(safeDefault)
 
-  const safeIntensity: Record<SurveyTheme, ThemeIntensity> = { default: 2, game: 2, cyber: 2, ancient: 2, sakura: 2, ocean: 2, forest: 2, candy: 2, noir: 2 }
+  const safeIntensity: Record<SurveyTheme, ThemeIntensity> = { default: 2, game: 2, cyber: 2, ancient: 2, sakura: 2, ocean: 2, forest: 2, candy: 2, noir: 2, sunset: 2, neon: 2, aurora: 2, space: 2, minimal: 2 }
   if (themeIntensity && typeof themeIntensity === 'object') {
     for (const key of VALID_THEMES) {
       const v = Number(themeIntensity[key])

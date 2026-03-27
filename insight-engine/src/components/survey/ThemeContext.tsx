@@ -24,7 +24,7 @@ const STORAGE_KEY = 'survey-user-theme'
 export function ThemeProvider({
   children,
   initialTheme = 'default',
-  intensityMap = { default: 2, game: 2, cyber: 2, ancient: 2, sakura: 2, ocean: 2, forest: 2, candy: 2, noir: 2 },
+  intensityMap = { default: 2, game: 2, cyber: 2, ancient: 2, sakura: 2, ocean: 2, forest: 2, candy: 2, noir: 2, sunset: 2, neon: 2, aurora: 2, space: 2, minimal: 2 },
 }: {
   children: React.ReactNode
   initialTheme?: SurveyTheme

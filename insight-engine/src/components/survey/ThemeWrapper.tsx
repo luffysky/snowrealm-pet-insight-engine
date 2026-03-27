@@ -29,7 +29,7 @@ export function ThemeWrapper({ children }: { children: React.ReactNode }) {
         defaultTheme: 'default',
         availableThemes: ['default'],
         allowUserChoice: false,
-        themeIntensity: { default: 2, game: 2, cyber: 2, ancient: 2, sakura: 2, ocean: 2, forest: 2, candy: 2, noir: 2 },
+        themeIntensity: { default: 2, game: 2, cyber: 2, ancient: 2, sakura: 2, ocean: 2, forest: 2, candy: 2, noir: 2, sunset: 2, neon: 2, aurora: 2, space: 2, minimal: 2 },
       }))
   }, [])
 

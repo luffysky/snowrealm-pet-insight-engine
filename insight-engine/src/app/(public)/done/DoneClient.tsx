@@ -223,6 +223,66 @@ const THEME_DONE: Record<SurveyTheme, ThemeDoneConfig> = {
     avatarAnim: 'noir-fade-in 0.5s ease-out',
     dividerClass: 'border-t border-white/8',
   },
+  sunset: {
+    topDecor: '🌇',
+    closingTitle: '夕陽無限好',
+    closingText: '暮色低垂，感謝你在黃昏時刻留下足跡，我們期待與你再次相遇。',
+    decorEmojis: ['🌅', '🔥', '✨', '🌇'],
+    statsLabel: '— 夕陽數據 —',
+    badgeLabel: '— 暮光成就 —',
+    ctaText: '留下聯絡，迎接下一個黎明',
+    wrapClass: 'done-theme-sunset',
+    avatarAnim: 'fade-slide-up 0.5s ease-out',
+    dividerClass: 'border-t border-orange-500/20',
+  },
+  neon: {
+    topDecor: '🌃',
+    closingTitle: 'GAME OVER',
+    closingText: '霓虹熄滅，但故事仍在繼續。感謝你點亮這座城市的數據夜空。',
+    decorEmojis: ['⚡', '🔮', '💜', '🌃'],
+    statsLabel: '— 夜城數據 —',
+    badgeLabel: '— 霓虹成就 —',
+    ctaText: '輸入代號，解鎖下一個副本',
+    wrapClass: 'done-theme-neon',
+    avatarAnim: 'fade-slide-up 0.5s ease-out',
+    dividerClass: 'border-t border-fuchsia-500/20',
+  },
+  aurora: {
+    topDecor: '🌌',
+    closingTitle: '極光閉幕',
+    closingText: '極光漸漸退去，感謝你在冰雪世界留下溫暖的足跡。',
+    decorEmojis: ['🌌', '❄️', '💚', '🌿'],
+    statsLabel: '— 極光數據 —',
+    badgeLabel: '— 冰原成就 —',
+    ctaText: '留下聯絡，等待下一道極光',
+    wrapClass: 'done-theme-aurora',
+    avatarAnim: 'fade-slide-up 0.5s ease-out',
+    dividerClass: 'border-t border-teal-500/20',
+  },
+  space: {
+    topDecor: '🚀',
+    closingTitle: '返航地球',
+    closingText: '探索任務完成，感謝你在星際旅途中留下珍貴的觀測數據。',
+    decorEmojis: ['🚀', '⭐', '🪐', '🌌'],
+    statsLabel: '— 星際數據 —',
+    badgeLabel: '— 太空成就 —',
+    ctaText: '留下信號，期待下次相遇',
+    wrapClass: 'done-theme-space',
+    avatarAnim: 'fade-slide-up 0.5s ease-out',
+    dividerClass: 'border-t border-blue-500/20',
+  },
+  minimal: {
+    topDecor: '✓',
+    closingTitle: '完成',
+    closingText: '感謝您撥冗填寫，您的意見對我們非常寶貴。',
+    decorEmojis: ['✓', '○', '□', '△'],
+    statsLabel: '統計數據',
+    badgeLabel: '個人成就',
+    ctaText: '留下聯絡方式',
+    wrapClass: 'done-theme-minimal',
+    avatarAnim: 'fade-slide-up 0.3s ease-out',
+    dividerClass: 'border-t border-gray-200',
+  },
 }
 
 function DoneContent({ config }: { config: SurveyConfig }) {
@@ -572,6 +632,11 @@ function statIcon(theme: SurveyTheme, type: 'level' | 'xp' | 'achieve'): string 
     forest:  { level: '🌲', xp: '🍃', achieve: '🦋' },
     candy:   { level: '🍭', xp: '🌈', achieve: '🧁' },
     noir:    { level: '🎬', xp: '🎞️', achieve: '🕯️' },
+    sunset:  { level: '🌅', xp: '🔥', achieve: '🌇' },
+    neon:    { level: '⚡', xp: '💜', achieve: '🌃' },
+    aurora:  { level: '🌌', xp: '❄️', achieve: '💚' },
+    space:   { level: '🚀', xp: '⭐', achieve: '🪐' },
+    minimal: { level: '○', xp: '□', achieve: '△' },
   }
   return map[theme]?.[type] ?? map.default[type]
 }
@@ -587,6 +652,11 @@ function statLabel(theme: SurveyTheme, type: 'level' | 'xp' | 'achieve'): string
     forest:  { level: '年輪', xp: '生命力', achieve: '印記' },
     candy:   { level: '甜度', xp: '糖果', achieve: '收藏' },
     noir:    { level: '場景', xp: '膠卷', achieve: '獎項' },
+    sunset:  { level: '時刻', xp: '溫度', achieve: '光芒' },
+    neon:    { level: 'LEVEL', xp: 'ENERGY', achieve: 'UNLOCK' },
+    aurora:  { level: '極光', xp: '冰晶', achieve: '奇蹟' },
+    space:   { level: '星級', xp: '燃料', achieve: '勛章' },
+    minimal: { level: '等級', xp: '經驗', achieve: '成就' },
   }
   return map[theme]?.[type] ?? map.default[type]
 }
@@ -602,6 +672,11 @@ function statCardStyle(theme: SurveyTheme): string {
     forest: 'bg-emerald-500/5 border-emerald-500/10',
     candy: 'bg-fuchsia-500/5 border-fuchsia-500/10',
     noir: 'bg-white/3 border-white/8',
+    sunset: 'bg-orange-500/5 border-orange-500/10',
+    neon: 'bg-fuchsia-500/5 border-fuchsia-500/10',
+    aurora: 'bg-teal-500/5 border-teal-500/10',
+    space: 'bg-blue-500/5 border-blue-500/10',
+    minimal: 'bg-gray-100 border-gray-200',
   }
   return map[theme] ?? map.default
 }
@@ -617,6 +692,11 @@ function badgeStyle(theme: SurveyTheme): string {
     forest: 'bg-emerald-500/10 border border-emerald-400/20 text-emerald-200/80',
     candy: 'bg-fuchsia-500/10 border border-fuchsia-400/20 text-fuchsia-200/80',
     noir: 'bg-white/5 border border-white/10 text-white/60',
+    sunset: 'bg-orange-500/10 border border-orange-400/20 text-orange-200/80',
+    neon: 'bg-fuchsia-500/10 border border-fuchsia-400/20 text-fuchsia-200/80',
+    aurora: 'bg-teal-500/10 border border-teal-400/20 text-teal-200/80',
+    space: 'bg-blue-500/10 border border-blue-400/20 text-blue-200/80',
+    minimal: 'bg-gray-100 border border-gray-300 text-gray-700',
   }
   return map[theme] ?? map.default
 }
@@ -632,6 +712,11 @@ function xpBarBg(theme: SurveyTheme): string {
     forest: 'bg-emerald-950/50 border-emerald-500/10',
     candy: 'bg-fuchsia-950/50 border-fuchsia-500/10',
     noir: 'bg-slate-900/80 border-white/5',
+    sunset: 'bg-orange-950/50 border-orange-500/10',
+    neon: 'bg-fuchsia-950/50 border-fuchsia-500/10',
+    aurora: 'bg-teal-950/50 border-teal-500/10',
+    space: 'bg-blue-950/50 border-blue-500/10',
+    minimal: 'bg-gray-200 border-gray-300',
   }
   return map[theme] ?? map.default
 }
@@ -647,6 +732,11 @@ function xpBarGradient(theme: SurveyTheme): string {
     forest: 'linear-gradient(90deg, #059669, #34d399)',
     candy: 'linear-gradient(90deg, #d946ef, #f0abfc)',
     noir: 'linear-gradient(90deg, #94a3b8, #e2e8f0)',
+    sunset: 'linear-gradient(90deg, #ea580c, #f97316)',
+    neon: 'linear-gradient(90deg, #d946ef, #22d3ee)',
+    aurora: 'linear-gradient(90deg, #14b8a6, #34d399)',
+    space: 'linear-gradient(90deg, #3b82f6, #8b5cf6)',
+    minimal: 'linear-gradient(90deg, #374151, #6b7280)',
   }
   return map[theme] ?? map.default
 }

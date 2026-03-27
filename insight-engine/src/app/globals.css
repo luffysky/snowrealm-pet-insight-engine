@@ -1142,6 +1142,173 @@ body {
 }
 
 /* ================================================
+   🌇 SUNSET THEME — 夕陽暮光
+   ================================================ */
+
+@keyframes sunsetGlow {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+
+.theme-sunset-bg {
+  background: linear-gradient(160deg, #1a0800 0%, #3d1000 40%, #6b1c00 70%, #1a0800 100%);
+  position: relative;
+  overflow: hidden;
+}
+.theme-sunset-bg::before {
+  content: '';
+  position: fixed;
+  top: -20%;
+  left: -10%;
+  width: 60%;
+  height: 60%;
+  background: radial-gradient(ellipse, rgba(234,88,12,0.25) 0%, transparent 70%);
+  animation: sunsetGlow 4s ease-in-out infinite;
+  pointer-events: none;
+}
+.theme-sunset-bg::after {
+  content: '';
+  position: fixed;
+  bottom: -20%;
+  right: -10%;
+  width: 50%;
+  height: 50%;
+  background: radial-gradient(ellipse, rgba(239,68,68,0.2) 0%, transparent 70%);
+  animation: sunsetGlow 5s ease-in-out infinite reverse;
+  pointer-events: none;
+}
+
+/* ================================================
+   🌃 NEON THEME — 霓虹都市
+   ================================================ */
+
+@keyframes neonPulse {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
+@keyframes neonScan {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(200vh); }
+}
+
+.theme-neon-bg {
+  background: #05000f;
+  position: relative;
+  overflow: hidden;
+}
+.theme-neon-bg::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background:
+    repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(255,0,255,0.02) 3px, rgba(255,0,255,0.02) 4px),
+    radial-gradient(ellipse at 30% 20%, rgba(255,0,255,0.15) 0%, transparent 50%),
+    radial-gradient(ellipse at 70% 80%, rgba(0,255,255,0.12) 0%, transparent 50%);
+  pointer-events: none;
+  animation: neonPulse 3s ease-in-out infinite;
+}
+
+.theme-neon-card {
+  border-color: rgba(217,70,239,0.35) !important;
+  box-shadow: 0 0 30px rgba(217,70,239,0.1), inset 0 0 30px rgba(217,70,239,0.03);
+}
+
+/* ================================================
+   🌌 AURORA THEME — 極光雪原
+   ================================================ */
+
+@keyframes auroraShift {
+  0% { transform: translateX(-5%) skewX(-3deg); opacity: 0.6; }
+  50% { transform: translateX(5%) skewX(3deg); opacity: 1; }
+  100% { transform: translateX(-5%) skewX(-3deg); opacity: 0.6; }
+}
+
+.theme-aurora-bg {
+  background: linear-gradient(180deg, #020b18 0%, #041422 50%, #06201e 100%);
+  position: relative;
+  overflow: hidden;
+}
+.theme-aurora-bg::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: -20%;
+  width: 140%;
+  height: 50%;
+  background: linear-gradient(180deg, transparent 0%, rgba(20,184,166,0.15) 40%, rgba(16,185,129,0.1) 70%, transparent 100%);
+  animation: auroraShift 6s ease-in-out infinite;
+  pointer-events: none;
+  filter: blur(20px);
+}
+.theme-aurora-bg::after {
+  content: '';
+  position: fixed;
+  top: 10%;
+  left: -10%;
+  width: 120%;
+  height: 40%;
+  background: linear-gradient(180deg, transparent 0%, rgba(139,92,246,0.1) 50%, transparent 100%);
+  animation: auroraShift 8s ease-in-out infinite reverse;
+  pointer-events: none;
+  filter: blur(30px);
+}
+
+/* ================================================
+   🚀 SPACE THEME — 太空漫遊
+   ================================================ */
+
+@keyframes starTwinkle {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.8; }
+}
+@keyframes nebulaDrift {
+  0%, 100% { transform: rotate(0deg) scale(1); }
+  50% { transform: rotate(5deg) scale(1.05); }
+}
+
+.theme-space-bg {
+  background: radial-gradient(ellipse at 50% 10%, #0d1b4b 0%, #050a1f 40%, #00010d 100%);
+  position: relative;
+  overflow: hidden;
+}
+.theme-space-bg::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(1px 1px at 10% 20%, rgba(255,255,255,0.6) 0%, transparent 100%),
+    radial-gradient(1px 1px at 30% 40%, rgba(255,255,255,0.4) 0%, transparent 100%),
+    radial-gradient(1px 1px at 60% 15%, rgba(255,255,255,0.7) 0%, transparent 100%),
+    radial-gradient(1px 1px at 80% 60%, rgba(255,255,255,0.5) 0%, transparent 100%),
+    radial-gradient(1px 1px at 45% 75%, rgba(255,255,255,0.3) 0%, transparent 100%),
+    radial-gradient(1px 1px at 90% 35%, rgba(255,255,255,0.6) 0%, transparent 100%),
+    radial-gradient(1px 1px at 20% 80%, rgba(255,255,255,0.4) 0%, transparent 100%),
+    radial-gradient(1px 1px at 70% 90%, rgba(255,255,255,0.5) 0%, transparent 100%);
+  animation: starTwinkle 4s ease-in-out infinite;
+  pointer-events: none;
+}
+.theme-space-bg::after {
+  content: '';
+  position: fixed;
+  top: 20%;
+  left: 30%;
+  width: 40%;
+  height: 40%;
+  background: radial-gradient(ellipse, rgba(99,102,241,0.1) 0%, transparent 70%);
+  animation: nebulaDrift 10s ease-in-out infinite;
+  pointer-events: none;
+  filter: blur(40px);
+}
+
+/* ================================================
+   ⬜ MINIMAL THEME — 純白極簡
+   ================================================ */
+
+.theme-minimal-bg {
+  background: #f8f9fa;
+}
+
+/* ================================================
    � 3D CARD FLIP — QUESTION TRANSITIONS
    ================================================ */
 

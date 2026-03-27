@@ -175,6 +175,36 @@ const CFG: Record<SurveyTheme, Cfg> = {
     sizeMin: 0.5, sizeMax: 1.5, vyMin: -0.06, vyMax: 0.06, vxMin: -0.04, vxMax: 0.04,
     opMin: 0.03, opMax: 0.1, spawn: 'random',
   },
+  sunset: {
+    count: 14, draw: drawDot,
+    colors: ['rgba(251,146,60,0.4)', 'rgba(239,68,68,0.35)', 'rgba(253,186,116,0.3)'],
+    sizeMin: 1, sizeMax: 3, vyMin: -0.15, vyMax: -0.05, vxMin: -0.08, vxMax: 0.08,
+    opMin: 0.1, opMax: 0.35, spawn: 'bottom',
+  },
+  neon: {
+    count: 20, draw: drawDot,
+    colors: ['rgba(217,70,239,0.5)', 'rgba(34,211,238,0.4)', 'rgba(168,85,247,0.4)'],
+    sizeMin: 0.5, sizeMax: 2, vyMin: -0.1, vyMax: 0.1, vxMin: -0.08, vxMax: 0.08,
+    opMin: 0.15, opMax: 0.5, spawn: 'random', oscillate: true,
+  },
+  aurora: {
+    count: 12, draw: drawDot,
+    colors: ['rgba(20,184,166,0.4)', 'rgba(52,211,153,0.35)', 'rgba(139,92,246,0.3)'],
+    sizeMin: 1, sizeMax: 4, vyMin: -0.08, vyMax: 0.08, vxMin: -0.06, vxMax: 0.06,
+    opMin: 0.1, opMax: 0.4, spawn: 'random', oscillate: true,
+  },
+  space: {
+    count: 18, draw: drawDot,
+    colors: ['rgba(255,255,255,0.5)', 'rgba(147,197,253,0.4)', 'rgba(196,181,253,0.35)'],
+    sizeMin: 0.5, sizeMax: 2, vyMin: -0.03, vyMax: 0.03, vxMin: -0.03, vxMax: 0.03,
+    opMin: 0.1, opMax: 0.5, spawn: 'random', oscillate: true,
+  },
+  minimal: {
+    count: 0, draw: drawDot,
+    colors: ['rgba(0,0,0,0)'],
+    sizeMin: 0, sizeMax: 0, vyMin: 0, vyMax: 0, vxMin: 0, vxMax: 0,
+    opMin: 0, opMax: 0, spawn: 'random',
+  },
 }
 
 /* ── 初始化單一粒子 ──────────────────────────────── */

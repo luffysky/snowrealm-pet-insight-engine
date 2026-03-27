@@ -44,6 +44,11 @@ const CARD_BG: Record<SurveyTheme, string> = {
   forest:  'bg-emerald-500/10 border-emerald-400/20',
   candy:   'bg-fuchsia-500/10 border-fuchsia-400/20',
   noir:    'bg-white/5 border-white/10',
+  sunset:  'bg-orange-500/10 border-orange-400/20',
+  neon:    'bg-fuchsia-500/10 border-fuchsia-400/20',
+  aurora:  'bg-teal-500/10 border-teal-400/20',
+  space:   'bg-blue-500/10 border-blue-400/20',
+  minimal: 'bg-gray-100 border-gray-300',
 }
 
 const TRAIT_STYLE: Record<SurveyTheme, string> = {
@@ -56,6 +61,11 @@ const TRAIT_STYLE: Record<SurveyTheme, string> = {
   forest:  'bg-emerald-500/15 text-emerald-200/80',
   candy:   'bg-fuchsia-500/15 text-fuchsia-200/80',
   noir:    'bg-white/5 text-white/60',
+  sunset:  'bg-orange-500/15 text-orange-200/80',
+  neon:    'bg-fuchsia-500/15 text-fuchsia-200/80',
+  aurora:  'bg-teal-500/15 text-teal-200/80',
+  space:   'bg-blue-500/15 text-blue-200/80',
+  minimal: 'bg-gray-200 text-gray-700',
 }
 
 export function ResultCard({ result, theme, sameTypePercent, onShare }: ResultCardProps) {

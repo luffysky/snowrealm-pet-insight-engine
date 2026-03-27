@@ -167,7 +167,7 @@ export interface UtmParams {
 // ===== 主題系統型別 =====
 
 /** 可用主題 key */
-export type SurveyTheme = 'default' | 'game' | 'cyber' | 'ancient' | 'sakura' | 'ocean' | 'forest' | 'candy' | 'noir'
+export type SurveyTheme = 'default' | 'game' | 'cyber' | 'ancient' | 'sakura' | 'ocean' | 'forest' | 'candy' | 'noir' | 'sunset' | 'neon' | 'aurora' | 'space' | 'minimal'
 
 /** 裝飾強度 1=輕量 2=標準 3=華麗 */
 export type ThemeIntensity = 1 | 2 | 3

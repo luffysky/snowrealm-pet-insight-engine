@@ -74,6 +74,36 @@ const MILESTONES: Record<SurveyTheme, { at: number; m: ThemeMilestone }[]> = {
     { at: 0.75, m: { icon: '🗝️', title: 'KEY EVIDENCE', desc: '關鍵證據到手' } },
     { at: 1.00, m: { icon: '📁', title: 'CASE CLOSED', desc: '調查完畢，檔案歸檔' } },
   ],
+  sunset: [
+    { at: 0.25, m: { icon: '🌅', title: '黃昏時分', desc: '已完成四分之一，夕陽初升！' } },
+    { at: 0.50, m: { icon: '🌇', title: '暮色漸深', desc: '已走過一半旅程，餘暉正美！' } },
+    { at: 0.75, m: { icon: '🔥', title: '夕陽無限', desc: '即將到達終點，燃燒到最後！' } },
+    { at: 1.00, m: { icon: '🌙', title: '夜幕降臨', desc: '感謝你在黃昏留下足跡！' } },
+  ],
+  neon: [
+    { at: 0.25, m: { icon: '💡', title: 'NEON SPARK', desc: '霓虹初亮，進度 25%！' } },
+    { at: 0.50, m: { icon: '⚡', title: 'CHARGED UP', desc: '能量蓄積過半，繼續發光！' } },
+    { at: 0.75, m: { icon: '🌃', title: 'CITY BLAZING', desc: '都市之夜全力燃燒，75% 完成！' } },
+    { at: 1.00, m: { icon: '🎆', title: 'NEON GLORY', desc: '霓虹盛放，感謝點亮這一刻！' } },
+  ],
+  aurora: [
+    { at: 0.25, m: { icon: '🌿', title: '極光初現', desc: '天際出現第一道極光帷幕！' } },
+    { at: 0.50, m: { icon: '🌌', title: '星空共舞', desc: '極光與星河共舞，旅程過半！' } },
+    { at: 0.75, m: { icon: '💚', title: '光幕搖曳', desc: '極光愈發璀璨，即將到達終點！' } },
+    { at: 1.00, m: { icon: '✨', title: '極光圓滿', desc: '感謝你在極光下留下足跡！' } },
+  ],
+  space: [
+    { at: 0.25, m: { icon: '🚀', title: 'LIFTOFF', desc: '已脫離大氣層，進入太空！' } },
+    { at: 0.50, m: { icon: '🌍', title: 'HALFWAY THERE', desc: '地球已在身後，目標在前！' } },
+    { at: 0.75, m: { icon: '🛸', title: 'DEEP SPACE', desc: '進入深空，幾乎抵達目的地！' } },
+    { at: 1.00, m: { icon: '⭐', title: 'MISSION COMPLETE', desc: '任務圓滿完成，感謝探索！' } },
+  ],
+  minimal: [
+    { at: 0.25, m: { icon: '○', title: '進度 25%', desc: '已完成四分之一。' } },
+    { at: 0.50, m: { icon: '◑', title: '進度 50%', desc: '已完成一半。' } },
+    { at: 0.75, m: { icon: '◕', title: '進度 75%', desc: '即將完成。' } },
+    { at: 1.00, m: { icon: '●', title: '完成', desc: '感謝你的填寫。' } },
+  ],
 }
 
 export function useThemeInteraction(
