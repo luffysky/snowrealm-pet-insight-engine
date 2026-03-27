@@ -179,10 +179,20 @@ export async function completeTask(
     [taskConfig.reward, wallet.id]
   )
 
+  // reason 對應 zcoin_transactions 的 earn reason（任務 ID 映射到 reason）
+  const reasonMap: Record<string, string> = {
+    daily_login: 'daily_login',
+    complete_survey: 'survey_complete',
+    share_result: 'share',
+    invite_friend: 'invite',
+    watch_ad: 'daily_login', // 廣告觀看歸類到 daily_login
+  }
+  const txReason = reasonMap[taskId] ?? 'daily_login'
+
   await execute(
     `INSERT INTO zcoin_transactions (wallet_id, amount, type, reason, reference_id)
      VALUES ($1, $2, 'earn', $3, $4)`,
-    [wallet.id, taskConfig.reward, 'daily_login', taskId]
+    [wallet.id, taskConfig.reward, txReason, taskId]
   )
 
   return {

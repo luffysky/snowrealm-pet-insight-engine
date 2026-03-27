@@ -89,7 +89,7 @@ export default function HomePage() {
   )
 
   return (
-    <div className="min-h-screen overflow-hidden bg-[radial-gradient(circle_at_top,#fff8fd_0%,#eef8ff_38%,#dff1ff_68%,#d9ecff_100%)] text-slate-800">
+    <div className="home-page min-h-screen overflow-hidden text-slate-800">
       {/* 背景裝飾 */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
         <div className="absolute left-[-8%] top-[-4%] h-64 w-64 rounded-full bg-pink-200/45 blur-3xl" />

@@ -1,5 +1,100 @@
 @import "tailwindcss";
 
+/* ── Public UI 淺色/深色模式 CSS 變數 ── */
+:root {
+  /* 公開頁預設：淺色 */
+  --pub-bg:         #f0f9ff;
+  --pub-bg2:        #ffffff;
+  --pub-surface:    rgba(255,255,255,0.85);
+  --pub-border:     rgba(186,230,253,0.6);
+  --pub-text:       #0f172a;
+  --pub-text-muted: #64748b;
+  --pub-accent:     #0284c7;
+  --pub-accent2:    #4f46e5;
+  --pub-card:       rgba(255,255,255,0.9);
+  --pub-shadow:     rgba(14,165,233,0.08);
+
+  /* Scrollbar */
+  --sb-thumb: rgba(14,165,233,0.25);
+  --sb-thumb-hover: rgba(14,165,233,0.45);
+}
+
+/* 深色模式：加 .dark class 到 <html> */
+html.dark {
+  --pub-bg:         #020617;
+  --pub-bg2:        #0f172a;
+  --pub-surface:    rgba(15,23,42,0.85);
+  --pub-border:     rgba(255,255,255,0.08);
+  --pub-text:       #e2e8f0;
+  --pub-text-muted: #94a3b8;
+  --pub-accent:     #38bdf8;
+  --pub-accent2:    #818cf8;
+  --pub-card:       rgba(30,41,59,0.9);
+  --pub-shadow:     rgba(0,0,0,0.3);
+
+  --sb-thumb: rgba(255,255,255,0.15);
+  --sb-thumb-hover: rgba(255,255,255,0.25);
+}
+
+/* Admin 區段強制深色（不隨 pub 模式切換） */
+.admin-root, .admin-root * {
+  color-scheme: dark;
+}
+
+/* ── 首頁深色模式 ── */
+.home-page {
+  --home-bg: radial-gradient(circle at top, #fff8fd 0%, #eef8ff 38%, #dff1ff 68%, #d9ecff 100%);
+  background: var(--home-bg);
+  color: #0f172a;
+  transition: background 0.3s ease, color 0.3s ease;
+}
+
+html.dark .home-page {
+  --home-bg: radial-gradient(circle at top, #020617 0%, #0c1527 40%, #0f172a 70%, #0c1527 100%);
+  background: var(--home-bg);
+  color: #e2e8f0;
+}
+
+/* Dark mode: 主要文字覆蓋 */
+html.dark .home-page .text-slate-800 { color: #e2e8f0; }
+html.dark .home-page .text-slate-700 { color: #cbd5e1; }
+html.dark .home-page .text-slate-600 { color: #94a3b8; }
+html.dark .home-page .text-slate-500 { color: #64748b; }
+html.dark .home-page .text-sky-700\/80 { color: rgba(125,211,252,0.8); }
+html.dark .home-page .text-sky-700\/75 { color: rgba(125,211,252,0.75); }
+
+/* Dark mode: 卡片/玻璃效果 */
+html.dark .home-page .bg-white\/18 { background: rgba(255,255,255,0.04); }
+html.dark .home-page .bg-white\/20 { background: rgba(255,255,255,0.05); }
+html.dark .home-page .bg-white\/25 { background: rgba(255,255,255,0.06); }
+html.dark .home-page .bg-white\/28 { background: rgba(255,255,255,0.07); }
+html.dark .home-page .bg-white\/35 { background: rgba(255,255,255,0.08); }
+html.dark .home-page .bg-white\/16 { background: rgba(255,255,255,0.04); }
+html.dark .home-page .bg-white\/32 { background: rgba(255,255,255,0.07); }
+html.dark .home-page .border-white\/30 { border-color: rgba(255,255,255,0.1); }
+html.dark .home-page .border-white\/35 { border-color: rgba(255,255,255,0.12); }
+
+/* Dark mode: 背景裝飾球 */
+html.dark .home-page .bg-pink-200\/45 { background: rgba(236,72,153,0.12); }
+html.dark .home-page .bg-cyan-200\/45 { background: rgba(6,182,212,0.12); }
+html.dark .home-page .bg-violet-200\/35 { background: rgba(139,92,246,0.1); }
+
+/* ── 公開頁面 (zcoin-shop / wallet / explore) 淺色模式 ── */
+.pub-page-light {
+  background: var(--pub-bg);
+  color: var(--pub-text);
+}
+
+.pub-page-light .pub-card {
+  background: var(--pub-card);
+  border-color: var(--pub-border);
+  color: var(--pub-text);
+}
+
+.pub-page-light .pub-muted {
+  color: var(--pub-text-muted);
+}
+
 :root {
   --background: #020617;
   --foreground: #e2e8f0;
@@ -43,8 +138,8 @@ body {
 /* 自訂滾動條 */
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.25); }
+::-webkit-scrollbar-thumb { background: var(--sb-thumb, rgba(255,255,255,0.15)); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--sb-thumb-hover, rgba(255,255,255,0.25)); }
 
 /* ================================================
    🎮 GAME THEME — RPG 冒險闖關

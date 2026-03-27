@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getTenantContext } from '@/lib/tenant'
-import { getBalance, getTransactionHistory, earnZcoin, spendZcoin } from '@/lib/zcoinEngine'
+import { getOrCreateWallet, getTransactionHistory, earnZcoin, spendZcoin } from '@/lib/zcoinEngine'
 
 /** GET /api/zcoin — 取得當前餘額與交易歷史 */
 export async function GET() {
@@ -10,12 +10,19 @@ export async function GET() {
   }
 
   const params = { userId: ctx.userId, tenantId: ctx.tenantId }
-  const [balance, history] = await Promise.all([
-    getBalance(params),
+  const [wallet, history] = await Promise.all([
+    getOrCreateWallet(params),
     getTransactionHistory({ ...params, limit: 30 }),
   ])
 
-  return NextResponse.json({ balance, history })
+  return NextResponse.json({
+    balance: {
+      balance: wallet.balance,
+      totalEarned: wallet.total_earned,
+      totalSpent: wallet.total_spent,
+    },
+    history,
+  })
 }
 
 /** POST /api/zcoin — 發起交易（earn 或 spend） */

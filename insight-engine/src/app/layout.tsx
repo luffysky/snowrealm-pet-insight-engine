@@ -66,6 +66,14 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="zh-Hant" suppressHydrationWarning>
+      <head>
+        {/* 避免 FOUC：在 CSS 渲染前立即套用深色模式 */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var t=localStorage.getItem('ui-theme');var d=window.matchMedia('(prefers-color-scheme: dark)').matches;if(t==='dark'||(t===null&&d))document.documentElement.classList.add('dark')}catch(e){}})();`,
+          }}
+        />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
         suppressHydrationWarning

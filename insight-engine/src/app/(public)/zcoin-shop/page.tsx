@@ -3,6 +3,76 @@
 import { useEffect, useState, useCallback } from 'react'
 import Link from 'next/link'
 
+// ===== 邀請連結元件 =====
+
+interface ReferralInfo {
+  code: string
+  referralUrl: string
+  info: {
+    referredBy?: string
+    referrerName?: string
+    referrals: { username: string; status: string; createdAt: string }[]
+  } | null
+}
+
+function ReferralSection({ onEarned }: { onEarned?: () => void }) {
+  const [data, setData] = useState<ReferralInfo | null>(null)
+  const [copied, setCopied] = useState(false)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    fetch('/api/referral')
+      .then(r => r.ok ? r.json() as Promise<ReferralInfo> : null)
+      .then(d => { if (d) setData(d) })
+      .catch(() => {})
+      .finally(() => setLoading(false))
+  }, [])
+
+  async function handleCopy() {
+    if (!data?.referralUrl) return
+    try {
+      await navigator.clipboard.writeText(data.referralUrl)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } catch { /* 靜默失敗 */ }
+  }
+
+  if (loading) return <div className="h-24 bg-white/5 rounded-xl animate-pulse" />
+  if (!data) return null
+
+  const successReferrals = data.info?.referrals.filter(r => r.status === 'completed').length ?? 0
+  const pendingReferrals = data.info?.referrals.filter(r => r.status === 'pending').length ?? 0
+
+  return (
+    <div className="bg-white/5 border border-emerald-400/15 rounded-xl p-4 space-y-3">
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-sm font-medium text-white/80">🤝 邀請好友賺 Z幣</p>
+          <p className="text-xs text-white/40 mt-0.5">每成功邀請一位好友 +10 Z幣</p>
+        </div>
+        <div className="text-right text-xs text-white/30">
+          <p>成功 {successReferrals} 位</p>
+          {pendingReferrals > 0 && <p className="text-amber-400/60">待確認 {pendingReferrals}</p>}
+        </div>
+      </div>
+      <div className="flex gap-2">
+        <div className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs text-white/50 truncate font-mono">
+          {data.referralUrl}
+        </div>
+        <button
+          onClick={handleCopy}
+          className="shrink-0 px-3 py-2 rounded-lg text-xs font-medium bg-emerald-500/20 border border-emerald-400/30 text-emerald-300 hover:bg-emerald-500/30 transition-colors"
+        >
+          {copied ? '✅ 已複製' : '📋 複製'}
+        </button>
+      </div>
+      {data.info?.referrerName && (
+        <p className="text-xs text-white/30">由 {data.info.referrerName} 邀請加入</p>
+      )}
+    </div>
+  )
+}
+
 // ===== 型別 =====
 
 interface BalanceData {
@@ -386,6 +456,11 @@ export default function ZcoinShopPage() {
           <p className="text-xs text-white/20 mt-3 text-center">
             購買即表示同意服務條款。Z幣僅限平台內使用，不可兌換現金。
           </p>
+        </section>
+
+        {/* 邀請好友 */}
+        <section className="mb-8">
+          <ReferralSection onEarned={fetchBalance} />
         </section>
 
         {/* 如何賺取 Z幣 */}

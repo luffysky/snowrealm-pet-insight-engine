@@ -10,6 +10,8 @@ import { notifySurveySubmitted } from '@/lib/line'
 import { verifyLineToken } from '@/lib/lineToken'
 import { evaluateNotificationRules } from '@/lib/notificationEngine'
 import { checkResponseLimit } from '@/lib/planLimits'
+import { rewardSurveyComplete } from '@/lib/zcoinEngine'
+import { completeTask } from '@/lib/dailyTaskEngine'
 import type { SubmitSurveyPayload } from '@/types'
 
 const MAX_ANSWER_LENGTH = 2000
@@ -186,6 +188,22 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         `UPDATE responses SET allow_story_wall = true WHERE id = $1`,
         [responseId]
       ).catch(() => {})
+    }
+
+    // Z幣獎勵（非阻塞）
+    const responseCount = await queryOne<{ cnt: string }>(
+      `SELECT COUNT(*) as cnt FROM responses WHERE survey_id = $1 AND status = 'completed'`,
+      [surveyId]
+    ).catch(() => null)
+    rewardSurveyComplete({
+      lineUserId: lineUserId,
+      tenantId: tenantId,
+      responseCount: parseInt(responseCount?.cnt ?? '0', 10),
+      referenceId: responseId,
+    }).catch(() => {})
+    // 每日任務：完成問卷（僅登入用戶）
+    if (userId) {
+      completeTask(userId, 'complete_survey').catch(() => {})
     }
 
     return NextResponse.json({ success: true, responseId })

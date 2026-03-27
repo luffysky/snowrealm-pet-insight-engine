@@ -6,6 +6,7 @@ import { createHash } from 'crypto'
 import { formatPhoneE164 } from '@/lib/sms'
 import { notifyNewRegistration } from '@/lib/lineNotify'
 import { validateReferralCode, createReferral } from '@/lib/referralEngine'
+import { earnZcoin } from '@/lib/zcoinEngine'
 
 /** 將中文/英文組織名轉成 URL 安全 slug */
 function toSlug(name: string): string {
@@ -174,6 +175,13 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       const ref = await validateReferralCode(referralCode)
       if (ref.valid && ref.referrerId) {
         await createReferral({ referrerId: ref.referrerId, referredId: newUser.id, referralCode })
+        // 推薦人獲得 Z幣 +10（非阻塞）
+        earnZcoin({
+          userId: ref.referrerId,
+          amount: 10,
+          reason: 'invite',
+          referenceId: newUser.id,
+        }).catch(() => {})
       }
     }
 

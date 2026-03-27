@@ -6,14 +6,30 @@ interface ShareButtonsProps {
   url: string
   title: string
   className?: string
+  onShared?: (earned: number) => void  // 分享後回呼（Z幣獎勵）
 }
 
-export function ShareButtons({ url, title, className = '' }: ShareButtonsProps) {
+/** 呼叫後端記錄分享並領取 Z幣（非必須成功） */
+async function recordShareEarn(): Promise<number> {
+  try {
+    const res = await fetch('/api/zcoin', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'earn', amount: 5, reason: 'share' }),
+    })
+    if (res.ok) return 5
+  } catch { /* 靜默失敗 */ }
+  return 0
+}
+
+export function ShareButtons({ url, title, className = '', onShared }: ShareButtonsProps) {
   const [copied, setCopied] = useState(false)
 
-  function handleShareLine() {
+  async function handleShareLine() {
     const shareUrl = `https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(url)}&text=${encodeURIComponent(title)}`
     window.open(shareUrl, '_blank', 'noopener,noreferrer')
+    const earned = await recordShareEarn()
+    if (earned > 0) onShared?.(earned)
   }
 
   async function handleCopyLink() {
@@ -21,6 +37,8 @@ export function ShareButtons({ url, title, className = '' }: ShareButtonsProps) 
       await navigator.clipboard.writeText(url)
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
+      const earned = await recordShareEarn()
+      if (earned > 0) onShared?.(earned)
     } catch {
       // 瀏覽器不支援 clipboard API — 靜默失敗
     }

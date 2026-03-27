@@ -3,6 +3,7 @@ import { query, queryOne } from '@/lib/db'
 import { verifyPassword } from '@/lib/auth'
 import { signToken } from '@/lib/jwt'
 import { notifyUserLogin } from '@/lib/lineNotify'
+import { completeTask } from '@/lib/dailyTaskEngine'
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
   const body = await request.json().catch(() => null)
@@ -83,6 +84,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     displayName: user.display_name,
     tenantId: defaultTid,
   })
+
+  // 每日登入 Z幣任務（非阻塞）
+  completeTask(user.id, 'daily_login').catch(() => {})
 
   // 以用戶擁有的第一個（或最近一個）tenant 作為預設跳轉的 slug
   const response = NextResponse.json({
