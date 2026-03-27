@@ -49,11 +49,17 @@ export async function GET(): Promise<NextResponse> {
     [userId]
   )
 
+  const AUDIO_PREFIX = '[AUDIO]:'
+
   const conversations: ConversationResult[] = rows.map(row => {
     let preview = '...'
     try {
-      preview = decryptApiKey({ encrypted: row.encrypted_content, iv: row.iv, tag: row.tag })
-      if (preview.length > 60) preview = preview.slice(0, 60) + '...'
+      const decrypted = decryptApiKey({ encrypted: row.encrypted_content, iv: row.iv, tag: row.tag })
+      if (decrypted.startsWith(AUDIO_PREFIX)) {
+        preview = '🎵 語音訊息'
+      } else {
+        preview = decrypted.length > 60 ? decrypted.slice(0, 60) + '...' : decrypted
+      }
     } catch {
       preview = '[無法解密]'
     }

@@ -41,7 +41,7 @@ const KNOWN_ADMIN_PAGES = new Set([
   'theme-settings', 'utm', 'utm-links', 'upgrade', 'waitlist', 'webhooks', 'responses', 'zcoin',
 ])
 
-export async function middleware(request: NextRequest): Promise<NextResponse> {
+export async function proxy(request: NextRequest): Promise<NextResponse> {
   const { pathname } = request.nextUrl
 
   // Login / Register / Auth API — 永遠放行

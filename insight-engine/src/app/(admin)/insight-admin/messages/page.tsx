@@ -5,7 +5,7 @@ import {
   Send, Loader2, ArrowLeft, MessageCircle, Search, MoreHorizontal,
   RotateCcw, Trash2, Bookmark, BookmarkCheck, Download, CheckSquare,
   Square, Trash, UserPlus, Bell, Check, X, Users, Smile, Paperclip,
-  Phone, Video, Info, ChevronDown,
+  Phone, Video, Info, ChevronDown, Mic, MicOff, Music,
 } from 'lucide-react'
 
 interface Conversation {
@@ -16,6 +16,8 @@ interface Conversation {
   lastMessageAt: string
   unreadCount: number
 }
+
+const AUDIO_PREFIX = '[AUDIO]:'
 
 interface Message {
   id: string
@@ -110,9 +112,17 @@ export default function MessagesPage() {
   const [userSearch, setUserSearch] = useState('')
   const [addingUserId, setAddingUserId] = useState<string | null>(null)
 
+  const [recording, setRecording] = useState(false)
+  const [recordingSecs, setRecordingSecs] = useState(0)
+  const [audioUploading, setAudioUploading] = useState(false)
+
   const bottomRef = useRef<HTMLDivElement>(null)
   const esRef = useRef<EventSource | null>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const audioFileRef = useRef<HTMLInputElement>(null)
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null)
+  const audioChunksRef = useRef<Blob[]>([])
+  const recordingTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   useEffect(() => {
     fetch('/api/auth/me')
@@ -295,6 +305,103 @@ export default function MessagesPage() {
     if (!selected) return
     window.open(`/api/admin/social/messages/${selected.userId}?export=1`, '_blank')
   }
+
+  const sendAudioMessage = async (blob: Blob) => {
+    if (!selected) return
+    setAudioUploading(true)
+    try {
+      const fd = new FormData()
+      fd.append('file', blob, 'voice.webm')
+      const res = await fetch('/api/upload/audio', { method: 'POST', body: fd })
+      const data = await res.json() as { url?: string; error?: string }
+      if (!data.url) throw new Error(data.error ?? '上傳失敗')
+
+      const audioContent = `${AUDIO_PREFIX}${data.url}`
+      const msgRes = await fetch('/api/admin/social/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ toUserId: selected.userId, content: audioContent }),
+      })
+      if (msgRes.ok) {
+        const msgData = await msgRes.json() as { message: { id: string; createdAt: string } }
+        setMessages(prev => [...prev, {
+          id: msgData.message.id,
+          content: audioContent,
+          createdAt: msgData.message.createdAt,
+          isMine: true,
+          fromName: null,
+          fromAvatar: null,
+          recalledAt: null,
+          isSaved: false,
+        }])
+        setConversations(prev => prev.map(c =>
+          c.userId === selected.userId
+            ? { ...c, lastMessagePreview: '🎵 語音訊息', lastMessageAt: msgData.message.createdAt }
+            : c
+        ))
+      }
+    } catch (err) {
+      console.error('[sendAudioMessage]', err)
+    } finally {
+      setAudioUploading(false)
+    }
+  }
+
+  const handleAudioFile = async (files: FileList | null) => {
+    if (!files?.[0]) return
+    await sendAudioMessage(files[0])
+  }
+
+  const startRecording = async () => {
+    if (recording) return
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      const mr = new MediaRecorder(stream, { mimeType: MediaRecorder.isTypeSupported('audio/webm;codecs=opus') ? 'audio/webm;codecs=opus' : 'audio/webm' })
+      audioChunksRef.current = []
+      mr.ondataavailable = e => { if (e.data.size > 0) audioChunksRef.current.push(e.data) }
+      mr.onstop = async () => {
+        stream.getTracks().forEach(t => t.stop())
+        if (audioChunksRef.current.length > 0) {
+          const blob = new Blob(audioChunksRef.current, { type: mr.mimeType })
+          await sendAudioMessage(blob)
+        }
+        audioChunksRef.current = []
+      }
+      mr.start(100)
+      mediaRecorderRef.current = mr
+      setRecording(true)
+      setRecordingSecs(0)
+      recordingTimerRef.current = setInterval(() => setRecordingSecs(s => s + 1), 1000)
+    } catch (err) {
+      console.error('[startRecording] mic access denied', err)
+    }
+  }
+
+  const stopRecording = () => {
+    if (!recording) return
+    if (recordingTimerRef.current) { clearInterval(recordingTimerRef.current); recordingTimerRef.current = null }
+    mediaRecorderRef.current?.stop()
+    mediaRecorderRef.current = null
+    setRecording(false)
+    setRecordingSecs(0)
+  }
+
+  const cancelRecording = () => {
+    if (!recording) return
+    if (recordingTimerRef.current) { clearInterval(recordingTimerRef.current); recordingTimerRef.current = null }
+    mediaRecorderRef.current?.stream.getTracks().forEach(t => t.stop())
+    if (mediaRecorderRef.current) {
+      mediaRecorderRef.current.ondataavailable = null
+      mediaRecorderRef.current.onstop = null
+      mediaRecorderRef.current.stop()
+    }
+    mediaRecorderRef.current = null
+    audioChunksRef.current = []
+    setRecording(false)
+    setRecordingSecs(0)
+  }
+
+  const formatRecordingSecs = (s: number) => `${Math.floor(s / 60).toString().padStart(2, '0')}:${(s % 60).toString().padStart(2, '0')}`
 
   const loadAllUsers = async () => {
     try {
@@ -616,6 +723,8 @@ export default function MessagesPage() {
                   const recalled = isRecalled(msg)
                   const isSelected = selectedMsgIds.has(msg.id)
                   const isMine = msg.isMine
+                  const isAudio = !recalled && msg.content.startsWith(AUDIO_PREFIX)
+                  const audioUrl = isAudio ? msg.content.slice(AUDIO_PREFIX.length) : null
 
                   return (
                     <div
@@ -645,15 +754,33 @@ export default function MessagesPage() {
 
                       {/* Bubble */}
                       <div className="max-w-[68%] sm:max-w-[72%] space-y-0.5">
-                        <div className={`px-3.5 py-2.5 text-sm leading-relaxed break-words ${
-                          recalled
-                            ? 'bg-white/4 text-white/25 italic border border-white/6 rounded-2xl'
-                            : isMine
-                              ? 'bg-gradient-to-br from-amber-500 to-orange-400 text-white font-medium rounded-2xl rounded-br-sm shadow-[0_4px_12px_rgba(245,158,11,0.25)]'
-                              : 'bg-white/[0.08] text-white/85 rounded-2xl rounded-bl-sm border border-white/[0.08] shadow-[0_2px_8px_rgba(0,0,0,0.3)]'
-                        }`}>
-                          {msg.content}
-                        </div>
+                        {isAudio && audioUrl ? (
+                          <div className={`px-3 py-2.5 rounded-2xl ${
+                            isMine ? 'rounded-br-sm bg-gradient-to-br from-amber-500/90 to-orange-400/90 shadow-[0_4px_12px_rgba(245,158,11,0.25)]'
+                                    : 'rounded-bl-sm bg-white/[0.08] border border-white/[0.08] shadow-[0_2px_8px_rgba(0,0,0,0.3)]'
+                          }`}>
+                            <div className="flex items-center gap-2 mb-1.5">
+                              <Music className={`w-3.5 h-3.5 shrink-0 ${isMine ? 'text-white/80' : 'text-amber-400/70'}`} />
+                              <span className={`text-xs font-medium ${isMine ? 'text-white/80' : 'text-white/50'}`}>語音訊息</span>
+                            </div>
+                            <audio
+                              src={audioUrl}
+                              controls
+                              className="w-48 h-8"
+                              style={{ colorScheme: 'dark' }}
+                            />
+                          </div>
+                        ) : (
+                          <div className={`px-3.5 py-2.5 text-sm leading-relaxed break-words ${
+                            recalled
+                              ? 'bg-white/4 text-white/25 italic border border-white/6 rounded-2xl'
+                              : isMine
+                                ? 'bg-gradient-to-br from-amber-500 to-orange-400 text-white font-medium rounded-2xl rounded-br-sm shadow-[0_4px_12px_rgba(245,158,11,0.25)]'
+                                : 'bg-white/[0.08] text-white/85 rounded-2xl rounded-bl-sm border border-white/[0.08] shadow-[0_2px_8px_rgba(0,0,0,0.3)]'
+                          }`}>
+                            {msg.content}
+                          </div>
+                        )}
                         <div className={`flex items-center gap-1.5 ${isMine ? 'justify-end' : 'justify-start'} px-1`}>
                           <span className="text-[10px] text-white/20">{formatTime(msg.createdAt)}</span>
                           {msg.isSaved && <Bookmark className="w-2.5 h-2.5 text-amber-400/50" />}
@@ -673,14 +800,42 @@ export default function MessagesPage() {
 
               {/* ── Input bar ── */}
               <div className="px-3 py-3 border-t border-white/8 shrink-0 bg-white/[0.02]">
+                {/* Recording indicator */}
+                {recording && (
+                  <div className="flex items-center gap-2 mb-2 px-3 py-2 bg-red-500/10 border border-red-400/20 rounded-xl">
+                    <span className="w-2 h-2 rounded-full bg-red-400 animate-pulse shrink-0" />
+                    <span className="text-xs text-red-300 font-medium flex-1">錄音中 {formatRecordingSecs(recordingSecs)}</span>
+                    <button onClick={cancelRecording} className="text-xs text-white/30 hover:text-white/60 transition-colors">取消</button>
+                    <button
+                      onClick={stopRecording}
+                      className="px-2.5 py-1 bg-red-500/20 hover:bg-red-500/35 border border-red-400/25 rounded-lg text-xs text-red-300 font-medium transition-colors"
+                    >
+                      {audioUploading ? <Loader2 className="w-3 h-3 animate-spin inline" /> : '完成送出'}
+                    </button>
+                  </div>
+                )}
+
                 <div className="flex items-end gap-2 bg-white/[0.06] border border-white/10 rounded-2xl px-1 pl-3 py-1.5 focus-within:border-amber-400/30 focus-within:bg-white/[0.08] transition-all">
                   {/* Left icons */}
                   <div className="flex items-center gap-0.5 self-end pb-1">
                     <button className="p-1.5 text-white/20 hover:text-amber-300 hover:bg-white/5 rounded-xl transition-colors" title="表情符號">
                       <Smile className="w-4 h-4" />
                     </button>
-                    <button className="p-1.5 text-white/20 hover:text-amber-300 hover:bg-white/5 rounded-xl transition-colors" title="附加檔案">
-                      <Paperclip className="w-4 h-4" />
+                    {/* Audio file upload */}
+                    <input
+                      ref={audioFileRef}
+                      type="file"
+                      accept="audio/*"
+                      className="hidden"
+                      onChange={e => void handleAudioFile(e.target.files)}
+                    />
+                    <button
+                      onClick={() => audioFileRef.current?.click()}
+                      disabled={audioUploading || recording}
+                      className="p-1.5 text-white/20 hover:text-amber-300 hover:bg-white/5 rounded-xl transition-colors disabled:opacity-40"
+                      title="上傳音訊檔案"
+                    >
+                      {audioUploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Paperclip className="w-4 h-4" />}
                     </button>
                   </div>
 
@@ -695,25 +850,48 @@ export default function MessagesPage() {
                     onKeyDown={e => {
                       if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); void send() }
                     }}
-                    placeholder="輸入訊息..."
+                    placeholder={recording ? '錄音中...' : '輸入訊息...'}
                     rows={1}
-                    className="flex-1 bg-transparent text-sm text-white placeholder-white/20 outline-none resize-none overflow-y-auto py-1"
+                    disabled={recording}
+                    className="flex-1 bg-transparent text-sm text-white placeholder-white/20 outline-none resize-none overflow-y-auto py-1 disabled:opacity-40"
                     style={{ minHeight: '22px', maxHeight: '96px' }}
                   />
 
-                  <button
-                    onClick={() => void send()}
-                    disabled={!input.trim() || sending}
-                    className={`shrink-0 self-end mb-1 w-9 h-9 rounded-xl flex items-center justify-center transition-all font-medium ${
-                      input.trim()
-                        ? 'bg-gradient-to-br from-amber-500 to-orange-400 text-white shadow-[0_4px_12px_rgba(245,158,11,0.3)] hover:shadow-[0_4px_16px_rgba(245,158,11,0.4)] hover:scale-105 active:scale-95'
-                        : 'bg-white/8 text-white/20 cursor-not-allowed'
-                    }`}
-                  >
-                    {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                  </button>
+                  {/* Mic button (hold to record) */}
+                  {!input.trim() && !sending && (
+                    <button
+                      onMouseDown={() => void startRecording()}
+                      onMouseUp={stopRecording}
+                      onMouseLeave={() => { if (recording) stopRecording() }}
+                      onTouchStart={e => { e.preventDefault(); void startRecording() }}
+                      onTouchEnd={stopRecording}
+                      disabled={audioUploading}
+                      className={`shrink-0 self-end mb-1 w-9 h-9 rounded-xl flex items-center justify-center transition-all select-none ${
+                        recording
+                          ? 'bg-red-500 text-white shadow-[0_4px_12px_rgba(239,68,68,0.4)] scale-110 animate-pulse'
+                          : 'bg-white/8 text-white/35 hover:bg-white/12 hover:text-amber-300 active:scale-95'
+                      } disabled:opacity-40`}
+                      title="按住錄音，放開送出"
+                    >
+                      {recording ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+                    </button>
+                  )}
+
+                  {(input.trim() || sending) && (
+                    <button
+                      onClick={() => void send()}
+                      disabled={!input.trim() || sending}
+                      className={`shrink-0 self-end mb-1 w-9 h-9 rounded-xl flex items-center justify-center transition-all font-medium ${
+                        input.trim()
+                          ? 'bg-gradient-to-br from-amber-500 to-orange-400 text-white shadow-[0_4px_12px_rgba(245,158,11,0.3)] hover:shadow-[0_4px_16px_rgba(245,158,11,0.4)] hover:scale-105 active:scale-95'
+                          : 'bg-white/8 text-white/20 cursor-not-allowed'
+                      }`}
+                    >
+                      {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                    </button>
+                  )}
                 </div>
-                <p className="text-center text-[10px] text-white/10 mt-1.5">Enter 送出 · Shift+Enter 換行</p>
+                <p className="text-center text-[10px] text-white/10 mt-1.5">Enter 送出 · Shift+Enter 換行 · 按住麥克風錄音</p>
               </div>
             </>
           )}
