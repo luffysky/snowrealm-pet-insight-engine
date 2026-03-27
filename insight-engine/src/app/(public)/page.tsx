@@ -422,8 +422,18 @@ export default function LandingPage() {
       </section>
 
       {/* ── Footer ── */}
-      <footer className="border-t border-slate-800/50 py-10">
+      <footer className="border-t border-slate-800/50 py-12">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
+          {/* Community rules banner */}
+          <div className="mb-8 p-4 bg-gradient-to-r from-amber-500/5 to-purple-500/5 border border-white/5 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-3 text-sm">
+            <div className="flex items-center gap-2 text-slate-400">
+              <span>⚖️</span>
+              <span>本平台禁止詐騙、騷擾、仇恨言論及任何違法行為。</span>
+            </div>
+            <Link href="/rules" className="shrink-0 text-amber-400 hover:text-amber-300 font-medium transition-colors">
+              閱讀社群規範 →
+            </Link>
+          </div>
           <div className="flex flex-col sm:flex-row items-center justify-between gap-6 text-sm text-slate-500">
             <div className="flex items-center gap-2">
               <span className="font-medium text-slate-400">✦ SnowRealm Insight Engine</span>
@@ -433,6 +443,7 @@ export default function LandingPage() {
               <Link href="/explore" className="hover:text-white transition-colors">探索問卷</Link>
               <Link href="/wallet" className="hover:text-white transition-colors">Z幣錢包</Link>
               <Link href="/#pricing" className="hover:text-white transition-colors">定價</Link>
+              <Link href="/rules" className="hover:text-amber-400 transition-colors">社群規範</Link>
               <Link href="/privacy" className="hover:text-white transition-colors">隱私政策</Link>
               <Link href="/terms" className="hover:text-white transition-colors">使用條款</Link>
               <Link href="/cookies" className="hover:text-white transition-colors">Cookie</Link>

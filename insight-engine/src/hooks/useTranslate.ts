@@ -25,18 +25,17 @@ export function useTranslate() {
     setTranslating(true)
     setError(null)
     try {
-      // Strip HTML tags for translation
+      // Strip HTML tags for plain text
       const plainText = text.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()
-      const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${encodeURIComponent(toLang)}&dt=t&q=${encodeURIComponent(plainText)}`
-      const res = await fetch(url)
+      const res = await fetch('/api/translate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: plainText, targetLang: toLang }),
+      })
       if (!res.ok) throw new Error('翻譯失敗')
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const data = await res.json() as any[]
-      // Google Translate response: [[["translated", "original", null, null, 1],...], null, "detected-lang"]
-      const translatedText = (data[0] as [string, string][]).map(([t]) => t).join('')
-      const detected = data[2] as string
-      setTranslated(translatedText)
-      setSourceLang(detected)
+      const data = await res.json() as { translated: string; sourceLang: string }
+      setTranslated(data.translated)
+      setSourceLang(data.sourceLang)
       setShowTranslation(true)
     } catch {
       setError('翻譯失敗，請稍後再試')

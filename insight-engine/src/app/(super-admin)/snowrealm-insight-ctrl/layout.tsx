@@ -10,6 +10,7 @@ const NAV_OPERATIONS = [
   { href: '/snowrealm-insight-ctrl/tenants', label: '租戶管理', icon: '🏢' },
   { href: '/snowrealm-insight-ctrl/users', label: '使用者', icon: '👤' },
   { href: '/snowrealm-insight-ctrl/usage', label: '用量追蹤', icon: '📈' },
+  { href: '/snowrealm-insight-ctrl/social', label: '社群監控', icon: '🛡️' },
   { href: '/snowrealm-insight-ctrl/support', label: '客服工單', icon: '📬' },
   { href: '/snowrealm-insight-ctrl/notifications', label: '平台通知', icon: '📢' },
   { href: '/snowrealm-insight-ctrl/rich-menu', label: 'Rich Menu', icon: '📱' },

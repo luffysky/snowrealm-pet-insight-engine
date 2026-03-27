@@ -9,7 +9,7 @@ import { queryOne } from '@/lib/db'
 
 const PUSH_URL = 'https://api.line.me/v2/bot/message/push'
 
-export type NotifyEvent = 'registration' | 'login' | 'survey_complete' | 'weekly_report'
+export type NotifyEvent = 'registration' | 'login' | 'survey_complete' | 'weekly_report' | 'report' | 'new_post' | 'new_user'
 
 async function isNotifyEnabled(event: NotifyEvent, tenantId?: string): Promise<boolean> {
   if (!tenantId) return true
@@ -190,6 +190,135 @@ export async function notifyUserLogin(info: {
     headerBg: theme.headerBg,
     rows,
   }))
+}
+
+// ━━━━━━━━━━━━━━━━━ 社群監控通知 ━━━━━━━━━━━━━━━━━
+
+const REASON_LABELS: Record<string, string> = {
+  spam:          '🗑️ 垃圾訊息',
+  fraud:         '🚨 詐騙',
+  harassment:    '😡 騷擾/霸凌',
+  inappropriate: '🔞 不當內容',
+  violence:      '⚔️ 暴力',
+  privacy:       '🔏 侵犯隱私',
+  copyright:     '©️ 侵犯著作權',
+  other:         '❓ 其他',
+}
+
+const TARGET_LABELS: Record<string, string> = {
+  post:    '貼文',
+  comment: '留言',
+  user:    '用戶',
+  message: '私訊',
+}
+
+/** 用戶檢舉通知 — 立即推送給總管理員 */
+export async function notifyReport(info: {
+  reporterName: string
+  targetType: string
+  targetId: string
+  targetContent?: string
+  targetAuthorName?: string
+  reason: string
+  description?: string
+}): Promise<void> {
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://insight.snowrealm.pet'
+  const rows: { label: string; value: string }[] = [
+    { label: '舉報人', value: info.reporterName },
+    { label: '目標類型', value: TARGET_LABELS[info.targetType] ?? info.targetType },
+    { label: '原因', value: REASON_LABELS[info.reason] ?? info.reason },
+  ]
+  if (info.targetAuthorName) rows.push({ label: '被舉報人', value: info.targetAuthorName })
+  if (info.targetContent) rows.push({ label: '內容摘要', value: info.targetContent.slice(0, 80) })
+  if (info.description) rows.push({ label: '補充說明', value: info.description.slice(0, 100) })
+
+  const adminUserId = await getLineConfig('ADMIN_USER_ID')
+  if (!adminUserId) return
+  let token = await getLineConfig('INSIGHT_CHANNEL_ACCESS_TOKEN')
+  if (!token) token = await getLineConfig('OFFICIAL_CHANNEL_ACCESS_TOKEN')
+  if (!token) return
+
+  const message = {
+    type: 'flex',
+    altText: `🚨 新檢舉：${REASON_LABELS[info.reason] ?? info.reason} — ${info.reporterName}`,
+    contents: {
+      type: 'bubble',
+      size: 'kilo',
+      header: {
+        type: 'box', layout: 'vertical',
+        backgroundColor: '#dc2626',
+        paddingAll: '16px',
+        contents: [
+          { type: 'text', text: '🚨 用戶檢舉通知', color: '#ffffff', weight: 'bold', size: 'lg' },
+        ],
+      },
+      body: {
+        type: 'box', layout: 'vertical',
+        spacing: 'md', paddingAll: '16px',
+        contents: [
+          ...rows.map(r => buildInfoRow(r.label, r.value)),
+          { type: 'separator', margin: 'md' },
+          buildInfoRow('時間', now()),
+        ],
+      },
+      footer: {
+        type: 'box', layout: 'vertical', paddingAll: '12px',
+        contents: [
+          {
+            type: 'button', style: 'primary', height: 'sm',
+            color: '#dc2626',
+            action: { type: 'uri', label: '前往審查 →', uri: `${baseUrl}/snowrealm-insight-ctrl/social?tab=reports` },
+          },
+        ],
+      },
+    },
+  }
+
+  fetch(PUSH_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ to: adminUserId, messages: [message] }),
+    signal: AbortSignal.timeout(10000),
+  }).catch(err => console.error('[notifyReport] LINE push failed:', err))
+}
+
+/** 新貼文/新用戶活動通知（可選，由呼叫端控制是否推送） */
+export async function notifyActivity(info: {
+  type: 'new_post' | 'new_user'
+  actorName: string
+  summary: string
+  link?: string
+}): Promise<void> {
+  const adminUserId = await getLineConfig('ADMIN_USER_ID')
+  if (!adminUserId) return
+  let token = await getLineConfig('INSIGHT_CHANNEL_ACCESS_TOKEN')
+  if (!token) token = await getLineConfig('OFFICIAL_CHANNEL_ACCESS_TOKEN')
+  if (!token) return
+
+  const emoji = info.type === 'new_post' ? '📝' : '👤'
+  const label = info.type === 'new_post' ? '新貼文發布' : '新用戶加入'
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://insight.snowrealm.pet'
+
+  const message = buildFlexMessage({
+    altText: `${emoji} ${label}：${info.actorName}`,
+    headerText: `${emoji} ${label}`,
+    headerBg: info.type === 'new_post' ? '#7c3aed' : '#059669',
+    rows: [
+      { label: '用戶', value: info.actorName },
+      { label: '內容', value: info.summary.slice(0, 100) },
+      ...(info.link ? [{ label: '連結', value: info.link }] : []),
+    ],
+  })
+  // Override footer link for social monitor
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  ;(message as any).contents.footer.contents[0].action.uri = `${baseUrl}/snowrealm-insight-ctrl/social`
+
+  fetch(PUSH_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ to: adminUserId, messages: [message] }),
+    signal: AbortSignal.timeout(10000),
+  }).catch(err => console.error('[notifyActivity] LINE push failed:', err))
 }
 
 // ━━━━━━━━━━━━━━━━━ Rich Menu ━━━━━━━━━━━━━━━━━

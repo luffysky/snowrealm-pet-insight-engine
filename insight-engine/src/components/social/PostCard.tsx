@@ -10,6 +10,7 @@ import { DMButton } from './DMButton'
 import { SharePostModal } from './SharePostModal'
 import { EditPostModal } from './EditPostModal'
 import { TranslateBar } from './TranslateBar'
+import { ReportButton } from './ReportButton'
 import { parseArticleContent } from './ArticleEditor'
 import type { SocialPost } from '@/lib/socialEngine'
 
@@ -121,6 +122,16 @@ export function PostCard({ post, currentUserId, onDeleted, showComments = false,
                 </div>
               )}
             </div>
+          )}
+          {/* Report — non-owner only */}
+          {!isOwner && (
+            <ReportButton
+              targetType="post"
+              targetId={post.id}
+              targetContent={currentPost.content.slice(0, 200)}
+              targetAuthorId={currentPost.userId}
+              targetAuthorName={currentPost.authorName ?? undefined}
+            />
           )}
         </div>
       </div>
