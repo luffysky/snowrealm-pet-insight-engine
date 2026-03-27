@@ -1,8 +1,6 @@
 'use client'
 
-export const dynamic = 'force-dynamic'
-
-import { useEffect, useState, useRef, useCallback } from 'react'
+import { Suspense, useEffect, useState, useRef, useCallback } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { X, Eye, Heart, Send, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react'
 
@@ -50,7 +48,9 @@ interface Story {
   hasViewed: boolean
 }
 
-export default function StoryViewPage() {
+// ── Inner component (uses useSearchParams — must be inside Suspense) ──────────
+
+function StoryViewInner() {
   const router = useRouter()
   const params = useSearchParams()
   const userId = params.get('userId')
@@ -69,15 +69,13 @@ export default function StoryViewPage() {
 
   const progressRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const longPressRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const DURATION = 5000 // ms per story
+  const DURATION = 5000
 
-  // Fetch me
   useEffect(() => {
     fetch('/api/auth/me').then(r => r.ok ? r.json() : null)
       .then((d: { userId?: string } | null) => { if (d?.userId) setMeId(d.userId) }).catch(() => {})
   }, [])
 
-  // Fetch stories for this user
   useEffect(() => {
     if (!userId) { router.back(); return }
     fetch(`/api/admin/social/stories?userId=${userId}`)
@@ -86,13 +84,23 @@ export default function StoryViewPage() {
       .finally(() => setLoading(false))
   }, [userId, router])
 
-  // Record view + start timer when story changes
+  const goNext = useCallback(() => {
+    setCurrent(c => {
+      if (c < stories.length - 1) return c + 1
+      router.back()
+      return c
+    })
+  }, [stories.length, router])
+
+  const goPrev = useCallback(() => {
+    setCurrent(c => Math.max(0, c - 1))
+  }, [])
+
   useEffect(() => {
     if (stories.length === 0 || loading) return
     const story = stories[current]
     if (!story) return
 
-    // Record view
     if (meId) {
       fetch('/api/admin/social/stories/view', {
         method: 'POST',
@@ -101,7 +109,6 @@ export default function StoryViewPage() {
       }).catch(() => {})
     }
 
-    // Load polls for this story
     const pollLayers = story.canvas.layers.filter(l => l.type === 'poll' && l.pollId)
     pollLayers.forEach(pl => {
       if (pl.pollId && !pollStates[pl.pollId]) {
@@ -113,7 +120,6 @@ export default function StoryViewPage() {
       }
     })
 
-    // Start auto-advance
     setProgress(0)
     if (progressRef.current) clearInterval(progressRef.current)
 
@@ -134,19 +140,6 @@ export default function StoryViewPage() {
     return () => { if (progressRef.current) clearInterval(progressRef.current) }
   }, [current, stories, loading, paused, meId]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const goNext = useCallback(() => {
-    setCurrent(c => {
-      if (c < stories.length - 1) return c + 1
-      router.back()
-      return c
-    })
-  }, [stories.length, router])
-
-  const goPrev = useCallback(() => {
-    setCurrent(c => Math.max(0, c - 1))
-  }, [])
-
-  // Long press to pause
   const handlePointerDown = () => {
     longPressRef.current = setTimeout(() => setPaused(true), 200)
   }
@@ -161,7 +154,6 @@ export default function StoryViewPage() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ pollId, choice }),
     }).catch(() => {})
-    // Refetch poll
     const d = await fetch(`/api/admin/social/stories/poll?pollId=${pollId}`)
       .then(r => r.ok ? r.json() : null) as PollState | null
     if (d) setPollStates(prev => ({ ...prev, [pollId]: d }))
@@ -170,7 +162,6 @@ export default function StoryViewPage() {
   const sendReply = async () => {
     if (!replyInput.trim() || !meId) return
     const story = stories[current]
-    // Send as DM to story author
     await fetch('/api/admin/social/messages', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -218,7 +209,6 @@ export default function StoryViewPage() {
 
   return (
     <div className="fixed inset-0 bg-black flex items-center justify-center">
-      {/* Story canvas */}
       <div
         className="relative w-full max-w-sm h-full max-h-[calc(100vh)] overflow-hidden"
         style={{ background: story.canvas.bg?.value ?? '#0f172a' }}
@@ -240,7 +230,9 @@ export default function StoryViewPage() {
         {/* Header */}
         <div className="absolute top-0 left-0 right-0 z-20 flex items-center gap-2 px-3 pt-[calc(env(safe-area-inset-top,8px)+1.25rem)]">
           <div className="w-8 h-8 rounded-full bg-gradient-to-br from-amber-400 to-purple-500 flex items-center justify-center text-xs font-bold text-white overflow-hidden shrink-0">
-            {story.userAvatar ? <img src={story.userAvatar} alt="" className="w-full h-full object-cover" /> : story.userName.slice(0, 2).toUpperCase()}
+            {story.userAvatar
+              ? <img src={story.userAvatar} alt="" className="w-full h-full object-cover" />
+              : story.userName.slice(0, 2).toUpperCase()}
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-white text-xs font-semibold">{story.userName}</p>
@@ -270,7 +262,8 @@ export default function StoryViewPage() {
           if (layer.type === 'text') {
             return (
               <div key={layer.id} style={{
-                ...style, color: layer.color ?? '#fff',
+                ...style,
+                color: layer.color ?? '#fff',
                 fontSize: layer.size ?? 28,
                 fontWeight: layer.bold ? 700 : 400,
                 fontStyle: layer.italic ? 'italic' : 'normal',
@@ -297,7 +290,6 @@ export default function StoryViewPage() {
               <div key={layer.id} style={style} className="w-64 bg-black/50 backdrop-blur-md rounded-2xl p-3 pointer-events-auto">
                 <p className="text-white text-sm font-semibold text-center mb-2">{layer.question}</p>
                 {ps?.myChoice ? (
-                  // Show results
                   <div className="space-y-1.5">
                     {(['a', 'b'] as const).map(choice => (
                       <div key={choice} className="relative h-9 rounded-xl overflow-hidden bg-white/10">
@@ -403,10 +395,24 @@ export default function StoryViewPage() {
   )
 }
 
+// ── Page export: wraps inner component in Suspense ────────────────────────────
+
+export default function StoryViewPage() {
+  return (
+    <Suspense fallback={
+      <div className="fixed inset-0 bg-black flex items-center justify-center">
+        <Loader2 className="w-8 h-8 text-white/40 animate-spin" />
+      </div>
+    }>
+      <StoryViewInner />
+    </Suspense>
+  )
+}
+
 function formatRelative(iso: string) {
   const diff = Date.now() - new Date(iso).getTime()
-  const hrs = Math.floor(diff / 3600000)
-  if (hrs < 1) return `${Math.floor(diff / 60000)} 分鐘前`
+  const hrs = Math.floor(diff / 3_600_000)
+  if (hrs < 1) return `${Math.floor(diff / 60_000)} 分鐘前`
   if (hrs < 24) return `${hrs} 小時前`
   return `${Math.floor(hrs / 24)} 天前`
 }
