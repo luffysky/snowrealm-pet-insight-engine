@@ -648,6 +648,9 @@ export default function MessagesPage() {
                     <input ref={fileInputRef} type="file" className="hidden"
                       onChange={e => { const f = e.target.files?.[0]; if (f) { uploadFile(f); setMediaPanel(null) } }}
                     />
+                    <p className="text-[10px] text-white/20 col-span-3 mt-1 text-center">
+                      圖片: JPG PNG WebP GIF · 影片: MP4 MOV WebM · 音訊: MP3 M4A AAC · 檔案: PDF ZIP (上限 50MB)
+                    </p>
                   </div>
                 )}
 

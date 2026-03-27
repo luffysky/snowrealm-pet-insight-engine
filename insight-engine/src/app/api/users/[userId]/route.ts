@@ -21,15 +21,31 @@ interface UserRow extends Record<string, unknown> {
 export async function GET(req: NextRequest, { params }: { params: Promise<{ userId: string }> }) {
   const { userId } = await params
 
-  const user = await queryOne<UserRow>(
-    `SELECT u.id, u.username, u.display_name, u.avatar_url, u.banner_url, u.profile_theme, u.bio, u.website_url,
-            u.instagram_handle, u.twitter_handle,
-            COALESCE(u.is_profile_public, true) AS is_profile_public,
-            (SELECT COUNT(*) FROM user_follows WHERE following_id = u.id)::int AS followers,
-            (SELECT COUNT(*) FROM user_follows WHERE follower_id = u.id)::int AS following
-     FROM admin_users u WHERE u.id = $1`,
-    [userId]
-  )
+  // Try full query first; fallback without newer columns if migration not run yet
+  let user: UserRow | null = null
+  try {
+    user = await queryOne<UserRow>(
+      `SELECT u.id, u.username, u.display_name, u.avatar_url, u.banner_url, u.profile_theme, u.bio, u.website_url,
+              u.instagram_handle, u.twitter_handle,
+              COALESCE(u.is_profile_public, true) AS is_profile_public,
+              (SELECT COUNT(*) FROM user_follows WHERE following_id = u.id)::int AS followers,
+              (SELECT COUNT(*) FROM user_follows WHERE follower_id = u.id)::int AS following
+       FROM admin_users u WHERE u.id = $1`,
+      [userId]
+    )
+  } catch {
+    user = await queryOne<UserRow>(
+      `SELECT u.id, u.username, u.display_name, u.avatar_url,
+              NULL::text AS banner_url, NULL::text AS profile_theme,
+              u.bio, u.website_url,
+              u.instagram_handle, u.twitter_handle,
+              COALESCE(u.is_profile_public, true) AS is_profile_public,
+              (SELECT COUNT(*) FROM user_follows WHERE following_id = u.id)::int AS followers,
+              (SELECT COUNT(*) FROM user_follows WHERE follower_id = u.id)::int AS following
+       FROM admin_users u WHERE u.id = $1`,
+      [userId]
+    ).catch(() => null)
+  }
 
   if (!user) return NextResponse.json({ error: '用戶不存在' }, { status: 404 })
 

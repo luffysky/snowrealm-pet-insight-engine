@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Home, Newspaper, Plus, MessageCircle, User, X, PenSquare, Clapperboard } from 'lucide-react'
+import { useAuth } from '@/hooks/useAuth'
 
 // Only hide on full-screen creation / auth flows
 const HIDDEN_PREFIXES = [
@@ -14,12 +15,11 @@ const HIDDEN_PREFIXES = [
 
 const COLLAPSE_KEY = 'bottomnav_collapsed'
 
-interface UserInfo { userId: string; userName: string }
-
 export function BottomNav() {
   const pathname = usePathname()
   const router = useRouter()
-  const [me, setMe] = useState<UserInfo | null>(null)
+  const { user: authUser } = useAuth()
+  const me = authUser ? { userId: authUser.userId, userName: authUser.userName } : null
   const [unreadDm, setUnreadDm] = useState(0)
   const [unreadNotif, setUnreadNotif] = useState(0)
   const [createOpen, setCreateOpen] = useState(false)
@@ -43,14 +43,6 @@ export function BottomNav() {
     const h = next ? '1.75rem' : 'calc(4.75rem + env(safe-area-inset-bottom, 0px))'
     document.documentElement.style.setProperty('--bnav-h', h)
   }
-
-  useEffect(() => {
-    fetch('/api/auth/me')
-      .then(r => r.ok ? r.json() : null)
-      .then((d: { userId?: string; userName?: string } | null) => {
-        if (d?.userId) setMe({ userId: d.userId, userName: d.userName ?? '' })
-      }).catch(() => {})
-  }, [])
 
   useEffect(() => {
     if (!me) return
