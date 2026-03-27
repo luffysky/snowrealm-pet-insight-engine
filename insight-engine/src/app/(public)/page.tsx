@@ -86,7 +86,7 @@ export default function LandingPage() {
     <div className="min-h-screen bg-slate-950 text-white">
 
       {/* ── 導覽列 ── */}
-      <header className="sticky top-0 z-50 border-b border-slate-800/60 bg-slate-950/80 backdrop-blur-md">
+      <header className="sticky top-0 z-50 border-b border-white/8 bg-slate-950/70 backdrop-blur-xl">
         <nav className="max-w-6xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
           <Link href="/" className="text-base font-bold text-white/90 tracking-tight">
             ✦ SnowRealm Insight Engine
@@ -102,8 +102,9 @@ export default function LandingPage() {
 
       {/* ── Hero ── */}
       <section className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-cyan-600/10 via-transparent to-purple-600/10 pointer-events-none" />
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-cyan-500/5 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute inset-0 bg-gradient-to-br from-cyan-600/12 via-transparent to-purple-600/12 pointer-events-none" />
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-cyan-500/8 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute bottom-0 right-0 w-[600px] h-[300px] bg-purple-500/6 rounded-full blur-3xl pointer-events-none" />
 
         <div className="relative max-w-4xl mx-auto px-4 sm:px-6 pt-20 pb-28 text-center">
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-xs font-medium mb-8">
@@ -128,13 +129,13 @@ export default function LandingPage() {
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link
               href="/explore"
-              className="px-8 py-3.5 rounded-full border border-cyan-500/40 bg-cyan-500/10 text-cyan-300 font-medium text-base hover:bg-cyan-500/20 hover:border-cyan-400/60 transition-all"
+              className="px-8 py-3.5 rounded-full border border-cyan-500/40 bg-cyan-500/10 backdrop-blur-sm text-cyan-300 font-medium text-base hover:bg-cyan-500/20 hover:border-cyan-400/60 transition-all shadow-[0_4px_16px_rgba(0,0,0,0.3),inset_0_1px_0_rgba(255,255,255,0.08)]"
             >
               先玩一份熱門問卷 →
             </Link>
             <Link
               href="/register"
-              className="px-8 py-3.5 rounded-full bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-medium text-base hover:from-cyan-400 hover:to-blue-500 transition-all shadow-lg shadow-cyan-500/25"
+              className="px-8 py-3.5 rounded-full bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-medium text-base hover:from-cyan-400 hover:to-blue-500 transition-all shadow-lg shadow-cyan-500/30"
             >
               免費建立問卷
             </Link>
@@ -159,7 +160,7 @@ export default function LandingPage() {
               <Link
                 key={t.title}
                 href="/register"
-                className="group flex flex-col items-center text-center p-4 rounded-2xl bg-slate-900/60 border border-slate-800/60 hover:border-cyan-500/30 hover:bg-slate-900 transition-all cursor-pointer"
+                className="group flex flex-col items-center text-center p-4 rounded-2xl bg-white/[0.03] backdrop-blur-sm border border-white/8 hover:border-cyan-500/30 hover:bg-white/[0.06] transition-all cursor-pointer shadow-[0_4px_16px_rgba(0,0,0,0.3)]"
               >
                 <span className="text-3xl mb-3">{t.icon}</span>
                 <span className="text-xs font-medium text-white/80 mb-1 leading-snug">{t.title}</span>
@@ -204,7 +205,7 @@ export default function LandingPage() {
               </Link>
             </div>
 
-            <div className="bg-slate-900/60 border border-slate-800/60 rounded-3xl p-8">
+            <div className="bg-white/[0.04] backdrop-blur-xl border border-white/8 border-t-white/14 rounded-3xl p-8 shadow-[0_20px_60px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.08)]">
               <p className="text-xs text-slate-500 mb-6 text-center">顧客滿意度感知分析</p>
               <div className="space-y-5">
                 {COGNITIVE_GAPS.map((item) => (
@@ -257,7 +258,7 @@ export default function LandingPage() {
                 {i < B_END_FLOW.length - 1 && (
                   <div className="hidden lg:block absolute top-8 left-full w-4 h-px bg-slate-700 z-10" />
                 )}
-                <div className="bg-slate-900/80 border border-slate-800/60 rounded-2xl p-6 hover:border-cyan-500/20 transition-colors h-full">
+                <div className="bg-white/[0.04] backdrop-blur-xl border border-white/8 border-t-white/12 rounded-2xl p-6 hover:border-cyan-500/30 hover:bg-white/[0.06] transition-all h-full shadow-[0_8px_32px_rgba(0,0,0,0.3),inset_0_1px_0_rgba(255,255,255,0.06)]">
                   <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-cyan-500/15 to-blue-500/15 border border-cyan-500/20 flex items-center justify-center mb-4 text-xl">
                     {item.icon}
                   </div>
@@ -292,7 +293,7 @@ export default function LandingPage() {
             {STORY_CARDS.map((card) => (
               <div
                 key={card.tag}
-                className="group relative bg-gradient-to-br from-slate-900 to-slate-800/80 border border-slate-700/50 rounded-3xl p-6 hover:border-cyan-500/30 transition-all"
+                className="group relative bg-white/[0.04] backdrop-blur-xl border border-white/8 border-t-white/14 rounded-3xl p-6 hover:border-cyan-500/30 hover:bg-white/[0.07] transition-all shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.08)]"
               >
                 <div className="text-4xl mb-4">{card.emoji}</div>
                 <p className="text-sm text-white/80 leading-relaxed mb-4 font-medium">
@@ -332,10 +333,10 @@ export default function LandingPage() {
             {PRICING.map((plan) => (
               <div
                 key={plan.name}
-                className={`relative rounded-3xl p-8 border transition-all ${
+                className={`relative rounded-3xl p-8 border transition-all shadow-[0_20px_60px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.08)] ${
                   plan.highlight
-                    ? 'bg-gradient-to-br from-cyan-500/10 to-blue-600/10 border-cyan-500/40'
-                    : 'bg-slate-900/60 border-slate-800/60'
+                    ? 'bg-gradient-to-br from-cyan-500/10 to-blue-600/10 backdrop-blur-xl border-cyan-500/40 border-t-cyan-400/30'
+                    : 'bg-white/[0.04] backdrop-blur-xl border-white/8 border-t-white/14'
                 }`}
               >
                 {plan.highlight && (
@@ -406,13 +407,13 @@ export default function LandingPage() {
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link
               href="/register"
-              className="px-10 py-4 rounded-full bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-medium text-lg hover:from-cyan-400 hover:to-blue-500 transition-all shadow-xl shadow-cyan-500/20"
+              className="px-10 py-4 rounded-full bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-medium text-lg hover:from-cyan-400 hover:to-blue-500 transition-all shadow-xl shadow-cyan-500/25"
             >
               免費開始 30 天試用 →
             </Link>
             <Link
               href="/explore"
-              className="px-10 py-4 rounded-full border border-slate-700 text-slate-300 text-base hover:border-slate-600 hover:text-white transition-all"
+              className="px-10 py-4 rounded-full border border-white/10 bg-white/[0.04] backdrop-blur-sm text-slate-300 text-base hover:border-white/20 hover:bg-white/[0.07] hover:text-white transition-all shadow-[0_4px_16px_rgba(0,0,0,0.3),inset_0_1px_0_rgba(255,255,255,0.06)]"
             >
               先逛逛熱門問卷
             </Link>

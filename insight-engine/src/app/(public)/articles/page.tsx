@@ -27,7 +27,7 @@ function PostPreviewCard({ post }: { post: SocialPost }) {
   const timeStr = new Date(post.createdAt).toLocaleDateString('zh-TW', { month: 'short', day: 'numeric' })
 
   return (
-    <article className="bg-white/4 border border-white/8 rounded-2xl overflow-hidden hover:border-white/15 hover:bg-white/6 transition-all group">
+    <article className="bg-white/[0.04] backdrop-blur-xl border border-white/8 border-t-white/14 rounded-3xl overflow-hidden hover:border-white/16 hover:bg-white/[0.06] transition-all group shadow-[0_8px_32px_rgba(0,0,0,0.3),inset_0_1px_0_rgba(255,255,255,0.08)]">
       {/* Image preview */}
       {post.images.length > 0 && (
         <div className="relative overflow-hidden h-48">
@@ -83,7 +83,7 @@ function PostPreviewCard({ post }: { post: SocialPost }) {
                 <Share2 className="w-3.5 h-3.5" />
               </button>
               {showShare && (
-                <div className="absolute right-0 bottom-full mb-1 bg-slate-800 border border-white/10 rounded-xl shadow-xl z-50 py-1 min-w-[130px]" onMouseLeave={() => setShowShare(false)}>
+                <div className="absolute right-0 bottom-full mb-1 bg-slate-900/90 backdrop-blur-xl border border-white/10 rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.5)] z-50 py-1 min-w-[130px]" onMouseLeave={() => setShowShare(false)}>
                   <button onClick={copyLink} className="w-full flex items-center gap-2 px-3 py-2 text-xs text-white/60 hover:bg-white/5">
                     {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <ExternalLink className="w-3.5 h-3.5" />}
                     {copied ? '已複製' : '複製連結'}
@@ -154,7 +154,8 @@ export default function ArticlesPage() {
   return (
     <div className="min-h-screen bg-slate-950 text-white">
       {/* Hero */}
-      <div className="bg-gradient-to-b from-slate-900 to-slate-950 border-b border-white/5">
+      <div className="relative bg-gradient-to-b from-slate-900/80 to-slate-950 border-b border-white/8 backdrop-blur-sm">
+        <div className="absolute inset-0 bg-gradient-to-br from-amber-600/5 via-transparent to-purple-600/5 pointer-events-none" />
         <div className="max-w-4xl mx-auto px-4 py-12 text-center">
           <p className="text-4xl mb-3">✨</p>
           <h1 className="text-3xl font-bold text-white mb-2">社群文章</h1>
@@ -171,7 +172,7 @@ export default function ArticlesPage() {
               value={search}
               onChange={e => setSearch(e.target.value)}
               placeholder="搜尋文章、標籤..."
-              className="w-full pl-9 pr-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-sm text-white placeholder-white/30 outline-none focus:border-amber-400/30"
+              className="w-full pl-9 pr-4 py-2.5 glass-input rounded-xl text-sm text-white placeholder-white/30"
             />
           </div>
           <div className="flex gap-2">

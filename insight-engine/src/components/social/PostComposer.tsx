@@ -84,7 +84,7 @@ export function PostComposer({ authorName = '你', authorAvatar, onPosted, defau
   if (compact && !expanded) {
     return (
       <button onClick={() => setExpanded(true)}
-        className="w-full flex items-center gap-3 px-4 py-3 bg-white/5 hover:bg-white/8 border border-white/10 rounded-2xl text-white/40 text-sm transition-colors"
+        className="w-full flex items-center gap-3 px-4 py-3 bg-white/[0.04] backdrop-blur-sm hover:bg-white/[0.07] border border-white/10 rounded-2xl text-white/40 text-sm transition-all shadow-[0_4px_16px_rgba(0,0,0,0.2)]"
       >
         <div className="w-8 h-8 rounded-full bg-gradient-to-br from-amber-500/30 to-purple-500/30 flex items-center justify-center text-xs font-bold shrink-0 overflow-hidden">
           {authorAvatar ? <img src={authorAvatar} alt="" className="w-full h-full object-cover" /> : initials}
@@ -95,7 +95,7 @@ export function PostComposer({ authorName = '你', authorAvatar, onPosted, defau
   }
 
   return (
-    <div className="bg-white/5 border border-white/10 rounded-2xl p-4 space-y-3">
+    <div className="bg-white/[0.04] backdrop-blur-xl border border-white/8 border-t-white/14 rounded-2xl p-4 space-y-3 shadow-[0_8px_32px_rgba(0,0,0,0.3),inset_0_1px_0_rgba(255,255,255,0.08)]">
       {/* Header */}
       <div className="flex items-center gap-3">
         <div className="w-9 h-9 rounded-full bg-gradient-to-br from-amber-500/30 to-purple-500/30 flex items-center justify-center text-sm font-bold text-white/80 shrink-0 overflow-hidden">

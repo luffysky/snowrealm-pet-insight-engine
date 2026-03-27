@@ -64,7 +64,7 @@ export function PostCard({ post, currentUserId, onDeleted, showComments = false,
   const hasImages = post.images.length > 0
 
   return (
-    <article className="bg-white/4 border border-white/8 rounded-2xl overflow-hidden hover:border-white/15 transition-colors">
+    <article className="bg-white/[0.04] backdrop-blur-xl border border-white/8 border-t-white/14 rounded-3xl overflow-hidden hover:border-white/15 hover:bg-white/[0.06] transition-all shadow-[0_8px_32px_rgba(0,0,0,0.4)]">
       {/* Header */}
       <div className="flex items-start justify-between px-4 pt-4 pb-2">
         <div className="flex items-center gap-2.5">
@@ -95,7 +95,7 @@ export function PostCard({ post, currentUserId, onDeleted, showComments = false,
               <Share2 className="w-4 h-4" />
             </button>
             {showShare && (
-              <div className="absolute right-0 top-full mt-1 bg-slate-800 border border-white/10 rounded-xl shadow-xl z-50 py-1 min-w-[140px]" onMouseLeave={() => setShowShare(false)}>
+              <div className="absolute right-0 top-full mt-1 bg-slate-900/90 backdrop-blur-xl border border-white/10 rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.5)] z-50 py-1 min-w-[140px]" onMouseLeave={() => setShowShare(false)}>
                 <button onClick={copyLink} className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-white/70 hover:bg-white/5 transition-colors">
                   {copied ? <Check className="w-4 h-4 text-emerald-400" /> : <ExternalLink className="w-4 h-4" />}
                   {copied ? '已複製！' : '複製連結'}
@@ -120,7 +120,7 @@ export function PostCard({ post, currentUserId, onDeleted, showComments = false,
                 <MoreHorizontal className="w-4 h-4" />
               </button>
               {menuOpen && (
-                <div className="absolute right-0 top-full mt-1 bg-slate-800 border border-white/10 rounded-xl shadow-xl z-50 py-1 min-w-[120px]" onMouseLeave={() => setMenuOpen(false)}>
+                <div className="absolute right-0 top-full mt-1 bg-slate-900/90 backdrop-blur-xl border border-white/10 rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.5)] z-50 py-1 min-w-[120px]" onMouseLeave={() => setMenuOpen(false)}>
                   <button onClick={handleDelete} disabled={deleting}
                     className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-400 hover:bg-red-400/10 transition-colors"
                   >

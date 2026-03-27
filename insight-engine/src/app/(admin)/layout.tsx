@@ -235,7 +235,7 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
           <select
             value={selectedSurveyId ?? ''}
             onChange={e => setSelectedSurveyId(e.target.value || null)}
-            className={`w-full bg-white/5 border ${tc.accentBorder} ${tc.accent} rounded-lg px-2.5 py-1.5 text-xs truncate cursor-pointer focus:outline-none`}
+            className={`glass-input w-full ${tc.accentBorder} ${tc.accent} rounded-lg px-2.5 py-1.5 text-xs truncate cursor-pointer`}
           >
             {surveys.map(s => (
               <option key={s.id} value={s.id} className="bg-slate-900">
@@ -308,7 +308,7 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
       {/* Sidebar */}
       <aside className={`
         fixed top-0 left-0 h-full w-60 z-50
-        bg-slate-950/95 backdrop-blur-xl border-r border-white/8
+        glass-sidebar
         transition-transform duration-300 ease-in-out
         ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
         lg:translate-x-0
@@ -319,7 +319,7 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
       {/* Main content */}
       <div className="lg:pl-60 min-h-screen flex flex-col">
         {/* Mobile top bar */}
-        <header className="lg:hidden sticky top-0 z-30 bg-slate-950/80 backdrop-blur-sm border-b border-white/8 px-4 py-3 flex items-center gap-3">
+        <header className="lg:hidden sticky top-0 z-30 bg-slate-950/60 backdrop-blur-xl border-b border-white/8 px-4 py-3 flex items-center gap-3">
           <button
             onClick={() => setSidebarOpen(true)}
             className="text-slate-400 hover:text-white transition-colors"
