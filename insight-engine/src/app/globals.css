@@ -38,9 +38,9 @@ html.dark {
 
 /* ── 立體球形按鈕動畫 ── */
 @keyframes spherePop {
-  0%   { transform: scale(1) rotate(0deg); }
-  35%  { transform: scale(1.13) rotate(180deg); }
-  100% { transform: scale(1) rotate(360deg); }
+  0%   { transform: scale(1) rotateY(0deg); }
+  35%  { transform: scale(1.1) rotateY(180deg); }
+  100% { transform: scale(1) rotateY(360deg); }
 }
 .animate-sphere-pop {
   animation: spherePop 0.42s ease-out forwards;
