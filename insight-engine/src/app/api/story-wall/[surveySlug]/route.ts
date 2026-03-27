@@ -24,7 +24,7 @@ export async function GET(
 
   try {
     const survey = await queryOne<SurveyExistRow>(
-      `SELECT id FROM surveys WHERE slug = $1 AND status = 'active'`,
+      `SELECT id FROM surveys WHERE slug = $1 AND status IN ('active', 'published')`,
       [surveySlug]
     )
 

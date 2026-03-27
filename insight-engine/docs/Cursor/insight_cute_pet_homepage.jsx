@@ -2,38 +2,38 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { Float, RoundedBox, Sphere, Stars } from "@react-three/drei";
 import { motion } from "framer-motion";
-import { Heart, Sparkles, PawPrint, ChevronRight, Share2, MessageCircleHeart } from "lucide-react";
+import { Brain, Sparkles, ChevronRight, Share2, MessageCircleHeart } from "lucide-react";
 
 const quizCards = [
   {
-    title: "你的寵物，其實想對你說…",
-    subtitle: "3 分鐘，看見牠藏起來的依賴與溫柔",
+    title: "你是不是其實讓人有壓力？",
+    subtitle: "3 分鐘，看見別人不敢告訴你的那一面",
     badge: "最熱門",
   },
   {
-    title: "你是牠眼中的哪種主人？",
-    subtitle: "從日常互動，找出你們的陪伴默契",
-    badge: "可愛爆擊",
+    title: "你的戀愛致命弱點是什麼？",
+    subtitle: "有點刺但不傷人，結果讓人忍不住傳給朋友",
+    badge: "情緒共鳴",
   },
   {
-    title: "如果牠會寫故事，第一章會怎麼寫你？",
-    subtitle: "把你和牠的相處，變成一張值得收藏的小卡",
+    title: "朋友眼中的你，跟你想的一樣嗎？",
+    subtitle: "把你沒看見的自己，變成一張值得收藏的小卡",
     badge: "故事感",
   },
 ];
 
 const storyWall = [
   {
-    title: "鯨仔今天偷看了我三次",
-    desc: "牠什麼都沒說，但每次我轉頭，牠都在那裡。",
+    title: "原來我在朋友眼中是那個總是先道歉的人",
+    desc: "你以為你在包容，別人覺得你其實是在逃避。",
   },
   {
-    title: "原來招財最在意的是我晚回家",
-    desc: "有些依賴不會吵，只會安靜地等。",
+    title: "你以為你很主動，但別人覺得你有距離感",
+    desc: "有些事，別人看得比你清楚。",
   },
   {
-    title: "雪寶沒講出口的那句話",
-    desc: "你以為你在照顧牠，牠其實也一直在接住你。",
+    title: "測完才知道，我最被低估的是觀察力",
+    desc: "你不是沒有才華，只是還沒被看見。",
   },
 ];
 
@@ -90,7 +90,7 @@ function FloatingWorld() {
 }
 
 function TypewriterText() {
-  const fullText = "有些話，牠不會說，但你可以看見。";
+  const fullText = "有些事，別人看得比你清楚。";
   const [text, setText] = useState("");
 
   useEffect(() => {
@@ -115,7 +115,7 @@ function CuteBadge({ children }) {
   );
 }
 
-export default function InsightCutePetHomepage() {
+export default function InsightCuteHomepage() {
   const floatingDots = useMemo(
     () =>
       Array.from({ length: 14 }, (_, i) => ({
@@ -148,16 +148,16 @@ export default function InsightCutePetHomepage() {
       <header className="relative z-20 mx-auto flex w-full max-w-7xl items-center justify-between px-5 py-5 md:px-8 lg:px-10">
         <div className="flex items-center gap-3">
           <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-white/30 bg-white/25 shadow-[0_12px_30px_rgba(126,177,255,0.16)] backdrop-blur-xl">
-            <PawPrint className="h-5 w-5 text-sky-600" />
+            <Brain className="h-5 w-5 text-sky-600" />
           </div>
           <div>
             <p className="text-sm font-semibold tracking-[0.22em] text-sky-700/80">SNOWREALM INSIGHT</p>
-            <p className="text-xs text-slate-500">可愛系情感洞察入口</p>
+            <p className="text-xs text-slate-500">AI 智慧問卷平台</p>
           </div>
         </div>
 
         <nav className="hidden items-center gap-3 md:flex">
-          {['熱門測驗', '故事牆', '分享卡片'].map((item) => (
+          {['熱門測驗', '故事牆', '探索問卷'].map((item) => (
             <button
               key={item}
               className="rounded-full border border-white/30 bg-white/20 px-4 py-2 text-sm text-slate-600 backdrop-blur-xl transition hover:bg-white/35"
@@ -177,21 +177,21 @@ export default function InsightCutePetHomepage() {
             className="order-2 lg:order-1"
           >
             <div className="inline-flex flex-wrap items-center gap-2">
-              <CuteBadge>可愛風首頁</CuteBadge>
-              <CuteBadge>寵物情感入口</CuteBadge>
-              <CuteBadge>Three.js 浮空星球</CuteBadge>
+              <CuteBadge>AI 智慧問卷</CuteBadge>
+              <CuteBadge>認知落差引擎</CuteBadge>
+              <CuteBadge>Story Card</CuteBadge>
             </div>
 
             <h1 className="mt-5 max-w-2xl text-4xl font-black leading-tight tracking-tight text-slate-800 md:text-6xl md:leading-[1.06]">
-              不是每一份測驗，
+              不是每份測驗，
               <span className="block bg-gradient-to-r from-sky-600 via-cyan-500 to-violet-500 bg-clip-text text-transparent">
-                都能把你和牠的心事變可愛。
+                都能讓人忍不住分享。
               </span>
             </h1>
 
             <p className="mt-5 max-w-xl text-base leading-7 text-slate-600 md:text-lg">
-              從一個輕鬆的小問卷開始，看看你的寵物想對你說什麼。
-              不是冷冰冰的功能介紹，是一個讓人想點、想玩、想收藏的小宇宙入口。
+              從一個好玩的小問卷開始，看見你沒看見的自己。
+              不是冷冰冰的功能介紹，是一個讓人想點、想玩、想收藏的認知入口。
             </p>
 
             <div className="mt-4 inline-flex items-center rounded-full border border-white/35 bg-white/25 px-4 py-2 text-sm text-slate-600 shadow-[0_12px_30px_rgba(145,188,255,0.14)] backdrop-blur-xl">
@@ -201,19 +201,19 @@ export default function InsightCutePetHomepage() {
 
             <div className="mt-7 flex flex-col gap-3 sm:flex-row">
               <button className="inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-sky-500 via-cyan-400 to-violet-400 px-6 py-4 text-base font-semibold text-white shadow-[0_18px_40px_rgba(83,173,255,0.35)] transition hover:scale-[1.02]">
-                立即測牠想說什麼
+                先玩一份熱門測驗
                 <ChevronRight className="h-4 w-4" />
               </button>
               <button className="inline-flex items-center justify-center gap-2 rounded-full border border-white/35 bg-white/25 px-6 py-4 text-base font-medium text-slate-700 backdrop-blur-xl transition hover:bg-white/40">
-                看看別人的故事卡
-                <Heart className="h-4 w-4 text-pink-500" />
+                免費建立問卷
+                <Sparkles className="h-4 w-4 text-violet-500" />
               </button>
             </div>
 
             <div className="mt-8 grid max-w-2xl grid-cols-1 gap-3 sm:grid-cols-3">
               {[
                 { value: "3 分鐘", label: "快速完成" },
-                { value: "可收藏", label: "分享卡片" },
+                { value: "可收藏", label: "Story Card" },
                 { value: "不硬銷", label: "先玩再說" },
               ].map((item) => (
                 <div
@@ -249,9 +249,9 @@ export default function InsightCutePetHomepage() {
                 <div className="flex items-start justify-between gap-4">
                   <div>
                     <p className="text-xs font-semibold tracking-[0.2em] text-sky-700/75">FEATURED CARD</p>
-                    <h3 className="mt-2 text-lg font-bold text-slate-800 md:text-2xl">你的寵物其實是情緒共感型</h3>
+                    <h3 className="mt-2 text-lg font-bold text-slate-800 md:text-2xl">你最被低估的是觀察力</h3>
                     <p className="mt-2 text-sm leading-6 text-slate-600 md:text-base">
-                      牠不是不黏你，牠是在等你有空的時候，安靜地靠近你。
+                      你不是沒有才華，只是還沒被看見。測完才知道，你早就看懂了。
                     </p>
                   </div>
                   <div className="hidden rounded-2xl border border-white/35 bg-white/35 p-3 md:block">
@@ -320,15 +320,15 @@ export default function InsightCutePetHomepage() {
 
           <div className="rounded-[30px] border border-white/30 bg-gradient-to-br from-white/24 to-white/14 p-6 shadow-[0_16px_40px_rgba(122,162,230,0.12)] backdrop-blur-2xl">
             <p className="text-sm font-semibold tracking-[0.18em] text-sky-700/75">GENTLE CTA</p>
-            <h2 className="mt-2 text-2xl font-black text-slate-800 md:text-3xl">先讓人喜歡，再讓人留下</h2>
+            <h2 className="mt-2 text-2xl font-black text-slate-800 md:text-3xl">先讓人好奇，再讓人留下</h2>
             <p className="mt-4 text-sm leading-7 text-slate-600 md:text-base">
-              首頁不要一直講功能。先給一個好玩、可愛、會讓人想試的入口。
-              等他玩了一陣子、收藏了一些卡片、開始有感覺，之後再慢慢把更深的世界打開。
+              首頁不要一直講功能。先給一個好玩、有共鳴、會讓人想試的入口。
+              等他玩了一陣子、收藏了幾張卡片、開始有感覺，之後再慢慢把更深的世界打開。
             </p>
             <div className="mt-6 rounded-[24px] border border-white/30 bg-white/24 p-4">
               <div className="flex items-center gap-3 text-slate-700">
-                <div className="rounded-2xl bg-pink-100 p-2">
-                  <Heart className="h-4 w-4 text-pink-500" />
+                <div className="rounded-2xl bg-violet-100 p-2">
+                  <Brain className="h-4 w-4 text-violet-500" />
                 </div>
                 <div>
                   <p className="text-sm font-bold">首頁任務只有一個</p>

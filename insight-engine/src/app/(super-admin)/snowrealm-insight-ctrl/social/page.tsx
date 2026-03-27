@@ -1,9 +1,16 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
-import { Shield, FileText, MessageSquare, Users, Flag, Trash2, CheckCircle, XCircle, Clock, Eye, RefreshCw, Ban, UserCheck } from 'lucide-react'
+import { useState, useEffect, useCallback, useRef } from 'react'
+import { Shield, FileText, MessageSquare, Users, Flag, Trash2, CheckCircle, XCircle, Clock, Eye, RefreshCw, Ban, UserCheck, Activity } from 'lucide-react'
 
 type Tab = 'reports' | 'posts' | 'dms' | 'users'
+
+interface Stats {
+  totalPosts: number
+  totalDms: number
+  totalUsers: number
+  pendingReports: number
+}
 
 interface Report {
   id: string
@@ -80,15 +87,38 @@ function Badge({ status }: { status: string }) {
   )
 }
 
+function EmptyState({ icon: Icon, text }: { icon: typeof Flag; text: string }) {
+  return (
+    <div className="text-center py-16 text-slate-400">
+      <Icon className="w-12 h-12 mx-auto mb-3 opacity-20" />
+      <p className="text-sm">{text}</p>
+    </div>
+  )
+}
+
+const AUTO_REFRESH_INTERVAL = 30_000 // 30 秒
+
 export default function SocialMonitorPage() {
   const [tab, setTab] = useState<Tab>('reports')
   const [reports, setReports] = useState<Report[]>([])
   const [posts, setPosts] = useState<Post[]>([])
   const [dms, setDms] = useState<Dm[]>([])
   const [users, setUsers] = useState<User[]>([])
+  const [stats, setStats] = useState<Stats | null>(null)
   const [loading, setLoading] = useState(false)
+  const [lastRefreshed, setLastRefreshed] = useState<Date | null>(null)
   const [selectedReport, setSelectedReport] = useState<Report | null>(null)
   const [reviewNote, setReviewNote] = useState('')
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+
+  const fetchStats = useCallback(async () => {
+    try {
+      const res = await fetch('/api/super-admin/social?tab=stats')
+      if (!res.ok) return
+      const data = await res.json() as { stats?: Stats }
+      if (data.stats) setStats(data.stats)
+    } catch {}
+  }, [])
 
   const fetchData = useCallback(async (t: Tab) => {
     setLoading(true)
@@ -100,12 +130,28 @@ export default function SocialMonitorPage() {
       if (data.posts) setPosts(data.posts)
       if (data.dms) setDms(data.dms)
       if (data.users) setUsers(data.users)
+      setLastRefreshed(new Date())
     } finally {
       setLoading(false)
     }
   }, [])
 
-  useEffect(() => { fetchData(tab) }, [tab, fetchData])
+  // Initial load + tab change
+  useEffect(() => {
+    fetchData(tab)
+    fetchStats()
+  }, [tab, fetchData, fetchStats])
+
+  // Auto-refresh every 30s
+  useEffect(() => {
+    timerRef.current = setInterval(() => {
+      fetchData(tab)
+      fetchStats()
+    }, AUTO_REFRESH_INTERVAL)
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current)
+    }
+  }, [tab, fetchData, fetchStats])
 
   const handleReportAction = async (reportId: string, status: 'resolved' | 'dismissed' | 'reviewing') => {
     await fetch('/api/super-admin/social', {
@@ -116,6 +162,7 @@ export default function SocialMonitorPage() {
     setSelectedReport(null)
     setReviewNote('')
     fetchData('reports')
+    fetchStats()
   }
 
   const handleBan = async (userId: string, action: 'ban' | 'unban', reason?: string) => {
@@ -126,6 +173,7 @@ export default function SocialMonitorPage() {
       body: JSON.stringify({ userId, action, reason }),
     })
     fetchData('users')
+    fetchStats()
   }
 
   const handleDeletePost = async (postId: string) => {
@@ -136,29 +184,65 @@ export default function SocialMonitorPage() {
       body: JSON.stringify({ deletePostId: postId }),
     })
     fetchData('posts')
+    fetchStats()
   }
 
-  const pendingCount = reports.filter(r => r.status === 'pending').length
+  const pendingCount = stats?.pendingReports ?? reports.filter(r => r.status === 'pending').length
 
   const TABS: { key: Tab; label: string; icon: typeof Flag; count?: number }[] = [
     { key: 'reports', label: '檢舉', icon: Flag, count: pendingCount || undefined },
-    { key: 'posts', label: '貼文', icon: FileText },
-    { key: 'dms', label: '私訊', icon: MessageSquare },
-    { key: 'users', label: '用戶', icon: Users },
+    { key: 'posts', label: '全部貼文', icon: FileText, count: stats?.totalPosts || undefined },
+    { key: 'dms', label: '全部私訊', icon: MessageSquare, count: stats?.totalDms || undefined },
+    { key: 'users', label: '用戶', icon: Users, count: stats?.totalUsers || undefined },
   ]
 
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div className="flex items-center gap-3">
         <Shield className="w-6 h-6 text-red-400" />
         <div>
           <h1 className="text-xl font-bold text-white">社群監控中心</h1>
-          <p className="text-xs text-slate-400">全平台貼文、私訊、用戶、檢舉即時監控</p>
+          <p className="text-xs text-slate-400">全平台貼文、私訊、用戶、檢舉即時監控（自動每 30 秒刷新）</p>
         </div>
-        <button onClick={() => fetchData(tab)} className="ml-auto p-2 text-slate-400 hover:text-white transition-colors">
-          <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-        </button>
+        <div className="ml-auto flex items-center gap-3">
+          {lastRefreshed && (
+            <span className="text-xs text-white/30 flex items-center gap-1">
+              <Activity className="w-3 h-3 text-emerald-400" />
+              {lastRefreshed.toLocaleTimeString('zh-TW')}
+            </span>
+          )}
+          <button
+            onClick={() => { fetchData(tab); fetchStats() }}
+            className="p-2 text-slate-400 hover:text-white transition-colors"
+          >
+            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+          </button>
+        </div>
       </div>
+
+      {/* Stats Overview */}
+      {stats && (
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          {[
+            { label: '待審檢舉', value: stats.pendingReports, color: 'text-red-400', icon: Flag },
+            { label: '全部貼文', value: stats.totalPosts, color: 'text-blue-400', icon: FileText },
+            { label: '全部私訊', value: stats.totalDms, color: 'text-purple-400', icon: MessageSquare },
+            { label: '全部用戶', value: stats.totalUsers, color: 'text-emerald-400', icon: Users },
+          ].map(s => {
+            const Icon = s.icon
+            return (
+              <div key={s.label} className="bg-slate-800/40 border border-slate-700/40 rounded-2xl px-4 py-3 flex items-center gap-3">
+                <Icon className={`w-5 h-5 ${s.color}`} />
+                <div>
+                  <p className={`text-lg font-bold ${s.color}`}>{s.value}</p>
+                  <p className="text-xs text-white/40">{s.label}</p>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )}
 
       {/* Tabs */}
       <div className="flex gap-2 border-b border-slate-800 pb-0">
@@ -175,7 +259,9 @@ export default function SocialMonitorPage() {
               <Icon className="w-4 h-4" />
               {t.label}
               {t.count ? (
-                <span className="bg-red-500 text-white text-[10px] rounded-full px-1.5 py-0.5 min-w-[18px] text-center">
+                <span className={`text-[10px] rounded-full px-1.5 py-0.5 min-w-[18px] text-center ${
+                  t.key === 'reports' ? 'bg-red-500 text-white' : 'bg-white/10 text-white/50'
+                }`}>
                   {t.count}
                 </span>
               ) : null}
@@ -188,12 +274,7 @@ export default function SocialMonitorPage() {
       {tab === 'reports' && (
         <div className="space-y-3">
           {loading && <p className="text-slate-400 text-sm py-4 text-center">載入中...</p>}
-          {!loading && reports.length === 0 && (
-            <div className="text-center py-12 text-slate-400">
-              <Flag className="w-12 h-12 mx-auto mb-3 opacity-30" />
-              <p>目前沒有檢舉記錄</p>
-            </div>
-          )}
+          {!loading && reports.length === 0 && <EmptyState icon={Flag} text="目前沒有檢舉記錄" />}
           {reports.map(r => (
             <div key={r.id} className="bg-slate-800/50 border border-slate-700/50 rounded-2xl p-4">
               <div className="flex items-start justify-between gap-3">
@@ -248,10 +329,11 @@ export default function SocialMonitorPage() {
         </div>
       )}
 
-      {/* Posts Tab */}
+      {/* Posts Tab — ALL posts regardless of report status */}
       {tab === 'posts' && (
         <div className="space-y-3">
           {loading && <p className="text-slate-400 text-sm py-4 text-center">載入中...</p>}
+          {!loading && posts.length === 0 && <EmptyState icon={FileText} text="目前沒有貼文" />}
           {posts.map(p => (
             <div key={p.id} className="bg-slate-800/50 border border-slate-700/50 rounded-2xl p-4">
               <div className="flex items-start justify-between gap-3">
@@ -296,16 +378,11 @@ export default function SocialMonitorPage() {
         </div>
       )}
 
-      {/* DMs Tab */}
+      {/* DMs Tab — ALL messages regardless of report status */}
       {tab === 'dms' && (
         <div className="space-y-3">
           {loading && <p className="text-slate-400 text-sm py-4 text-center">載入中...</p>}
-          {!loading && dms.length === 0 && (
-            <div className="text-center py-12 text-slate-400">
-              <MessageSquare className="w-12 h-12 mx-auto mb-3 opacity-30" />
-              <p>目前沒有私訊記錄</p>
-            </div>
-          )}
+          {!loading && dms.length === 0 && <EmptyState icon={MessageSquare} text="目前沒有私訊記錄" />}
           {dms.map(dm => (
             <div key={dm.id} className="bg-slate-800/50 border border-slate-700/50 rounded-2xl px-4 py-3">
               <div className="flex items-center gap-2 text-xs text-white/40 mb-1">
@@ -322,10 +399,11 @@ export default function SocialMonitorPage() {
         </div>
       )}
 
-      {/* Users Tab */}
+      {/* Users Tab — ALL users */}
       {tab === 'users' && (
         <div className="space-y-2">
           {loading && <p className="text-slate-400 text-sm py-4 text-center">載入中...</p>}
+          {!loading && users.length === 0 && <EmptyState icon={Users} text="目前沒有用戶資料" />}
           {users.map(u => (
             <div key={u.id} className={`border rounded-xl px-4 py-3 flex items-center gap-3 ${u.is_banned ? 'bg-red-500/5 border-red-400/20' : 'bg-slate-800/50 border-slate-700/50'}`}>
               <div className="w-9 h-9 rounded-full bg-gradient-to-br from-amber-500/30 to-purple-500/30 flex items-center justify-center text-sm font-bold text-white/80 overflow-hidden shrink-0">

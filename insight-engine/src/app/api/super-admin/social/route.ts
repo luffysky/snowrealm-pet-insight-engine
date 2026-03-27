@@ -70,12 +70,29 @@ interface UserRow extends Record<string, unknown> {
   ban_reason: string | null
 }
 
-/** GET /api/super-admin/social?tab=posts|dms|users|reports */
+/** GET /api/super-admin/social?tab=posts|dms|users|reports|stats */
 export async function GET(req: NextRequest): Promise<NextResponse> {
   const auth = await requireSuperAdmin()
   if (!auth) return NextResponse.json({ error: '未授權' }, { status: 401 })
 
   const tab = req.nextUrl.searchParams.get('tab') ?? 'reports'
+
+  if (tab === 'stats') {
+    const [rPending, rPosts, rDms, rUsers] = await Promise.all([
+      query<{ cnt: string }>(`SELECT COUNT(*) as cnt FROM social_reports WHERE status = 'pending'`),
+      query<{ cnt: string }>(`SELECT COUNT(*) as cnt FROM social_posts`),
+      query<{ cnt: string }>(`SELECT COUNT(*) as cnt FROM direct_messages`),
+      query<{ cnt: string }>(`SELECT COUNT(*) as cnt FROM admin_users`),
+    ])
+    return NextResponse.json({
+      stats: {
+        pendingReports: parseInt(rPending[0]?.cnt ?? '0'),
+        totalPosts:     parseInt(rPosts[0]?.cnt ?? '0'),
+        totalDms:       parseInt(rDms[0]?.cnt ?? '0'),
+        totalUsers:     parseInt(rUsers[0]?.cnt ?? '0'),
+      }
+    })
+  }
   const page = Math.max(1, parseInt(req.nextUrl.searchParams.get('page') ?? '1'))
   const pageSize = 30
   const offset = (page - 1) * pageSize

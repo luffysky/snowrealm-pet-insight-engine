@@ -5,6 +5,21 @@
 
 ---
 
+## 🔴 需要在 Supabase 手動執行的 Migration（社群系統）
+
+> 以下 SQL 需依序執行，全部在 `supabase/` 資料夾。
+
+```
+1. migration_social.sql           — social_posts / social_reactions / social_comments / 擴充 admin_users
+2. migration_follow_dm.sql        — user_follows / direct_messages
+3. migration_social_bookmarks.sql — social_bookmarks
+4. migration_social_reports.sql   — social_reports（檢舉系統）
+5. migration_user_bans_blocks.sql — is_banned / user_blocks
+6. migration_phase44_message_management.sql — recalled_at / deleted_for / saved_messages / friend_requests
+```
+
+---
+
 ## 🔴 需要在 Supabase 手動執行的 Migration
 
 > 腳本已在 repo，直接複製到 Supabase SQL Editor 貼上執行即可。
