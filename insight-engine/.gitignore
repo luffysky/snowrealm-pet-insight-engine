@@ -44,3 +44,4 @@ docs/log.md
 *.tsbuildinfo
 next-env.d.ts
 .claude/worktrees/
+
