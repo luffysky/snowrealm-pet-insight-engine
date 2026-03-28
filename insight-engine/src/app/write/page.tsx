@@ -1,20 +1,67 @@
 'use client'
 
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState, useRef, useCallback } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import {
   ArrowLeft, Send, Loader2, Image as ImageIcon, Film, Tag, Globe, Lock,
-  Plus, Trash2, GripVertical, Type, AlignLeft, X, CheckCircle
+  Plus, Trash2, GripVertical, Type, AlignLeft, X, CheckCircle, Link as LinkIcon
 } from 'lucide-react'
 import type { ArticleBlock } from '@/components/social/ArticleEditor'
 import { blocksToHtml } from '@/components/social/ArticleEditor'
 import { nanoid } from 'nanoid'
 
+interface OgData {
+  url: string
+  title: string
+  description: string
+  image: string
+  siteName: string
+}
+
+const URL_REGEX = /https?:\/\/[^\s"'<>(){}[\]]+/gi
+
 interface UserInfo {
   userId: string
   userName: string
   tenantId: string
+}
+
+// ── OG Preview Card ──
+function OgPreviewCard({ og, onRemove }: { og: OgData; onRemove: () => void }) {
+  return (
+    <a
+      href={og.url}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="block mt-2 rounded-xl border border-white/10 bg-white/5 hover:bg-white/8 overflow-hidden transition-colors"
+      onClick={e => e.stopPropagation()}
+    >
+      <div className="flex gap-3 p-3">
+        {og.image && (
+          <img
+            src={og.image}
+            alt={og.title}
+            className="w-20 h-16 object-cover rounded-lg flex-shrink-0"
+            onError={e => { (e.target as HTMLImageElement).style.display = 'none' }}
+          />
+        )}
+        <div className="flex-1 min-w-0">
+          <p className="text-[10px] text-white/30 truncate">{og.siteName}</p>
+          <p className="text-sm font-medium text-white/80 line-clamp-2 leading-snug">{og.title}</p>
+          {og.description && (
+            <p className="text-xs text-white/40 line-clamp-2 mt-0.5 leading-snug">{og.description}</p>
+          )}
+        </div>
+      </div>
+      <button
+        onClick={e => { e.preventDefault(); e.stopPropagation(); onRemove() }}
+        className="absolute top-1.5 right-1.5 p-0.5 bg-black/60 rounded text-white/40 hover:text-white/80"
+      >
+        <X className="w-3 h-3" />
+      </button>
+    </a>
+  )
 }
 
 // ── Simple inline block editor (no DnD overhead for the write page) ──
@@ -23,13 +70,43 @@ function BlockEditor({ blocks, onChange, onUpload }: {
   onChange: (blocks: ArticleBlock[]) => void
   onUpload: (file: File) => Promise<string>
 }) {
+  const [ogPreviews, setOgPreviews] = useState<Record<string, OgData>>({})
+  const [fetchingOg, setFetchingOg] = useState<Record<string, boolean>>({})
+
   const addText = () => onChange([...blocks, { id: nanoid(), type: 'text', textContent: '' }])
   const addImage = () => onChange([...blocks, { id: nanoid(), type: 'image', imageUrl: '' }])
 
   const updateBlock = (id: string, patch: Partial<ArticleBlock>) =>
     onChange(blocks.map(b => b.id === id ? { ...b, ...patch } : b))
 
-  const deleteBlock = (id: string) => onChange(blocks.filter(b => b.id !== id))
+  const deleteBlock = (id: string) => {
+    onChange(blocks.filter(b => b.id !== id))
+    setOgPreviews(prev => { const n = { ...prev }; delete n[id]; return n })
+  }
+
+  const fetchOgForBlock = useCallback(async (blockId: string, url: string) => {
+    if (fetchingOg[blockId] || ogPreviews[blockId]) return
+    setFetchingOg(prev => ({ ...prev, [blockId]: true }))
+    try {
+      const res = await fetch(`/api/og-fetch?url=${encodeURIComponent(url)}`)
+      if (res.ok) {
+        const data = await res.json() as OgData
+        if (data.title) setOgPreviews(prev => ({ ...prev, [blockId]: data }))
+      }
+    } catch {
+      // silent fail — OG preview is non-critical
+    } finally {
+      setFetchingOg(prev => { const n = { ...prev }; delete n[blockId]; return n })
+    }
+  }, [fetchingOg, ogPreviews])
+
+  const handleTextPaste = useCallback((blockId: string, e: React.ClipboardEvent<HTMLTextAreaElement>) => {
+    const pasted = e.clipboardData.getData('text')
+    const urls = pasted.match(URL_REGEX)
+    if (urls?.[0] && !ogPreviews[blockId]) {
+      fetchOgForBlock(blockId, urls[0])
+    }
+  }, [fetchOgForBlock, ogPreviews])
 
   return (
     <div className="space-y-4">
@@ -42,18 +119,33 @@ function BlockEditor({ blocks, onChange, onUpload }: {
           </div>
 
           {block.type === 'text' && (
-            <textarea
-              value={block.textContent ?? ''}
-              onChange={e => updateBlock(block.id, { textContent: e.target.value })}
-              placeholder="開始輸入段落..."
-              className="w-full bg-transparent text-white/80 placeholder-white/20 outline-none resize-none text-base leading-relaxed min-h-[80px]"
-              rows={4}
-              onInput={e => {
-                const el = e.currentTarget
-                el.style.height = 'auto'
-                el.style.height = el.scrollHeight + 'px'
-              }}
-            />
+            <div className="relative">
+              <textarea
+                value={block.textContent ?? ''}
+                onChange={e => updateBlock(block.id, { textContent: e.target.value })}
+                onPaste={e => handleTextPaste(block.id, e)}
+                placeholder="開始輸入段落..."
+                className="w-full bg-transparent text-white/80 placeholder-white/20 outline-none resize-none text-base leading-relaxed min-h-[80px]"
+                rows={4}
+                onInput={e => {
+                  const el = e.currentTarget
+                  el.style.height = 'auto'
+                  el.style.height = el.scrollHeight + 'px'
+                }}
+              />
+              {fetchingOg[block.id] && (
+                <div className="flex items-center gap-2 mt-2 text-xs text-white/30">
+                  <Loader2 className="w-3 h-3 animate-spin" />
+                  <span>載入連結預覽...</span>
+                </div>
+              )}
+              {ogPreviews[block.id] && (
+                <OgPreviewCard
+                  og={ogPreviews[block.id]}
+                  onRemove={() => setOgPreviews(prev => { const n = { ...prev }; delete n[block.id]; return n })}
+                />
+              )}
+            </div>
           )}
 
           {block.type === 'image' && (
