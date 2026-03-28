@@ -50,6 +50,14 @@ const CATEGORIES = [
   { key: 'article', label: '長文章', emoji: '📝' },
 ]
 
+function stripHtml(html: string): string {
+  return html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()
+}
+
+function extractFirstImageSrc(html: string): string {
+  return /<img[^>]+src=["']([^"']+)["']/i.exec(html)?.[1] ?? ''
+}
+
 function PostPreviewCard({ post, meId }: { post: SocialPost; meId: string | null }) {
   const router = useRouter()
   const [copied, setCopied] = useState(false)
@@ -156,14 +164,17 @@ function PostPreviewCard({ post, meId }: { post: SocialPost; meId: string | null
           </div>
         </div>
       )}
-      {!post.videoUrl && post.images.length > 0 && (
-        <div className="relative overflow-hidden h-48 cursor-zoom-in" onClick={e => { e.stopPropagation(); setLightboxUrl(post.images[0].url) }}>
-          <img src={post.images[0].url} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-          {post.images.length > 1 && (
-            <span className="absolute top-2 right-2 bg-black/60 text-white text-xs px-2 py-0.5 rounded-full">+{post.images.length - 1}</span>
-          )}
-        </div>
-      )}
+      {!post.videoUrl && (() => {
+        const imgUrl = post.images[0]?.url || (post.type === 'article' ? extractFirstImageSrc(post.content) : '')
+        return imgUrl ? (
+          <div className="relative overflow-hidden h-48 cursor-zoom-in" onClick={e => { e.stopPropagation(); setLightboxUrl(imgUrl) }}>
+            <img src={imgUrl} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+            {post.images.length > 1 && (
+              <span className="absolute top-2 right-2 bg-black/60 text-white text-xs px-2 py-0.5 rounded-full">+{post.images.length - 1}</span>
+            )}
+          </div>
+        ) : null
+      })()}
       <div className="p-4 space-y-3">
         <div className="flex items-center gap-2 flex-wrap">
           <Link href={`/u/${post.userId}`} onClick={e => e.stopPropagation()}
@@ -195,7 +206,7 @@ function PostPreviewCard({ post, meId }: { post: SocialPost; meId: string | null
           )}
         </div>
         {post.title && <h3 className="font-bold text-white/90 text-base line-clamp-2">{post.title}</h3>}
-        <p className="text-sm text-white/60 leading-relaxed line-clamp-3">{post.content}</p>
+        <p className="text-sm text-white/60 leading-relaxed line-clamp-3">{stripHtml(post.content)}</p>
         {post.tags.length > 0 && (
           <div className="flex flex-wrap gap-1">
             {post.tags.slice(0, 3).map(t => (

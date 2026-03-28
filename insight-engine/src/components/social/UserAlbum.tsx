@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useCallback } from 'react'
+import { useState, useRef, useCallback, useEffect } from 'react'
 import { Plus, Trash2, Globe, Lock, X, Loader2, ChevronLeft, ChevronRight } from 'lucide-react'
 
 interface AlbumPhoto {
@@ -21,6 +21,11 @@ interface UserAlbumProps {
 export function UserAlbum({ userId, isOwner, initialPhotos }: UserAlbumProps) {
   const [photos, setPhotos] = useState<AlbumPhoto[]>(initialPhotos)
   const [uploading, setUploading] = useState(false)
+
+  // Sync when parent finishes fetching (initialPhotos starts as [] then updates)
+  useEffect(() => {
+    if (initialPhotos.length > 0) setPhotos(initialPhotos)
+  }, [initialPhotos])
   const [lightbox, setLightbox] = useState<number | null>(null)
   const [deleting, setDeleting] = useState<string | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)

@@ -7,6 +7,10 @@ import { ArrowLeft, Globe, Heart, MessageSquare, Loader2, X, Settings, ChevronRi
 import { UserAlbum } from '@/components/social/UserAlbum'
 import { setFloatingChatEnabled, FLOATING_CHAT_ENABLED_KEY } from '@/components/social/FloatingChat'
 
+function stripHtml(html: string): string {
+  return html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()
+}
+
 // ─── Profile sidebar (only shown for own profile) ───
 function ProfileSidebar({ onClose }: { onClose: () => void }) {
   const [floatEnabled, setFloatEnabled] = useState(true)
@@ -493,7 +497,7 @@ export default function UserProfilePage() {
                   className="block bg-white/[0.03] border border-white/8 rounded-2xl p-4 hover:bg-white/[0.06] hover:border-white/14 transition-all"
                 >
                   {post.title && <p className="font-semibold text-white/85 mb-1 line-clamp-1 pr-8">{post.title}</p>}
-                  <p className="text-sm text-white/55 leading-relaxed line-clamp-2 pr-8">{post.content}</p>
+                  <p className="text-sm text-white/55 leading-relaxed line-clamp-2 pr-8">{stripHtml(post.content)}</p>
                   <div className="flex items-center gap-4 mt-3 text-xs text-white/25">
                     <span className="flex items-center gap-1"><Heart className="w-3.5 h-3.5" /> {post.likesCount}</span>
                     <span className="flex items-center gap-1"><MessageSquare className="w-3.5 h-3.5" /> {post.commentsCount}</span>
