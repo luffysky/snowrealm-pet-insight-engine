@@ -130,10 +130,10 @@ export function BottomNav() {
         >
           <div className="flex items-stretch h-16 max-w-lg mx-auto px-2" style={{ overflow: 'visible' }}>
 
-            {/* 探索 */}
-            <Link href="/explore" className={tabCls('/explore')}>
-              <Home className="w-5 h-5" strokeWidth={isActive('/explore') ? 2.5 : 1.8} />
-              <span className={labelCls}>探索</span>
+            {/* 部落格 */}
+            <Link href="/blogs" className={tabCls('/blogs')}>
+              <Home className="w-5 h-5" strokeWidth={isActive('/blogs') ? 2.5 : 1.8} />
+              <span className={labelCls}>部落格</span>
             </Link>
 
             {/* 社群 */}
@@ -243,7 +243,7 @@ export function BottomNav() {
               </div>
             </button>
             <button
-              onClick={() => { setCreateOpen(false); router.push('/studio') }}
+              onClick={() => { setCreateOpen(false); router.push('/insight-admin/blog') }}
               className="w-full flex items-center gap-4 p-4 bg-white/5 hover:bg-white/10 border border-white/8 rounded-2xl transition-colors text-left"
             >
               <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-cyan-500/20 to-blue-500/20 flex items-center justify-center shrink-0">
@@ -311,18 +311,18 @@ export function BottomNav() {
               </div>
             </Link>
 
-            {/* 探索 */}
+            {/* 部落格 */}
             <Link
-              href="/explore"
+              href="/blogs"
               onClick={() => setMoreOpen(false)}
               className="w-full flex items-center gap-4 p-4 bg-white/5 hover:bg-white/10 border border-white/8 rounded-2xl transition-colors"
             >
               <div className="w-11 h-11 rounded-xl bg-indigo-500/15 flex items-center justify-center shrink-0">
-                <span className="text-lg">🔍</span>
+                <span className="text-lg">📝</span>
               </div>
               <div>
-                <p className="font-semibold text-white text-sm">探索</p>
-                <p className="text-xs text-white/40 mt-0.5">發現問卷、貼文、創作者</p>
+                <p className="font-semibold text-white text-sm">部落格</p>
+                <p className="text-xs text-white/40 mt-0.5">瀏覽創作者文章</p>
               </div>
             </Link>
           </div>

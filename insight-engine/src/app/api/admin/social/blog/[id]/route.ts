@@ -10,6 +10,7 @@ interface BlogArticleRow extends Record<string, unknown> {
   summary: string | null
   content: string
   cover_image: string | null
+  cover_image_position: string | null
   tags: string[]
   is_public: boolean
   view_count: number
@@ -45,6 +46,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     summary?: string | null
     content?: string
     coverImage?: string | null
+    coverImagePosition?: string | null
     tags?: string[]
     isPublic?: boolean
     seoTitle?: string | null
@@ -65,17 +67,18 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
   const article = await queryOne<BlogArticleRow>(
     `UPDATE user_blog_articles SET
-       title       = COALESCE($1, title),
-       slug        = COALESCE($2, slug),
-       summary     = CASE WHEN $3::boolean THEN $4 ELSE summary END,
-       content     = COALESCE($5, content),
-       cover_image = CASE WHEN $6::boolean THEN $7 ELSE cover_image END,
-       tags        = COALESCE($8, tags),
-       is_public   = COALESCE($9, is_public),
-       seo_title   = CASE WHEN $10::boolean THEN $11 ELSE seo_title END,
-       seo_desc    = CASE WHEN $12::boolean THEN $13 ELSE seo_desc END,
-       updated_at  = NOW()
-     WHERE id::text = $14 AND user_id::text = $15
+       title                = COALESCE($1, title),
+       slug                 = COALESCE($2, slug),
+       summary              = CASE WHEN $3::boolean THEN $4 ELSE summary END,
+       content              = COALESCE($5, content),
+       cover_image          = CASE WHEN $6::boolean THEN $7 ELSE cover_image END,
+       cover_image_position = COALESCE($8, cover_image_position),
+       tags                 = COALESCE($9, tags),
+       is_public            = COALESCE($10, is_public),
+       seo_title            = CASE WHEN $11::boolean THEN $12 ELSE seo_title END,
+       seo_desc             = CASE WHEN $13::boolean THEN $14 ELSE seo_desc END,
+       updated_at           = NOW()
+     WHERE id::text = $15 AND user_id::text = $16
      RETURNING *`,
     [
       body.title ?? null,
@@ -83,6 +86,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       'summary' in body, body.summary ?? null,
       body.content ?? null,
       'coverImage' in body, body.coverImage ?? null,
+      body.coverImagePosition ?? null,
       body.tags ?? null,
       body.isPublic ?? null,
       'seoTitle' in body, body.seoTitle ?? null,

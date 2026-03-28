@@ -12,6 +12,7 @@ interface ArticleData {
     summary: string | null
     content: string
     cover_image: string | null
+    cover_image_position: string | null
     tags: string[]
     is_public: boolean
     view_count: number
@@ -93,6 +94,7 @@ export default async function ArticlePage({
               alt={article.title}
               fill
               className="object-cover"
+              style={{ objectPosition: article.cover_image_position ?? 'center center' }}
               priority
             />
           </div>

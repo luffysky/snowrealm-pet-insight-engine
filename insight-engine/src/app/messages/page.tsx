@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, MessageCircle, Send, Loader2, X, Paperclip, Smile, ImageIcon, Music, File as FileIcon, Gift, Pencil, Plus, Palette, Play, Pause, Volume2 } from 'lucide-react'
+import { ArrowLeft, MessageCircle, Send, Loader2, X, Paperclip, Smile, ImageIcon, Music, File as FileIcon, Gift, Pencil, Plus, Palette, Play, Pause, Volume2, Mic } from 'lucide-react'
 import { GifPicker } from '@/components/social/GifPicker'
 
 // ─── Emoji data ───
@@ -18,6 +18,16 @@ const EMOJI_CATEGORIES = [
 ]
 
 const STICKER_EMOJI = ['🥹','🥰','🤩','🥳','😭','😤','🤯','🫠','🥺','😴','🤗','🤣','😂','😆','😁','😊','🫡','🤔','😬','😏','🤫','😇','😈','👿','💀','🫶','❤️‍🔥','🔥','💯','✨']
+
+const STICKER_PREFIX = '[STICKER]:'
+
+interface StickerPack {
+  id: string
+  name: string
+  coverUrl: string | null
+  sortOrder: number
+  stickers: { id: string; url: string }[]
+}
 
 // Lightbox for full-size media view
 function Lightbox({ url, type, onClose }: { url: string; type: 'image' | 'video'; onClose: () => void }) {
@@ -249,6 +259,16 @@ function MessageContent({ content, edited, isMine, onLightbox }: { content: stri
     const url = content.slice(7, -1)
     return <AudioPlayer url={url} isMine={isMine ?? false} />
   }
+  if (content.startsWith(STICKER_PREFIX)) {
+    const url = content.slice(STICKER_PREFIX.length)
+    return (
+      <img
+        src={url} alt="貼圖"
+        className="w-24 h-24 object-contain rounded-xl cursor-pointer hover:scale-105 transition-transform"
+        onClick={() => onLightbox?.(url, 'image')}
+      />
+    )
+  }
   if (content.startsWith('[file:') && content.endsWith(']')) {
     const inner = content.slice(6, -1)
     const sep = inner.indexOf('|')
@@ -285,7 +305,7 @@ function isNakedContent(content: string): boolean {
   if (content === '[已收回]') return false
   if (content.startsWith('[img:') || content.startsWith('[gif:') ||
       content.startsWith('[video:') || content.startsWith('[audio:') ||
-      content.startsWith('[file:')) return true
+      content.startsWith('[file:') || content.startsWith(STICKER_PREFIX)) return true
   const trimmed = content.trim()
   // Single emoji sticker (≤ 4 chars, contains emoji)
   if (trimmed.length <= 4 && /\p{Emoji}/u.test(trimmed)) return true
@@ -398,7 +418,10 @@ export default function MessagesPage() {
   const esRef = useRef<EventSource | null>(null)
   const [bubble, setBubble] = useState<BubbleState | null>(null)
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const [mediaPanel, setMediaPanel] = useState<'emoji' | 'attach' | 'gif' | null>(null)
+  const [mediaPanel, setMediaPanel] = useState<'emoji' | 'attach' | 'gif' | 'sticker' | null>(null)
+  const [stickerPacks, setStickerPacks] = useState<StickerPack[]>([])
+  const [stickerPackIdx, setStickerPackIdx] = useState(0)
+  const [loadingStickers, setLoadingStickers] = useState(false)
   const [emojiCategory, setEmojiCategory] = useState(0)
   const [plusMenuOpen, setPlusMenuOpen] = useState(false)
   const [lightbox, setLightbox] = useState<{ url: string; type: 'image' | 'video' } | null>(null)
@@ -419,6 +442,13 @@ export default function MessagesPage() {
   const [mainTab, setMainTab] = useState<'messages' | 'friends'>('messages')
   const [friends, setFriends] = useState<{ id: string; displayName: string | null; avatarUrl: string | null; relation: 'follower' | 'following' | 'mutual' }[]>([])
   const [friendsLoading, setFriendsLoading] = useState(false)
+  // ── 語音錄音 ──
+  const [recording, setRecording] = useState(false)
+  const [recSeconds, setRecSeconds] = useState(0)
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null)
+  const recChunksRef = useRef<Blob[]>([])
+  const recStreamRef = useRef<MediaStream | null>(null)
+  const recTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   useEffect(() => {
     fetch('/api/auth/me')
@@ -730,6 +760,69 @@ export default function MessagesPage() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'edit', messageId: msgId, newContent: trimmed }),
     }).catch(() => {})
+  }
+
+  const startRecording = async () => {
+    if (recording) return
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      recStreamRef.current = stream
+      recChunksRef.current = []
+      const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+        ? 'audio/webm;codecs=opus'
+        : MediaRecorder.isTypeSupported('audio/mp4')
+          ? 'audio/mp4'
+          : ''
+      const mr = new MediaRecorder(stream, mimeType ? { mimeType } : undefined)
+      mr.ondataavailable = e => { if (e.data.size > 0) recChunksRef.current.push(e.data) }
+      mr.start(100)
+      mediaRecorderRef.current = mr
+      setRecording(true)
+      setRecSeconds(0)
+      recTimerRef.current = setInterval(() => setRecSeconds(s => s + 1), 1000)
+    } catch {
+      setUploadError('無法存取麥克風，請確認權限')
+      setTimeout(() => setUploadError(null), 4000)
+    }
+  }
+
+  const stopRecording = async (cancel = false) => {
+    if (!recording) return
+    if (recTimerRef.current) { clearInterval(recTimerRef.current); recTimerRef.current = null }
+    const mr = mediaRecorderRef.current
+    const stream = recStreamRef.current
+    setRecording(false)
+    if (!mr) return
+    if (cancel) {
+      mr.stop()
+      stream?.getTracks().forEach(t => t.stop())
+      recChunksRef.current = []
+      return
+    }
+    await new Promise<void>(resolve => { mr.onstop = () => resolve(); mr.stop() })
+    stream?.getTracks().forEach(t => t.stop())
+    const chunks = recChunksRef.current
+    if (!chunks.length || !active) return
+    const ext = chunks[0].type.includes('mp4') ? 'mp4' : 'webm'
+    const blob = new Blob(chunks, { type: chunks[0].type || 'audio/webm' })
+    const file = new File([blob], `voice-${Date.now()}.${ext}`, { type: blob.type })
+    await uploadFile(file)
+  }
+
+  const loadStickerPacks = async () => {
+    if (stickerPacks.length > 0) return
+    setLoadingStickers(true)
+    try {
+      const res = await fetch('/api/stickers')
+      const data = await res.json() as { packs: StickerPack[] }
+      setStickerPacks(data.packs ?? [])
+    } catch { /* ignore */ }
+    finally { setLoadingStickers(false) }
+  }
+
+  const sendSticker = (url: string) => {
+    sendContent(`${STICKER_PREFIX}${url}`)
+    setMediaPanel(null)
   }
 
   const persist = useCallback((k: string, c: string, fx: BgEffects) => {
@@ -1253,6 +1346,46 @@ export default function MessagesPage() {
                     />
                   </div>
                 )}
+
+                {mediaPanel === 'sticker' && (
+                  <div>
+                    {loadingStickers ? (
+                      <div className="flex justify-center py-6"><Loader2 className="w-5 h-5 text-white/25 animate-spin" /></div>
+                    ) : stickerPacks.length === 0 ? (
+                      <div className="py-6 text-center text-xs text-white/25">尚無貼圖包</div>
+                    ) : (
+                      <>
+                        <div className="flex gap-0.5 px-2 pt-2 overflow-x-auto">
+                          {stickerPacks.map((pack, idx) => (
+                            <button
+                              key={pack.id}
+                              onClick={() => setStickerPackIdx(idx)}
+                              className={`shrink-0 w-9 h-9 rounded-lg overflow-hidden border transition-all ${
+                                stickerPackIdx === idx ? 'border-amber-400/60' : 'border-white/10 hover:border-white/20'
+                              }`}
+                            >
+                              {pack.coverUrl
+                                ? <img src={pack.coverUrl} alt={pack.name} className="w-full h-full object-cover" />
+                                : <span className="text-lg leading-none flex items-center justify-center w-full h-full">🫶</span>
+                              }
+                            </button>
+                          ))}
+                        </div>
+                        <div className="grid grid-cols-6 gap-1 p-2 max-h-44 overflow-y-auto">
+                          {(stickerPacks[stickerPackIdx]?.stickers ?? []).map(s => (
+                            <button
+                              key={s.id}
+                              onClick={() => sendSticker(s.url)}
+                              className="aspect-square rounded-xl overflow-hidden hover:bg-white/10 transition-colors p-1"
+                            >
+                              <img src={s.url} alt="" className="w-full h-full object-contain" />
+                            </button>
+                          ))}
+                        </div>
+                      </>
+                    )}
+                  </div>
+                )}
               </div>
             )}
 
@@ -1303,7 +1436,13 @@ export default function MessagesPage() {
                         onClick={() => { setMediaPanel(p => p === 'emoji' ? null : 'emoji'); setPlusMenuOpen(false) }}
                         className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-white/8 text-sm text-white/80 transition-colors"
                       >
-                        <Smile className="w-4 h-4 text-yellow-400" /> 表情 / 貼圖
+                        <Smile className="w-4 h-4 text-yellow-400" /> 表情
+                      </button>
+                      <button
+                        onClick={() => { setMediaPanel(p => p === 'sticker' ? null : 'sticker'); setPlusMenuOpen(false); void loadStickerPacks() }}
+                        className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-white/8 text-sm text-white/80 transition-colors border-t border-white/8"
+                      >
+                        <span className="text-base leading-none">🫶</span> 貼圖
                       </button>
                       <button
                         onClick={() => { setMediaPanel(p => p === 'attach' ? null : 'attach'); setPlusMenuOpen(false) }}
@@ -1320,28 +1459,58 @@ export default function MessagesPage() {
                     </div>
                   )}
                 </div>
-                {/* Input pill */}
-                <div className="flex-1 flex items-center bg-slate-800/80 border border-white/[0.08] rounded-3xl overflow-hidden focus-within:border-amber-500/40 transition-colors">
-                  <input
-                    value={input}
-                    onChange={e => setInput(e.target.value)}
-                    onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send() } }}
-                    onFocus={() => { setMediaPanel(null); setPlusMenuOpen(false) }}
-                    placeholder="輸入訊息..."
-                    className="flex-1 bg-transparent px-4 py-2.5 text-sm text-white placeholder-white/25 outline-none min-w-0"
-                  />
-                  <button
-                    onClick={send}
-                    disabled={!input.trim() || sending}
-                    className={`shrink-0 w-8 h-8 rounded-full mr-1 flex items-center justify-center transition-all ${
-                      input.trim() && !sending
-                        ? 'bg-gradient-to-br from-amber-500 to-orange-600 text-white shadow-md shadow-amber-500/30 scale-100'
-                        : 'bg-white/8 text-white/25 scale-90'
-                    }`}
-                  >
-                    {sending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
-                  </button>
-                </div>
+                {/* Input pill / recording indicator */}
+                {recording ? (
+                  <div className="flex-1 flex items-center gap-3 bg-rose-500/10 border border-rose-500/30 rounded-3xl px-4 py-2.5">
+                    <span className="w-2.5 h-2.5 rounded-full bg-rose-500 animate-pulse shrink-0" />
+                    <span className="text-sm text-rose-300 flex-1">
+                      錄音中… {Math.floor(recSeconds / 60)}:{String(recSeconds % 60).padStart(2, '0')}
+                    </span>
+                    <button
+                      onClick={() => stopRecording(true)}
+                      className="text-xs text-white/40 hover:text-white/70 shrink-0"
+                    >取消</button>
+                  </div>
+                ) : (
+                  <div className="flex-1 flex items-center bg-slate-800/80 border border-white/[0.08] rounded-3xl overflow-hidden focus-within:border-amber-500/40 transition-colors">
+                    <input
+                      value={input}
+                      onChange={e => setInput(e.target.value)}
+                      onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send() } }}
+                      onFocus={() => { setMediaPanel(null); setPlusMenuOpen(false) }}
+                      placeholder="輸入訊息..."
+                      className="flex-1 bg-transparent px-4 py-2.5 text-sm text-white placeholder-white/25 outline-none min-w-0"
+                    />
+                    <button
+                      onClick={send}
+                      disabled={!input.trim() || sending}
+                      className={`shrink-0 w-8 h-8 rounded-full mr-1 flex items-center justify-center transition-all ${
+                        input.trim() && !sending
+                          ? 'bg-gradient-to-br from-amber-500 to-orange-600 text-white shadow-md shadow-amber-500/30 scale-100'
+                          : 'bg-white/8 text-white/25 scale-90'
+                      }`}
+                    >
+                      {sending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+                    </button>
+                  </div>
+                )}
+                {/* Mic button — hold to record, release to send */}
+                <button
+                  onPointerDown={e => { e.preventDefault(); startRecording() }}
+                  onPointerUp={() => stopRecording(false)}
+                  onPointerLeave={() => { if (recording) stopRecording(false) }}
+                  className={`shrink-0 w-10 h-10 rounded-full flex items-center justify-center transition-all select-none touch-none ${
+                    recording
+                      ? 'bg-rose-500 text-white scale-110 shadow-lg shadow-rose-500/40'
+                      : 'bg-white/8 text-white/40 hover:bg-white/15 hover:text-white/70'
+                  }`}
+                  title="按住錄音"
+                >
+                  {uploading && !recording
+                    ? <Loader2 className="w-4 h-4 animate-spin" />
+                    : <Mic className="w-4 h-4" />
+                  }
+                </button>
               </div>
             </div>
             </div>{/* end 輸入層 */}

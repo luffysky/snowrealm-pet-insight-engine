@@ -16,6 +16,7 @@ interface BlogData {
     slug: string
     summary: string | null
     cover_image: string | null
+    cover_image_position: string | null
     tags: string[]
     view_count: number
     published_at: string
@@ -126,6 +127,7 @@ export default async function BlogPage({ params }: { params: Promise<{ userSlug:
                       width={112}
                       height={80}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      style={{ objectPosition: article.cover_image_position ?? 'center center' }}
                     />
                   </div>
                 )}

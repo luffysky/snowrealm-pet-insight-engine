@@ -10,6 +10,7 @@ interface BlogArticleRow extends Record<string, unknown> {
   summary: string | null
   content: string
   cover_image: string | null
+  cover_image_position: string | null
   tags: string[]
   is_public: boolean
   view_count: number
@@ -48,6 +49,7 @@ export async function POST(req: NextRequest) {
     summary?: string
     content?: string
     coverImage?: string
+    coverImagePosition?: string
     tags?: string[]
     isPublic?: boolean
     seoTitle?: string
@@ -69,8 +71,8 @@ export async function POST(req: NextRequest) {
 
   const article = await queryOne<BlogArticleRow>(
     `INSERT INTO user_blog_articles
-       (user_id, tenant_id, title, slug, summary, content, cover_image, tags, is_public, seo_title, seo_desc)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+       (user_id, tenant_id, title, slug, summary, content, cover_image, cover_image_position, tags, is_public, seo_title, seo_desc)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
      RETURNING *`,
     [
       ctx.userId, ctx.tenantId ?? 'default',
@@ -78,6 +80,7 @@ export async function POST(req: NextRequest) {
       body.summary ?? null,
       body.content ?? '',
       body.coverImage ?? null,
+      body.coverImagePosition ?? 'center center',
       body.tags ?? [],
       body.isPublic ?? true,
       body.seoTitle ?? null,

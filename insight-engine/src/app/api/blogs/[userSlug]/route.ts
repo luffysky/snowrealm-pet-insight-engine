@@ -7,6 +7,7 @@ interface BlogArticleRow extends Record<string, unknown> {
   slug: string
   summary: string | null
   cover_image: string | null
+  cover_image_position: string | null
   tags: string[]
   view_count: number
   published_at: string
@@ -55,7 +56,7 @@ export async function GET(
   }
 
   const articles = await query<BlogArticleRow>(
-    `SELECT id, title, slug, summary, cover_image, tags, view_count, published_at
+    `SELECT id, title, slug, summary, cover_image, cover_image_position, tags, view_count, published_at
      FROM user_blog_articles
      WHERE user_id::text = $1 AND is_public = true
      ORDER BY published_at DESC`,

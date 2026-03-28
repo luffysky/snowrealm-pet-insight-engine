@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { ArrowLeft, Save, Eye, EyeOff, ImageIcon, Loader2, X, Tag, Check } from 'lucide-react'
+import { ArrowLeft, Save, Eye, EyeOff, ImageIcon, Loader2, X, Tag, Check, Move } from 'lucide-react'
 
 interface BlogArticle {
   id?: string
@@ -10,6 +10,7 @@ interface BlogArticle {
   summary: string
   content: string
   coverImage: string
+  coverImagePosition: string
   tags: string[]
   isPublic: boolean
   seoTitle: string
@@ -18,7 +19,8 @@ interface BlogArticle {
 
 const EMPTY: BlogArticle = {
   title: '', slug: '', summary: '', content: '',
-  coverImage: '', tags: [], isPublic: true, seoTitle: '', seoDesc: '',
+  coverImage: '', coverImagePosition: 'center center',
+  tags: [], isPublic: true, seoTitle: '', seoDesc: '',
 }
 
 function slugify(text: string): string {
@@ -50,6 +52,8 @@ export function BlogEditor({ articleId, onSaved, onCancel }: Props) {
   const editorRef = useRef<HTMLDivElement>(null)
   const coverInputRef = useRef<HTMLInputElement>(null)
   const [activeTab, setActiveTab] = useState<'write' | 'seo'>('write')
+  const [adjustingPosition, setAdjustingPosition] = useState(false)
+  const coverPreviewRef = useRef<HTMLDivElement>(null)
 
   // Load existing article
   useEffect(() => {
@@ -67,6 +71,7 @@ export function BlogEditor({ articleId, onSaved, onCancel }: Props) {
           id: articleId,
           title: a.title, slug: a.slug, summary: a.summary ?? '',
           content: a.content, coverImage: a.cover_image ?? '',
+          coverImagePosition: (a as { cover_image_position?: string }).cover_image_position ?? 'center center',
           tags: a.tags ?? [], isPublic: a.is_public,
           seoTitle: a.seo_title ?? '', seoDesc: a.seo_desc ?? '',
         })
@@ -141,6 +146,7 @@ export function BlogEditor({ articleId, onSaved, onCancel }: Props) {
           summary: form.summary || null,
           content,
           coverImage: form.coverImage || null,
+          coverImagePosition: form.coverImagePosition || 'center center',
           tags: form.tags,
           isPublic: form.isPublic,
           seoTitle: form.seoTitle || null,
@@ -263,14 +269,63 @@ export function BlogEditor({ articleId, onSaved, onCancel }: Props) {
             <div>
               <label className="text-[11px] text-white/40 font-medium uppercase tracking-widest block mb-1.5">封面圖片</label>
               {form.coverImage ? (
-                <div className="relative group">
-                  <img src={form.coverImage} alt="" className="w-full h-40 object-cover rounded-2xl" />
-                  <button
-                    onClick={() => setForm(f => ({ ...f, coverImage: '' }))}
-                    className="absolute top-2 right-2 w-7 h-7 bg-slate-900/80 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                <div className="space-y-2">
+                  <div
+                    ref={coverPreviewRef}
+                    className={`relative overflow-hidden rounded-2xl h-40 ${adjustingPosition ? 'cursor-crosshair ring-2 ring-amber-400/60' : 'group'}`}
+                    onClick={e => {
+                      if (!adjustingPosition) return
+                      const rect = e.currentTarget.getBoundingClientRect()
+                      const x = Math.round(((e.clientX - rect.left) / rect.width) * 100)
+                      const y = Math.round(((e.clientY - rect.top) / rect.height) * 100)
+                      setForm(f => ({ ...f, coverImagePosition: `${x}% ${y}%` }))
+                    }}
                   >
-                    <X className="w-3.5 h-3.5 text-white/70" />
-                  </button>
+                    <img
+                      src={form.coverImage}
+                      alt=""
+                      className="w-full h-full object-cover"
+                      style={{ objectPosition: form.coverImagePosition }}
+                      draggable={false}
+                    />
+                    {adjustingPosition && (
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                        <p className="text-xs text-white bg-black/50 px-3 py-1.5 rounded-full">點擊設定焦點位置</p>
+                      </div>
+                    )}
+                    {!adjustingPosition && (
+                      <button
+                        onClick={() => setForm(f => ({ ...f, coverImage: '' }))}
+                        className="absolute top-2 right-2 w-7 h-7 bg-slate-900/80 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <X className="w-3.5 h-3.5 text-white/70" />
+                      </button>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setAdjustingPosition(p => !p)}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-colors ${
+                        adjustingPosition
+                          ? 'bg-amber-500/30 border border-amber-400/40 text-amber-300'
+                          : 'bg-white/5 border border-white/10 text-white/50 hover:text-white/80'
+                      }`}
+                    >
+                      <Move className="w-3 h-3" />
+                      {adjustingPosition ? '完成調整' : '調整焦點'}
+                    </button>
+                    {form.coverImagePosition !== 'center center' && (
+                      <button
+                        type="button"
+                        onClick={() => setForm(f => ({ ...f, coverImagePosition: 'center center' }))}
+                        className="text-[11px] text-white/30 hover:text-white/60 transition-colors"
+                      >
+                        ↺ 重設
+                      </button>
+                    )}
+                    <span className="text-[11px] text-white/25 ml-auto">{form.coverImagePosition}</span>
+                  </div>
                 </div>
               ) : (
                 <label className="flex items-center gap-3 justify-center h-32 border-2 border-dashed border-white/10 rounded-2xl cursor-pointer hover:border-white/20 transition-colors">
