@@ -4,6 +4,7 @@ import { useEffect, useState, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { ArrowLeft, MessageCircle, Send, Loader2, X, Paperclip, Smile, ImageIcon, Music, File as FileIcon, Gift, Pencil, Plus, Palette, Play, Pause, Volume2, Mic } from 'lucide-react'
 import { GifPicker } from '@/components/social/GifPicker'
+import { CHAT_BACKGROUNDS, ChatBgLayer, type BgId } from '@/components/admin/chat-bg'
 
 // ─── Emoji data ───
 const EMOJI_CATEGORIES = [
@@ -439,6 +440,10 @@ export default function MessagesPage() {
   const [effects, setEffects] = useState<BgEffects>(DEFAULT_EFFECTS)
   const [themePanelOpen, setThemePanelOpen] = useState(false)
   const [themeTab, setThemeTab] = useState<'theme' | 'bg' | 'fx'>('theme')
+  const [chatBgId, setChatBgId] = useState<BgId | null>(null)
+  const [bgOwned, setBgOwned] = useState<Set<BgId>>(new Set())
+  const [zcoinBalance, setZcoinBalance] = useState(0)
+  const [bgPurchasing, setBgPurchasing] = useState<BgId | null>(null)
   const [mainTab, setMainTab] = useState<'messages' | 'friends'>('messages')
   const [friends, setFriends] = useState<{ id: string; displayName: string | null; avatarUrl: string | null; relation: 'follower' | 'following' | 'mutual' }[]>([])
   const [friendsLoading, setFriendsLoading] = useState(false)
@@ -460,12 +465,23 @@ export default function MessagesPage() {
     // Load saved chat theme
     try {
       const saved = JSON.parse(localStorage.getItem(THEME_STORAGE_KEY) ?? '{}') as {
-        themeKey?: string; custom?: string; effects?: Partial<BgEffects>
+        themeKey?: string; custom?: string; effects?: Partial<BgEffects>; chatBgId?: BgId
       }
       if (saved.themeKey) setThemeKey(saved.themeKey)
       if (saved.custom) setBgCustomUrl(saved.custom)
       if (saved.effects) setEffects(e => ({ ...e, ...saved.effects }))
+      if (saved.chatBgId) setChatBgId(saved.chatBgId)
     } catch { /* ignore */ }
+    // Load owned backgrounds
+    try {
+      const owned = JSON.parse(localStorage.getItem('insight_chat_bg_owned') ?? '[]') as BgId[]
+      setBgOwned(new Set(owned))
+    } catch { /* ignore */ }
+    // Fetch Z幣 balance
+    fetch('/api/zcoin')
+      .then(r => r.ok ? r.json() as Promise<{ balance: { balance: number } }> : null)
+      .then(d => { if (d?.balance?.balance != null) setZcoinBalance(d.balance.balance) })
+      .catch(() => {})
   }, [router])
 
   useEffect(() => {
@@ -825,8 +841,18 @@ export default function MessagesPage() {
     setMediaPanel(null)
   }
 
+  const persistBgId = useCallback((id: BgId | null) => {
+    try {
+      const saved = JSON.parse(localStorage.getItem(THEME_STORAGE_KEY) ?? '{}')
+      localStorage.setItem(THEME_STORAGE_KEY, JSON.stringify({ ...saved, chatBgId: id }))
+    } catch { /* ignore */ }
+  }, [])
+
   const persist = useCallback((k: string, c: string, fx: BgEffects) => {
-    localStorage.setItem(THEME_STORAGE_KEY, JSON.stringify({ themeKey: k, custom: c, effects: fx }))
+    try {
+      const saved = JSON.parse(localStorage.getItem(THEME_STORAGE_KEY) ?? '{}')
+      localStorage.setItem(THEME_STORAGE_KEY, JSON.stringify({ ...saved, themeKey: k, custom: c, effects: fx }))
+    } catch { /* ignore */ }
   }, [])
 
   const applyTheme = useCallback((key: string) => {
@@ -850,7 +876,34 @@ export default function MessagesPage() {
     if (bgCustomUrl) {
       return { backgroundImage: `url(${bgCustomUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' }
     }
+    if (chatBgId && chatBgId !== 'default') return {}
     return activeTheme.bg
+  }
+
+  const handleBgSelect = (id: BgId) => {
+    setChatBgId(id)
+    persistBgId(id)
+    setBgCustomUrl('')
+  }
+
+  const handleBgPurchase = async (def: { id: BgId; price: number }) => {
+    setBgPurchasing(def.id)
+    try {
+      const res = await fetch('/api/zcoin/spend', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ amount: def.price, reason: `聊天背景: ${def.id}` }),
+      })
+      if (!res.ok) return
+      const data = await res.json() as { newBalance?: number }
+      const next = new Set(bgOwned).add(def.id)
+      setBgOwned(next)
+      setZcoinBalance(data.newBalance ?? zcoinBalance - def.price)
+      localStorage.setItem('insight_chat_bg_owned', JSON.stringify([...next]))
+      handleBgSelect(def.id)
+    } finally {
+      setBgPurchasing(null)
+    }
   }
 
   const fxFilter = (): string => {
@@ -1088,39 +1141,98 @@ export default function MessagesPage() {
 
                 {/* ── Tab: 背景 ── */}
                 {themeTab === 'bg' && (
-                  <div className="px-4 py-3 space-y-2.5">
-                    <div className="flex items-center gap-2">
-                      <input
-                        value={bgCustomUrl}
-                        onChange={e => setBgCustomUrl(e.target.value)}
-                        placeholder="貼上圖片網址 (https://...)"
-                        className="flex-1 bg-white/5 border border-white/10 rounded-xl px-3 py-1.5 text-xs text-white placeholder-white/25 outline-none focus:border-amber-400/40"
-                      />
-                      <button
-                        onClick={() => applyCustomBg(bgCustomUrl)}
-                        disabled={!bgCustomUrl.startsWith('http')}
-                        className="px-3 py-1.5 bg-amber-500/20 border border-amber-400/30 rounded-xl text-xs text-amber-300 hover:bg-amber-500/30 disabled:opacity-30 transition-colors shrink-0"
-                      >套用</button>
+                  <div className="px-4 py-3 space-y-3 max-h-[320px] overflow-y-auto">
+                    {/* 內建背景 grid */}
+                    <div>
+                      <p className="text-[10px] text-white/30 font-medium mb-2">內建背景</p>
+                      <div className="grid grid-cols-4 gap-2">
+                        {CHAT_BACKGROUNDS.map(def => {
+                          const isOwned = def.price === 0 || bgOwned.has(def.id)
+                          const isActive = chatBgId === def.id && !bgCustomUrl
+                          const isBuying = bgPurchasing === def.id
+                          const canAfford = zcoinBalance >= def.price
+                          return (
+                            <div key={def.id} className="flex flex-col items-center gap-1">
+                              <button
+                                onClick={() => {
+                                  if (isOwned) handleBgSelect(def.id)
+                                  else if (canAfford) handleBgPurchase(def)
+                                }}
+                                disabled={isBuying}
+                                className={`relative w-14 h-14 rounded-xl overflow-hidden transition-all ${
+                                  isActive ? 'ring-2 ring-amber-400 scale-105' : 'hover:scale-105 hover:ring-1 hover:ring-white/30'
+                                }`}
+                              >
+                                <div className="w-full h-full" style={{ background: def.swatch }} />
+                                {isActive && (
+                                  <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                                    <span className="text-white text-sm">✓</span>
+                                  </div>
+                                )}
+                                {!isOwned && (
+                                  <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/55">
+                                    {isBuying ? (
+                                      <span className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin block" />
+                                    ) : (
+                                      <>
+                                        <span className="text-[10px]">🔒</span>
+                                        <span className={`text-[9px] font-bold mt-0.5 ${canAfford ? 'text-amber-300' : 'text-red-400'}`}>{def.price}Z</span>
+                                      </>
+                                    )}
+                                  </div>
+                                )}
+                                {def.isThree && (
+                                  <div className="absolute top-1 right-1 text-[8px] bg-black/50 rounded px-0.5 text-white/70">3D</div>
+                                )}
+                              </button>
+                              <span className="text-[9px] text-white/35 truncate w-14 text-center">{def.emoji} {def.name}</span>
+                            </div>
+                          )
+                        })}
+                      </div>
+                      {/* Z幣餘額 */}
+                      <div className="mt-2.5 pt-2.5 border-t border-white/6 flex items-center justify-between">
+                        <span className="text-[10px] text-white/30">Z幣餘額</span>
+                        <span className="text-[10px] text-amber-300 font-semibold">{zcoinBalance} Z</span>
+                      </div>
                     </div>
-                    <label className="flex items-center gap-1.5 cursor-pointer w-fit">
-                      <span className="text-[11px] text-white/35 hover:text-white/60 transition-colors flex items-center gap-1.5">
-                        <ImageIcon className="w-3.5 h-3.5" /> 從裝置上傳圖片
-                      </span>
-                      <input type="file" accept="image/*" className="hidden"
-                        onChange={e => {
-                          const f = e.target.files?.[0]; if (!f) return
-                          const reader = new FileReader()
-                          reader.onload = ev => { const url = ev.target?.result as string; setBgCustomUrl(url); applyCustomBg(url) }
-                          reader.readAsDataURL(f)
-                        }}
-                      />
-                    </label>
-                    {bgCustomUrl && (
-                      <button onClick={() => { setBgCustomUrl(''); persist(themeKey, '', effects) }}
-                        className="text-[11px] text-red-400/60 hover:text-red-400 transition-colors">
-                        ✕ 清除自訂背景
-                      </button>
-                    )}
+
+                    {/* 自訂背景 */}
+                    <div>
+                      <p className="text-[10px] text-white/30 font-medium mb-2">自訂圖片</p>
+                      <div className="flex items-center gap-2">
+                        <input
+                          value={bgCustomUrl}
+                          onChange={e => setBgCustomUrl(e.target.value)}
+                          placeholder="貼上圖片網址 (https://...)"
+                          className="flex-1 bg-white/5 border border-white/10 rounded-xl px-3 py-1.5 text-xs text-white placeholder-white/25 outline-none focus:border-amber-400/40"
+                        />
+                        <button
+                          onClick={() => { applyCustomBg(bgCustomUrl); setChatBgId(null) }}
+                          disabled={!bgCustomUrl.startsWith('http')}
+                          className="px-3 py-1.5 bg-amber-500/20 border border-amber-400/30 rounded-xl text-xs text-amber-300 hover:bg-amber-500/30 disabled:opacity-30 transition-colors shrink-0"
+                        >套用</button>
+                      </div>
+                      <label className="flex items-center gap-1.5 cursor-pointer w-fit mt-2">
+                        <span className="text-[11px] text-white/35 hover:text-white/60 transition-colors flex items-center gap-1.5">
+                          <ImageIcon className="w-3.5 h-3.5" /> 從裝置上傳圖片
+                        </span>
+                        <input type="file" accept="image/*" className="hidden"
+                          onChange={e => {
+                            const f = e.target.files?.[0]; if (!f) return
+                            const reader = new FileReader()
+                            reader.onload = ev => { const url = ev.target?.result as string; setBgCustomUrl(url); applyCustomBg(url); setChatBgId(null) }
+                            reader.readAsDataURL(f)
+                          }}
+                        />
+                      </label>
+                      {bgCustomUrl && (
+                        <button onClick={() => { setBgCustomUrl(''); persist(themeKey, '', effects) }}
+                          className="text-[11px] text-red-400/60 hover:text-red-400 transition-colors mt-1.5 block">
+                          ✕ 清除自訂背景
+                        </button>
+                      )}
+                    </div>
                   </div>
                 )}
 
@@ -1158,13 +1270,17 @@ export default function MessagesPage() {
             <div className="flex-1 min-h-0 overflow-hidden relative">
               {/* 背景層（套用濾鏡，blur 時外擴避免邊緣模糊） */}
               <div
-                className="absolute pointer-events-none z-0 transition-all duration-500"
+                className="absolute pointer-events-none z-0 transition-all duration-500 overflow-hidden"
                 style={{
                   inset: effects.blur > 0 ? `-${effects.blur * 3}px` : '0',
                   filter: fxFilter(),
                   ...bgLayerStyle(),
                 }}
-              />
+              >
+                {chatBgId && chatBgId !== 'default' && !bgCustomUrl && (
+                  <ChatBgLayer bgId={chatBgId} />
+                )}
+              </div>
               {/* 暗化遮罩 */}
               {effects.dim > 0 && (
                 <div className="absolute inset-0 z-[1] pointer-events-none" style={{ background: `rgba(0,0,0,${effects.dim / 100})` }} />
