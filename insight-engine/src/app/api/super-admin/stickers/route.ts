@@ -45,7 +45,15 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   const auth = await requireSuperAdmin()
   if (!auth) return NextResponse.json({ error: '未授權' }, { status: 401 })
 
-  const formData = await req.formData()
+  let formData: FormData
+  try {
+    formData = await req.formData()
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err)
+    console.error('[sticker POST] formData parse error:', msg)
+    return NextResponse.json({ error: `表單解析失敗：${msg.slice(0, 120)}` }, { status: 400 })
+  }
+
   const name = (formData.get('name') as string | null)?.trim()
   const description = (formData.get('description') as string | null)?.trim() || null
   const file = formData.get('file') as File | null

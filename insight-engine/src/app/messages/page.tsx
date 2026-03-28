@@ -459,6 +459,8 @@ export default function MessagesPage() {
   const [pendingShareTheme, setPendingShareTheme] = useState<string | null>(null)
   const pendingShareTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [incomingThemeSync, setIncomingThemeSync] = useState<{ themeKey: string; bgId?: string; fromId: string } | null>(null)
+  // ── 套用範圍 ──
+  const [applyToAll, setApplyToAll] = useState(true)
   // ── 語音錄音 ──
   const [recording, setRecording] = useState(false)
   const [recSeconds, setRecSeconds] = useState(0)
@@ -688,6 +690,27 @@ export default function MessagesPage() {
   const openConversation = (conv: Conversation) => {
     setActive(conv)
     window.history.pushState(null, '', `/messages?uid=${conv.userId}`)
+    // Load per-conversation theme override (if exists), else keep global
+    try {
+      const perConv = JSON.parse(localStorage.getItem(`${THEME_STORAGE_KEY}_${conv.userId}`) ?? 'null') as {
+        themeKey?: string; custom?: string; effects?: Partial<BgEffects>; chatBgId?: BgId
+      } | null
+      if (perConv) {
+        if (perConv.themeKey) setThemeKey(perConv.themeKey)
+        setBgCustomUrl(perConv.custom ?? '')
+        if (perConv.effects) setEffects(e => ({ ...e, ...perConv.effects }))
+        setChatBgId(perConv.chatBgId ?? null)
+      } else {
+        // Reset to global theme
+        const global = JSON.parse(localStorage.getItem(THEME_STORAGE_KEY) ?? '{}') as {
+          themeKey?: string; custom?: string; effects?: Partial<BgEffects>; chatBgId?: BgId
+        }
+        if (global.themeKey) setThemeKey(global.themeKey)
+        setBgCustomUrl(global.custom ?? '')
+        if (global.effects) setEffects(e => ({ ...e, ...global.effects }))
+        setChatBgId(global.chatBgId ?? null)
+      }
+    } catch { /* ignore */ }
   }
 
   // 關閉對話：使用 router.back() 讓瀏覽器回到上一頁歷史（/messages 列表）
@@ -924,17 +947,20 @@ export default function MessagesPage() {
 
   const persistBgId = useCallback((id: BgId | null) => {
     try {
-      const saved = JSON.parse(localStorage.getItem(THEME_STORAGE_KEY) ?? '{}')
-      localStorage.setItem(THEME_STORAGE_KEY, JSON.stringify({ ...saved, chatBgId: id }))
+      // Save to per-conversation key if "not apply to all", else global
+      const key = (!applyToAll && active) ? `${THEME_STORAGE_KEY}_${active.userId}` : THEME_STORAGE_KEY
+      const saved = JSON.parse(localStorage.getItem(key) ?? '{}')
+      localStorage.setItem(key, JSON.stringify({ ...saved, chatBgId: id }))
     } catch { /* ignore */ }
-  }, [])
+  }, [applyToAll, active])
 
   const persist = useCallback((k: string, c: string, fx: BgEffects) => {
     try {
-      const saved = JSON.parse(localStorage.getItem(THEME_STORAGE_KEY) ?? '{}')
-      localStorage.setItem(THEME_STORAGE_KEY, JSON.stringify({ ...saved, themeKey: k, custom: c, effects: fx }))
+      const key = (!applyToAll && active) ? `${THEME_STORAGE_KEY}_${active.userId}` : THEME_STORAGE_KEY
+      const saved = JSON.parse(localStorage.getItem(key) ?? '{}')
+      localStorage.setItem(key, JSON.stringify({ ...saved, themeKey: k, custom: c, effects: fx }))
     } catch { /* ignore */ }
-  }, [])
+  }, [applyToAll, active])
 
   const applyTheme = useCallback((key: string) => {
     setThemeKey(key)
@@ -1213,6 +1239,20 @@ export default function MessagesPage() {
             {/* ── 主題面板 ── */}
             {themePanelOpen && (
               <div className="shrink-0 bg-slate-950/96 backdrop-blur-2xl border-b border-white/8">
+                {/* 套用範圍 toggle */}
+                <div className="flex items-center justify-between px-4 py-2 border-b border-white/5">
+                  <span className="text-[11px] text-white/40">套用範圍</span>
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      onClick={() => setApplyToAll(false)}
+                      className={`px-2.5 py-1 rounded-lg text-[10px] font-medium transition-colors ${!applyToAll ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' : 'text-white/30 hover:text-white/50'}`}
+                    >僅此聊天室</button>
+                    <button
+                      onClick={() => setApplyToAll(true)}
+                      className={`px-2.5 py-1 rounded-lg text-[10px] font-medium transition-colors ${applyToAll ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' : 'text-white/30 hover:text-white/50'}`}
+                    >全部聊天室</button>
+                  </div>
+                </div>
                 {/* Tabs */}
                 <div className="flex border-b border-white/6">
                   {([['theme','🎨 主題'],['bg','🖼️ 背景'],['fx','✨ 濾鏡']] as const).map(([k,l]) => (
@@ -1271,17 +1311,13 @@ export default function MessagesPage() {
                       <p className="text-[10px] text-white/30 font-medium mb-2">內建背景</p>
                       <div className="grid grid-cols-4 gap-2">
                         {CHAT_BACKGROUNDS.map(def => {
-                          const isOwned = def.price === 0 || bgOwned.has(def.id)
+                          const isOwned = true  // All backgrounds are free
                           const isActive = chatBgId === def.id && !bgCustomUrl
                           const isBuying = bgPurchasing === def.id
-                          const canAfford = zcoinBalance >= def.price
                           return (
                             <div key={def.id} className="flex flex-col items-center gap-1">
                               <button
-                                onClick={() => {
-                                  if (isOwned) handleBgSelect(def.id)
-                                  else if (canAfford) handleBgPurchase(def)
-                                }}
+                                onClick={() => { if (isOwned) handleBgSelect(def.id) }}
                                 disabled={isBuying}
                                 className={`relative w-14 h-14 rounded-xl overflow-hidden transition-all ${
                                   isActive ? 'ring-2 ring-amber-400 scale-105' : 'hover:scale-105 hover:ring-1 hover:ring-white/30'
@@ -1293,18 +1329,6 @@ export default function MessagesPage() {
                                     <span className="text-white text-sm">✓</span>
                                   </div>
                                 )}
-                                {!isOwned && (
-                                  <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/55">
-                                    {isBuying ? (
-                                      <span className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin block" />
-                                    ) : (
-                                      <>
-                                        <span className="text-[10px]">🔒</span>
-                                        <span className={`text-[9px] font-bold mt-0.5 ${canAfford ? 'text-amber-300' : 'text-red-400'}`}>{def.price}Z</span>
-                                      </>
-                                    )}
-                                  </div>
-                                )}
                                 {def.isThree && (
                                   <div className="absolute top-1 right-1 text-[8px] bg-black/50 rounded px-0.5 text-white/70">3D</div>
                                 )}
@@ -1313,11 +1337,6 @@ export default function MessagesPage() {
                             </div>
                           )
                         })}
-                      </div>
-                      {/* Z幣餘額 */}
-                      <div className="mt-2.5 pt-2.5 border-t border-white/6 flex items-center justify-between">
-                        <span className="text-[10px] text-white/30">Z幣餘額</span>
-                        <span className="text-[10px] text-amber-300 font-semibold">{zcoinBalance} Z</span>
                       </div>
                     </div>
 
