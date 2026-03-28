@@ -30,6 +30,29 @@
       "purpose": "maskable"
     }
   ],
+  "screenshots": [
+    {
+      "src": "/screenshots/mobile-explore.png",
+      "sizes": "390x844",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "探索頁面"
+    },
+    {
+      "src": "/screenshots/mobile-articles.png",
+      "sizes": "390x844",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "社群貼文"
+    },
+    {
+      "src": "/screenshots/desktop-explore.png",
+      "sizes": "1280x800",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "探索（桌面版）"
+    }
+  ],
   "shortcuts": [
     {
       "name": "探索",
@@ -56,5 +79,5 @@
       "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
     }
   ],
-  "categories": ["productivity", "utilities"]
+  "categories": ["social", "productivity", "utilities"]
 }

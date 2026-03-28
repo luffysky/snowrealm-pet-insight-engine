@@ -4,6 +4,7 @@ import "./globals.css";
 import { queryOne } from "@/lib/db";
 import { BottomNav } from "@/components/social/BottomNav";
 import { FloatingChat } from "@/components/social/FloatingChat";
+import { PwaInstallBanner } from "@/components/social/PwaInstallBanner";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -114,6 +115,7 @@ export default function RootLayout({
       >
         {children}
         <BottomNav />
+        <PwaInstallBanner />
         <FloatingChat />
       </body>
     </html>
