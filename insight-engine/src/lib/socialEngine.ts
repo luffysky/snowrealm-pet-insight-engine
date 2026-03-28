@@ -45,6 +45,7 @@ export interface SocialPost {
   authorAvatar?: string
   myReaction?: string | null
   isBookmarked?: boolean
+  isFollowing?: boolean
 }
 
 export interface PostImage {
@@ -93,6 +94,7 @@ interface PostRow extends Record<string, unknown> {
   author_avatar: string | null
   my_reaction: string | null
   is_bookmarked?: boolean
+  is_following?: boolean
 }
 
 function rowToPost(row: PostRow): SocialPost {
@@ -118,6 +120,7 @@ function rowToPost(row: PostRow): SocialPost {
     authorAvatar: row.author_avatar ?? undefined,
     myReaction: row.my_reaction,
     isBookmarked: row.is_bookmarked ?? false,
+    isFollowing: row.is_following ?? false,
   }
 }
 
@@ -146,10 +149,13 @@ export async function getPosts({
 
   let viewerReactionExpr = 'NULL::text AS my_reaction'
   let viewerBookmarkExpr = 'false AS is_bookmarked'
+  let viewerFollowExpr = 'false AS is_following'
   if (viewerId) {
     viewerReactionExpr = `(SELECT type FROM social_reactions WHERE user_id = $${i++} AND post_id = p.id LIMIT 1) AS my_reaction`
     params.push(viewerId)
     viewerBookmarkExpr = `EXISTS(SELECT 1 FROM social_bookmarks sb WHERE sb.post_id = p.id AND sb.user_id = $${i++}) AS is_bookmarked`
+    params.push(viewerId)
+    viewerFollowExpr = `EXISTS(SELECT 1 FROM social_follows sf WHERE sf.follower_id = $${i++}::uuid AND sf.following_id = p.user_id) AS is_following`
     params.push(viewerId)
   }
   params.push(limit, offset)
@@ -159,7 +165,8 @@ export async function getPosts({
       COALESCE(u.display_name, u.username) AS author_name,
       u.avatar_url AS author_avatar,
       ${viewerReactionExpr},
-      ${viewerBookmarkExpr}
+      ${viewerBookmarkExpr},
+      ${viewerFollowExpr}
      FROM social_posts p
      JOIN admin_users u ON u.id = p.user_id
      WHERE ${conditions.join(' AND ')}
@@ -175,10 +182,12 @@ export async function getPost(postId: string, viewerId?: string): Promise<Social
   const params: unknown[] = [postId]
   let viewerReactionExpr = 'NULL::text AS my_reaction'
   let viewerBookmarkExpr = 'false AS is_bookmarked'
+  let viewerFollowExpr2 = 'false AS is_following'
   if (viewerId) {
     viewerReactionExpr = `(SELECT type FROM social_reactions WHERE user_id = $2 AND post_id = p.id LIMIT 1) AS my_reaction`
     viewerBookmarkExpr = `EXISTS(SELECT 1 FROM social_bookmarks sb WHERE sb.post_id = p.id AND sb.user_id = $3) AS is_bookmarked`
-    params.push(viewerId, viewerId)
+    viewerFollowExpr2 = `EXISTS(SELECT 1 FROM social_follows sf WHERE sf.follower_id = $4::uuid AND sf.following_id = p.user_id) AS is_following`
+    params.push(viewerId, viewerId, viewerId)
   }
 
   const row = await queryOne<PostRow>(
@@ -186,7 +195,8 @@ export async function getPost(postId: string, viewerId?: string): Promise<Social
       COALESCE(u.display_name, u.username) AS author_name,
       u.avatar_url AS author_avatar,
       ${viewerReactionExpr},
-      ${viewerBookmarkExpr}
+      ${viewerBookmarkExpr},
+      ${viewerFollowExpr2}
      FROM social_posts p
      JOIN admin_users u ON u.id = p.user_id
      WHERE p.id = $1`,

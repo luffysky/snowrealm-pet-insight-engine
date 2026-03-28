@@ -13,6 +13,7 @@ import { LoginPrompt } from '@/components/social/LoginPrompt'
 import { FollowButton } from '@/components/social/FollowButton'
 import { PostShareCard } from '@/components/social/PostShareCard'
 import { StoryCircles } from '@/components/social/StoryCircles'
+import { ImageCarousel } from '@/components/social/ImageCarousel'
 
 // ── types ──────────────────────────────────────────────────────────────────
 interface ExploreSurvey {
@@ -165,13 +166,17 @@ function PostPreviewCard({ post, meId }: { post: SocialPost; meId: string | null
         </div>
       )}
       {!post.videoUrl && (() => {
-        const imgUrl = post.images[0]?.url || (post.type === 'article' ? extractFirstImageSrc(post.content) : '')
-        return imgUrl ? (
-          <div className="relative overflow-hidden h-48 cursor-zoom-in" onClick={e => { e.stopPropagation(); setLightboxUrl(imgUrl) }}>
-            <img src={imgUrl} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-            {post.images.length > 1 && (
-              <span className="absolute top-2 right-2 bg-black/60 text-white text-xs px-2 py-0.5 rounded-full">+{post.images.length - 1}</span>
-            )}
+        const imgs = post.images.length > 0
+          ? post.images
+          : (() => { const s = extractFirstImageSrc(post.content); return s ? [{ url: s }] : [] })()
+        return imgs.length > 0 ? (
+          <div className="overflow-hidden" onClick={e => e.stopPropagation()}>
+            <ImageCarousel
+              images={imgs}
+              aspectRatio="video"
+              onImageClick={setLightboxUrl}
+              className="rounded-none"
+            />
           </div>
         ) : null
       })()}
@@ -185,10 +190,10 @@ function PostPreviewCard({ post, meId }: { post: SocialPost; meId: string | null
           <Link href={`/u/${post.userId}`} onClick={e => e.stopPropagation()}
             className="text-xs text-white/50 font-medium hover:text-white/80 transition-colors"
           >{post.authorName ?? '用戶'}</Link>
-          {!isOwn && post.userId && (
+          {!isOwn && post.userId && !post.isFollowing && (
             meId ? (
               <div onClick={e => e.stopPropagation()}>
-                <FollowButton targetUserId={post.userId} compact onLoginRequired={() => setLoginPrompt(true)} />
+                <FollowButton targetUserId={post.userId} initialFollowing={false} compact onLoginRequired={() => setLoginPrompt(true)} />
               </div>
             ) : (
               <button

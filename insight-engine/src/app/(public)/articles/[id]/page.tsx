@@ -13,6 +13,7 @@ import { PostShareCard } from '@/components/social/PostShareCard'
 import type { SocialPost } from '@/lib/socialEngine'
 import type { ArticleBlock } from '@/components/social/ArticleEditor'
 import { VideoPlayer } from '@/components/public/VideoPlayer'
+import { ImageCarousel } from '@/components/social/ImageCarousel'
 
 function BlocksRenderer({ blocks, onImageClick }: { blocks: ArticleBlock[]; onImageClick?: (url: string) => void }) {
   return (
@@ -153,11 +154,13 @@ export default function ArticleDetailPage() {
           </div>
         )}
 
-        {/* Hero image (only if no video) */}
+        {/* Hero images carousel (only if no video) */}
         {!post.videoUrl && post.images.length > 0 && (
-          <div className="rounded-2xl overflow-hidden max-h-80 cursor-zoom-in" onClick={() => setLightboxUrl(post.images[0].url)}>
-            <img src={post.images[0].url} alt="" className="w-full h-full object-cover" />
-          </div>
+          <ImageCarousel
+            images={post.images}
+            aspectRatio="video"
+            onImageClick={setLightboxUrl}
+          />
         )}
 
         {/* Article header */}
@@ -180,7 +183,7 @@ export default function ArticleDetailPage() {
             </div>
             {meId && meId !== post.userId && (
               <div className="flex items-center gap-2">
-                <FollowButton targetUserId={post.userId} />
+                {!post.isFollowing && <FollowButton targetUserId={post.userId} initialFollowing={false} />}
                 <DMButton targetUserId={post.userId} targetName={post.authorName ?? '用戶'} targetAvatar={post.authorAvatar} />
               </div>
             )}
@@ -218,15 +221,6 @@ export default function ArticleDetailPage() {
           )
         })()}
 
-        {/* More images */}
-        {post.images.length > 1 && (
-          <div className={`grid gap-2 ${post.images.length === 2 ? 'grid-cols-2' : 'grid-cols-2 sm:grid-cols-3'}`}>
-            {post.images.slice(1).map((img, i) => (
-              <img key={i} src={img.url} alt={img.alt ?? ''} className="rounded-xl object-cover aspect-square w-full cursor-zoom-in"
-                onClick={() => setLightboxUrl(img.url)} />
-            ))}
-          </div>
-        )}
 
         {/* Interaction */}
         <div className="border-t border-white/8 pt-4">

@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import {
   ArrowLeft, Send, Loader2, Image as ImageIcon, Film, Tag, Globe, Lock,
-  Plus, Trash2, GripVertical, Type, AlignLeft, X, CheckCircle, Link as LinkIcon
+  Plus, Trash2, GripVertical, Type, AlignLeft, X, CheckCircle, Link as LinkIcon, Images
 } from 'lucide-react'
 import type { ArticleBlock } from '@/components/social/ArticleEditor'
 import { blocksToHtml } from '@/components/social/ArticleEditor'
@@ -246,12 +246,12 @@ export default function WritePage() {
   const [tags, setTags] = useState<string[]>([])
   const [tagInput, setTagInput] = useState('')
   const [isPublic, setIsPublic] = useState(true)
-  const [coverImage, setCoverImage] = useState('')
+  const [postImages, setPostImages] = useState<string[]>([])
   const [posting, setPosting] = useState(false)
   const [posted, setPosted] = useState(false)
   const [error, setError] = useState('')
-  const coverRef = useRef<HTMLInputElement>(null)
-  const [coverUploading, setCoverUploading] = useState(false)
+  const imagePickerRef = useRef<HTMLInputElement>(null)
+  const [imageUploading, setImageUploading] = useState(false)
 
   useEffect(() => {
     fetch('/api/auth/me')
@@ -272,18 +272,23 @@ export default function WritePage() {
     return data.url
   }
 
-  const uploadCover = async (files: FileList | null) => {
-    if (!files?.[0]) return
-    setCoverUploading(true)
+  const addImages = async (files: FileList | null) => {
+    if (!files || files.length === 0) return
+    if (postImages.length >= 9) return
+    setImageUploading(true)
     try {
-      const url = await uploadImage(files[0])
-      setCoverImage(url)
+      const remaining = 9 - postImages.length
+      const toUpload = Array.from(files).slice(0, remaining)
+      const urls = await Promise.all(toUpload.map(uploadImage))
+      setPostImages(prev => [...prev, ...urls])
     } catch {
-      setError('封面上傳失敗')
+      setError('圖片上傳失敗')
     } finally {
-      setCoverUploading(false)
+      setImageUploading(false)
     }
   }
+
+  const removeImage = (idx: number) => setPostImages(prev => prev.filter((_, i) => i !== idx))
 
   const addTag = () => {
     const t = tagInput.trim().replace(/^#/, '')
@@ -301,7 +306,7 @@ export default function WritePage() {
     setError('')
     try {
       const content = blocksToHtml(blocks)
-      const images = coverImage ? [{ url: coverImage, alt: title }] : []
+      const images = postImages.map((url, i) => ({ url, alt: i === 0 ? title : '' }))
       const res = await fetch('/api/posts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -397,27 +402,52 @@ export default function WritePage() {
       {/* Editor area */}
       <div className="max-w-2xl mx-auto px-4 py-8 pl-12">
 
-        {/* Cover image */}
+        {/* Multi-image picker */}
         <div className="mb-6">
-          {coverImage ? (
-            <div className="relative rounded-2xl overflow-hidden mb-4 group">
-              <img src={coverImage} alt="封面" className="w-full object-cover max-h-56" />
-              <button
-                onClick={() => setCoverImage('')}
-                className="absolute top-3 right-3 p-1.5 bg-black/60 rounded-lg text-white/70 hover:text-white opacity-0 group-hover:opacity-100 transition-opacity"
-              >
-                <X className="w-4 h-4" />
-              </button>
+          <input
+            ref={imagePickerRef}
+            type="file"
+            accept="image/*"
+            multiple
+            className="hidden"
+            onChange={e => addImages(e.target.files)}
+          />
+          {postImages.length > 0 && (
+            <div className="grid grid-cols-3 gap-2 mb-3">
+              {postImages.map((url, i) => (
+                <div key={i} className="relative aspect-square rounded-xl overflow-hidden group">
+                  <img src={url} alt="" className="w-full h-full object-cover" />
+                  <button
+                    onClick={() => removeImage(i)}
+                    className="absolute top-1.5 right-1.5 w-5 h-5 bg-black/70 hover:bg-rose-500 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all"
+                  >
+                    <X className="w-3 h-3 text-white" />
+                  </button>
+                  {i === 0 && (
+                    <span className="absolute bottom-1.5 left-1.5 text-[9px] bg-amber-500 text-slate-900 px-1.5 py-0.5 rounded font-bold">封面</span>
+                  )}
+                </div>
+              ))}
+              {postImages.length < 9 && (
+                <button
+                  onClick={() => imagePickerRef.current?.click()}
+                  disabled={imageUploading}
+                  className="aspect-square rounded-xl border-2 border-dashed border-white/10 hover:border-white/25 flex flex-col items-center justify-center gap-1 text-white/25 hover:text-white/50 transition-colors"
+                >
+                  {imageUploading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Plus className="w-5 h-5" />}
+                  <span className="text-[10px]">新增</span>
+                </button>
+              )}
             </div>
-          ) : (
+          )}
+          {postImages.length === 0 && (
             <button
-              onClick={() => coverRef.current?.click()}
-              disabled={coverUploading}
+              onClick={() => imagePickerRef.current?.click()}
+              disabled={imageUploading}
               className="flex items-center gap-2 text-xs text-white/25 hover:text-white/50 transition-colors mb-4"
             >
-              <input ref={coverRef} type="file" accept="image/*" className="hidden" onChange={e => uploadCover(e.target.files)} />
-              {coverUploading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ImageIcon className="w-3.5 h-3.5" />}
-              新增封面圖片
+              {imageUploading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Images className="w-3.5 h-3.5" />}
+              新增圖片（最多 9 張）
             </button>
           )}
         </div>
