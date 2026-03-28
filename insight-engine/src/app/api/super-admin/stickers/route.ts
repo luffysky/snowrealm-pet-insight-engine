@@ -86,7 +86,15 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         }, { status: 400 })
       }
 
-      const zip = new AdmZip(buffer)
+      let zip: AdmZip
+      try {
+        zip = new AdmZip(buffer)
+      } catch (zipErr) {
+        const msg = zipErr instanceof Error ? zipErr.message : String(zipErr)
+        return NextResponse.json({
+          error: `ZIP 解析失敗（收到 ${buffer.length} bytes）：${msg}。若 ZIP 超過 1MB 請向 Zeabur 確認 body size 設定。`
+        }, { status: 400 })
+      }
       const entries = zip.getEntries()
         .filter(e => {
           if (e.isDirectory) return false
