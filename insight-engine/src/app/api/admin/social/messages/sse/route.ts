@@ -2,7 +2,7 @@ import { NextRequest } from 'next/server'
 import { getTenantContext } from '@/lib/tenant'
 import { query } from '@/lib/db'
 import { decryptApiKey } from '@/lib/aiCrypto'
-import { getIsTyping, pollThemeSync } from '@/lib/dmEventStore'
+import { getIsTyping } from '@/lib/dmEventStore'
 
 interface MsgRow extends Record<string, unknown> {
   id: string
@@ -100,19 +100,14 @@ export async function GET(request: NextRequest) {
           // 3. Typing indicator (other person typing to me)
           const isTyping = getIsTyping(withUserId, ctx.userId)
 
-          // 4. Theme sync proposal for me
-          const themeSyncEvent = pollThemeSync(ctx.userId)
-
           // Always send so client gets typing/read updates even with no new messages
+          // Theme sync proposals now come via messages (persisted in direct_messages table)
           send({
             type: newMessages.length > 0 ? 'messages' : 'ping',
             messages: newMessages.length > 0 ? newMessages : undefined,
             isTyping,
             readUpdates: readRows.length > 0
               ? readRows.map(r => ({ id: r.id, readAt: r.read_at }))
-              : undefined,
-            themeSync: themeSyncEvent
-              ? { themeKey: themeSyncEvent.themeKey, fromId: themeSyncEvent.fromId }
               : undefined,
           })
         } catch {

@@ -66,6 +66,32 @@ interface UserRow extends Record<string, unknown> {
   ban_reason: string | null
 }
 
+interface AlbumRow extends Record<string, unknown> {
+  id: string
+  user_id: string
+  author_name: string | null
+  author_avatar: string | null
+  name: string
+  is_public: boolean
+  photo_count: string
+  created_at: string
+}
+
+interface BlogRow extends Record<string, unknown> {
+  id: string
+  user_id: string
+  author_name: string | null
+  author_avatar: string | null
+  title: string
+  slug: string
+  summary: string | null
+  cover_image: string | null
+  is_public: boolean
+  view_count: number
+  tags: string | null
+  published_at: string
+}
+
 /** GET /api/super-admin/social?tab=posts|dms|users|reports|stats */
 export async function GET(req: NextRequest): Promise<NextResponse> {
   const auth = await requireSuperAdmin()
@@ -74,11 +100,13 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
   const tab = req.nextUrl.searchParams.get('tab') ?? 'reports'
 
   if (tab === 'stats') {
-    const [rPending, rPosts, rDms, rUsers] = await Promise.all([
+    const [rPending, rPosts, rDms, rUsers, rAlbums, rBlogs] = await Promise.all([
       query<{ cnt: string }>(`SELECT COUNT(*) as cnt FROM social_reports WHERE status = 'pending'`),
-      query<{ cnt: string }>(`SELECT COUNT(*) as cnt FROM social_posts WHERE status = 'published'`),
+      query<{ cnt: string }>(`SELECT COUNT(*) as cnt FROM social_posts`),
       query<{ cnt: string }>(`SELECT COUNT(DISTINCT CONCAT(LEAST(from_user_id::text,to_user_id::text),'_',GREATEST(from_user_id::text,to_user_id::text))) as cnt FROM direct_messages`),
       query<{ cnt: string }>(`SELECT COUNT(*) as cnt FROM admin_users`),
+      query<{ cnt: string }>(`SELECT COUNT(*) as cnt FROM user_album_photos`).catch(() => [{ cnt: '0' }]),
+      query<{ cnt: string }>(`SELECT COUNT(*) as cnt FROM user_blog_articles`).catch(() => [{ cnt: '0' }]),
     ])
     return NextResponse.json({
       stats: {
@@ -86,6 +114,8 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
         totalPosts:     parseInt(rPosts[0]?.cnt ?? '0'),
         totalDms:       parseInt(rDms[0]?.cnt ?? '0'),
         totalUsers:     parseInt(rUsers[0]?.cnt ?? '0'),
+        totalAlbumPhotos: parseInt(rAlbums[0]?.cnt ?? '0'),
+        totalBlogs:     parseInt(rBlogs[0]?.cnt ?? '0'),
       }
     })
   }
@@ -113,7 +143,8 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
   if (tab === 'posts') {
     const rows = await query<PostRow>(
       `SELECT sp.id, sp.user_id, au.display_name as author_name, au.avatar_url as author_avatar,
-              sp.type, sp.title, sp.content, sp.images::text, sp.tags::text,
+              sp.type, sp.title, sp.content, sp.images::text,
+              array_to_json(sp.tags)::text AS tags,
               sp.is_public, sp.created_at,
               sp.likes_count, sp.comments_count
        FROM social_posts sp
@@ -213,6 +244,50 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ messages })
   }
 
+  if (tab === 'albums') {
+    try {
+      const rows = await query<AlbumRow>(
+        `SELECT ua.id, ua.user_id::text, au.display_name as author_name, au.avatar_url as author_avatar,
+                ua.name, ua.is_public, ua.created_at,
+                COUNT(uap.id)::text as photo_count
+         FROM user_albums ua
+         LEFT JOIN admin_users au ON au.id = ua.user_id
+         LEFT JOIN user_album_photos uap ON uap.album_id = ua.id
+         GROUP BY ua.id, au.display_name, au.avatar_url, ua.user_id, ua.name, ua.is_public, ua.created_at
+         ORDER BY au.display_name NULLS LAST, ua.created_at DESC
+         LIMIT $1 OFFSET $2`,
+        [pageSize, offset]
+      )
+      return NextResponse.json({ albums: rows })
+    } catch {
+      return NextResponse.json({ albums: [] })
+    }
+  }
+
+  if (tab === 'blogs') {
+    try {
+      const rows = await query<BlogRow>(
+        `SELECT uba.id, uba.user_id::text, au.display_name as author_name, au.avatar_url as author_avatar,
+                uba.title, uba.slug, uba.summary, uba.cover_image,
+                uba.is_public, uba.view_count, uba.published_at,
+                array_to_json(uba.tags)::text as tags
+         FROM user_blog_articles uba
+         LEFT JOIN admin_users au ON au.id = uba.user_id
+         ORDER BY au.display_name NULLS LAST, uba.published_at DESC
+         LIMIT $1 OFFSET $2`,
+        [pageSize, offset]
+      )
+      return NextResponse.json({
+        blogs: rows.map(r => ({
+          ...r,
+          tags: r.tags ? JSON.parse(r.tags) as string[] : [],
+        }))
+      })
+    } catch {
+      return NextResponse.json({ blogs: [] })
+    }
+  }
+
   if (tab === 'users') {
     const rows = await query<UserRow>(
       `SELECT au.id, au.username, au.display_name, au.avatar_url, au.role, au.created_at,
@@ -234,10 +309,23 @@ export async function PATCH(req: NextRequest): Promise<NextResponse> {
   const auth = await requireSuperAdmin()
   if (!auth) return NextResponse.json({ error: '未授權' }, { status: 401 })
 
-  const body = await req.json() as { reportId?: string; status?: string; reviewNote?: string; deletePostId?: string }
+  const body = await req.json() as {
+    reportId?: string; status?: string; reviewNote?: string;
+    deletePostId?: string; deleteAlbumId?: string; deleteBlogId?: string
+  }
 
   if (body.deletePostId) {
     await execute(`DELETE FROM social_posts WHERE id = $1`, [body.deletePostId])
+    return NextResponse.json({ ok: true })
+  }
+
+  if (body.deleteAlbumId) {
+    await execute(`DELETE FROM user_albums WHERE id = $1`, [body.deleteAlbumId])
+    return NextResponse.json({ ok: true })
+  }
+
+  if (body.deleteBlogId) {
+    await execute(`DELETE FROM user_blog_articles WHERE id = $1`, [body.deleteBlogId])
     return NextResponse.json({ ok: true })
   }
 

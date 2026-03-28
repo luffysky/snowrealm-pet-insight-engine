@@ -85,18 +85,26 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     }
 
     const mimeMap: Record<string, string> = { '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.gif': 'image/gif', '.webp': 'image/webp' }
+
+    // Upload all images in parallel (5 concurrent) to avoid timeouts on large zips
+    const CONCURRENCY = 5
     const uploaded: { url: string; filename: string; order: number }[] = []
-    for (let i = 0; i < entries.length; i++) {
-      const entry = entries[i]
-      const imgBuffer = entry.getData()
-      const lower = entry.entryName.toLowerCase()
-      const ext = lower.slice(lower.lastIndexOf('.'))
-      const mime = mimeMap[ext] ?? 'image/png'
-      const filename = entry.entryName.split('/').pop() ?? `sticker-${i}`
-      const url = await uploadToR2(imgBuffer, `${pack.id}-${i}-${filename}`, mime, 'stickers')
-      uploaded.push({ url, filename, order: i })
+    for (let i = 0; i < entries.length; i += CONCURRENCY) {
+      const batch = entries.slice(i, i + CONCURRENCY)
+      const results = await Promise.all(batch.map(async (entry, batchIdx) => {
+        const imgBuffer = entry.getData()
+        if (!imgBuffer) throw new Error(`Cannot extract: ${entry.entryName}`)
+        const lower = entry.entryName.toLowerCase()
+        const ext = lower.slice(lower.lastIndexOf('.'))
+        const mime = mimeMap[ext] ?? 'image/png'
+        const filename = entry.entryName.split('/').pop() ?? `sticker-${i + batchIdx}`
+        const url = await uploadToR2(imgBuffer, `sticker-${i + batchIdx}-${filename}`, mime, 'stickers')
+        return { url, filename, order: i + batchIdx }
+      }))
+      uploaded.push(...results)
     }
 
+    // Batch insert stickers
     for (const s of uploaded) {
       await execute(
         `INSERT INTO stickers (pack_id, url, filename, sort_order) VALUES ($1, $2, $3, $4)`,
@@ -108,7 +116,8 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
     return NextResponse.json({ ok: true, packId: pack.id, count: uploaded.length })
   } catch (err) {
-    console.error('[sticker upload]', err)
-    return NextResponse.json({ error: '上傳失敗，請確認 zip 格式正確' }, { status: 500 })
+    const message = err instanceof Error ? err.message : String(err)
+    console.error('[sticker upload]', message)
+    return NextResponse.json({ error: `上傳失敗：${message.slice(0, 100)}` }, { status: 500 })
   }
 }

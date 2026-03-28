@@ -11,6 +11,8 @@ const HIDDEN_PREFIXES = [
   '/login', '/register', '/super-login', '/forgot-password',
   '/story/create', '/story/view', '/write', '/post', '/api', '/privacy', '/terms', '/cookies',
   '/messages',
+  '/insight-admin',
+  '/snowrealm-insight-ctrl',
 ]
 
 const COLLAPSE_KEY = 'bottomnav_collapsed'

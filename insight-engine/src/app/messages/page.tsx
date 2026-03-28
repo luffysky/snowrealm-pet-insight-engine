@@ -407,7 +407,6 @@ interface SSEMessage {
   }[]
   isTyping?: boolean
   readUpdates?: { id: string; readAt: string }[]
-  themeSync?: { themeKey: string; fromId: string } | null
 }
 
 export default function MessagesPage() {
@@ -459,7 +458,7 @@ export default function MessagesPage() {
   // ── 主題共用 ──
   const [pendingShareTheme, setPendingShareTheme] = useState<string | null>(null)
   const pendingShareTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const [incomingThemeSync, setIncomingThemeSync] = useState<{ themeKey: string; fromId: string } | null>(null)
+  const [incomingThemeSync, setIncomingThemeSync] = useState<{ themeKey: string; bgId?: string; fromId: string } | null>(null)
   // ── 語音錄音 ──
   const [recording, setRecording] = useState(false)
   const [recSeconds, setRecSeconds] = useState(0)
@@ -577,7 +576,25 @@ export default function MessagesPage() {
       .then(r => r.ok ? r.json() as Promise<{ messages: (Omit<Message, 'isMine'> & { fromUserId: string; readAt: string | null })[] }> : null)
       .then(d => {
         if (d?.messages) {
-          setMessages(d.messages.map(m => ({
+          const THEME_SYNC_PREFIX = '[THEME_SYNC]:'
+          // Process theme sync proposals separately — don't show as chat bubbles
+          const pendingThemeSync = d.messages.find(m => !m.isMine && m.content.startsWith(THEME_SYNC_PREFIX))
+          if (pendingThemeSync) {
+            const raw = pendingThemeSync.content.slice(THEME_SYNC_PREFIX.length)
+            let themeKey = raw
+            let bgId: string | undefined
+            try { const p = JSON.parse(raw) as { t?: string; bg?: string }; themeKey = p.t ?? raw; bgId = p.bg ?? undefined } catch { /* legacy plain key */ }
+            setIncomingThemeSync({ themeKey, bgId, fromId: pendingThemeSync.fromUserId })
+            // Consume: add recipient to deleted_for so it won't show again
+            fetch(`/api/admin/social/messages/${active.userId}`, {
+              method: 'DELETE',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ messageId: pendingThemeSync.id }),
+            }).catch(() => {})
+          }
+          setMessages(d.messages
+            .filter(m => !m.content.startsWith(THEME_SYNC_PREFIX))
+            .map(m => ({
             id: m.id,
             content: m.content,
             createdAt: m.createdAt,
@@ -608,10 +625,27 @@ export default function MessagesPage() {
 
         // New messages
         if (data.messages && data.messages.length > 0) {
+          const THEME_SYNC_PREFIX = '[THEME_SYNC]:'
+          // Handle theme sync proposals embedded as messages
+          data.messages.filter(m => !m.fromUserId.includes(meId ?? '') && m.content.startsWith(THEME_SYNC_PREFIX))
+            .forEach(m => {
+              const raw = m.content.slice(THEME_SYNC_PREFIX.length)
+              let themeKey = raw
+              let bgId: string | undefined
+              try { const p = JSON.parse(raw) as { t?: string; bg?: string }; themeKey = p.t ?? raw; bgId = p.bg ?? undefined } catch { /* legacy */ }
+              setIncomingThemeSync({ themeKey, bgId, fromId: m.fromUserId })
+              // Consume so it won't re-appear on next chat open
+              fetch(`/api/admin/social/messages/${m.fromUserId}`, {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ messageId: m.id }),
+              }).catch(() => {})
+            })
+
           setMessages(prev => {
             const existingIds = new Set(prev.map(m => m.id))
             const newMsgs = data.messages!
-              .filter(m => !existingIds.has(m.id))
+              .filter(m => !existingIds.has(m.id) && !m.content.startsWith(THEME_SYNC_PREFIX))
               .map(m => ({
                 id: m.id, content: m.content, createdAt: m.createdAt,
                 isMine: m.fromUserId === meId, fromName: m.fromName, fromAvatar: m.fromAvatar,
@@ -640,10 +674,6 @@ export default function MessagesPage() {
           }))
         }
 
-        // Incoming theme sync proposal
-        if (data.themeSync) {
-          setIncomingThemeSync(data.themeSync)
-        }
       } catch { /* ignore */ }
     }
 
@@ -921,15 +951,19 @@ export default function MessagesPage() {
     fetch('/api/admin/social/messages/theme-sync', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ toUserId: active.userId, themeKey }),
+      body: JSON.stringify({ toUserId: active.userId, themeKey, bgId: chatBgId ?? undefined }),
     }).catch(() => {})
-  }, [active])
+  }, [active, chatBgId])
 
-  const acceptThemeSync = useCallback((themeKey: string) => {
+  const acceptThemeSync = useCallback((themeKey: string, bgId?: string) => {
     setIncomingThemeSync(null)
     setThemeKey(themeKey)
     persist(themeKey, bgCustomUrl, effects)
-  }, [bgCustomUrl, effects, persist])
+    if (bgId) {
+      setChatBgId(bgId as BgId)
+      persistBgId(bgId as BgId)
+    }
+  }, [bgCustomUrl, effects, persist, persistBgId])
 
   const applyCustomBg = useCallback((url: string) => {
     setBgCustomUrl(url)
@@ -955,6 +989,10 @@ export default function MessagesPage() {
     setChatBgId(id)
     persistBgId(id)
     setBgCustomUrl('')
+    // Show share prompt (same as theme change)
+    if (pendingShareTimer.current) clearTimeout(pendingShareTimer.current)
+    setPendingShareTheme(themeKey)
+    pendingShareTimer.current = setTimeout(() => setPendingShareTheme(null), 6000)
   }
 
   const handleBgPurchase = async (def: { id: BgId; price: number }) => {
@@ -1843,11 +1881,12 @@ export default function MessagesPage() {
             <div className="flex-1 min-w-0">
               <p className="text-sm text-white/85 font-medium leading-snug">
                 對方邀你一起用「{CHAT_THEMES.find(t => t.key === incomingThemeSync.themeKey)?.label ?? incomingThemeSync.themeKey}」主題
+                {incomingThemeSync.bgId && <span className="text-white/50 text-xs ml-1">+ 背景</span>}
               </p>
             </div>
             <div className="flex gap-2 shrink-0">
               <button
-                onClick={() => acceptThemeSync(incomingThemeSync.themeKey)}
+                onClick={() => acceptThemeSync(incomingThemeSync.themeKey, incomingThemeSync.bgId)}
                 className="px-3 py-1.5 bg-amber-500 text-slate-900 text-xs font-bold rounded-xl hover:bg-amber-400 transition-colors"
               >套用</button>
               <button onClick={() => setIncomingThemeSync(null)} className="text-white/30 hover:text-white/60 text-xs px-2">略過</button>

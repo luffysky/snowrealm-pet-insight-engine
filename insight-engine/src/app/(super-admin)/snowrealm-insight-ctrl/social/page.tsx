@@ -1,15 +1,43 @@
 'use client'
 
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { Shield, FileText, MessageSquare, Users, Flag, Trash2, CheckCircle, XCircle, Clock, Eye, RefreshCw, Ban, UserCheck, Activity } from 'lucide-react'
+import { Shield, FileText, MessageSquare, Users, Flag, Trash2, CheckCircle, XCircle, Clock, Eye, RefreshCw, Ban, UserCheck, Activity, Image as ImageIcon, BookOpen } from 'lucide-react'
 
-type Tab = 'reports' | 'posts' | 'dms' | 'users'
+type Tab = 'reports' | 'posts' | 'albums' | 'blogs' | 'dms' | 'users'
 
 interface Stats {
   totalPosts: number
   totalDms: number
   totalUsers: number
   pendingReports: number
+  totalAlbumPhotos: number
+  totalBlogs: number
+}
+
+interface Album {
+  id: string
+  user_id: string
+  author_name: string | null
+  author_avatar: string | null
+  name: string
+  is_public: boolean
+  photo_count: string
+  created_at: string
+}
+
+interface BlogArticle {
+  id: string
+  user_id: string
+  author_name: string | null
+  author_avatar: string | null
+  title: string
+  slug: string
+  summary: string | null
+  cover_image: string | null
+  is_public: boolean
+  view_count: number
+  tags: string[]
+  published_at: string
 }
 
 interface Report {
@@ -162,6 +190,8 @@ export default function SocialMonitorPage() {
   const [tab, setTab] = useState<Tab>('reports')
   const [reports, setReports] = useState<Report[]>([])
   const [posts, setPosts] = useState<Post[]>([])
+  const [albums, setAlbums] = useState<Album[]>([])
+  const [blogs, setBlogs] = useState<BlogArticle[]>([])
   const [dms, setDms] = useState<DmConversation[]>([])
   const [users, setUsers] = useState<User[]>([])
   const [stats, setStats] = useState<Stats | null>(null)
@@ -188,9 +218,11 @@ export default function SocialMonitorPage() {
     try {
       const res = await fetch(`/api/super-admin/social?tab=${t}`)
       if (!res.ok) return
-      const data = await res.json() as { reports?: Report[]; posts?: Post[]; dms?: DmConversation[]; users?: User[] }
+      const data = await res.json() as { reports?: Report[]; posts?: Post[]; albums?: Album[]; blogs?: BlogArticle[]; dms?: DmConversation[]; users?: User[] }
       if (data.reports) setReports(data.reports)
       if (data.posts) setPosts(data.posts)
+      if (data.albums) setAlbums(data.albums)
+      if (data.blogs) setBlogs(data.blogs)
       if (data.dms) setDms(data.dms)
       if (data.users) setUsers(data.users)
       setLastRefreshed(new Date())
@@ -269,12 +301,36 @@ export default function SocialMonitorPage() {
     fetchStats()
   }
 
+  const handleDeleteAlbum = async (albumId: string, name: string) => {
+    if (!confirm(`確定刪除相簿「${name}」及其所有照片？此操作無法復原。`)) return
+    await fetch('/api/super-admin/social', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ deleteAlbumId: albumId }),
+    })
+    fetchData('albums')
+    fetchStats()
+  }
+
+  const handleDeleteBlog = async (blogId: string, title: string) => {
+    if (!confirm(`確定刪除文章「${title}」？此操作無法復原。`)) return
+    await fetch('/api/super-admin/social', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ deleteBlogId: blogId }),
+    })
+    fetchData('blogs')
+    fetchStats()
+  }
+
   const pendingCount = stats?.pendingReports ?? reports.filter(r => r.status === 'pending').length
 
   const TABS: { key: Tab; label: string; icon: typeof Flag; count?: number }[] = [
     { key: 'reports', label: '檢舉', icon: Flag, count: pendingCount || undefined },
-    { key: 'posts', label: '全部貼文', icon: FileText, count: stats?.totalPosts || undefined },
-    { key: 'dms', label: '私訊對話', icon: MessageSquare, count: stats?.totalDms || undefined },
+    { key: 'posts', label: '貼文', icon: FileText, count: stats?.totalPosts || undefined },
+    { key: 'albums', label: '相簿', icon: ImageIcon, count: stats?.totalAlbumPhotos || undefined },
+    { key: 'blogs', label: '部落格', icon: BookOpen, count: stats?.totalBlogs || undefined },
+    { key: 'dms', label: '私訊', icon: MessageSquare, count: stats?.totalDms || undefined },
     { key: 'users', label: '用戶', icon: Users, count: stats?.totalUsers || undefined },
   ]
 
@@ -305,12 +361,14 @@ export default function SocialMonitorPage() {
 
       {/* Stats Overview */}
       {stats && (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
           {[
             { label: '待審檢舉', value: stats.pendingReports, color: 'text-red-400', icon: Flag },
-            { label: '全部貼文', value: stats.totalPosts, color: 'text-blue-400', icon: FileText },
-            { label: '全部私訊', value: stats.totalDms, color: 'text-purple-400', icon: MessageSquare },
-            { label: '全部用戶', value: stats.totalUsers, color: 'text-emerald-400', icon: Users },
+            { label: '貼文', value: stats.totalPosts, color: 'text-blue-400', icon: FileText },
+            { label: '相簿照片', value: stats.totalAlbumPhotos, color: 'text-pink-400', icon: ImageIcon },
+            { label: '部落格文章', value: stats.totalBlogs, color: 'text-amber-400', icon: BookOpen },
+            { label: '私訊對話', value: stats.totalDms, color: 'text-purple-400', icon: MessageSquare },
+            { label: '用戶', value: stats.totalUsers, color: 'text-emerald-400', icon: Users },
           ].map(s => {
             const Icon = s.icon
             return (
@@ -457,6 +515,109 @@ export default function SocialMonitorPage() {
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Albums Tab — grouped by user */}
+      {tab === 'albums' && (
+        <div className="space-y-3">
+          {loading && <p className="text-slate-400 text-sm py-4 text-center">載入中...</p>}
+          {!loading && albums.length === 0 && <EmptyState icon={ImageIcon} text="目前沒有相簿" />}
+          {/* Group by user */}
+          {(() => {
+            const byUser = albums.reduce<Record<string, { name: string | null; avatar: string | null; items: Album[] }>>((acc, a) => {
+              const key = a.user_id
+              if (!acc[key]) acc[key] = { name: a.author_name, avatar: a.author_avatar, items: [] }
+              acc[key].items.push(a)
+              return acc
+            }, {})
+            return Object.entries(byUser).map(([userId, group]) => (
+              <div key={userId} className="bg-slate-800/50 border border-slate-700/50 rounded-2xl overflow-hidden">
+                <div className="px-4 py-3 border-b border-slate-700/30 flex items-center gap-2">
+                  <div className="w-7 h-7 rounded-full bg-gradient-to-br from-pink-500/30 to-purple-500/30 flex items-center justify-center text-xs font-bold text-white/70 overflow-hidden shrink-0">
+                    {group.avatar ? <img src={group.avatar} alt="" className="w-full h-full object-cover" /> : (group.name ?? 'U').slice(0, 1).toUpperCase()}
+                  </div>
+                  <span className="text-sm font-medium text-white/80">{group.name ?? '未知用戶'}</span>
+                  <span className="text-xs text-white/30 ml-auto">{group.items.length} 個相簿</span>
+                </div>
+                <div className="divide-y divide-slate-700/20">
+                  {group.items.map(album => (
+                    <div key={album.id} className="px-4 py-2.5 flex items-center gap-3">
+                      <ImageIcon className="w-4 h-4 text-pink-400/60 shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <span className="text-sm text-white/75">{album.name}</span>
+                        <span className="ml-2 text-xs text-white/30">{album.photo_count} 張照片</span>
+                        {!album.is_public && <span className="ml-2 text-[10px] text-white/25 bg-white/5 border border-white/10 rounded-full px-1.5 py-0.5">私密</span>}
+                      </div>
+                      <span className="text-xs text-white/25 shrink-0">{new Date(album.created_at).toLocaleDateString('zh-TW')}</span>
+                      <button
+                        onClick={() => void handleDeleteAlbum(album.id, album.name)}
+                        className="p-1 text-red-400/40 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-colors shrink-0"
+                        title="刪除相簿"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))
+          })()}
+        </div>
+      )}
+
+      {/* Blogs Tab — grouped by user */}
+      {tab === 'blogs' && (
+        <div className="space-y-3">
+          {loading && <p className="text-slate-400 text-sm py-4 text-center">載入中...</p>}
+          {!loading && blogs.length === 0 && <EmptyState icon={BookOpen} text="目前沒有部落格文章" />}
+          {(() => {
+            const byUser = blogs.reduce<Record<string, { name: string | null; avatar: string | null; items: BlogArticle[] }>>((acc, b) => {
+              const key = b.user_id
+              if (!acc[key]) acc[key] = { name: b.author_name, avatar: b.author_avatar, items: [] }
+              acc[key].items.push(b)
+              return acc
+            }, {})
+            return Object.entries(byUser).map(([userId, group]) => (
+              <div key={userId} className="bg-slate-800/50 border border-slate-700/50 rounded-2xl overflow-hidden">
+                <div className="px-4 py-3 border-b border-slate-700/30 flex items-center gap-2">
+                  <div className="w-7 h-7 rounded-full bg-gradient-to-br from-amber-500/30 to-orange-500/30 flex items-center justify-center text-xs font-bold text-white/70 overflow-hidden shrink-0">
+                    {group.avatar ? <img src={group.avatar} alt="" className="w-full h-full object-cover" /> : (group.name ?? 'U').slice(0, 1).toUpperCase()}
+                  </div>
+                  <span className="text-sm font-medium text-white/80">{group.name ?? '未知用戶'}</span>
+                  <span className="text-xs text-white/30 ml-auto">{group.items.length} 篇文章</span>
+                </div>
+                <div className="divide-y divide-slate-700/20">
+                  {group.items.map(article => (
+                    <div key={article.id} className="px-4 py-3 flex items-start gap-3">
+                      {article.cover_image && (
+                        <img src={article.cover_image} alt="" className="w-14 h-10 object-cover rounded-lg shrink-0" />
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap mb-0.5">
+                          <span className="text-sm font-medium text-white/80 truncate">{article.title}</span>
+                          {!article.is_public && <span className="text-[10px] text-white/25 bg-white/5 border border-white/10 rounded-full px-1.5 py-0.5 shrink-0">私密</span>}
+                        </div>
+                        {article.summary && <p className="text-xs text-white/40 line-clamp-1">{article.summary}</p>}
+                        <div className="flex items-center gap-3 mt-0.5 text-xs text-white/25">
+                          <span>👁 {article.view_count}</span>
+                          {article.tags.length > 0 && <span className="text-amber-400/40">#{article.tags.slice(0, 2).join(' #')}</span>}
+                          <span>{new Date(article.published_at).toLocaleDateString('zh-TW')}</span>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => void handleDeleteBlog(article.id, article.title)}
+                        className="p-1 text-red-400/40 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-colors shrink-0"
+                        title="刪除文章"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))
+          })()}
         </div>
       )}
 
