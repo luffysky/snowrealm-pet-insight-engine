@@ -545,8 +545,9 @@ export async function getResponseDetail(
     submitted_at: string
     created_at: string
     notes: string | null
+    survey_id: string | null
   }>(
-    'SELECT id, status, source, utm_source, submitted_at, created_at, notes FROM responses WHERE id = $1',
+    'SELECT id, status, source, utm_source, submitted_at, created_at, notes, survey_id FROM responses WHERE id = $1',
     [responseId]
   )
 
@@ -567,7 +568,8 @@ export async function getResponseDetail(
     ),
   ])
 
-  const questions = await resolveQuestions()
+  // 必須用該筆 response 所屬的 survey_id 取題目，否則會 fallback 到主問卷造成題目錯誤
+  const questions = await resolveQuestions(undefined, response.survey_id ?? undefined)
   const questionMap = new Map<string, string>()
   for (const q of questions) {
     questionMap.set(q.key, q.content)
