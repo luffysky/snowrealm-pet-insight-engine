@@ -76,6 +76,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
     try {
       const buffer = Buffer.from(await req.arrayBuffer())
+      if (buffer.length === 0) return NextResponse.json({ error: '收到空的上傳內容，請確認檔案已選取並重試' }, { status: 400 })
       if (buffer.length > 50 * 1024 * 1024) return NextResponse.json({ error: 'zip 大小不能超過 50MB' }, { status: 400 })
 
       const zip = new AdmZip(buffer)
