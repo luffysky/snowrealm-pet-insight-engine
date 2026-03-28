@@ -79,6 +79,13 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       if (buffer.length === 0) return NextResponse.json({ error: '收到空的上傳內容，請確認檔案已選取並重試' }, { status: 400 })
       if (buffer.length > 50 * 1024 * 1024) return NextResponse.json({ error: 'zip 大小不能超過 50MB' }, { status: 400 })
 
+      // Validate ZIP magic bytes (PK = 0x504B)
+      if (buffer[0] !== 0x50 || buffer[1] !== 0x4b) {
+        return NextResponse.json({
+          error: `檔案格式錯誤（非 zip，magic: ${buffer.slice(0, 4).toString('hex')}，大小: ${buffer.length} bytes）`
+        }, { status: 400 })
+      }
+
       const zip = new AdmZip(buffer)
       const entries = zip.getEntries()
         .filter(e => {

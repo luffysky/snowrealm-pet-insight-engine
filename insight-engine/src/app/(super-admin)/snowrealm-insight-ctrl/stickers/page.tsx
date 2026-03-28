@@ -114,10 +114,11 @@ export default function StickersPage() {
 
       // Step 2: if zip provided, upload as octet-stream
       if (uploadFile) {
+        const fileBuffer = await uploadFile.arrayBuffer()
         const uploadRes = await fetch(`/api/super-admin/stickers?packId=${createData.packId}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/octet-stream' },
-          body: uploadFile,
+          body: fileBuffer,
         })
         const uploadData = await uploadRes.json() as { ok?: boolean; count?: number; error?: string }
         if (uploadData.ok) {
