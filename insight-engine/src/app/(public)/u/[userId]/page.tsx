@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef, type ReactNode } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, Globe, Heart, MessageSquare, Loader2, X, Settings, ChevronRight, Bell, MessageCircle, LayoutDashboard, BookOpen, Image, MoreHorizontal, Pencil, Trash2, Camera } from 'lucide-react'
+import { ArrowLeft, Globe, Heart, MessageSquare, Loader2, X, Settings, ChevronRight, Bell, MessageCircle, LayoutDashboard, BookOpen, Image, MoreHorizontal, Pencil, Trash2, Camera, Wallet, Library } from 'lucide-react'
 import { UserAlbum } from '@/components/social/UserAlbum'
 import { setFloatingChatEnabled, FLOATING_CHAT_ENABLED_KEY } from '@/components/social/FloatingChat'
 
@@ -42,9 +42,11 @@ function ProfileSidebar({ onClose, tenantSlug, isSuperAdmin }: { onClose: () => 
           <SidebarSection label="社群">
             <SidebarLink href="/write" icon={<BookOpen className="w-4 h-4" />} label="發布文章" onClick={onClose} />
             <SidebarLink href="/insight-admin/blog" icon={<BookOpen className="w-4 h-4" />} label="我的部落格" onClick={onClose} />
+            <SidebarLink href="/blogs" icon={<Library className="w-4 h-4" />} label="部落格廣場" onClick={onClose} />
             <SidebarLink href="/articles" icon={<Image className="w-4 h-4" />} label="相簿 &amp; 動態" onClick={onClose} />
             <SidebarLink href="/notifications" icon={<Bell className="w-4 h-4" />} label="通知" onClick={onClose} />
             <SidebarLink href="/messages" icon={<MessageCircle className="w-4 h-4" />} label="私訊" onClick={onClose} />
+            <SidebarLink href="/wallet" icon={<Wallet className="w-4 h-4" />} label="Z幣錢包" onClick={onClose} />
           </SidebarSection>
 
           {/* 一般後台 */}

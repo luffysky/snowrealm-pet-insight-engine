@@ -131,6 +131,7 @@ export async function getPosts({
   type,
   limit = 20,
   offset = 0,
+  adminView = false,
 }: {
   tenantId?: string
   userId?: string
@@ -138,8 +139,9 @@ export async function getPosts({
   type?: string
   limit?: number
   offset?: number
+  adminView?: boolean
 }): Promise<SocialPost[]> {
-  const conditions: string[] = ['p.status = $1', 'p.is_public = true']
+  const conditions: string[] = adminView ? ['p.status = $1'] : ['p.status = $1', 'p.is_public = true']
   const params: unknown[] = ['published']
   let i = 2
 

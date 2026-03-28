@@ -3,13 +3,13 @@
 import { useEffect, useState } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Home, Newspaper, Plus, MessageCircle, User, X, PenSquare, Clapperboard, Bell, MoreHorizontal, Sparkles } from 'lucide-react'
+import { Home, Newspaper, Plus, MessageCircle, User, X, Clapperboard, Sparkles, AlignLeft, FileText } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
 
 // Only hide on full-screen creation / auth flows
 const HIDDEN_PREFIXES = [
   '/login', '/register', '/super-login', '/forgot-password',
-  '/story/create', '/story/view', '/write', '/api', '/privacy', '/terms', '/cookies',
+  '/story/create', '/story/view', '/write', '/post', '/api', '/privacy', '/terms', '/cookies',
   '/messages',
 ]
 
@@ -23,7 +23,6 @@ export function BottomNav() {
   const [unreadDm, setUnreadDm] = useState(0)
   const [unreadNotif, setUnreadNotif] = useState(0)
   const [createOpen, setCreateOpen] = useState(false)
-  const [moreOpen, setMoreOpen] = useState(false)
   const [collapsed, setCollapsed] = useState(false)
   const [mounted, setMounted] = useState(false)
 
@@ -155,21 +154,6 @@ export function BottomNav() {
               </button>
             </div>
 
-            {/* 更多 */}
-            <button onClick={() => setMoreOpen(true)} className={`${tabCls('/notifications')} relative`}>
-              <div className="relative">
-                <MoreHorizontal className="w-5 h-5" strokeWidth={1.8} />
-                {unreadNotif > 0 && (
-                  <span className="absolute -top-1.5 -right-1.5 min-w-[16px] h-4 px-1
-                                   bg-rose-500 text-white text-[9px] font-bold rounded-full
-                                   flex items-center justify-center leading-none">
-                    {unreadNotif > 99 ? '99+' : unreadNotif}
-                  </span>
-                )}
-              </div>
-              <span className={labelCls}>更多</span>
-            </button>
-
             {/* 訊息 */}
             <button onClick={() => router.push('/messages')} className={`${tabCls('/messages')} relative`}>
               <div className="relative">
@@ -191,9 +175,18 @@ export function BottomNav() {
                 if (me) router.push(`/u/${me.userId}`)
                 else router.push(`/login?redirect=${encodeURIComponent(pathname)}`)
               }}
-              className={tabCls('/u')}
+              className={`${tabCls('/u')} relative`}
             >
-              <User className="w-5 h-5" strokeWidth={isActive('/u') ? 2.5 : 1.8} />
+              <div className="relative">
+                <User className="w-5 h-5" strokeWidth={isActive('/u') ? 2.5 : 1.8} />
+                {unreadNotif > 0 && (
+                  <span className="absolute -top-1.5 -right-1.5 min-w-[16px] h-4 px-1
+                                   bg-rose-500 text-white text-[9px] font-bold rounded-full
+                                   flex items-center justify-center leading-none">
+                    {unreadNotif > 99 ? '99+' : unreadNotif}
+                  </span>
+                )}
+              </div>
               <span className={labelCls}>我的</span>
             </button>
 
@@ -219,15 +212,27 @@ export function BottomNav() {
               </button>
             </div>
             <button
-              onClick={() => { setCreateOpen(false); router.push('/write') }}
+              onClick={() => { setCreateOpen(false); router.push('/post') }}
               className="w-full flex items-center gap-4 p-4 bg-white/5 hover:bg-white/10 border border-white/8 rounded-2xl transition-colors text-left"
             >
               <div className="w-11 h-11 rounded-xl bg-sky-500/20 flex items-center justify-center shrink-0">
-                <PenSquare className="w-5 h-5 text-sky-400" />
+                <AlignLeft className="w-5 h-5 text-sky-400" />
               </div>
               <div>
-                <p className="font-semibold text-white text-sm">發布貼文</p>
-                <p className="text-xs text-white/40 mt-0.5">文字、圖片、長文章</p>
+                <p className="font-semibold text-white text-sm">短貼文</p>
+                <p className="text-xs text-white/40 mt-0.5">文字、圖片、標籤</p>
+              </div>
+            </button>
+            <button
+              onClick={() => { setCreateOpen(false); router.push('/write') }}
+              className="w-full flex items-center gap-4 p-4 bg-white/5 hover:bg-white/10 border border-white/8 rounded-2xl transition-colors text-left"
+            >
+              <div className="w-11 h-11 rounded-xl bg-indigo-500/20 flex items-center justify-center shrink-0">
+                <FileText className="w-5 h-5 text-indigo-400" />
+              </div>
+              <div>
+                <p className="font-semibold text-white text-sm">長文章</p>
+                <p className="text-xs text-white/40 mt-0.5">富文字編輯、嵌入圖片</p>
               </div>
             </button>
             <button
@@ -258,76 +263,6 @@ export function BottomNav() {
         </div>
       )}
 
-      {/* More menu */}
-      {moreOpen && (
-        <div
-          className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-4"
-          style={{ paddingBottom: 'calc(var(--bnav-h, 76px) + 1rem)' }}
-          onClick={() => setMoreOpen(false)}
-        >
-          <div
-            className="w-full max-w-sm bg-slate-900 border border-white/10 rounded-3xl p-5 space-y-2 shadow-2xl"
-            onClick={e => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-sm font-semibold text-white/60 tracking-wide">更多功能</p>
-              <button onClick={() => setMoreOpen(false)} className="p-1 text-white/30 hover:text-white/60">
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            {/* 通知 */}
-            <Link
-              href="/notifications"
-              onClick={() => setMoreOpen(false)}
-              className="w-full flex items-center gap-4 p-4 bg-white/5 hover:bg-white/10 border border-white/8 rounded-2xl transition-colors"
-            >
-              <div className="w-11 h-11 rounded-xl bg-rose-500/15 flex items-center justify-center shrink-0 relative">
-                <Bell className="w-5 h-5 text-rose-400" />
-                {unreadNotif > 0 && (
-                  <span className="absolute -top-1 -right-1 min-w-[16px] h-4 px-1 bg-rose-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center leading-none">
-                    {unreadNotif > 99 ? '99+' : unreadNotif}
-                  </span>
-                )}
-              </div>
-              <div className="flex-1">
-                <p className="font-semibold text-white text-sm">通知</p>
-                <p className="text-xs text-white/40 mt-0.5">{unreadNotif > 0 ? `${unreadNotif} 則未讀` : '查看所有通知'}</p>
-              </div>
-            </Link>
-
-            {/* 錢包 */}
-            <Link
-              href="/wallet"
-              onClick={() => setMoreOpen(false)}
-              className="w-full flex items-center gap-4 p-4 bg-white/5 hover:bg-white/10 border border-white/8 rounded-2xl transition-colors"
-            >
-              <div className="w-11 h-11 rounded-xl bg-amber-500/15 flex items-center justify-center shrink-0">
-                <span className="text-lg">🪙</span>
-              </div>
-              <div>
-                <p className="font-semibold text-white text-sm">Z幣錢包</p>
-                <p className="text-xs text-white/40 mt-0.5">查看餘額與交易紀錄</p>
-              </div>
-            </Link>
-
-            {/* 部落格 */}
-            <Link
-              href="/blogs"
-              onClick={() => setMoreOpen(false)}
-              className="w-full flex items-center gap-4 p-4 bg-white/5 hover:bg-white/10 border border-white/8 rounded-2xl transition-colors"
-            >
-              <div className="w-11 h-11 rounded-xl bg-indigo-500/15 flex items-center justify-center shrink-0">
-                <span className="text-lg">📝</span>
-              </div>
-              <div>
-                <p className="font-semibold text-white text-sm">部落格</p>
-                <p className="text-xs text-white/40 mt-0.5">瀏覽創作者文章</p>
-              </div>
-            </Link>
-          </div>
-        </div>
-      )}
     </>
   )
 }

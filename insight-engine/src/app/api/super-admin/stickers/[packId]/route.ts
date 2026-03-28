@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { query, execute } from '@/lib/db'
+import { query, execute, queryOne } from '@/lib/db'
 import { headers } from 'next/headers'
 
 async function requireSuperAdmin() {
@@ -17,6 +17,10 @@ interface StickerRow extends Record<string, unknown> {
   sort_order: number
 }
 
+interface PackDetail extends Record<string, unknown> {
+  columns_per_row: number
+}
+
 /** GET — 取得貼圖包內所有貼圖 */
 export async function GET(
   _req: NextRequest,
@@ -25,11 +29,16 @@ export async function GET(
   const auth = await requireSuperAdmin()
   if (!auth) return NextResponse.json({ error: '未授權' }, { status: 401 })
   const { packId } = await params
-  const stickers = await query<StickerRow>(
-    `SELECT id, url, filename, sort_order FROM stickers WHERE pack_id = $1 ORDER BY sort_order ASC`,
-    [packId]
-  )
-  return NextResponse.json({ stickers })
+  const [stickers, pack] = await Promise.all([
+    query<StickerRow>(
+      `SELECT id, url, filename, sort_order FROM stickers WHERE pack_id = $1 ORDER BY sort_order ASC`,
+      [packId]
+    ),
+    queryOne<PackDetail>(
+      `SELECT columns_per_row FROM sticker_packs WHERE id = $1`, [packId]
+    ),
+  ])
+  return NextResponse.json({ stickers, columnsPerRow: pack?.columns_per_row ?? 5 })
 }
 
 /** PATCH — 更新貼圖包（名稱、說明、is_active、sort_order） */
@@ -40,16 +49,17 @@ export async function PATCH(
   const auth = await requireSuperAdmin()
   if (!auth) return NextResponse.json({ error: '未授權' }, { status: 401 })
   const { packId } = await params
-  const body = await req.json() as { name?: string; description?: string; isActive?: boolean; sortOrder?: number }
+  const body = await req.json() as { name?: string; description?: string; isActive?: boolean; sortOrder?: number; columnsPerRow?: number }
 
   await execute(
     `UPDATE sticker_packs SET
        name = COALESCE($1, name),
        description = COALESCE($2, description),
        is_active = COALESCE($3, is_active),
-       sort_order = COALESCE($4, sort_order)
-     WHERE id = $5`,
-    [body.name ?? null, body.description ?? null, body.isActive ?? null, body.sortOrder ?? null, packId]
+       sort_order = COALESCE($4, sort_order),
+       columns_per_row = COALESCE($5, columns_per_row)
+     WHERE id = $6`,
+    [body.name ?? null, body.description ?? null, body.isActive ?? null, body.sortOrder ?? null, body.columnsPerRow ?? null, packId]
   )
   return NextResponse.json({ ok: true })
 }

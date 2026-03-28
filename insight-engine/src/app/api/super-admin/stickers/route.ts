@@ -51,18 +51,29 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   const file = formData.get('file') as File | null
 
   if (!name) return NextResponse.json({ error: '請填寫貼圖包名稱' }, { status: 400 })
-  if (!file) return NextResponse.json({ error: '請上傳 zip 檔案' }, { status: 400 })
-  if (!file.name.endsWith('.zip')) return NextResponse.json({ error: '只接受 .zip 檔案' }, { status: 400 })
-  if (file.size > 50 * 1024 * 1024) return NextResponse.json({ error: 'zip 大小不能超過 50MB' }, { status: 400 })
 
   try {
+    // 建立貼圖包（不管有沒有 zip）
+    const pack = await queryOne<{ id: string }>(
+      `INSERT INTO sticker_packs (name, description) VALUES ($1, $2) RETURNING id`,
+      [name, description]
+    )
+    if (!pack) throw new Error('建立貼圖包失敗')
+
+    // 沒有提供 zip 則直接回傳空包
+    if (!file) {
+      return NextResponse.json({ ok: true, packId: pack.id, count: 0 })
+    }
+
+    if (!file.name.endsWith('.zip')) return NextResponse.json({ error: '只接受 .zip 檔案' }, { status: 400 })
+    if (file.size > 50 * 1024 * 1024) return NextResponse.json({ error: 'zip 大小不能超過 50MB' }, { status: 400 })
+
     const buffer = Buffer.from(await file.arrayBuffer())
     const zip = new AdmZip(buffer)
     const entries = zip.getEntries()
       .filter(e => {
         if (e.isDirectory) return false
         const lower = e.entryName.toLowerCase()
-        // Skip macOS metadata and hidden files
         if (lower.includes('__macosx') || lower.startsWith('.')) return false
         const ext = lower.slice(lower.lastIndexOf('.'))
         return IMAGE_EXTS.has(ext)
@@ -70,31 +81,22 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       .sort((a, b) => a.entryName.localeCompare(b.entryName))
 
     if (entries.length === 0) {
-      return NextResponse.json({ error: 'zip 中找不到圖片檔案（支援 PNG/JPG/GIF/WebP）' }, { status: 400 })
+      return NextResponse.json({ ok: true, packId: pack.id, count: 0 })
     }
 
-    // 建立貼圖包
-    const pack = await queryOne<{ id: string }>(
-      `INSERT INTO sticker_packs (name, description) VALUES ($1, $2) RETURNING id`,
-      [name, description]
-    )
-    if (!pack) throw new Error('建立貼圖包失敗')
-
-    // 上傳每張貼圖到 R2
+    const mimeMap: Record<string, string> = { '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.gif': 'image/gif', '.webp': 'image/webp' }
     const uploaded: { url: string; filename: string; order: number }[] = []
     for (let i = 0; i < entries.length; i++) {
       const entry = entries[i]
       const imgBuffer = entry.getData()
       const lower = entry.entryName.toLowerCase()
       const ext = lower.slice(lower.lastIndexOf('.'))
-      const mimeMap: Record<string, string> = { '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.gif': 'image/gif', '.webp': 'image/webp' }
       const mime = mimeMap[ext] ?? 'image/png'
       const filename = entry.entryName.split('/').pop() ?? `sticker-${i}`
       const url = await uploadToR2(imgBuffer, `${pack.id}-${i}-${filename}`, mime, 'stickers')
       uploaded.push({ url, filename, order: i })
     }
 
-    // 批量寫入 stickers
     for (const s of uploaded) {
       await execute(
         `INSERT INTO stickers (pack_id, url, filename, sort_order) VALUES ($1, $2, $3, $4)`,
@@ -102,11 +104,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       )
     }
 
-    // 第一張作為封面
-    await execute(
-      `UPDATE sticker_packs SET cover_url = $1 WHERE id = $2`,
-      [uploaded[0].url, pack.id]
-    )
+    await execute(`UPDATE sticker_packs SET cover_url = $1 WHERE id = $2`, [uploaded[0].url, pack.id])
 
     return NextResponse.json({ ok: true, packId: pack.id, count: uploaded.length })
   } catch (err) {

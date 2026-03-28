@@ -11,12 +11,12 @@ export async function GET(request: NextRequest) {
   const offset = parseInt(searchParams.get('offset') ?? '0')
 
   const posts = await getPosts({
-    tenantId: ctx.tenantId ?? 'default',
     userId,
     viewerId: ctx.userId ?? undefined,
     type,
     limit,
     offset,
+    adminView: true,
   })
   return NextResponse.json({ posts })
 }
