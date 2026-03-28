@@ -118,10 +118,34 @@ Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
 
 ---
 
+## Session 2 完成（同日下午）
+
+### 8. 確認所有 WIRE/BUG 狀態
+- BUG-1：確認已修（code + DB branch_config 皆正確）
+- WIRE-1,2,3,4：確認全部已在 code 中完成
+- BUG-4：確認三個 API 都已有 requireRole
+- LINE-2：確認 system/route.ts 已用 getLineConfig
+- BUG-C：掃描全專案登入死循環，無問題
+
+### 9. 新增三個公開頁面 + Report API（commit `c346c82`）
+- `/api/report/[slug]` — 公開報告 API
+- `/report/[slug]/page.tsx` — SSR 公開報告頁
+- `/story/[responseId]/page.tsx` — 公開故事卡片頁
+- `/story-wall/[surveySlug]/page.tsx` — 公開故事牆
+- `CopyLinkButton.tsx` — 修正 inline script 問題
+
+### 10. DB 操作
+- BUG-2：ALTER TABLE ai_usage_logs 更新 action CHECK constraint（加入 chat/insight/story/sentiment）
+- phase33/34/35 migrations 全部執行成功
+- 確認社群系統 6 張表全部存在
+
 ## 今日未完成（移入明日計劃）
 
-- BUG-1：分流邏輯 (useSurveyFlow.ts) 仍未修
-- PAGE-1,2,3：三個公開頁面缺失 (report/story/story-wall)
-- WIRE-1：問卷完成頁故事卡片整合
-- WIRE-2,3：故事報告存 DB + 歷史列表區分
-- WIRE-4：Dashboard 整合新指標顯示
+- BUG-A：分享小卡 OG 圖裁切問題（html2canvas CORS）
+- BUG-B：貼文編輯器貼入 URL 無 OG 預覽卡
+- SOCIAL-2：限時動態（Stories）
+- SOCIAL-3：懸浮訊息泡泡
+- PWA 基礎設定
+- URG-1：毛行天下租戶重複顯示
+- URG-3：super_admin 看到所有組織
+- URG-4：Official Bot 文案硬編碼

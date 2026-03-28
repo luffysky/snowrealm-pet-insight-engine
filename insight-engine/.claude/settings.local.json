@@ -126,7 +126,11 @@
       "Bash(cat:*)",
       "Bash(/dev/null find:*)",
       "Bash(for f:*)",
-      "Bash(PGPASSWORD=\"3n25zPNSZyU64T9QrAmxX817WGk0RYwc\" psql \"postgresql://postgres:3n25zPNSZyU64T9QrAmxX817WGk0RYwc@43.167.237.37:30465/postgres\" -c \"\\\\dt\")"
+      "Bash(PGPASSWORD=\"3n25zPNSZyU64T9QrAmxX817WGk0RYwc\" psql \"postgresql://postgres:3n25zPNSZyU64T9QrAmxX817WGk0RYwc@43.167.237.37:30465/postgres\" -c \"\\\\dt\")",
+      "Bash(mkdir -p \"D:\\\\SnowRealmRebirth\\\\snowrealm-insight-engine\\\\insight-engine\\\\src\\\\app\\\\api\\\\report\\\\[slug]\")",
+      "Bash(mkdir -p \"D:\\\\SnowRealmRebirth\\\\snowrealm-insight-engine\\\\insight-engine\\\\src\\\\app\\\\report\\\\[slug]\")",
+      "Bash(mkdir -p \"D:\\\\SnowRealmRebirth\\\\snowrealm-insight-engine\\\\insight-engine\\\\src\\\\app\\\\story\\\\[responseId]\")",
+      "Bash(mkdir -p \"D:\\\\SnowRealmRebirth\\\\snowrealm-insight-engine\\\\insight-engine\\\\src\\\\app\\\\story-wall\\\\[surveySlug]\")"
     ]
   }
 }

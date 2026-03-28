@@ -1,99 +1,79 @@
-✓ Starting...
+#15 2.177 ▲ Next.js 16.1.7 (Turbopack)
 
-✓ Ready in 115ms
+#15 2.177
 
-⨯ error: operator does not exist: text = uuid
+#15 2.358   Creating an optimized production build ...
 
-    at async s (.next/server/chunks/[root-of-the-server]__98ee3e37._.js:1:1446)
+#15 28.12
 
-    at async l (.next/server/chunks/[root-of-the-server]__d164dd7a._.js:1:2657)
+#15 28.12 > Build error occurred
 
-    at async d (.next/server/chunks/[root-of-the-server]__d164dd7a._.js:13:4723)
+#15 28.13 Error: Turbopack build failed with 1 errors:
 
-    at async u (.next/server/chunks/[root-of-the-server]__d164dd7a._.js:13:5764)
+#15 28.13 ./src/app/messages/page.tsx:1284:14
 
-    at async Module.N (.next/server/chunks/[root-of-the-server]__d164dd7a._.js:13:6842) {
+#15 28.13 Parsing ecmascript source code failed
 
-  length: 197,
+#15 28.13   1282 |                 <span>🗑️</span> {msgMenu.msg.isMine ? '刪除' : '從我這邊刪除'}
 
-  severity: 'ERROR',
+#15 28.13   1283 |               </button>
 
-  code: '42883',
+#15 28.13 > 1284 |             )}
 
-  detail: undefined,
+#15 28.13        |              ^
 
-  hint: 'No operator matches the given name and argument types. You might need to add explicit type casts.',
+#15 28.13   1285 |           </div>
 
-  position: '116',
+#15 28.13   1286 |         </>
 
-  internalPosition: undefined,
+#15 28.13   1287 |       )}
 
-  internalQuery: undefined,
+#15 28.13
 
-  where: undefined,
+#15 28.13 Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
 
-  schema: undefined,
+#15 28.13
 
-  table: undefined,
+#15 28.13
 
-  column: undefined,
+#15 28.13     at <unknown> (./src/app/messages/page.tsx:1284:14)
 
-  dataType: undefined,
+#15 28.32 npm notice
 
-  constraint: undefined,
+#15 28.32 npm notice New major version of npm available! 10.8.2 -> 11.12.1
 
-  file: 'parse_oper.c',
+#15 28.32 npm notice Changelog: https://github.com/npm/cli/releases/tag/v11.12.1
 
-  line: '647',
+#15 28.32 npm notice To update run: npm install -g npm@11.12.1
 
-   routine: 'op_error'
+#15 28.32 npm notice
 
-}
+#15 ERROR: process "/bin/sh -c npm run build" did not complete successfully: exit code: 1
 
-⨯ error: column sc.one_liner does not exist
+------
 
-    at async s (.next/server/chunks/[root-of-the-server]__98ee3e37._.js:1:1446)
+> [builder 4/4] RUN npm run build:
 
-    at async i (.next/server/chunks/[root-of-the-server]__4cd51257._.js:1:1947)
+28.13
 
-    at async d (.next/server/chunks/[root-of-the-server]__4cd51257._.js:29:3624)
+28.13 Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
 
-    at async u (.next/server/chunks/[root-of-the-server]__4cd51257._.js:29:4665)
+28.13
 
-    at async Module.f (.next/server/chunks/[root-of-the-server]__4cd51257._.js:29:5743) {
+28.13
 
-  length: 111,
+28.13     at <unknown> (./src/app/messages/page.tsx:1284:14)
 
-  severity: 'ERROR',
+28.32 npm notice
 
-  code: '42703',
+28.32 npm notice New major version of npm available! 10.8.2 -> 11.12.1
 
-  detail: undefined,
+28.32 npm notice Changelog: https://github.com/npm/cli/releases/tag/v11.12.1
 
-  hint: undefined,
+28.32 npm notice To update run: npm install -g npm@11.12.1
 
-  position: '128',
+28.32 npm notice
 
-  internalPosition: undefined,
+------
 
-  internalQuery: undefined,
-
-  where: undefined,
-
-  schema: undefined,
-
-  table: undefined,
-
-  column: undefined,
-
-  dataType: undefined,
-
-  constraint: undefined,
-
-  file: 'parse_relation.c',
-
-  line: '3665',
-
-  routine: 'errorMissingColumn'
-
-}
+🔴 Build Failed. Reason: build image: build failed: failed to solve: process "/bin/sh -c npm run build" did not complete successfully: exit code: 1
