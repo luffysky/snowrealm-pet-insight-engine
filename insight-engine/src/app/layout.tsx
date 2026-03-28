@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { queryOne } from "@/lib/db";
@@ -18,6 +18,13 @@ const geistMono = Geist_Mono({
 // 預設 meta（DB 讀取失敗時使用）
 const DEFAULT_TITLE = 'SnowRealm Insight Engine — 問卷系統'
 const DEFAULT_DESC = '免費建立你的專屬問卷系統，支持多租戶、數據分析、LINE 整合。'
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+}
 
 export async function generateMetadata(): Promise<Metadata> {
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://insight.snowrealm.pet'
