@@ -223,7 +223,9 @@ function AlbumDetail({
   const longPressRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
-    fetch(`/api/admin/social/album?userId=${userId}&albumId=${album.id}`)
+    // album.id === 'all' is the virtual "全部照片" entry — fetch without albumId filter
+    const albumParam = album.id !== 'all' ? `&albumId=${album.id}` : ''
+    fetch(`/api/admin/social/album?userId=${userId}${albumParam}`)
       .then(r => r.ok ? r.json() : null)
       .then(d => { if (d?.photos) setPhotos(d.photos) })
       .finally(() => setLoading(false))
@@ -243,7 +245,7 @@ function AlbumDetail({
         const res = await fetch('/api/admin/social/album', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ url: upData.url, isPublic: album.isPublic, albumId: album.id }),
+          body: JSON.stringify({ url: upData.url, isPublic: album.isPublic, ...(album.id !== 'all' && { albumId: album.id }) }),
         })
         const data = await res.json() as { photo?: AlbumPhoto }
         if (data.photo) newPhotos.push(data.photo)
@@ -373,9 +375,11 @@ function AlbumDetail({
               </button>
             ) : (
               <>
-                <button onClick={() => setEditAlbum(true)} className="p-1.5 text-white/30 hover:text-white/60 transition-colors">
-                  <Pencil className="w-4 h-4" />
-                </button>
+                {album.id !== 'all' && (
+                  <button onClick={() => setEditAlbum(true)} className="p-1.5 text-white/30 hover:text-white/60 transition-colors">
+                    <Pencil className="w-4 h-4" />
+                  </button>
+                )}
                 <button
                   onClick={() => fileRef.current?.click()}
                   disabled={uploading}
@@ -559,16 +563,20 @@ export function UserAlbum({ userId, isOwner }: UserAlbumProps) {
   const [albums, setAlbums] = useState<Album[]>([])
   const [loading, setLoading] = useState(true)
   const [activeAlbum, setActiveAlbum] = useState<Album | null>(null)
+  const [totalPhotoCount, setTotalPhotoCount] = useState(0)
   const [createModal, setCreateModal] = useState(false)
   const [deleteConfirm, setDeleteConfirm] = useState<Album | null>(null)
   const [longPressAlbum, setLongPressAlbum] = useState<Album | null>(null)
   const lpRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
-    fetch(`/api/admin/social/albums?userId=${userId}`)
-      .then(r => r.ok ? r.json() : null)
-      .then(d => { if (d?.albums) setAlbums(d.albums) })
-      .finally(() => setLoading(false))
+    Promise.all([
+      fetch(`/api/admin/social/albums?userId=${userId}`).then(r => r.ok ? r.json() : null),
+      fetch(`/api/admin/social/album?userId=${userId}`).then(r => r.ok ? r.json() : null),
+    ]).then(([albumsData, photosData]) => {
+      if (albumsData?.albums) setAlbums(albumsData.albums)
+      if (photosData?.photos) setTotalPhotoCount(photosData.photos.length)
+    }).finally(() => setLoading(false))
   }, [userId])
 
   const createAlbum = async (name: string, description: string, isPublic: boolean) => {
@@ -606,7 +614,7 @@ export function UserAlbum({ userId, isOwner }: UserAlbumProps) {
     )
   }
 
-  if (!loading && albums.length === 0 && !isOwner) return null
+  if (!loading && albums.length === 0 && totalPhotoCount === 0 && !isOwner) return null
 
   return (
     <div className="space-y-3">
@@ -632,6 +640,24 @@ export function UserAlbum({ userId, isOwner }: UserAlbumProps) {
         </div>
       ) : (
         <div className="grid grid-cols-2 gap-3">
+          {/* 虛擬「全部照片」入口 — 顯示所有照片（含未分類）*/}
+          {totalPhotoCount > 0 && (
+            <div
+              className="relative cursor-pointer"
+              onClick={() => setActiveAlbum({
+                id: 'all', name: '全部照片', description: null,
+                isPublic: true, photoCount: totalPhotoCount, coverUrl: null, createdAt: '',
+              })}
+            >
+              <div className="aspect-square rounded-2xl overflow-hidden bg-white/5 border border-white/8 flex items-center justify-center">
+                <Camera className="w-8 h-8 text-white/15" />
+              </div>
+              <div className="mt-1.5 px-0.5">
+                <p className="text-sm text-white/70 font-medium truncate">全部照片</p>
+                <p className="text-xs text-white/25">{totalPhotoCount} 張</p>
+              </div>
+            </div>
+          )}
           {albums.map(album => (
             <div
               key={album.id}
