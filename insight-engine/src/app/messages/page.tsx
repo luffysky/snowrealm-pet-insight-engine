@@ -118,12 +118,16 @@ function AudioPlayer({ url, isMine }: { url: string; isMine: boolean }) {
   const [current, setCurrent] = useState(0)
   const [duration, setDuration] = useState(0)
   const [loading, setLoading] = useState(true)
+  const [hasError, setHasError] = useState(false)
+
+  // Route through server-side proxy to avoid CORS / CDN bot-protection blocking
+  const proxyUrl = `/api/admin/social/messages/audio-proxy?url=${encodeURIComponent(url)}`
 
   const toggle = () => {
     const a = audioRef.current
-    if (!a) return
+    if (!a || hasError) return
     if (playing) { a.pause(); setPlaying(false) }
-    else { a.play().then(() => setPlaying(true)).catch(() => {}) }
+    else { a.play().then(() => setPlaying(true)).catch(() => { setHasError(true); setPlaying(false) }) }
   }
 
   const fmt = (s: number) => {
@@ -135,15 +139,26 @@ function AudioPlayer({ url, isMine }: { url: string; isMine: boolean }) {
 
   const pct = duration > 0 ? (current / duration) * 100 : 0
 
+  if (hasError) {
+    return (
+      <div className={`flex items-center gap-2 rounded-2xl px-3 py-2.5 w-[220px] ${isMine ? 'bg-white/15' : 'bg-white/8'}`}>
+        <div className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 bg-red-500/20">
+          <Volume2 className="w-4 h-4 text-red-400/60" />
+        </div>
+        <span className="text-[10px] text-white/30">音訊無法播放</span>
+      </div>
+    )
+  }
+
   return (
     <div className={`flex items-center gap-3 rounded-2xl px-3 py-2.5 w-[220px] ${isMine ? 'bg-white/15' : 'bg-white/8'}`}>
       <audio
         ref={audioRef}
-        src={url}
+        src={proxyUrl}
         onLoadedMetadata={() => { setDuration(audioRef.current?.duration ?? 0); setLoading(false) }}
         onTimeUpdate={() => setCurrent(audioRef.current?.currentTime ?? 0)}
         onEnded={() => { setPlaying(false); setCurrent(0) }}
-        onError={() => setLoading(false)}
+        onError={() => { setLoading(false); setHasError(true) }}
         preload="metadata"
         className="hidden"
       />
@@ -765,18 +780,26 @@ export default function MessagesPage() {
   const initials = (name: string | null) => (name ?? '?').slice(0, 2).toUpperCase()
 
   return (
-    <div className="h-[100dvh] bg-slate-950 text-white flex flex-col overflow-hidden">
-      {/* 列表頂部導覽 — 開啟對話時隱藏 */}
-      {!active && (
-        <nav className="shrink-0 bg-gradient-to-b from-slate-900 to-slate-950 border-b border-white/[0.06]">
-          <div className="max-w-2xl mx-auto px-4 pt-4 pb-0 flex items-center gap-3">
-            <button onClick={() => router.back()} className="text-white/40 hover:text-white transition-colors">
+    <div className="h-[100dvh] bg-slate-950 text-white flex flex-col overflow-hidden md:flex-row md:items-stretch">
+      {/* ── 左側欄：列表 + 好友 (always visible on desktop) ── */}
+      <div className={`
+        ${active ? 'hidden md:flex' : 'flex'}
+        flex-col shrink-0
+        w-full md:w-80 lg:w-96
+        md:border-r md:border-white/[0.08]
+        md:bg-slate-900/60
+        overflow-hidden
+      `}>
+        {/* 列表頂部導覽 */}
+        <nav className="shrink-0 bg-gradient-to-b from-slate-900 to-slate-900/80 border-b border-white/[0.06] md:from-slate-900 md:to-slate-900">
+          <div className="px-4 pt-4 pb-0 flex items-center gap-3">
+            <button onClick={() => router.back()} className="text-white/40 hover:text-white transition-colors md:hidden">
               <ArrowLeft className="w-4 h-4" />
             </button>
             <h1 className="font-bold text-lg tracking-tight">訊息</h1>
           </div>
           {/* Tab bar */}
-          <div className="max-w-2xl mx-auto px-4 flex gap-1 pt-2">
+          <div className="px-4 flex gap-1 pt-2">
             <button
               onClick={() => setMainTab('messages')}
               className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors -mb-px ${mainTab === 'messages' ? 'text-amber-400 border-amber-400' : 'text-white/40 border-transparent hover:text-white/70'}`}
@@ -791,11 +814,7 @@ export default function MessagesPage() {
             </button>
           </div>
         </nav>
-      )}
-
-      <div className="flex-1 flex max-w-2xl mx-auto w-full min-h-0">
-        {/* Conversation list / Friends list — hidden on mobile when chat open */}
-        <div className={`${active ? 'hidden md:flex' : 'flex'} flex-col w-full md:w-72 md:border-r md:border-white/8 shrink-0 overflow-y-auto`}>
+        <div className="flex-1 overflow-y-auto">
           {mainTab === 'messages' ? (
             // ─── 訊息列表 ───
             loading ? (
@@ -908,10 +927,12 @@ export default function MessagesPage() {
               </div>
             )
           )}
-        </div>
+        </div>{/* end scrollable list area */}
+      </div>{/* end left column */}
 
-        {/* Chat panel */}
-        {active ? (
+      {/* ── 右側：聊天面板 (flex-1 on desktop, always shown when active on mobile) ── */}
+      {active ? (
+        <div className={`${active ? 'flex' : 'hidden md:flex'} flex-1 flex-col min-h-0 overflow-hidden`}>
           <div className="flex-1 flex flex-col min-h-0">
             {/* 名子層 — 頂部（手機 + 桌機都顯示） */}
             <div className="shrink-0 bg-gradient-to-b from-slate-900/95 to-slate-950/95 backdrop-blur-xl border-b border-white/[0.06] px-4 py-3 flex items-center gap-3">
@@ -1325,18 +1346,19 @@ export default function MessagesPage() {
             </div>
             </div>{/* end 輸入層 */}
           </div>
-        ) : (
-          <div className="flex-1 hidden md:flex items-center justify-center">
-            <div className="text-center text-white/15">
-              <div className="w-16 h-16 rounded-3xl bg-white/5 flex items-center justify-center mx-auto mb-4">
-                <MessageCircle className="w-8 h-8" />
-              </div>
-              <p className="text-sm font-medium">選擇一個對話</p>
-              <p className="text-xs mt-1 text-white/10">或前往別人的個人頁面發起對話</p>
+        </div>
+      ) : (
+        /* Desktop: no conversation selected placeholder */
+        <div className="flex-1 hidden md:flex items-center justify-center bg-slate-950">
+          <div className="text-center text-white/15">
+            <div className="w-16 h-16 rounded-3xl bg-white/5 flex items-center justify-center mx-auto mb-4">
+              <MessageCircle className="w-8 h-8" />
             </div>
+            <p className="text-sm font-medium">選擇一個對話</p>
+            <p className="text-xs mt-1 text-white/10">或前往別人的個人頁面發起對話</p>
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Message context menu */}
       {msgMenu && (

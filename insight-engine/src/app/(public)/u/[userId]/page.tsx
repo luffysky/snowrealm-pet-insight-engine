@@ -12,7 +12,7 @@ function stripHtml(html: string): string {
 }
 
 // ─── Profile sidebar (only shown for own profile) ───
-function ProfileSidebar({ onClose }: { onClose: () => void }) {
+function ProfileSidebar({ onClose, tenantSlug, isSuperAdmin }: { onClose: () => void; tenantSlug: string | null; isSuperAdmin: boolean }) {
   const [floatEnabled, setFloatEnabled] = useState(true)
 
   useEffect(() => {
@@ -37,18 +37,40 @@ function ProfileSidebar({ onClose }: { onClose: () => void }) {
           </button>
         </div>
         <div className="flex-1 overflow-y-auto py-2">
-          <SidebarSection label="創作">
+
+          {/* 社群創作 */}
+          <SidebarSection label="社群">
             <SidebarLink href="/write" icon={<BookOpen className="w-4 h-4" />} label="發布文章" onClick={onClose} />
             <SidebarLink href="/articles" icon={<Image className="w-4 h-4" />} label="相簿 &amp; 動態" onClick={onClose} />
+            <SidebarLink href="/notifications" icon={<Bell className="w-4 h-4" />} label="通知" onClick={onClose} />
+            <SidebarLink href="/messages" icon={<MessageCircle className="w-4 h-4" />} label="私訊" onClick={onClose} />
           </SidebarSection>
-          <SidebarSection label="管理後台">
-            <SidebarLink href="/insight-admin" icon={<LayoutDashboard className="w-4 h-4" />} label="問卷後台" onClick={onClose} />
+
+          {/* 一般後台 */}
+          <SidebarSection label="問卷後台">
+            <SidebarLink
+              href={tenantSlug ? `/insight-admin/${tenantSlug}` : '/insight-admin'}
+              icon={<LayoutDashboard className="w-4 h-4" />}
+              label="進入後台"
+              onClick={onClose}
+            />
+            <SidebarLink href="/insight-admin/account" icon={<Bell className="w-4 h-4" />} label="帳號 &amp; 通知設定" onClick={onClose} />
           </SidebarSection>
+
+          {/* 總後台（僅 super_admin） */}
+          {isSuperAdmin && (
+            <SidebarSection label="🌟 總後台">
+              <SidebarLink
+                href="/snowrealm-insight-ctrl"
+                icon={<LayoutDashboard className="w-4 h-4" />}
+                label="Super Admin 控制台"
+                onClick={onClose}
+              />
+            </SidebarSection>
+          )}
+
+          {/* 偏好設定 */}
           <SidebarSection label="偏好設定">
-            <SidebarLink href="/messages" icon={<MessageCircle className="w-4 h-4" />} label="訊息設定" onClick={onClose} />
-            <SidebarLink href="/insight-admin/account" icon={<Bell className="w-4 h-4" />} label="通知設定" onClick={onClose} />
-          </SidebarSection>
-          <SidebarSection label="顯示設定">
             <div className="flex items-center justify-between px-4 py-3">
               <div className="flex items-center gap-3">
                 <span className="w-8 h-8 rounded-xl bg-sky-500/15 flex items-center justify-center text-sky-400">
@@ -67,6 +89,7 @@ function ProfileSidebar({ onClose }: { onClose: () => void }) {
               </button>
             </div>
           </SidebarSection>
+
         </div>
         <div className="px-4 py-3 border-t border-white/8 shrink-0">
           <p className="text-[11px] text-white/25 text-center">長按訊息可產生可拖曳懸浮球</p>
@@ -274,6 +297,8 @@ export default function UserProfilePage() {
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [loading, setLoading] = useState(true)
   const [meId, setMeId] = useState<string | null>(null)
+  const [meTenantSlug, setMeTenantSlug] = useState<string | null>(null)
+  const [meIsSuperAdmin, setMeIsSuperAdmin] = useState(false)
   const [loginPrompt, setLoginPrompt] = useState(false)
   const [albumPhotos, setAlbumPhotos] = useState<{ id: string; url: string; caption: string | null; is_public: boolean; display_order: number; created_at: string }[]>([])
   const [followModal, setFollowModal] = useState<'followers' | 'following' | null>(null)
@@ -286,8 +311,12 @@ export default function UserProfilePage() {
 
   useEffect(() => {
     fetch('/api/auth/me')
-      .then(r => r.ok ? r.json() as Promise<{ userId?: string }> : null)
-      .then(d => { if (d?.userId) setMeId(d.userId) })
+      .then(r => r.ok ? r.json() as Promise<{ userId?: string; tenantId?: string; role?: string }> : null)
+      .then(d => {
+        if (d?.userId) setMeId(d.userId)
+        if (d?.tenantId) setMeTenantSlug(d.tenantId)
+        if (d?.role === 'super_admin') setMeIsSuperAdmin(true)
+      })
       .catch(() => {})
   }, [])
 
@@ -380,7 +409,7 @@ export default function UserProfilePage() {
     <div className="min-h-screen bg-slate-950 text-white">
       <LoginPrompt open={loginPrompt} onClose={() => setLoginPrompt(false)} action="追蹤或私訊" />
       {followModal && <FollowListModal type={followModal} userId={userId} onClose={() => setFollowModal(null)} />}
-      {sidebarOpen && isMe && <ProfileSidebar onClose={() => setSidebarOpen(false)} />}
+      {sidebarOpen && isMe && <ProfileSidebar onClose={() => setSidebarOpen(false)} tenantSlug={meTenantSlug} isSuperAdmin={meIsSuperAdmin} />}
       {avatarLightbox && profile.avatar && <AvatarLightbox src={profile.avatar} onClose={() => setAvatarLightbox(false)} />}
 
       {/* Nav */}

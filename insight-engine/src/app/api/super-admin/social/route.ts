@@ -76,8 +76,8 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
   if (tab === 'stats') {
     const [rPending, rPosts, rDms, rUsers] = await Promise.all([
       query<{ cnt: string }>(`SELECT COUNT(*) as cnt FROM social_reports WHERE status = 'pending'`),
-      query<{ cnt: string }>(`SELECT COUNT(*) as cnt FROM social_posts`),
-      query<{ cnt: string }>(`SELECT COUNT(*) as cnt FROM direct_messages`),
+      query<{ cnt: string }>(`SELECT COUNT(*) as cnt FROM social_posts WHERE status = 'published'`),
+      query<{ cnt: string }>(`SELECT COUNT(DISTINCT CONCAT(LEAST(from_user_id::text,to_user_id::text),'_',GREATEST(from_user_id::text,to_user_id::text))) as cnt FROM direct_messages`),
       query<{ cnt: string }>(`SELECT COUNT(*) as cnt FROM admin_users`),
     ])
     return NextResponse.json({
@@ -132,6 +132,58 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
   }
 
   if (tab === 'dms') {
+    // Return conversations grouped by user pair, ordered by latest message
+    const convRows = await query<{
+      user1_id: string; user2_id: string;
+      user1_name: string | null; user2_name: string | null;
+      user1_avatar: string | null; user2_avatar: string | null;
+      message_count: string; last_at: string;
+      last_encrypted: string; last_iv: string; last_tag: string;
+    }>(
+      `SELECT
+         LEAST(dm.from_user_id::text, dm.to_user_id::text) AS user1_id,
+         GREATEST(dm.from_user_id::text, dm.to_user_id::text) AS user2_id,
+         u1.display_name AS user1_name, u2.display_name AS user2_name,
+         u1.avatar_url AS user1_avatar, u2.avatar_url AS user2_avatar,
+         COUNT(*)::text AS message_count,
+         MAX(dm.created_at)::text AS last_at,
+         (ARRAY_AGG(dm.encrypted_content ORDER BY dm.created_at DESC))[1] AS last_encrypted,
+         (ARRAY_AGG(dm.iv ORDER BY dm.created_at DESC))[1] AS last_iv,
+         (ARRAY_AGG(dm.tag ORDER BY dm.created_at DESC))[1] AS last_tag
+       FROM direct_messages dm
+       LEFT JOIN admin_users u1 ON u1.id::text = LEAST(dm.from_user_id::text, dm.to_user_id::text)
+       LEFT JOIN admin_users u2 ON u2.id::text = GREATEST(dm.from_user_id::text, dm.to_user_id::text)
+       GROUP BY
+         LEAST(dm.from_user_id::text, dm.to_user_id::text),
+         GREATEST(dm.from_user_id::text, dm.to_user_id::text),
+         u1.display_name, u2.display_name, u1.avatar_url, u2.avatar_url
+       ORDER BY MAX(dm.created_at) DESC
+       LIMIT $1 OFFSET $2`,
+      [pageSize, offset]
+    )
+
+    const dms = convRows.map(row => {
+      let lastContent = '[無法解密]'
+      try { lastContent = decryptApiKey({ encrypted: row.last_encrypted, iv: row.last_iv, tag: row.last_tag }) } catch {}
+      return {
+        user1Id: row.user1_id,
+        user2Id: row.user2_id,
+        user1Name: row.user1_name ?? '未知',
+        user2Name: row.user2_name ?? '未知',
+        user1Avatar: row.user1_avatar,
+        user2Avatar: row.user2_avatar,
+        messageCount: parseInt(row.message_count),
+        lastAt: row.last_at,
+        lastContent,
+      }
+    })
+    return NextResponse.json({ dms })
+  }
+
+  if (tab === 'dm_detail') {
+    const u1 = req.nextUrl.searchParams.get('u1')
+    const u2 = req.nextUrl.searchParams.get('u2')
+    if (!u1 || !u2) return NextResponse.json({ error: '缺少參數' }, { status: 400 })
     const rows = await query<DmRow>(
       `SELECT dm.id, dm.from_user_id, dm.to_user_id,
               f.display_name as from_name, t.display_name as to_name,
@@ -139,11 +191,13 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
        FROM direct_messages dm
        LEFT JOIN admin_users f ON f.id::text = dm.from_user_id::text
        LEFT JOIN admin_users t ON t.id::text = dm.to_user_id::text
-       ORDER BY dm.created_at DESC
-       LIMIT $1 OFFSET $2`,
-      [pageSize, offset]
+       WHERE (dm.from_user_id::text = $1 AND dm.to_user_id::text = $2)
+          OR (dm.from_user_id::text = $2 AND dm.to_user_id::text = $1)
+       ORDER BY dm.created_at ASC
+       LIMIT 100`,
+      [u1, u2]
     )
-    const dms = rows.map(row => {
+    const messages = rows.map(row => {
       let content = '[無法解密]'
       try { content = decryptApiKey({ encrypted: row.encrypted_content, iv: row.iv, tag: row.tag }) } catch {}
       return {
@@ -156,7 +210,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
         createdAt: row.created_at,
       }
     })
-    return NextResponse.json({ dms })
+    return NextResponse.json({ messages })
   }
 
   if (tab === 'users') {

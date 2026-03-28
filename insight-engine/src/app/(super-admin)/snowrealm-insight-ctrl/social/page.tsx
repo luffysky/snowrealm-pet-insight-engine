@@ -43,8 +43,22 @@ interface Post {
   comments_count: number
 }
 
-interface Dm {
+interface DmConversation {
+  user1Id: string
+  user2Id: string
+  user1Name: string
+  user2Name: string
+  user1Avatar: string | null
+  user2Avatar: string | null
+  messageCount: number
+  lastAt: string
+  lastContent: string
+}
+
+interface DmMessage {
   id: string
+  fromUserId: string
+  toUserId: string
   fromName: string
   toName: string
   content: string
@@ -148,13 +162,16 @@ export default function SocialMonitorPage() {
   const [tab, setTab] = useState<Tab>('reports')
   const [reports, setReports] = useState<Report[]>([])
   const [posts, setPosts] = useState<Post[]>([])
-  const [dms, setDms] = useState<Dm[]>([])
+  const [dms, setDms] = useState<DmConversation[]>([])
   const [users, setUsers] = useState<User[]>([])
   const [stats, setStats] = useState<Stats | null>(null)
   const [loading, setLoading] = useState(false)
   const [lastRefreshed, setLastRefreshed] = useState<Date | null>(null)
   const [selectedReport, setSelectedReport] = useState<Report | null>(null)
   const [reviewNote, setReviewNote] = useState('')
+  const [expandedConv, setExpandedConv] = useState<{ u1: string; u2: string } | null>(null)
+  const [convMessages, setConvMessages] = useState<DmMessage[]>([])
+  const [convLoading, setConvLoading] = useState(false)
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   const fetchStats = useCallback(async () => {
@@ -171,7 +188,7 @@ export default function SocialMonitorPage() {
     try {
       const res = await fetch(`/api/super-admin/social?tab=${t}`)
       if (!res.ok) return
-      const data = await res.json() as { reports?: Report[]; posts?: Post[]; dms?: Dm[]; users?: User[] }
+      const data = await res.json() as { reports?: Report[]; posts?: Post[]; dms?: DmConversation[]; users?: User[] }
       if (data.reports) setReports(data.reports)
       if (data.posts) setPosts(data.posts)
       if (data.dms) setDms(data.dms)
@@ -222,6 +239,25 @@ export default function SocialMonitorPage() {
     fetchStats()
   }
 
+  const loadConvMessages = async (u1: string, u2: string) => {
+    if (expandedConv?.u1 === u1 && expandedConv?.u2 === u2) {
+      setExpandedConv(null)
+      setConvMessages([])
+      return
+    }
+    setExpandedConv({ u1, u2 })
+    setConvLoading(true)
+    try {
+      const res = await fetch(`/api/super-admin/social?tab=dm_detail&u1=${u1}&u2=${u2}`)
+      if (res.ok) {
+        const data = await res.json() as { messages?: DmMessage[] }
+        setConvMessages(data.messages ?? [])
+      }
+    } finally {
+      setConvLoading(false)
+    }
+  }
+
   const handleDeletePost = async (postId: string) => {
     if (!confirm('確定刪除此貼文？此操作無法復原。')) return
     await fetch('/api/super-admin/social', {
@@ -238,7 +274,7 @@ export default function SocialMonitorPage() {
   const TABS: { key: Tab; label: string; icon: typeof Flag; count?: number }[] = [
     { key: 'reports', label: '檢舉', icon: Flag, count: pendingCount || undefined },
     { key: 'posts', label: '全部貼文', icon: FileText, count: stats?.totalPosts || undefined },
-    { key: 'dms', label: '全部私訊', icon: MessageSquare, count: stats?.totalDms || undefined },
+    { key: 'dms', label: '私訊對話', icon: MessageSquare, count: stats?.totalDms || undefined },
     { key: 'users', label: '用戶', icon: Users, count: stats?.totalUsers || undefined },
   ]
 
@@ -424,24 +460,65 @@ export default function SocialMonitorPage() {
         </div>
       )}
 
-      {/* DMs Tab — ALL messages regardless of report status */}
+      {/* DMs Tab — Grouped by conversation */}
       {tab === 'dms' && (
-        <div className="space-y-3">
+        <div className="space-y-2">
           {loading && <p className="text-slate-400 text-sm py-4 text-center">載入中...</p>}
           {!loading && dms.length === 0 && <EmptyState icon={MessageSquare} text="目前沒有私訊記錄" />}
-          {dms.map(dm => (
-            <div key={dm.id} className="bg-slate-800/50 border border-slate-700/50 rounded-2xl px-4 py-3">
-              <div className="flex items-center gap-2 text-xs text-white/40 mb-1">
-                <span className="text-white/70 font-medium">{dm.fromName}</span>
-                <span>→</span>
-                <span className="text-white/70 font-medium">{dm.toName}</span>
-                <span className="ml-auto">{new Date(dm.createdAt).toLocaleString('zh-TW')}</span>
+          {dms.map(conv => {
+            const isExpanded = expandedConv?.u1 === conv.user1Id && expandedConv?.u2 === conv.user2Id
+            return (
+              <div key={`${conv.user1Id}_${conv.user2Id}`} className="bg-slate-800/50 border border-slate-700/50 rounded-2xl overflow-hidden">
+                {/* Conversation header row */}
+                <button
+                  className="w-full px-4 py-3 flex items-center gap-3 hover:bg-white/5 transition-colors text-left"
+                  onClick={() => loadConvMessages(conv.user1Id, conv.user2Id)}
+                >
+                  {/* User avatars stacked */}
+                  <div className="relative shrink-0 w-10 h-10">
+                    <div className="absolute top-0 left-0 w-7 h-7 rounded-full bg-gradient-to-br from-amber-500/40 to-purple-500/40 border-2 border-slate-800 flex items-center justify-center text-[10px] font-bold text-white/70 overflow-hidden">
+                      {conv.user1Avatar ? <img src={conv.user1Avatar} alt="" className="w-full h-full object-cover" /> : conv.user1Name.slice(0, 1).toUpperCase()}
+                    </div>
+                    <div className="absolute bottom-0 right-0 w-7 h-7 rounded-full bg-gradient-to-br from-sky-500/40 to-emerald-500/40 border-2 border-slate-800 flex items-center justify-center text-[10px] font-bold text-white/70 overflow-hidden">
+                      {conv.user2Avatar ? <img src={conv.user2Avatar} alt="" className="w-full h-full object-cover" /> : conv.user2Name.slice(0, 1).toUpperCase()}
+                    </div>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1.5 mb-0.5">
+                      <span className="text-sm font-medium text-white/80">{conv.user1Name}</span>
+                      <span className="text-white/30 text-xs">↔</span>
+                      <span className="text-sm font-medium text-white/80">{conv.user2Name}</span>
+                      <span className="ml-auto text-[10px] text-white/30 bg-white/8 px-1.5 py-0.5 rounded-full shrink-0">{conv.messageCount} 則</span>
+                    </div>
+                    <p className="text-xs text-white/35 truncate">{conv.lastContent.startsWith('[') ? '📎 媒體' : conv.lastContent.slice(0, 60)}</p>
+                  </div>
+                  <div className="flex flex-col items-end gap-1 shrink-0">
+                    <span className="text-[10px] text-white/25">{new Date(conv.lastAt).toLocaleDateString('zh-TW')}</span>
+                    <span className={`text-[10px] text-white/30 transition-transform ${isExpanded ? 'rotate-180' : ''}`}>▼</span>
+                  </div>
+                </button>
+
+                {/* Expanded message thread */}
+                {isExpanded && (
+                  <div className="border-t border-white/5 bg-black/20 px-4 py-3 space-y-2 max-h-96 overflow-y-auto">
+                    {convLoading ? (
+                      <p className="text-xs text-white/30 text-center py-3">載入中...</p>
+                    ) : (
+                      convMessages.map(msg => (
+                        <div key={msg.id} className="flex gap-2">
+                          <span className="text-[10px] text-white/50 shrink-0 font-medium">{msg.fromName}:</span>
+                          <div className="flex-1 min-w-0">
+                            {renderDmContent(msg.content)}
+                            <span className="text-[9px] text-white/20 block mt-0.5">{new Date(msg.createdAt).toLocaleString('zh-TW')}</span>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                )}
               </div>
-              <div className="bg-black/20 rounded-xl px-3 py-2 min-h-[2rem]">
-                {renderDmContent(dm.content)}
-              </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
       )}
 
