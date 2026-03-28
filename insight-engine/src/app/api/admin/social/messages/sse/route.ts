@@ -25,7 +25,8 @@ export async function GET(request: NextRequest) {
   if (!withUserId) return new Response('userId required', { status: 400 })
 
   const encoder = new TextEncoder()
-  let lastId = searchParams.get('lastId') ?? ''
+  // Use created_at for tracking instead of id (UUIDs are random, not sortable by time)
+  let lastCreatedAt = searchParams.get('since') ?? new Date(Date.now() - 5000).toISOString()
 
   const stream = new ReadableStream({
     async start(controller) {
@@ -46,10 +47,10 @@ export async function GET(request: NextRequest) {
                (dm.from_user_id = $1 AND dm.to_user_id = $2) OR
                (dm.from_user_id = $2 AND dm.to_user_id = $1)
              )
-             ${lastId ? 'AND dm.id > $3' : ''}
+             AND dm.created_at > $3
              ORDER BY dm.created_at ASC
-             LIMIT 20`,
-            lastId ? [ctx.userId, withUserId, lastId] : [ctx.userId, withUserId]
+             LIMIT 50`,
+            [ctx.userId, withUserId, lastCreatedAt]
           )
 
           if (rows.length > 0) {
@@ -67,7 +68,7 @@ export async function GET(request: NextRequest) {
                 createdAt: r.created_at,
               }
             })
-            lastId = rows[rows.length - 1].id
+            lastCreatedAt = rows[rows.length - 1].created_at
             send({ type: 'messages', messages })
           } else {
             send({ type: 'ping' })

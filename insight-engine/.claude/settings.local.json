@@ -147,7 +147,12 @@
       "Bash(npx next:*)",
       "Bash(grep -n \"followers\\\\|follower\\\\|following\\\\|follow_count\\\\|FollowList\\\\|fetchFollow\" /d/SnowRealmRebirth/snowrealm-insight-engine/insight-engine/src/app/\\\\\\(public\\\\\\)/u/[userId]/page.tsx)",
       "Bash(/d/SnowRealmRebirth/snowrealm-insight-engine/insight-engine/supabase/migrations/20260328_comment_likes.sql:*)",
-      "Bash(/d/SnowRealmRebirth/snowrealm-insight-engine/insight-engine/supabase/migrations/20260328_multi_album.sql:*)"
+      "Bash(/d/SnowRealmRebirth/snowrealm-insight-engine/insight-engine/supabase/migrations/20260328_multi_album.sql:*)",
+      "Bash(find \"D:\\\\SnowRealmRebirth\\\\snowrealm-insight-engine\\\\insight-engine/src/app/\\(admin\\)/insight-admin\" -type d)",
+      "Bash(ls -la \"D:\\\\SnowRealmRebirth\\\\snowrealm-insight-engine\\\\insight-engine\\\\src\\\\app\\\\\\(admin\\)\\\\insight-admin\")",
+      "Bash(\"D:\\\\SnowRealmRebirth\\\\snowrealm-insight-engine\\\\insight-engine\\\\supabase\\\\run_all_pending.sql\":*)",
+      "Bash(find \"D:/SnowRealmRebirth/snowrealm-insight-engine/insight-engine/src/app\" -path \"*/\\(public\\)/*\" -name \"page.tsx\")",
+      "Bash(head -5 grep -n \"bnav-h\\\\|paddingBottom\" \"D:/SnowRealmRebirth/snowrealm-insight-engine/insight-engine/src/app/\\(public\\)/explore/page.tsx\")"
     ]
   }
 }

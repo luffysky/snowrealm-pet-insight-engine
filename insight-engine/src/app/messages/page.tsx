@@ -576,7 +576,9 @@ export default function MessagesPage() {
       .catch(() => {})
       .finally(() => setMsgLoading(false))
 
-    const es = new EventSource(`/api/admin/social/messages/sse?userId=${active.userId}`)
+    // Pass `since` = now so SSE only picks up messages after initial load
+    const since = encodeURIComponent(new Date().toISOString())
+    const es = new EventSource(`/api/admin/social/messages/sse?userId=${active.userId}&since=${since}`)
     esRef.current = es
     es.onmessage = (e) => {
       try {
@@ -1662,6 +1664,20 @@ export default function MessagesPage() {
             >
               <span>↩️</span> 回覆
             </button>
+            {msgMenu.msg.content !== '[已收回]' && !isNakedContent(msgMenu.msg.content) && (
+              <button
+                onClick={() => {
+                  const body = msgMenu.msg.content.includes('\n')
+                    ? msgMenu.msg.content.split('\n').slice(1).join('\n')
+                    : msgMenu.msg.content
+                  navigator.clipboard.writeText(body).catch(() => {})
+                  setMsgMenu(null)
+                }}
+                className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/8 text-sm text-white/80 text-left transition-colors border-t border-white/8"
+              >
+                <span>📋</span> 複製
+              </button>
+            )}
             {msgMenu.msg.isMine && msgMenu.msg.content !== '[已收回]' && (
               <button
                 onClick={() => startEdit(msgMenu.msg)}

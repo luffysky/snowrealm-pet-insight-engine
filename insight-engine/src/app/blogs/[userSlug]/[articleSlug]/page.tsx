@@ -74,7 +74,7 @@ export default async function ArticlePage({
   const backSlug = article.blog_slug ?? userSlug
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white">
+    <div className="min-h-screen bg-slate-950 text-white" style={{ paddingBottom: 'var(--bnav-h, 76px)' }}>
       {/* Back link */}
       <div className="max-w-3xl mx-auto px-4 sm:px-6 pt-8">
         <Link

@@ -36,7 +36,7 @@ function ProfileSidebar({ onClose, tenantSlug, isSuperAdmin }: { onClose: () => 
             <X className="w-4 h-4" />
           </button>
         </div>
-        <div className="flex-1 overflow-y-auto py-2">
+        <div className="flex-1 overflow-y-auto py-2" style={{ paddingBottom: 'var(--bnav-h, 76px)' }}>
 
           {/* 社群創作 */}
           <SidebarSection label="社群">

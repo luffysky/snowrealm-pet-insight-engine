@@ -55,7 +55,7 @@ export default function WalletPage() {
   const { balance, history } = data
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white">
+    <div className="min-h-screen bg-slate-950 text-white" style={{ paddingBottom: 'var(--bnav-h, 76px)' }}>
       {/* Top nav */}
       <nav className="sticky top-0 z-10 bg-slate-950/80 backdrop-blur-sm border-b border-white/10">
         <div className="max-w-md mx-auto px-4 py-3 flex items-center justify-between gap-2">

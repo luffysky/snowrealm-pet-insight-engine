@@ -157,7 +157,7 @@ export async function getPosts({
     params.push(viewerId)
     viewerBookmarkExpr = `EXISTS(SELECT 1 FROM social_bookmarks sb WHERE sb.post_id = p.id AND sb.user_id = $${i++}) AS is_bookmarked`
     params.push(viewerId)
-    viewerFollowExpr = `EXISTS(SELECT 1 FROM social_follows sf WHERE sf.follower_id = $${i++}::uuid AND sf.following_id = p.user_id) AS is_following`
+    viewerFollowExpr = `EXISTS(SELECT 1 FROM user_follows sf WHERE sf.follower_id = $${i++}::uuid AND sf.following_id = p.user_id) AS is_following`
     params.push(viewerId)
   }
   params.push(limit, offset)
@@ -188,7 +188,7 @@ export async function getPost(postId: string, viewerId?: string): Promise<Social
   if (viewerId) {
     viewerReactionExpr = `(SELECT type FROM social_reactions WHERE user_id = $2 AND post_id = p.id LIMIT 1) AS my_reaction`
     viewerBookmarkExpr = `EXISTS(SELECT 1 FROM social_bookmarks sb WHERE sb.post_id = p.id AND sb.user_id = $3) AS is_bookmarked`
-    viewerFollowExpr2 = `EXISTS(SELECT 1 FROM social_follows sf WHERE sf.follower_id = $4::uuid AND sf.following_id = p.user_id) AS is_following`
+    viewerFollowExpr2 = `EXISTS(SELECT 1 FROM user_follows sf WHERE sf.follower_id = $4::uuid AND sf.following_id = p.user_id) AS is_following`
     params.push(viewerId, viewerId, viewerId)
   }
 

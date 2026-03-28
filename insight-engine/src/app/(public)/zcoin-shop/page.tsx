@@ -608,7 +608,7 @@ export default function ZcoinShopPage() {
   const completedOtherCount = otherTasks.filter((t) => t.isCompleted).length
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white">
+    <div className="min-h-screen bg-slate-950 text-white" style={{ paddingBottom: 'var(--bnav-h, 76px)' }}>
       {/* Toast */}
       {toast && (
         <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 bg-amber-500 text-slate-900 font-medium text-sm px-4 py-2 rounded-full shadow-lg animate-bounce">

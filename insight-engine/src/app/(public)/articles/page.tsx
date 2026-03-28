@@ -427,7 +427,7 @@ function ArticlesPageInner() {
   ]
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white">
+    <div className="min-h-screen bg-slate-950 text-white" style={{ paddingBottom: 'var(--bnav-h, 76px)' }}>
       {showCreateModal && (
         <CreatePostModal onClose={() => setShowCreateModal(false)} onCreated={handlePostCreated} />
       )}
