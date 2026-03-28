@@ -1,11 +1,11 @@
 # SnowRealm Insight Engine — 開發路線圖
 
-> 最後更新：2026-03-28
+> 最後更新：2026-03-28（Session 2 更新）
 > 本文件整合所有已完成、待實作、規劃中的項目。
 
 ---
 
-## ✅ 已完成（本 session）
+## ✅ 已完成
 
 | 項目 | 說明 |
 |------|------|
@@ -20,8 +20,20 @@
 | 共用認證修正 | `register/page.tsx` 支援 `?redirect=` 參數 |
 | SOCIAL-1：Bottom Nav | `BottomNav.tsx` 完成，掛入 `layout.tsx`，未讀 DM badge 輪詢，create modal |
 | SOCIAL-1：訊息頁面 | `/messages` 對話列表 + 即時聊天（SSE），手機/桌面響應式 |
+| SOCIAL-2：限時動態 Stories | DB 4 張表（stories/story_views/story_polls/story_poll_votes）+ 創作頁 `/story/create` + 播放器 `/story/view` + StoryCircles 整合進 `/articles` |
+| SOCIAL-3：懸浮訊息泡泡 | `FloatingChat.tsx` 完成，掛入根 `layout.tsx`，React Portal + 拖移 + 迷你視窗 |
 | SOCIAL-4：通知 API | `social_notifications` 表 + API（GET/PATCH），通知頁面 `/notifications` |
 | 未讀訊息 API | `/api/admin/social/messages/unread` |
+| 私訊系統 | 10 種主題 + 背景效果 + 濾鏡，轉傳/刪除/收回，真實 DB message ID |
+| 分享小卡 CORS 修正 | `/api/img-proxy` 代理 R2/S3 圖片，PostShareCard 全部走代理 |
+| 公開故事卡片頁 | `/story/[responseId]` SSR + OG Meta，LINE/複製連結分享 |
+| 公開故事牆 | `/story-wall/[surveySlug]` 瀑布流 + 關鍵字標籤 + CTA |
+| 公開 AI 報告頁 | `/report/[slug]` SSR + OG，數據/故事模式，瀏覽計數 |
+| AI 報告分享系統 | `share_slug`/`is_public` 欄位，PATCH share/unshare/update_title，ShareCardModal |
+| DB Migrations | phase33（報告分享）、phase34（Bot 口令）、phase35（平台通知）全部執行 ✅ |
+| BUG-C：登入死循環掃描 | 全專案確認無問題 ✅ |
+| BUG-2：ai_usage_logs 約束 | ALTER TABLE 直接修正，支援 chat/insight/story/sentiment |
+| PWA manifest.json | `public/manifest.json` 基礎設定完成（standalone mode、icons、shortcuts） |
 
 ---
 
@@ -38,139 +50,54 @@
 - **修法**：偵測文字框貼上 URL → 呼叫 `/api/og-fetch?url=` → 顯示預覽卡
 - **檔案**：`src/app/write/page.tsx` + 新增 `src/app/api/og-fetch/route.ts`
 
-### BUG-C：全專案還有哪些登入死循環
-- **已知問題**：`/zcoin-shop`（已修）、`LoginPrompt`（已修）
-- **待查**：搜尋全專案所有 `href="/login"` 沒帶 `redirect` 的地方
-- **工具**：`grep -r 'href="/login"' src/`
+### URG-1：毛行天下租戶重複顯示
+- **問題**：租戶選單出現兩筆「毛行天下」
+- **診斷 SQL**：`SELECT id, slug, name, is_active FROM tenants WHERE name LIKE '%毛行天下%';`
+- **修法**：刪除/設 inactive 重複那筆，register route 加名稱唯一檢查
+
+### URG-3：super_admin 看到所有組織
+- **問題**：`/api/auth/me` 對 super_admin 回傳全部 tenant
+- **修法**：加 `?scope=super` 參數，一般後台只回傳自己有權限的租戶
+- **檔案**：`src/app/api/auth/me/route.ts`
+
+### URG-4：Official Bot 文案硬編碼
+- **問題**：歡迎語/回覆文案寫死「毛行天下」
+- **修法**：改用 `tenantBranding.ts` 的 `getTenantBranding()` 讀取
+- **檔案**：`src/app/api/line/webhook/official/route.ts`
 
 ---
 
-## 🟠 社群 UX 全面升級（核心開發中）
+## ✅ 已完成社群功能（2026-03-28 確認）
 
-### ~~SOCIAL-1：Bottom Navigation Bar~~ ✅ 已完成
-底部導覽列，手機版專用（`md:hidden`）。
+### SOCIAL-1：Bottom Navigation Bar ✅
+- `BottomNav.tsx` + `FloatingChat.tsx` 均掛入根 `layout.tsx`
+- 未讀 DM badge 輪詢，create modal
 
-```
-🏠 探索  |  🌐 社群  |  ⊕  |  💬 訊息  |  👤 我的
-```
+### SOCIAL-2：限時動態（Stories）✅
+- DB 4 張表：stories / story_views / story_polls / story_poll_votes
+- 創作頁 `/story/create`（595 行，canvas 編輯器）
+- 播放器 `/story/view`（418 行，全螢幕 + 投票）
+- `StoryCircles.tsx` 整合進 `/articles` 社群 feed 頁頂部
 
-- **⊕ 中間按鈕**：點開底部選單 → 選「發布貼文」或「發布限時動態」
-- **💬 訊息**：未讀數紅點 badge
-- **👤 我的**：通知紅點 badge（讚/留言/追蹤）
-- **實作範圍**：
-  - `src/components/social/BottomNav.tsx`
-  - 掛入所有社群公開頁面（`/articles`、`/u/[userId]`、`/explore` 等）
-  - 頁面內容加 `pb-20` 不被擋住
-  - iOS 安全區 `pb-[env(safe-area-inset-bottom)]`
+### SOCIAL-3：懸浮訊息泡泡 ✅
+- `FloatingChat.tsx` 完成，掛入根 `layout.tsx`
+- React Portal + 拖移 + 迷你聊天視窗
 
----
-
-### SOCIAL-2：限時動態（Stories）
-完整類 IG 體驗，但有平台獨家功能。
-
-#### DB（4 張表）
-```sql
-stories            -- 動態主體（canvas JSON + 背景 + 到期時間）
-story_views        -- 誰看過（去重，作者可查）
-story_polls        -- 投票貼圖
-story_poll_votes   -- 投票記錄
-```
-
-#### Canvas 資料結構
-```json
-{
-  "bg": { "type": "gradient", "value": "#667eea,#764ba2" },
-  "layers": [
-    { "type": "text", "content": "...", "font": "modern", "color": "#fff",
-      "x": 50, "y": 30, "size": 28, "effect": "neon" },
-    { "type": "storyCard", "responseId": "xxx", "x": 50, "y": 55 },
-    { "type": "poll", "pollId": "yyy", "x": 50, "y": 75 },
-    { "type": "emoji", "content": "✨", "x": 20, "y": 20, "size": 48 }
-  ],
-  "music": { "title": "晚安", "artist": "顏人中" },
-  "expiresHours": 24
-}
-```
-
-#### 創作頁 `/story/create`
-- 背景：8 種漸層 + 上傳圖片
-- 文字層：可拖移 + 縮放，4 種字型（現代/古典/手寫/打字機），顏色選擇，特效（閃亮/霓虹）
-- 貼圖工具列：Story Card（測驗結果）、投票、Emoji、音樂顯示卡、#標籤
-- 發布設定：24h / 72h / 永久 + 公開 / 粉絲限定
-
-#### 瀏覽器 `/story/view`
-- 全螢幕播放，頂部進度條
-- 左/右點切換，長按暫停
-- ❤️ 快速反應 + 💬 私訊回覆
-- 作者可看誰看過（眼睛圖示 + 名單）
-- 投票貼圖：即時圓餅圖動畫
-
-#### 社群頁頂部動態圓圈列
-```
-🔵+    👤     👤     👤
-你的   user1  user2  user3
-(未看 = 漸層光環，已看 = 灰框)
-```
-
-#### 獨家功能（超越 IG）
-- Story Card 貼圖：一鍵嵌入問卷測驗結果卡片
-- 投票結果進 dashboard 分析
-- 分享連結純 web，LINE 可直接看
-- 精選動態 = 公開 URL，無需 app
+### SOCIAL-4：通知系統 ✅
+- `social_notifications` 表 + API + 通知頁面 `/notifications`
 
 ---
 
-### SOCIAL-3：懸浮訊息泡泡
-不用離開當前頁面即可回覆訊息。
+## 🟡 PWA（Progressive Web App）— 部分完成
 
-#### 三種狀態
-```
-泡泡（64px 圓形，可拖移）
-  → 點一下 → 迷你聊天視窗（60vh 底部滑出）
-  → 點「↗ 展開」→ 完整訊息頁
-```
+### 已完成
+- `public/manifest.json` 基礎設定（standalone、icons、shortcuts、`start_url: /explore`）
 
-#### 觸發方式
-- 收到新訊息 → 右下角自動滑入泡泡
-- 訊息列表長按對話 → 選「懸浮此對話」
-
-#### 手勢
-| 動作 | 效果 |
-|------|------|
-| 拖移 | 自由移動到畫面任意位置 |
-| 拖到右邊緣 | 半收起（省空間模式） |
-| 迷你視窗往下滑 | 收回泡泡 |
-
-#### 技術方案
-- React Portal 渲染在 `document.body`（`z-index: 9999`）
-- Zustand 管理全域狀態 `{ activeChat, isExpanded }`
-- SSE 收到新訊息 → 自動觸發
-- Touch events 實作拖移
-
----
-
-### SOCIAL-4：通知系統
-- `notifications` 表（type: like / comment / follow / story_reply / poll_result）
-- 底部導覽 badge 實時更新
-- `/notifications` 頁面
-- 長按通知 → 標為已讀 / 刪除
-
----
-
-## 🟡 PWA（Progressive Web App）
-
-### 效益
-- 手機加入主畫面，開啟像原生 app
-- 全螢幕模式（無瀏覽器 UI，Stories / 底部導覽更沉浸）
-- Push 通知（app 關閉也能收到 DM 通知）
-- 離線快取
-
-### 實作步驟
-1. `npm install next-pwa`
+### 待完成
+1. `npm install next-pwa`（或直接 `next-pwa` 設定 service worker）
 2. 修改 `next.config.ts`（5 行）
-3. 新增 `public/manifest.json` + 各尺寸 icon
-4. `layout.tsx` 加 meta 標籤
-5. Web Push API：VAPID keys + DB 存訂閱 + `web-push` 套件
+3. `layout.tsx` 加 `<link rel="manifest">` meta 標籤（確認有加）
+4. Web Push API：VAPID keys + DB 存訂閱 + `web-push` 套件
 
 ### 注意
 - Service Worker 排除 `/api/*` 快取
@@ -282,50 +209,38 @@ story_poll_votes   -- 投票記錄
 
 ---
 
-## 📋 DB Migration 待執行清單
-
-以下 SQL 已在 repo，需在 Supabase SQL Editor 手動執行：
+## 📋 DB Migration 狀態
 
 ```
-supabase/migrations/20260327_user_album.sql         ✅ 已執行
-supabase/migration_phase33_report_sharing.sql       ⬜ 待執行
-supabase/migration_phase34_bot_passcode.sql         ⬜ 待執行
-supabase/migration_phase35_platform_notifications.sql ⬜ 待執行
-```
-
-社群系統（若尚未執行）：
-```
-supabase/migration_social.sql                       ⬜ 確認
-supabase/migration_follow_dm.sql                    ⬜ 確認
-supabase/migration_social_bookmarks.sql             ⬜ 確認
-supabase/migration_social_reports.sql               ⬜ 確認
-supabase/migration_user_bans_blocks.sql             ⬜ 確認
-supabase/migration_phase44_message_management.sql   ⬜ 確認
+supabase/migrations/20260327_user_album.sql              ✅ 已執行
+supabase/migration_phase33_report_sharing.sql            ✅ 已執行（2026-03-28）
+supabase/migration_phase34_bot_passcode.sql              ✅ 已執行（2026-03-28）
+supabase/migration_phase35_platform_notifications.sql    ✅ 已執行（2026-03-28）
+supabase/migration_social.sql                            ✅ 已確認
+supabase/migration_follow_dm.sql                         ✅ 已確認
+supabase/migration_social_bookmarks.sql                  ✅ 已確認
+supabase/migration_social_reports.sql                    ✅ 已確認
+supabase/migration_user_bans_blocks.sql                  ✅ 已確認
+supabase/migration_phase44_message_management.sql        ✅ 已確認
 ```
 
 ---
 
-## 🗓️ 建議開工順序
+## 🗓️ 建議開工順序（截至 2026-03-28 更新）
 
 ```
-本週
-├── SOCIAL-1  Bottom Nav（1天）
-├── SOCIAL-4  通知系統基礎（0.5天）
-├── PWA       基礎設定（0.5天）
-└── BUG-C     掃描所有登入死循環（0.5天）
-
-下週
-├── SOCIAL-2  限時動態（Stories）（3天）
-│   ├── DB + API
-│   ├── 創作頁面
-│   └── 播放器
-├── SOCIAL-3  懸浮訊息泡泡（1天）
-└── PWA       Push 通知（1天）
+本週（剩餘）
+├── BUG-A     分享小卡 OG 圖（Satori 後端方案）
+├── BUG-B     貼文 URL OG 預覽（/api/og-fetch）
+├── URG-1     毛行天下重複租戶（SQL 診斷 + 合併）
+├── URG-3     super_admin 租戶範圍（me/route.ts）
+├── URG-4     Official Bot 文案解耦（tenantBranding）
+└── PWA       Service Worker（next-pwa 設定）
 
 之後
-├── 成就/升級系統
-├── 付款功能（藍新金流）
-└── 社群頁面
+├── 成就/升級系統前端
+├── 付款功能（藍新金流前端結帳頁）
+└── 社群頁面（communities、/c/[slug]）
 ```
 
 ---
