@@ -34,27 +34,43 @@ export function PostShareCard({ post, onClose }: PostShareCardProps) {
   const excerpt = post.content.length > 120 ? post.content.slice(0, 120) + '…' : post.content
 
   const handleSave = async () => {
-    if (!cardRef.current || saving) return
+    if (saving) return
     setSaving(true)
     setAdjustMode(false)
     try {
-      const html2canvas = (await import('html2canvas')).default
-      const canvas = await html2canvas(cardRef.current, {
-        scale: 2,
-        useCORS: true,
-        allowTaint: true,
-        backgroundColor: '#0f172a',
+      const imageUrl = post.images[0]?.url ?? undefined
+      const res = await fetch('/api/og', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          postId: post.id,
+          authorName: post.authorName ?? '用戶',
+          authorAvatar: post.authorAvatar ?? undefined,
+          imageUrl,
+          title: post.title ?? undefined,
+          content: post.content,
+          tags: post.tags,
+          likesCount: post.likesCount,
+          commentsCount: post.commentsCount,
+          dateStr,
+          postUrl,
+          imgPosX: imgPos.x,
+          imgPosY: imgPos.y,
+        }),
       })
-      const dataUrl = canvas.toDataURL('image/png')
+      if (!res.ok) throw new Error(`Server error ${res.status}`)
+      const blob = await res.blob()
+      const objectUrl = URL.createObjectURL(blob)
       const link = document.createElement('a')
       link.download = `post-${post.id.slice(0, 8)}.png`
-      link.href = dataUrl
+      link.href = objectUrl
       document.body.appendChild(link)
       link.click()
       document.body.removeChild(link)
+      URL.revokeObjectURL(objectUrl)
     } catch (err) {
       console.error('[PostShareCard] 儲存失敗:', err)
-      alert('儲存圖片失敗，請嘗試長按圖片另存')
+      alert('儲存圖片失敗，請稍後再試')
     } finally {
       setSaving(false)
     }

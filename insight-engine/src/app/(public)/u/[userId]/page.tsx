@@ -161,6 +161,7 @@ interface FollowUser {
   id: string
   display_name: string | null
   avatar_url: string | null
+  is_following_back?: boolean
 }
 
 interface Story {
@@ -186,26 +187,57 @@ function FollowListModal({ type, userId, onClose }: { type: 'followers' | 'follo
       .finally(() => setLoading(false))
   }, [userId, type])
 
+  const toggleFollow = async (targetId: string, isFollowing: boolean) => {
+    const method = isFollowing ? 'DELETE' : 'POST'
+    const res = await fetch('/api/admin/social/follow', {
+      method,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ targetUserId: targetId }),
+    })
+    if (res.ok) {
+      setUsers(prev => prev.map(u => u.id === targetId ? { ...u, is_following_back: !isFollowing } : u))
+    }
+  }
+
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={onClose}>
       <div className="w-full max-w-sm bg-slate-900 border border-white/10 rounded-2xl overflow-hidden shadow-2xl" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between px-4 py-3 border-b border-white/8">
-          <h3 className="text-sm font-semibold text-white/80">{type === 'followers' ? '粉絲' : '追蹤中'}</h3>
+          <h3 className="text-sm font-semibold text-white/80">{type === 'followers' ? `粉絲 · ${users.length}` : `追蹤中 · ${users.length}`}</h3>
           <button onClick={onClose} className="text-white/30 hover:text-white/60 transition-colors"><X className="w-4 h-4" /></button>
         </div>
-        <div className="max-h-80 overflow-y-auto">
+        <div className="max-h-96 overflow-y-auto">
           {loading ? (
             <div className="flex justify-center py-8"><Loader2 className="w-5 h-5 text-white/30 animate-spin" /></div>
           ) : users.length === 0 ? (
             <p className="text-center text-white/25 text-sm py-8">還沒有{type === 'followers' ? '粉絲' : '追蹤的人'}</p>
           ) : (
             users.map(u => (
-              <Link key={u.id} href={`/u/${u.id}`} onClick={onClose} className="flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors">
-                <div className="w-9 h-9 rounded-full bg-gradient-to-br from-amber-500/30 to-purple-500/30 flex items-center justify-center text-sm font-bold text-white/80 overflow-hidden shrink-0">
-                  {u.avatar_url ? <img src={u.avatar_url} alt="" className="w-full h-full object-cover" /> : (u.display_name ?? '?').charAt(0).toUpperCase()}
-                </div>
-                <span className="text-sm text-white/75 truncate">{u.display_name ?? '用戶'}</span>
-              </Link>
+              <div key={u.id} className="flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors">
+                <Link href={`/u/${u.id}`} onClick={onClose} className="flex items-center gap-3 flex-1 min-w-0">
+                  <div className="w-9 h-9 rounded-full bg-gradient-to-br from-amber-500/30 to-purple-500/30 flex items-center justify-center text-sm font-bold text-white/80 overflow-hidden shrink-0">
+                    {u.avatar_url ? <img src={u.avatar_url} alt="" className="w-full h-full object-cover" /> : (u.display_name ?? '?').charAt(0).toUpperCase()}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-sm text-white/75 truncate">{u.display_name ?? '用戶'}</p>
+                    {type === 'followers' && u.is_following_back && (
+                      <p className="text-[10px] text-emerald-400/70">互相追蹤</p>
+                    )}
+                  </div>
+                </Link>
+                {type === 'followers' && (
+                  <button
+                    onClick={() => toggleFollow(u.id, !!u.is_following_back)}
+                    className={`shrink-0 text-xs px-3 py-1.5 rounded-xl border transition-colors ${
+                      u.is_following_back
+                        ? 'bg-white/8 border-white/12 text-white/50 hover:bg-red-500/10 hover:border-red-400/20 hover:text-red-400'
+                        : 'bg-amber-500/20 border-amber-400/30 text-amber-300 hover:bg-amber-500/30'
+                    }`}
+                  >
+                    {u.is_following_back ? '已追蹤' : '回追'}
+                  </button>
+                )}
+              </div>
             ))
           )}
         </div>

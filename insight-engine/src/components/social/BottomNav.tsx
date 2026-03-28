@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Home, Newspaper, Plus, MessageCircle, User, X, PenSquare, Clapperboard } from 'lucide-react'
+import { Home, Newspaper, Plus, MessageCircle, User, X, PenSquare, Clapperboard, Bell } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
 
 // Only hide on full-screen creation / auth flows
@@ -154,6 +154,21 @@ export function BottomNav() {
               </button>
             </div>
 
+            {/* 通知 */}
+            <button onClick={() => router.push('/notifications')} className={`${tabCls('/notifications')} relative`}>
+              <div className="relative">
+                <Bell className="w-5 h-5" strokeWidth={isActive('/notifications') ? 2.5 : 1.8} />
+                {unreadNotif > 0 && (
+                  <span className="absolute -top-1.5 -right-1.5 min-w-[16px] h-4 px-1
+                                   bg-rose-500 text-white text-[9px] font-bold rounded-full
+                                   flex items-center justify-center leading-none">
+                    {unreadNotif > 99 ? '99+' : unreadNotif}
+                  </span>
+                )}
+              </div>
+              <span className={labelCls}>通知</span>
+            </button>
+
             {/* 訊息 */}
             <button onClick={() => router.push('/messages')} className={`${tabCls('/messages')} relative`}>
               <div className="relative">
@@ -175,14 +190,9 @@ export function BottomNav() {
                 if (me) router.push(`/u/${me.userId}`)
                 else router.push(`/login?redirect=${encodeURIComponent(pathname)}`)
               }}
-              className={`${tabCls('/u')} relative`}
+              className={tabCls('/u')}
             >
-              <div className="relative">
-                <User className="w-5 h-5" strokeWidth={isActive('/u') ? 2.5 : 1.8} />
-                {unreadNotif > 0 && (
-                  <span className="absolute -top-1.5 -right-1.5 w-2 h-2 bg-rose-500 rounded-full" />
-                )}
-              </div>
+              <User className="w-5 h-5" strokeWidth={isActive('/u') ? 2.5 : 1.8} />
               <span className={labelCls}>我的</span>
             </button>
 

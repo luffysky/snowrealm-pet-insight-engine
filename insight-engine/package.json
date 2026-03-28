@@ -49,6 +49,7 @@
     "react-dom": "19.2.3",
     "react-image-crop": "^11.0.10",
     "recharts": "^3.8.0",
+    "satori": "^0.26.0",
     "sharp": "^0.34.5",
     "three": "^0.183.2",
     "uuid": "^13.0.0"

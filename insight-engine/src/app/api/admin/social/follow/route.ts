@@ -38,16 +38,20 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
   const targetUserId = searchParams.get('userId') ?? ctx.userId
   const list = searchParams.get('list')
 
-  // 回傳粉絲列表
+  // 回傳粉絲列表（附帶當前登入者是否有回追）
   if (list === 'followers') {
-    const users = await query<UserRow>(
-      `SELECT au.id, au.display_name, au.avatar_url
+    const users = await query<UserRow & { is_following_back: boolean }>(
+      `SELECT au.id, au.display_name, au.avatar_url,
+              EXISTS(
+                SELECT 1 FROM user_follows f2
+                WHERE f2.follower_id = $2 AND f2.following_id::text = au.id::text
+              ) AS is_following_back
        FROM user_follows uf
        JOIN admin_users au ON au.id::text = uf.follower_id
        WHERE uf.following_id = $1
        ORDER BY uf.created_at DESC
        LIMIT 100`,
-      [targetUserId]
+      [targetUserId, ctx.userId]
     )
     return NextResponse.json({ users })
   }
