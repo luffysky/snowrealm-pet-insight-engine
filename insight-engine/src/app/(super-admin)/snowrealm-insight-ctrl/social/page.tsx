@@ -95,13 +95,13 @@ function renderDmContent(content: string) {
     <audio src={audioMatch[1]} controls className="w-full max-w-xs" />
   )
 
-  // file
-  const fileMatch = content.match(/^\[file:(https?:\/\/[^\]]+)\|([^\]]+)\]$/)
+  // file — format: [file:name|url] (pipe separator)
+  const fileMatch = content.match(/^\[file:([^\|]+)\|(https?:\/\/[^\]]+)\]$/)
   if (fileMatch) return (
-    <a href={fileMatch[1]} target="_blank" rel="noopener noreferrer"
+    <a href={fileMatch[2]} target="_blank" rel="noopener noreferrer"
       className="flex items-center gap-2 px-3 py-2 bg-white/5 border border-white/10 rounded-xl text-xs text-blue-300 hover:text-blue-200 hover:bg-white/10 transition-colors"
     >
-      📎 {fileMatch[2]}
+      📎 {fileMatch[1]}
     </a>
   )
 

@@ -247,7 +247,7 @@ function PostsFeed({ posts, meId }: { posts: Post[]; meId: string | null }) {
             </div>
           </div>
           {p.title && <p className="font-semibold text-white/90 text-sm line-clamp-1">{p.title}</p>}
-          <p className="text-sm text-white/55 leading-relaxed line-clamp-3">{p.content}</p>
+          <p className="text-sm text-white/55 leading-relaxed line-clamp-3">{p.content.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()}</p>
           {p.images?.[0] && (
             <img src={p.images[0].url} alt="" className="w-full h-40 object-cover rounded-xl" />
           )}

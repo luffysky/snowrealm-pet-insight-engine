@@ -105,6 +105,7 @@ export function PostShareCard({ post, onClose }: PostShareCardProps) {
   const onImgPointerUp = () => { imgDrag.current = null }
 
   const hasImage = post.images.length > 0
+  const [imageError, setImageError] = useState(false)
 
   return (
     <div className="fixed inset-0 z-[250] flex items-end sm:items-center justify-center p-4 bg-black/70 backdrop-blur-sm" onClick={onClose}>
@@ -129,7 +130,7 @@ export function PostShareCard({ post, onClose }: PostShareCardProps) {
           </div>
 
           {/* Post image — adjustable */}
-          {hasImage && (
+          {hasImage && !imageError && (
             <div
               className={`relative rounded-xl overflow-hidden h-48 ${adjustMode ? 'ring-2 ring-amber-400/50 cursor-move' : ''}`}
               onPointerDown={onImgPointerDown}
@@ -144,6 +145,7 @@ export function PostShareCard({ post, onClose }: PostShareCardProps) {
                 className="w-full h-full object-cover select-none"
                 style={{ objectPosition: `${imgPos.x}% ${imgPos.y}%` }}
                 draggable={false}
+                onError={() => setImageError(true)}
               />
               {adjustMode && (
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none">

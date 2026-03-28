@@ -60,6 +60,16 @@ export async function GET(): Promise<NextResponse> {
         preview = '🎵 語音訊息'
       } else if (decrypted.startsWith(STICKER_PREFIX)) {
         preview = '🎭 貼圖'
+      } else if (decrypted.startsWith('[img:')) {
+        preview = '📷 圖片'
+      } else if (decrypted.startsWith('[gif:')) {
+        preview = '🎞 GIF'
+      } else if (decrypted.startsWith('[video:')) {
+        preview = '🎬 影片'
+      } else if (decrypted.startsWith('[file:')) {
+        const inner = decrypted.slice(6, -1)
+        const name = inner.split('|')[0] || '檔案'
+        preview = `📎 ${name}`
       } else {
         preview = decrypted.length > 60 ? decrypted.slice(0, 60) + '...' : decrypted
       }
