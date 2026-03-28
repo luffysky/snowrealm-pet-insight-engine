@@ -85,6 +85,15 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
         <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png" />
         <link rel="icon" type="image/png" sizes="512x512" href="/icons/icon-512.png" />
+        {/* iOS Splash Screens */}
+        <link rel="apple-touch-startup-image" href="/splash/iphone-se.png" media="(device-width:320px) and (device-height:568px) and (-webkit-device-pixel-ratio:2)" />
+        <link rel="apple-touch-startup-image" href="/splash/iphone-8.png" media="(device-width:375px) and (device-height:667px) and (-webkit-device-pixel-ratio:2)" />
+        <link rel="apple-touch-startup-image" href="/splash/iphone-x.png" media="(device-width:375px) and (device-height:812px) and (-webkit-device-pixel-ratio:3)" />
+        <link rel="apple-touch-startup-image" href="/splash/iphone-xr.png" media="(device-width:414px) and (device-height:896px) and (-webkit-device-pixel-ratio:2)" />
+        <link rel="apple-touch-startup-image" href="/splash/iphone-12.png" media="(device-width:390px) and (device-height:844px) and (-webkit-device-pixel-ratio:3)" />
+        <link rel="apple-touch-startup-image" href="/splash/iphone-14-pro.png" media="(device-width:393px) and (device-height:852px) and (-webkit-device-pixel-ratio:3)" />
+        <link rel="apple-touch-startup-image" href="/splash/ipad.png" media="(device-width:768px) and (device-height:1024px) and (-webkit-device-pixel-ratio:2)" />
+        <link rel="apple-touch-startup-image" href="/splash/ipad-pro-11.png" media="(device-width:834px) and (device-height:1194px) and (-webkit-device-pixel-ratio:2)" />
         {/* SW registration */}
         <script
           dangerouslySetInnerHTML={{
