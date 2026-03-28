@@ -45,25 +45,21 @@
 - **修法**：後端產生 OG 圖（Satori + resvg），或提供圖片裁切/位置調整 UI
 - **檔案**：`src/components/social/PostShareCard.tsx` + `src/app/api/og/route.tsx`
 
-### BUG-B：貼文分享連結無 OG 預覽（連結貼上）
-- **問題**：貼文編輯器貼入外部 URL 時，沒有自動抓取 OG 預覽卡
-- **修法**：偵測文字框貼上 URL → 呼叫 `/api/og-fetch?url=` → 顯示預覽卡
-- **檔案**：`src/app/write/page.tsx` + 新增 `src/app/api/og-fetch/route.ts`
+### ~~BUG-B：貼文分享連結無 OG 預覽（連結貼上）~~ ✅
+- ~~偵測文字框貼上 URL → 呼叫 `/api/og-fetch?url=` → 顯示預覽卡~~
+- 已完成：`/api/og-fetch/route.ts` + `write/page.tsx` onPaste 偵測
 
-### URG-1：毛行天下租戶重複顯示
-- **問題**：租戶選單出現兩筆「毛行天下」
-- **診斷 SQL**：`SELECT id, slug, name, is_active FROM tenants WHERE name LIKE '%毛行天下%';`
-- **修法**：刪除/設 inactive 重複那筆，register route 加名稱唯一檢查
+### ~~URG-1：毛行天下租戶重複顯示~~ ✅
+- ~~租戶選單出現兩筆「毛行天下」~~
+- 已確認：`maoxingtianxia` slug 已設 `is_active = false`，`me/route.ts` 過濾後不再重複
 
-### URG-3：super_admin 看到所有組織
-- **問題**：`/api/auth/me` 對 super_admin 回傳全部 tenant
-- **修法**：加 `?scope=super` 參數，一般後台只回傳自己有權限的租戶
-- **檔案**：`src/app/api/auth/me/route.ts`
+### ~~URG-3：super_admin 看到所有組織~~ ✅
+- ~~`/api/auth/me` 對 super_admin 回傳全部 tenant~~
+- 已確認：`me/route.ts` 改為 JOIN `tenant_users`，只回傳有權限的租戶
 
-### URG-4：Official Bot 文案硬編碼
-- **問題**：歡迎語/回覆文案寫死「毛行天下」
-- **修法**：改用 `tenantBranding.ts` 的 `getTenantBranding()` 讀取
-- **檔案**：`src/app/api/line/webhook/official/route.ts`
+### ~~URG-4：Official Bot 文案硬編碼~~ ✅
+- ~~歡迎語/回覆文案寫死「毛行天下」~~
+- 已完成：`official/route.ts` + `lineBotEngine.ts` 全部改用 `getTenantBranding()`
 
 ---
 
@@ -90,14 +86,13 @@
 
 ## 🟡 PWA（Progressive Web App）— 部分完成
 
-### 已完成
-- `public/manifest.json` 基礎設定（standalone、icons、shortcuts、`start_url: /explore`）
+### ~~已完成~~
+- ~~`public/manifest.json` 基礎設定（standalone、icons、shortcuts、`start_url: /explore`）~~ ✅
+- ~~`layout.tsx` 加 `<link rel="manifest">` + `theme-color` + `apple-touch-icon`~~ ✅
 
 ### 待完成
-1. `npm install next-pwa`（或直接 `next-pwa` 設定 service worker）
-2. 修改 `next.config.ts`（5 行）
-3. `layout.tsx` 加 `<link rel="manifest">` meta 標籤（確認有加）
-4. Web Push API：VAPID keys + DB 存訂閱 + `web-push` 套件
+1. `npm install next-pwa` + 修改 `next.config.ts`（Service Worker 自動生成）
+2. Web Push API：VAPID keys + DB 存訂閱 + `web-push` 套件
 
 ### 注意
 - Service Worker 排除 `/api/*` 快取
@@ -230,12 +225,12 @@ supabase/migration_phase44_message_management.sql        ✅ 已確認
 
 ```
 本週（剩餘）
-├── BUG-A     分享小卡 OG 圖（Satori 後端方案）
-├── BUG-B     貼文 URL OG 預覽（/api/og-fetch）
-├── URG-1     毛行天下重複租戶（SQL 診斷 + 合併）
-├── URG-3     super_admin 租戶範圍（me/route.ts）
-├── URG-4     Official Bot 文案解耦（tenantBranding）
-└── PWA       Service Worker（next-pwa 設定）
+├── BUG-A     分享小卡 OG 圖（Satori 後端方案）           ← 進行中
+├── PWA       Service Worker（next-pwa 設定）             ← 進行中
+├── ~~BUG-B~~   ~~貼文 URL OG 預覽~~ ✅
+├── ~~URG-1~~   ~~毛行天下重複租戶~~ ✅
+├── ~~URG-3~~   ~~super_admin 租戶範圍~~ ✅
+└── ~~URG-4~~   ~~Official Bot 文案解耦~~ ✅
 
 之後
 ├── 成就/升級系統前端
