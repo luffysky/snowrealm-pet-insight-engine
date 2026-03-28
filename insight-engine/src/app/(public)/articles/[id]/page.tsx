@@ -207,9 +207,14 @@ export default function ArticleDetailPage() {
           return blocks ? (
             <BlocksRenderer blocks={blocks} onImageClick={setLightboxUrl} />
           ) : (
-            <div className="prose prose-invert prose-sm max-w-none">
-              <p className="text-white/75 leading-relaxed whitespace-pre-wrap text-base">{post.content}</p>
-            </div>
+            <div
+              className="prose prose-invert prose-sm max-w-none prose-p:text-white/75 prose-img:rounded-xl prose-img:w-full prose-img:max-h-80 prose-img:object-cover prose-img:cursor-zoom-in"
+              dangerouslySetInnerHTML={{ __html: post.content }}
+              onClick={e => {
+                const target = e.target as HTMLElement
+                if (target.tagName === 'IMG') setLightboxUrl((target as HTMLImageElement).src)
+              }}
+            />
           )
         })()}
 

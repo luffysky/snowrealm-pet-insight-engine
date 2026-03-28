@@ -41,6 +41,7 @@ function ProfileSidebar({ onClose, tenantSlug, isSuperAdmin }: { onClose: () => 
           {/* 社群創作 */}
           <SidebarSection label="社群">
             <SidebarLink href="/write" icon={<BookOpen className="w-4 h-4" />} label="發布文章" onClick={onClose} />
+            <SidebarLink href="/insight-admin/blog" icon={<BookOpen className="w-4 h-4" />} label="我的部落格" onClick={onClose} />
             <SidebarLink href="/articles" icon={<Image className="w-4 h-4" />} label="相簿 &amp; 動態" onClick={onClose} />
             <SidebarLink href="/notifications" icon={<Bell className="w-4 h-4" />} label="通知" onClick={onClose} />
             <SidebarLink href="/messages" icon={<MessageCircle className="w-4 h-4" />} label="私訊" onClick={onClose} />
