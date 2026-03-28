@@ -261,12 +261,17 @@ function MessageContent({ content, edited, isMine, onLightbox }: { content: stri
     const url = content.slice(7, -1)
     return <AudioPlayer url={url} isMine={isMine ?? false} />
   }
+  // legacy format stored as [AUDIO]:url
+  if (content.startsWith('[AUDIO]:')) {
+    const url = content.slice(8)
+    return <AudioPlayer url={url} isMine={isMine ?? false} />
+  }
   if (content.startsWith(STICKER_PREFIX)) {
     const url = content.slice(STICKER_PREFIX.length)
     return (
       <img
         src={url} alt="貼圖"
-        className="w-24 h-24 object-contain rounded-xl cursor-pointer hover:scale-105 transition-transform"
+        className="w-[50vw] max-w-[180px] h-auto object-contain rounded-xl cursor-pointer hover:scale-105 transition-transform"
         onClick={() => onLightbox?.(url, 'image')}
       />
     )
@@ -1713,8 +1718,8 @@ export default function MessagesPage() {
                     ) : (
                       <MessageContent content={isRecalled ? '[已收回]' : bodyContent} edited={!!msg.editedAt} isMine={msg.isMine} onLightbox={(url, type) => setLightbox({ url, type })} />
                     )}
-                    {!isEditing && (
-                      <p className={`text-[10px] mt-1 flex items-center gap-1 ${naked ? (msg.isMine ? 'text-white/30 justify-end px-1' : 'text-white/25 px-1') : msg.isMine ? 'text-white/50 justify-end' : 'text-white/35'}`}>
+                    {!isEditing && !naked && (
+                      <p className={`text-[10px] mt-1 flex items-center gap-1 ${msg.isMine ? 'text-white/50 justify-end' : 'text-white/35'}`}>
                         {msg.editedAt && <span className="opacity-60">已編輯</span>}
                         <span>{formatTime(msg.createdAt)}</span>
                         {msg.isMine && msg.content !== '[已收回]' && (
