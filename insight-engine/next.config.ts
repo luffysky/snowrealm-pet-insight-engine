@@ -4,8 +4,7 @@ const nextConfig: NextConfig = {
   output: "standalone",
   reactCompiler: true,
   experimental: {
-    serverBodySizeLimit: '50mb',
-    middlewareClientMaxBodySize: '50mb',
+    proxyClientMaxBodySize: '50mb',
   },
   images: {
     remotePatterns: [
