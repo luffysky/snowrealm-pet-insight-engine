@@ -3,7 +3,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
 import {
   Plus, Trash2, Globe, Lock, X, Loader2, ChevronLeft, ChevronRight,
-  Pencil, FolderOpen, Check, GripVertical, Camera, BookImage,
+  Pencil, FolderOpen, Check, GripVertical, Camera, BookImage, FolderInput,
 } from 'lucide-react'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -96,6 +96,59 @@ function AlbumNameModal({
           >
             {initial ? '儲存' : '建立'}
           </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─── Move to Album Modal ──────────────────────────────────────────────────────
+
+function MoveToAlbumModal({
+  albums,
+  onSelect,
+  onClose,
+}: {
+  albums: Album[]
+  onSelect: (albumId: string | null) => void
+  onClose: () => void
+}) {
+  return (
+    <div className="fixed inset-0 z-[200] bg-black/60 backdrop-blur-sm flex items-end justify-center p-4" onClick={onClose}>
+      <div className="w-full max-w-sm bg-slate-900 border border-white/10 rounded-2xl overflow-hidden shadow-2xl" onClick={e => e.stopPropagation()}>
+        <div className="px-4 py-3 border-b border-white/8">
+          <p className="text-sm font-semibold text-white/70">移動到相簿</p>
+          <p className="text-xs text-white/30 mt-0.5">選擇目標相簿</p>
+        </div>
+        <div className="max-h-72 overflow-y-auto divide-y divide-white/5">
+          <button
+            onClick={() => onSelect(null)}
+            className="w-full flex items-center gap-3 px-4 py-3.5 text-sm text-white/60 hover:bg-white/5 transition-colors text-left"
+          >
+            <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center shrink-0">
+              <Camera className="w-4 h-4 text-white/25" />
+            </div>
+            未分類照片
+          </button>
+          {albums.map(album => (
+            <button
+              key={album.id}
+              onClick={() => onSelect(album.id)}
+              className="w-full flex items-center gap-3 px-4 py-3.5 text-sm text-white/70 hover:bg-white/5 transition-colors text-left"
+            >
+              <div className="w-8 h-8 rounded-lg overflow-hidden bg-white/5 shrink-0">
+                {album.coverUrl
+                  ? <img src={album.coverUrl} alt="" className="w-full h-full object-cover" />
+                  : <div className="w-full h-full flex items-center justify-center"><FolderOpen className="w-4 h-4 text-white/20" /></div>
+                }
+              </div>
+              <span className="truncate">{album.name}</span>
+              <span className="ml-auto text-white/25 text-xs shrink-0">{album.photoCount}</span>
+            </button>
+          ))}
+        </div>
+        <div className="border-t border-white/8">
+          <button onClick={onClose} className="w-full px-4 py-3.5 text-sm text-white/30 hover:text-white/60 transition-colors">取消</button>
         </div>
       </div>
     </div>
@@ -200,12 +253,14 @@ function AlbumDetail({
   album,
   userId,
   isOwner,
+  albums,
   onBack,
   onAlbumUpdated,
 }: {
   album: Album
   userId: string
   isOwner: boolean
+  albums: Album[]
   onBack: () => void
   onAlbumUpdated: (id: string, patch: Partial<Album>) => void
 }) {
@@ -219,6 +274,7 @@ function AlbumDetail({
   const [editAlbum, setEditAlbum] = useState(false)
   const [dragOver, setDragOver] = useState<string | null>(null)
   const [dragSrc, setDragSrc] = useState<string | null>(null)
+  const [moveModal, setMoveModal] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
   const longPressRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -262,6 +318,23 @@ function AlbumDetail({
     setPhotos(prev => prev.filter(p => !selected.has(p.id)))
     setSelected(new Set())
     setSelectionMode(false)
+  }
+
+  const moveToAlbum = async (targetAlbumId: string | null) => {
+    const ids = Array.from(selected)
+    await fetch('/api/admin/social/album', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ids, albumId: targetAlbumId }),
+    })
+    if (album.id !== 'all') {
+      // In a specific album view, moved-away photos leave this view
+      setPhotos(prev => prev.filter(p => !selected.has(p.id)))
+    }
+    // In 'all' view, photos stay visible — they're just re-categorised
+    setSelected(new Set())
+    setSelectionMode(false)
+    setMoveModal(false)
   }
 
   const setPrivacySelected = async (isPublic: boolean) => {
@@ -486,6 +559,12 @@ function AlbumDetail({
                 <Lock className="w-3.5 h-3.5" /> 私人
               </button>
               <button
+                onClick={() => setMoveModal(true)}
+                className="flex-1 flex items-center justify-center gap-1.5 py-2 bg-blue-500/15 text-blue-400 rounded-xl text-xs hover:bg-blue-500/25 transition-colors"
+              >
+                <FolderInput className="w-3.5 h-3.5" /> 移動
+              </button>
+              <button
                 onClick={deleteSelected}
                 className="flex-1 flex items-center justify-center gap-1.5 py-2 bg-rose-500/15 text-rose-400 rounded-xl text-xs hover:bg-rose-500/25 transition-colors"
               >
@@ -494,6 +573,14 @@ function AlbumDetail({
             </div>
           </div>
         </div>
+      )}
+
+      {moveModal && (
+        <MoveToAlbumModal
+          albums={albums}
+          onSelect={moveToAlbum}
+          onClose={() => setMoveModal(false)}
+        />
       )}
 
       {/* Lightbox */}
@@ -559,10 +646,16 @@ function AlbumDetail({
 
 // ─── Album List ───────────────────────────────────────────────────────────────
 
+const ALL_PHOTOS_ALBUM: Album = {
+  id: 'all', name: '所有照片', description: null,
+  isPublic: true, photoCount: 0, coverUrl: null, createdAt: '',
+}
+
 export function UserAlbum({ userId, isOwner }: UserAlbumProps) {
   const [albums, setAlbums] = useState<Album[]>([])
   const [loading, setLoading] = useState(true)
-  const [activeAlbum, setActiveAlbum] = useState<Album | null>(null)
+  // Default to all-photos view so users see their photos immediately
+  const [activeAlbum, setActiveAlbum] = useState<Album | null>(ALL_PHOTOS_ALBUM)
   const [totalPhotoCount, setTotalPhotoCount] = useState(0)
   const [createModal, setCreateModal] = useState(false)
   const [deleteConfirm, setDeleteConfirm] = useState<Album | null>(null)
@@ -608,6 +701,7 @@ export function UserAlbum({ userId, isOwner }: UserAlbumProps) {
         album={activeAlbum}
         userId={userId}
         isOwner={isOwner}
+        albums={albums}
         onBack={() => setActiveAlbum(null)}
         onAlbumUpdated={updateAlbum}
       />
@@ -615,6 +709,10 @@ export function UserAlbum({ userId, isOwner }: UserAlbumProps) {
   }
 
   if (!loading && albums.length === 0 && totalPhotoCount === 0 && !isOwner) return null
+
+  // Non-owner with only unassigned photos: skip the album list, go straight to all-photos
+  // (activeAlbum is already ALL_PHOTOS_ALBUM by default — this just handles the edge case
+  //  where we want the loading state to not flash the album grid)
 
   return (
     <div className="space-y-3">
@@ -632,28 +730,25 @@ export function UserAlbum({ userId, isOwner }: UserAlbumProps) {
 
       {loading ? (
         <div className="flex justify-center py-6"><Loader2 className="w-5 h-5 text-white/20 animate-spin" /></div>
-      ) : albums.length === 0 ? (
+      ) : albums.length === 0 && totalPhotoCount === 0 ? (
         <div className="text-center py-10 text-white/20">
           <BookImage className="w-10 h-10 mx-auto mb-3 opacity-30" />
-          <p className="text-sm">還沒有相簿</p>
-          {isOwner && <p className="text-xs mt-1">點「建立相簿」開始收藏你的照片</p>}
+          <p className="text-sm">還沒有照片</p>
+          {isOwner && <p className="text-xs mt-1">返回「所有照片」上傳你的第一張照片</p>}
         </div>
       ) : (
         <div className="grid grid-cols-2 gap-3">
-          {/* 虛擬「全部照片」入口 — 顯示所有照片（含未分類）*/}
+          {/* 全部照片入口 */}
           {totalPhotoCount > 0 && (
             <div
               className="relative cursor-pointer"
-              onClick={() => setActiveAlbum({
-                id: 'all', name: '全部照片', description: null,
-                isPublic: true, photoCount: totalPhotoCount, coverUrl: null, createdAt: '',
-              })}
+              onClick={() => setActiveAlbum({ ...ALL_PHOTOS_ALBUM, photoCount: totalPhotoCount })}
             >
               <div className="aspect-square rounded-2xl overflow-hidden bg-white/5 border border-white/8 flex items-center justify-center">
                 <Camera className="w-8 h-8 text-white/15" />
               </div>
               <div className="mt-1.5 px-0.5">
-                <p className="text-sm text-white/70 font-medium truncate">全部照片</p>
+                <p className="text-sm text-white/70 font-medium truncate">所有照片</p>
                 <p className="text-xs text-white/25">{totalPhotoCount} 張</p>
               </div>
             </div>

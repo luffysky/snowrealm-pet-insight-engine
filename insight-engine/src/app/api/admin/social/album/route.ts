@@ -105,6 +105,15 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ ok: true })
   }
 
+  // 批量移動到相簿
+  if (body.ids && body.albumId !== undefined) {
+    await execute(
+      `UPDATE user_album_photos SET album_id = $1 WHERE id = ANY($2::uuid[]) AND user_id = $3`,
+      [body.albumId ?? null, body.ids, auth.userId]
+    )
+    return NextResponse.json({ ok: true })
+  }
+
   // 批量設定公開/私人
   if (body.ids && typeof body.isPublic === 'boolean') {
     await execute(
