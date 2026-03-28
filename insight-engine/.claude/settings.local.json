@@ -146,7 +146,8 @@
       "Bash(ls /d/SnowRealmRebirth/snowrealm-insight-engine/insight-engine/src/app/'\\(public\\)'/)",
       "Bash(npx next:*)",
       "Bash(grep -n \"followers\\\\|follower\\\\|following\\\\|follow_count\\\\|FollowList\\\\|fetchFollow\" /d/SnowRealmRebirth/snowrealm-insight-engine/insight-engine/src/app/\\\\\\(public\\\\\\)/u/[userId]/page.tsx)",
-      "Bash(/d/SnowRealmRebirth/snowrealm-insight-engine/insight-engine/supabase/migrations/20260328_comment_likes.sql:*)"
+      "Bash(/d/SnowRealmRebirth/snowrealm-insight-engine/insight-engine/supabase/migrations/20260328_comment_likes.sql:*)",
+      "Bash(/d/SnowRealmRebirth/snowrealm-insight-engine/insight-engine/supabase/migrations/20260328_multi_album.sql:*)"
     ]
   }
 }
