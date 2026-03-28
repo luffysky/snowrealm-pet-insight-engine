@@ -182,7 +182,15 @@ function FollowListModal({ type, userId, onClose }: { type: 'followers' | 'follo
   useEffect(() => {
     fetch(`/api/admin/social/follow?userId=${userId}&list=${type}`)
       .then(r => r.ok ? r.json() as Promise<{ users: FollowUser[] }> : null)
-      .then(d => { if (d?.users) setUsers(d.users) })
+      .then(d => {
+        if (d?.users) {
+          // For following list, all users are ones we follow → default is_following_back to true
+          const users = type === 'following'
+            ? d.users.map(u => ({ ...u, is_following_back: u.is_following_back ?? true }))
+            : d.users
+          setUsers(users)
+        }
+      })
       .catch(() => {})
       .finally(() => setLoading(false))
   }, [userId, type])
@@ -200,13 +208,17 @@ function FollowListModal({ type, userId, onClose }: { type: 'followers' | 'follo
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={onClose}>
-      <div className="w-full max-w-sm bg-slate-900 border border-white/10 rounded-2xl overflow-hidden shadow-2xl" onClick={e => e.stopPropagation()}>
+    <div
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm px-4 pt-4 sm:p-4"
+      style={{ paddingBottom: 'calc(var(--bnav-h, 76px) + 0.5rem)' }}
+      onClick={onClose}
+    >
+      <div className="w-full max-w-sm bg-slate-900 border border-white/10 rounded-2xl overflow-hidden shadow-2xl sm:mb-0" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between px-4 py-3 border-b border-white/8">
           <h3 className="text-sm font-semibold text-white/80">{type === 'followers' ? `粉絲 · ${users.length}` : `追蹤中 · ${users.length}`}</h3>
           <button onClick={onClose} className="text-white/30 hover:text-white/60 transition-colors"><X className="w-4 h-4" /></button>
         </div>
-        <div className="max-h-96 overflow-y-auto">
+        <div className="max-h-80 overflow-y-auto">
           {loading ? (
             <div className="flex justify-center py-8"><Loader2 className="w-5 h-5 text-white/30 animate-spin" /></div>
           ) : users.length === 0 ? (
@@ -220,23 +232,21 @@ function FollowListModal({ type, userId, onClose }: { type: 'followers' | 'follo
                   </div>
                   <div className="min-w-0">
                     <p className="text-sm text-white/75 truncate">{u.display_name ?? '用戶'}</p>
-                    {type === 'followers' && u.is_following_back && (
+                    {u.is_following_back && type === 'followers' && (
                       <p className="text-[10px] text-emerald-400/70">互相追蹤</p>
                     )}
                   </div>
                 </Link>
-                {type === 'followers' && (
-                  <button
-                    onClick={() => toggleFollow(u.id, !!u.is_following_back)}
-                    className={`shrink-0 text-xs px-3 py-1.5 rounded-xl border transition-colors ${
-                      u.is_following_back
-                        ? 'bg-white/8 border-white/12 text-white/50 hover:bg-red-500/10 hover:border-red-400/20 hover:text-red-400'
-                        : 'bg-amber-500/20 border-amber-400/30 text-amber-300 hover:bg-amber-500/30'
-                    }`}
-                  >
-                    {u.is_following_back ? '已追蹤' : '回追'}
-                  </button>
-                )}
+                <button
+                  onClick={() => toggleFollow(u.id, !!u.is_following_back)}
+                  className={`shrink-0 text-xs px-3 py-1.5 rounded-xl border transition-colors ${
+                    u.is_following_back
+                      ? 'bg-white/8 border-white/12 text-white/50 hover:bg-red-500/10 hover:border-red-400/20 hover:text-red-400'
+                      : 'bg-amber-500/20 border-amber-400/30 text-amber-300 hover:bg-amber-500/30'
+                  }`}
+                >
+                  {u.is_following_back ? '追蹤中' : (type === 'followers' ? '回追' : '追蹤')}
+                </button>
               </div>
             ))
           )}

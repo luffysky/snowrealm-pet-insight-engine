@@ -237,25 +237,35 @@ function PostsFeed({ posts, meId }: { posts: Post[]; meId: string | null }) {
   return (
     <div className="space-y-3">
       {posts.map(p => (
-        <Link key={p.id} href={`/articles/${p.id}`}
-          className="block bg-white/[0.03] border border-white/8 rounded-2xl p-4 hover:bg-white/[0.06] hover:border-white/14 transition-all space-y-3">
-          <div className="flex items-center gap-2.5">
-            <Avatar name={p.displayName} url={p.avatarUrl} size={8} />
+        <div key={p.id} className="bg-white/[0.03] border border-white/8 rounded-2xl hover:bg-white/[0.06] hover:border-white/14 transition-all">
+          {/* Author row — not wrapped in Link so FollowButton works */}
+          <div className="flex items-center gap-2.5 px-4 pt-4 pb-0">
+            <Link href={`/u/${p.userId}`} className="shrink-0">
+              <Avatar name={p.displayName} url={p.avatarUrl} size={8} />
+            </Link>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-white/80 truncate">{p.displayName ?? '用戶'}</p>
+              <Link href={`/u/${p.userId}`}>
+                <p className="text-sm font-medium text-white/80 truncate hover:text-white transition-colors">{p.displayName ?? '用戶'}</p>
+              </Link>
               <p className="text-[10px] text-white/30">{timeAgo(p.createdAt)}</p>
             </div>
+            {meId && meId !== p.userId && (
+              <FollowButton targetUserId={p.userId} initialFollowing={false} compact />
+            )}
           </div>
-          {p.title && <p className="font-semibold text-white/90 text-sm line-clamp-1">{p.title}</p>}
-          <p className="text-sm text-white/55 leading-relaxed line-clamp-3">{p.content.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()}</p>
-          {p.images?.[0] && (
-            <img src={p.images[0].url} alt="" className="w-full h-40 object-cover rounded-xl" />
-          )}
-          <div className="flex items-center gap-4 text-xs text-white/25">
-            <span className="flex items-center gap-1"><Heart className="w-3.5 h-3.5" />{p.likesCount}</span>
-            <span className="flex items-center gap-1"><MessageSquare className="w-3.5 h-3.5" />{p.commentsCount}</span>
-          </div>
-        </Link>
+          {/* Post content */}
+          <Link href={`/articles/${p.id}`} className="block px-4 pt-3 pb-4 space-y-2">
+            {p.title && <p className="font-semibold text-white/90 text-sm line-clamp-1">{p.title}</p>}
+            <p className="text-sm text-white/55 leading-relaxed line-clamp-3">{p.content.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()}</p>
+            {p.images?.[0] && (
+              <img src={p.images[0].url} alt="" className="w-full h-40 object-cover rounded-xl" />
+            )}
+            <div className="flex items-center gap-4 text-xs text-white/25">
+              <span className="flex items-center gap-1"><Heart className="w-3.5 h-3.5" />{p.likesCount}</span>
+              <span className="flex items-center gap-1"><MessageSquare className="w-3.5 h-3.5" />{p.commentsCount}</span>
+            </div>
+          </Link>
+        </div>
       ))}
     </div>
   )

@@ -2,7 +2,9 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { Send, Reply, Trash2, Loader2, Smile, X, ChevronDown, ChevronUp } from 'lucide-react'
+import Link from 'next/link'
 import { GifPicker } from './GifPicker'
+import { FollowButton } from './FollowButton'
 import type { SocialComment } from '@/lib/socialEngine'
 
 const QUICK_EMOJIS = ['❤️', '👍', '😂', '😮', '🎉', '🙏', '🔥', '👏']
@@ -159,7 +161,14 @@ function CommentItem({
         </div>
         <div className="flex-1 min-w-0">
           <div className="bg-white/4 rounded-xl px-3 py-2">
-            <p className="text-xs font-semibold text-white/70 mb-0.5">{comment.authorName ?? '用戶'}</p>
+            <div className="flex items-center gap-2 mb-0.5">
+              <Link href={`/u/${comment.userId}`} className="text-xs font-semibold text-white/70 hover:text-white transition-colors">
+                {comment.authorName ?? '用戶'}
+              </Link>
+              {currentUserId && currentUserId !== comment.userId && (
+                <FollowButton targetUserId={comment.userId} initialFollowing={false} compact />
+              )}
+            </div>
             <p className="text-sm text-white/80 break-words whitespace-pre-wrap">{comment.content.trim()}</p>
             {comment.gifUrl && (
               <img src={comment.gifUrl} alt="GIF" className="mt-1.5 h-20 rounded-lg" />
@@ -211,7 +220,14 @@ function CommentItem({
               </div>
               <div className="flex-1">
                 <div className="bg-white/4 rounded-xl px-3 py-2">
-                  <p className="text-[11px] font-semibold text-white/60 mb-0.5">{reply.authorName ?? '用戶'}</p>
+                  <div className="flex items-center gap-2 mb-0.5">
+                    <Link href={`/u/${reply.userId}`} className="text-[11px] font-semibold text-white/60 hover:text-white transition-colors">
+                      {reply.authorName ?? '用戶'}
+                    </Link>
+                    {currentUserId && currentUserId !== reply.userId && (
+                      <FollowButton targetUserId={reply.userId} initialFollowing={false} compact />
+                    )}
+                  </div>
                   <p className="text-sm text-white/80 break-words whitespace-pre-wrap">{reply.content.trim()}</p>
                   {reply.gifUrl && <img src={reply.gifUrl} alt="GIF" className="mt-1.5 h-16 rounded-lg" />}
                 </div>

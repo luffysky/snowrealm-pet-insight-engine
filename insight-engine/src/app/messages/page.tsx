@@ -401,6 +401,9 @@ export default function MessagesPage() {
   const [effects, setEffects] = useState<BgEffects>(DEFAULT_EFFECTS)
   const [themePanelOpen, setThemePanelOpen] = useState(false)
   const [themeTab, setThemeTab] = useState<'theme' | 'bg' | 'fx'>('theme')
+  const [mainTab, setMainTab] = useState<'messages' | 'friends'>('messages')
+  const [friends, setFriends] = useState<{ id: string; displayName: string | null; avatarUrl: string | null; relation: 'follower' | 'following' | 'mutual' }[]>([])
+  const [friendsLoading, setFriendsLoading] = useState(false)
 
   useEffect(() => {
     fetch('/api/auth/me')
@@ -439,6 +442,36 @@ export default function MessagesPage() {
       })
       .finally(() => setLoading(false))
   }, [meId])
+
+  // Load friends when tab switches to 'friends'
+  useEffect(() => {
+    if (mainTab !== 'friends' || !meId || friends.length > 0) return
+    setFriendsLoading(true)
+    Promise.all([
+      fetch(`/api/admin/social/follow?userId=${meId}&list=followers`).then(r => r.ok ? r.json() as Promise<{ users: { id: string; display_name: string | null; avatar_url: string | null }[] }> : null),
+      fetch(`/api/admin/social/follow?userId=${meId}&list=following`).then(r => r.ok ? r.json() as Promise<{ users: { id: string; display_name: string | null; avatar_url: string | null }[] }> : null),
+    ]).then(([fwRes, fgRes]) => {
+      const followerIds = new Set((fwRes?.users ?? []).map(u => u.id))
+      const followingIds = new Set((fgRes?.users ?? []).map(u => u.id))
+      const allIds = new Set([...followerIds, ...followingIds])
+      const userMap = new Map<string, { id: string; display_name: string | null; avatar_url: string | null }>()
+      for (const u of [...(fwRes?.users ?? []), ...(fgRes?.users ?? [])]) {
+        userMap.set(u.id, u)
+      }
+      const merged = Array.from(allIds).map(id => {
+        const u = userMap.get(id)!
+        const isFollower = followerIds.has(id)
+        const isFollowing = followingIds.has(id)
+        return {
+          id,
+          displayName: u.display_name,
+          avatarUrl: u.avatar_url,
+          relation: (isFollower && isFollowing ? 'mutual' : isFollower ? 'follower' : 'following') as 'follower' | 'following' | 'mutual',
+        }
+      })
+      setFriends(merged)
+    }).catch(() => {}).finally(() => setFriendsLoading(false))
+  }, [mainTab, meId, friends.length])
 
   // 監聽瀏覽器上一頁/下一頁（popstate）
   useEffect(() => {
@@ -736,67 +769,144 @@ export default function MessagesPage() {
       {/* 列表頂部導覽 — 開啟對話時隱藏 */}
       {!active && (
         <nav className="shrink-0 bg-gradient-to-b from-slate-900 to-slate-950 border-b border-white/[0.06]">
-          <div className="max-w-2xl mx-auto px-4 py-4 flex items-center gap-3">
+          <div className="max-w-2xl mx-auto px-4 pt-4 pb-0 flex items-center gap-3">
             <button onClick={() => router.back()} className="text-white/40 hover:text-white transition-colors">
               <ArrowLeft className="w-4 h-4" />
             </button>
             <h1 className="font-bold text-lg tracking-tight">訊息</h1>
           </div>
+          {/* Tab bar */}
+          <div className="max-w-2xl mx-auto px-4 flex gap-1 pt-2">
+            <button
+              onClick={() => setMainTab('messages')}
+              className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors -mb-px ${mainTab === 'messages' ? 'text-amber-400 border-amber-400' : 'text-white/40 border-transparent hover:text-white/70'}`}
+            >
+              💬 訊息
+            </button>
+            <button
+              onClick={() => setMainTab('friends')}
+              className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors -mb-px ${mainTab === 'friends' ? 'text-amber-400 border-amber-400' : 'text-white/40 border-transparent hover:text-white/70'}`}
+            >
+              👥 好友
+            </button>
+          </div>
         </nav>
       )}
 
       <div className="flex-1 flex max-w-2xl mx-auto w-full min-h-0">
-        {/* Conversation list — hidden on mobile when chat open */}
+        {/* Conversation list / Friends list — hidden on mobile when chat open */}
         <div className={`${active ? 'hidden md:flex' : 'flex'} flex-col w-full md:w-72 md:border-r md:border-white/8 shrink-0 overflow-y-auto`}>
-          {loading ? (
-            <div className="flex justify-center pt-16">
-              <Loader2 className="w-6 h-6 text-white/30 animate-spin" />
-            </div>
-          ) : conversations.length === 0 ? (
-            <div className="text-center py-24 px-6 text-white/25">
-              <div className="w-14 h-14 rounded-2xl bg-white/5 flex items-center justify-center mx-auto mb-4">
-                <MessageCircle className="w-7 h-7 opacity-50" />
+          {mainTab === 'messages' ? (
+            // ─── 訊息列表 ───
+            loading ? (
+              <div className="flex justify-center pt-16">
+                <Loader2 className="w-6 h-6 text-white/30 animate-spin" />
               </div>
-              <p className="text-sm font-medium mb-1">還沒有訊息</p>
-              <p className="text-xs text-white/15">前往別人的個人頁面發起對話</p>
-            </div>
-          ) : (
-            <div className="py-2">
-              {conversations.map(c => (
-                <button
-                  key={c.userId}
-                  onClick={() => openConversation(c)}
-                  className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-all ${active?.userId === c.userId ? 'bg-white/[0.07]' : 'hover:bg-white/[0.03]'}`}
-                >
-                  {/* Avatar */}
-                  <div className="relative shrink-0">
-                    <div className="w-12 h-12 rounded-full overflow-hidden">
-                      {c.avatarUrl
-                        ? <img src={c.avatarUrl} alt="" className="w-full h-full object-cover" />
-                        : <div className="w-full h-full bg-gradient-to-br from-amber-500/40 to-purple-600/40 flex items-center justify-center text-sm font-bold text-white/80">{initials(c.displayName)}</div>
-                      }
+            ) : conversations.length === 0 ? (
+              <div className="text-center py-24 px-6 text-white/25">
+                <div className="w-14 h-14 rounded-2xl bg-white/5 flex items-center justify-center mx-auto mb-4">
+                  <MessageCircle className="w-7 h-7 opacity-50" />
+                </div>
+                <p className="text-sm font-medium mb-1">還沒有訊息</p>
+                <p className="text-xs text-white/15">前往別人的個人頁面發起對話</p>
+              </div>
+            ) : (
+              <div className="py-2">
+                {conversations.map(c => (
+                  <button
+                    key={c.userId}
+                    onClick={() => openConversation(c)}
+                    className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-all ${active?.userId === c.userId ? 'bg-white/[0.07]' : 'hover:bg-white/[0.03]'}`}
+                  >
+                    <div className="relative shrink-0">
+                      <div className="w-12 h-12 rounded-full overflow-hidden">
+                        {c.avatarUrl
+                          ? <img src={c.avatarUrl} alt="" className="w-full h-full object-cover" />
+                          : <div className="w-full h-full bg-gradient-to-br from-amber-500/40 to-purple-600/40 flex items-center justify-center text-sm font-bold text-white/80">{initials(c.displayName)}</div>
+                        }
+                      </div>
+                      {c.unreadCount > 0 && (
+                        <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 bg-rose-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center leading-none">
+                          {c.unreadCount > 99 ? '99+' : c.unreadCount}
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-baseline justify-between gap-2">
+                        <span className={`text-sm font-semibold truncate ${c.unreadCount > 0 ? 'text-white' : 'text-white/80'}`}>{c.displayName ?? '用戶'}</span>
+                        <span className="text-[11px] text-white/30 shrink-0 tabular-nums">{formatTime(c.lastMessageAt)}</span>
+                      </div>
+                      <p className={`text-xs truncate mt-0.5 ${c.unreadCount > 0 ? 'text-white/60 font-medium' : 'text-white/35'}`}>{c.lastMessagePreview}</p>
                     </div>
                     {c.unreadCount > 0 && (
-                      <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 bg-rose-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center leading-none">
+                      <span className="min-w-[18px] h-[18px] px-1 bg-rose-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center shrink-0">
                         {c.unreadCount > 99 ? '99+' : c.unreadCount}
                       </span>
                     )}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-baseline justify-between gap-2">
-                      <span className={`text-sm font-semibold truncate ${c.unreadCount > 0 ? 'text-white' : 'text-white/80'}`}>{c.displayName ?? '用戶'}</span>
-                      <span className="text-[11px] text-white/30 shrink-0 tabular-nums">{formatTime(c.lastMessageAt)}</span>
-                    </div>
-                    <p className={`text-xs truncate mt-0.5 ${c.unreadCount > 0 ? 'text-white/60 font-medium' : 'text-white/35'}`}>{c.lastMessagePreview}</p>
-                  </div>
-                  {c.unreadCount > 0 && (
-                    <span className="min-w-[18px] h-[18px] px-1 bg-rose-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center shrink-0">
-                      {c.unreadCount > 99 ? '99+' : c.unreadCount}
-                    </span>
-                  )}
-                </button>
-              ))}
-            </div>
+                  </button>
+                ))}
+              </div>
+            )
+          ) : (
+            // ─── 好友列表 (追蹤 + 粉絲) ───
+            friendsLoading ? (
+              <div className="flex justify-center pt-16">
+                <Loader2 className="w-6 h-6 text-white/30 animate-spin" />
+              </div>
+            ) : friends.length === 0 ? (
+              <div className="text-center py-24 px-6 text-white/25">
+                <div className="w-14 h-14 rounded-2xl bg-white/5 flex items-center justify-center mx-auto mb-4">
+                  <span className="text-2xl">👥</span>
+                </div>
+                <p className="text-sm font-medium mb-1">還沒有好友</p>
+                <p className="text-xs text-white/15">追蹤別人或讓別人追蹤你後會出現在這裡</p>
+              </div>
+            ) : (
+              <div className="py-2">
+                {friends.map(f => {
+                  const existing = conversations.find(c => c.userId === f.id)
+                  return (
+                    <button
+                      key={f.id}
+                      onClick={() => {
+                        if (existing) {
+                          openConversation(existing)
+                        } else {
+                          // Start new conversation — create a temporary conv entry
+                          const tempConv: Conversation = {
+                            userId: f.id,
+                            displayName: f.displayName,
+                            avatarUrl: f.avatarUrl,
+                            lastMessagePreview: '',
+                            lastMessageAt: new Date().toISOString(),
+                            unreadCount: 0,
+                          }
+                          openConversation(tempConv)
+                        }
+                        setMainTab('messages')
+                      }}
+                      className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-white/[0.03] transition-all"
+                    >
+                      <div className="w-12 h-12 rounded-full overflow-hidden shrink-0">
+                        {f.avatarUrl
+                          ? <img src={f.avatarUrl} alt="" className="w-full h-full object-cover" />
+                          : <div className="w-full h-full bg-gradient-to-br from-amber-500/40 to-purple-600/40 flex items-center justify-center text-sm font-bold text-white/80">{initials(f.displayName)}</div>
+                        }
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-white/80 truncate">{f.displayName ?? '用戶'}</p>
+                        <p className="text-xs text-white/30 mt-0.5">
+                          {f.relation === 'mutual' ? '互相追蹤' : f.relation === 'follower' ? '追蹤了你' : '你追蹤的'}
+                        </p>
+                      </div>
+                      <span className="shrink-0 text-xs text-amber-400/60 font-medium">
+                        {existing ? '繼續聊' : '私訊'}
+                      </span>
+                    </button>
+                  )
+                })}
+              </div>
+            )
           )}
         </div>
 

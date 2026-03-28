@@ -192,10 +192,10 @@ export default function NotificationsPage() {
                     <p className="text-xs text-white/30 mt-0.5">{formatTime(n.createdAt)}</p>
                   </div>
 
-                  {/* Right: type icon + follow-back or post link */}
+                  {/* Right: type icon + follow button */}
                   <div className="shrink-0 flex flex-col items-end gap-2">
                     <div className="mt-1">{TYPE_ICON[n.type]}</div>
-                    {n.type === 'follow' && meId && n.actorId !== meId && (
+                    {meId && n.actorId !== meId && (
                       <FollowBackButton actorId={n.actorId} />
                     )}
                   </div>
