@@ -310,6 +310,9 @@ export default function UserProfilePage() {
   const [openMenuId, setOpenMenuId] = useState<string | null>(null)
   const [avatarLightbox, setAvatarLightbox] = useState(false)
   const [avatarUploading, setAvatarUploading] = useState(false)
+  const [nickname, setNickname] = useState<string>('')
+  const [nicknameEditing, setNicknameEditing] = useState(false)
+  const [nicknameDraft, setNicknameDraft] = useState('')
   const menuRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -344,6 +347,15 @@ export default function UserProfilePage() {
       .catch(() => {})
   }, [userId])
 
+  // Load nickname (only for other users' profiles)
+  useEffect(() => {
+    if (!meId || meId === userId) return
+    fetch(`/api/admin/social/contact-notes?userId=${userId}`)
+      .then(r => r.ok ? r.json() as Promise<{ nickname: string | null }> : null)
+      .then(d => { if (d?.nickname) setNickname(d.nickname) })
+      .catch(() => {})
+  }, [meId, userId])
+
   // Close post menu when clicking outside
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -362,6 +374,17 @@ export default function UserProfilePage() {
       setProfile(prev => prev ? { ...prev, posts: prev.posts.filter(p => p.id !== postId) } : prev)
     }
     setOpenMenuId(null)
+  }
+
+  const saveNickname = async () => {
+    const trimmed = nicknameDraft.trim()
+    await fetch('/api/admin/social/contact-notes', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ targetUserId: userId, nickname: trimmed }),
+    })
+    setNickname(trimmed)
+    setNicknameEditing(false)
   }
 
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -485,7 +508,44 @@ export default function UserProfilePage() {
               )}
             </div>
 
-            <h1 className="text-xl font-bold text-white">{profile.name}</h1>
+            {/* Name + nickname */}
+            {nickname && !isMe ? (
+              <div>
+                <h1 className="text-xl font-bold text-white">{nickname}</h1>
+                <p className="text-sm text-white/35">{profile.name}</p>
+              </div>
+            ) : (
+              <h1 className="text-xl font-bold text-white">{profile.name}</h1>
+            )}
+
+            {/* Nickname edit (only for other users when logged in) */}
+            {!isMe && meId && (
+              <div className="mt-1.5">
+                {nicknameEditing ? (
+                  <div className="flex items-center gap-2">
+                    <input
+                      autoFocus
+                      value={nicknameDraft}
+                      onChange={e => setNicknameDraft(e.target.value)}
+                      onKeyDown={e => { if (e.key === 'Enter') saveNickname(); if (e.key === 'Escape') setNicknameEditing(false) }}
+                      placeholder="輸入備註名字…"
+                      className="text-xs bg-white/8 border border-white/12 rounded-lg px-2.5 py-1 text-white placeholder-white/25 outline-none focus:border-amber-400/50 w-36"
+                    />
+                    <button onClick={saveNickname} className="text-xs text-amber-400 hover:text-amber-300 transition-colors">儲存</button>
+                    <button onClick={() => setNicknameEditing(false)} className="text-xs text-white/30 hover:text-white/60 transition-colors">取消</button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => { setNicknameDraft(nickname); setNicknameEditing(true) }}
+                    className="flex items-center gap-1 text-xs text-white/30 hover:text-white/60 transition-colors group"
+                  >
+                    <Pencil className="w-3 h-3" />
+                    <span>{nickname ? `備註：${nickname}` : '新增備註名字'}</span>
+                  </button>
+                )}
+              </div>
+            )}
+
             {profile.bio && <p className="text-sm text-white/50 mt-1 leading-relaxed">{profile.bio}</p>}
 
             {/* Social links */}

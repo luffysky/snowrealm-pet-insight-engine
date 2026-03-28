@@ -2,7 +2,8 @@
 
 import { useEffect, useState, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, MessageCircle, Send, Loader2, X, Paperclip, Smile, ImageIcon, Music, File as FileIcon, Gift, Pencil, Plus, Palette, Play, Pause, Volume2, Mic } from 'lucide-react'
+import { ArrowLeft, MessageCircle, Send, Loader2, X, Paperclip, Smile, ImageIcon, Music, File as FileIcon, Gift, Pencil, Plus, Palette, Play, Pause, Volume2, Mic, Settings, BellOff, Bell, Eye, EyeOff, Check } from 'lucide-react'
+import Link from 'next/link'
 import { GifPicker } from '@/components/social/GifPicker'
 import { CHAT_BACKGROUNDS, ChatBgLayer, type BgId } from '@/components/admin/chat-bg'
 
@@ -381,6 +382,19 @@ interface Conversation {
   lastMessagePreview: string
   lastMessageAt: string
   unreadCount: number
+  lastActiveAt?: string | null
+  nickname?: string | null
+}
+
+function formatLastActive(ts: string | null | undefined): string | null {
+  if (!ts) return null
+  const diff = Date.now() - new Date(ts).getTime()
+  const mins = Math.floor(diff / 60000)
+  if (mins < 1) return '剛剛上線'
+  if (mins < 60) return `${mins} 分鐘前上線`
+  const hours = Math.floor(mins / 60)
+  if (hours < 24) return `${hours} 小時前上線`
+  return null
 }
 
 interface Message {
@@ -452,9 +466,11 @@ export default function MessagesPage() {
   const [bgOwned, setBgOwned] = useState<Set<BgId>>(new Set())
   const [zcoinBalance, setZcoinBalance] = useState(0)
   const [bgPurchasing, setBgPurchasing] = useState<BgId | null>(null)
-  const [mainTab, setMainTab] = useState<'messages' | 'friends'>('messages')
+  const [mainTab, setMainTab] = useState<'messages' | 'friends' | 'settings'>('messages')
   const [friends, setFriends] = useState<{ id: string; displayName: string | null; avatarUrl: string | null; relation: 'follower' | 'following' | 'mutual' }[]>([])
   const [friendsLoading, setFriendsLoading] = useState(false)
+  const [hideOnlineStatus, setHideOnlineStatus] = useState(false)
+  const [mutedUsers, setMutedUsers] = useState<Set<string>>(new Set())
   // ── 輸入中提示 ──
   const [peerTyping, setPeerTyping] = useState(false)
   const peerTypingTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -500,7 +516,26 @@ export default function MessagesPage() {
       .then(r => r.ok ? r.json() as Promise<{ balance: { balance: number } }> : null)
       .then(d => { if (d?.balance?.balance != null) setZcoinBalance(d.balance.balance) })
       .catch(() => {})
+    // Load muted users from localStorage
+    try {
+      const muted = JSON.parse(localStorage.getItem('dm_muted_users') ?? '[]') as string[]
+      setMutedUsers(new Set(muted))
+    } catch { /* ignore */ }
   }, [router])
+
+  // 上線狀態 ping + 設定載入
+  useEffect(() => {
+    if (!meId) return
+    const ping = () => fetch('/api/admin/social/active', { method: 'PATCH' }).catch(() => {})
+    ping()
+    const interval = setInterval(ping, 30000)
+    // Load hide_online_status setting
+    fetch('/api/admin/social/active')
+      .then(r => r.ok ? r.json() as Promise<{ hideOnlineStatus: boolean }> : null)
+      .then(d => { if (d) setHideOnlineStatus(d.hideOnlineStatus) })
+      .catch(() => {})
+    return () => clearInterval(interval)
+  }, [meId])
 
   useEffect(() => {
     if (!meId) return
@@ -1065,6 +1100,33 @@ export default function MessagesPage() {
     return parts.join(' ') || 'none'
   }
 
+  const toggleMute = (userId: string) => {
+    setMutedUsers(prev => {
+      const next = new Set(prev)
+      if (next.has(userId)) next.delete(userId)
+      else next.add(userId)
+      localStorage.setItem('dm_muted_users', JSON.stringify(Array.from(next)))
+      return next
+    })
+  }
+
+  const toggleHideOnline = async () => {
+    const next = !hideOnlineStatus
+    setHideOnlineStatus(next)
+    await fetch('/api/admin/social/active', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ hideOnlineStatus: next }),
+    })
+  }
+
+  const applyThemeToAll = () => {
+    // Clear all per-conversation overrides, keep only global theme
+    const keys = Object.keys(localStorage).filter(k => k.startsWith(`${THEME_STORAGE_KEY}_`))
+    keys.forEach(k => localStorage.removeItem(k))
+    setApplyToAll(true)
+  }
+
   const formatTime = (iso: string) => {
     const d = new Date(iso)
     const now = new Date()
@@ -1108,6 +1170,12 @@ export default function MessagesPage() {
             >
               👥 好友
             </button>
+            <button
+              onClick={() => setMainTab('settings')}
+              className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors -mb-px ${mainTab === 'settings' ? 'text-amber-400 border-amber-400' : 'text-white/40 border-transparent hover:text-white/70'}`}
+            >
+              ⚙️ 設定
+            </button>
           </div>
         </nav>
         <div className="flex-1 overflow-y-auto">
@@ -1133,25 +1201,38 @@ export default function MessagesPage() {
                     onClick={() => openConversation(c)}
                     className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-all ${active?.userId === c.userId ? 'bg-white/[0.07]' : 'hover:bg-white/[0.03]'}`}
                   >
-                    <div className="relative shrink-0">
-                      <div className="w-12 h-12 rounded-full overflow-hidden">
+                    <div className="relative shrink-0" onClick={e => e.stopPropagation()}>
+                      <Link href={`/u/${c.userId}`} className="block w-12 h-12 rounded-full overflow-hidden hover:ring-2 hover:ring-amber-400/40 transition-all">
                         {c.avatarUrl
                           ? <img src={c.avatarUrl} alt="" className="w-full h-full object-cover" />
                           : <div className="w-full h-full bg-gradient-to-br from-amber-500/40 to-purple-600/40 flex items-center justify-center text-sm font-bold text-white/80">{initials(c.displayName)}</div>
                         }
-                      </div>
+                      </Link>
                       {c.unreadCount > 0 && (
-                        <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 bg-rose-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center leading-none">
+                        <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 bg-rose-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center leading-none pointer-events-none">
                           {c.unreadCount > 99 ? '99+' : c.unreadCount}
                         </span>
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-baseline justify-between gap-2">
-                        <span className={`text-sm font-semibold truncate ${c.unreadCount > 0 ? 'text-white' : 'text-white/80'}`}>{c.displayName ?? '用戶'}</span>
+                        <div className="min-w-0 flex-1">
+                          <span className={`text-sm font-semibold truncate block ${c.unreadCount > 0 ? 'text-white' : 'text-white/80'}`}>
+                            {c.nickname ?? c.displayName ?? '用戶'}
+                          </span>
+                          {c.nickname && c.displayName && (
+                            <span className="text-[10px] text-white/30 truncate block">{c.displayName}</span>
+                          )}
+                        </div>
                         <span className="text-[11px] text-white/30 shrink-0 tabular-nums">{formatTime(c.lastMessageAt)}</span>
                       </div>
-                      <p className={`text-xs truncate mt-0.5 ${c.unreadCount > 0 ? 'text-white/60 font-medium' : 'text-white/35'}`}>{c.lastMessagePreview}</p>
+                      <div className="flex items-center gap-1.5 mt-0.5">
+                        {(() => {
+                          const la = formatLastActive(c.lastActiveAt)
+                          return la ? <span className="text-[9px] text-emerald-400/60 shrink-0">● {la}</span> : null
+                        })()}
+                        <p className={`text-xs truncate ${c.unreadCount > 0 ? 'text-white/60 font-medium' : 'text-white/35'}`}>{c.lastMessagePreview}</p>
+                      </div>
                     </div>
                     {c.unreadCount > 0 && (
                       <span className="min-w-[18px] h-[18px] px-1 bg-rose-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center shrink-0">
@@ -1162,7 +1243,7 @@ export default function MessagesPage() {
                 ))}
               </div>
             )
-          ) : (
+          ) : mainTab === 'friends' ? (
             // ─── 好友列表 (追蹤 + 粉絲) ───
             friendsLoading ? (
               <div className="flex justify-center pt-16">
@@ -1222,7 +1303,81 @@ export default function MessagesPage() {
                 })}
               </div>
             )
-          )}
+          )
+          : mainTab === 'settings' ? (
+            // ─── 設定 ───
+            <div className="py-4 px-4 space-y-8 overflow-y-auto">
+
+              {/* 聊天通知 */}
+              <div>
+                <p className="text-[10px] text-white/30 uppercase tracking-widest mb-3">聊天通知</p>
+                {conversations.length === 0 ? (
+                  <p className="text-xs text-white/25">還沒有對話</p>
+                ) : (
+                  <div className="space-y-1">
+                    {conversations.map(c => (
+                      <div key={c.userId} className="flex items-center gap-3 py-2.5">
+                        <div className="w-8 h-8 rounded-full overflow-hidden shrink-0">
+                          {c.avatarUrl
+                            ? <img src={c.avatarUrl} alt="" className="w-full h-full object-cover" />
+                            : <div className="w-full h-full bg-gradient-to-br from-amber-500/40 to-purple-600/40 flex items-center justify-center text-xs font-bold text-white/70">{initials(c.displayName)}</div>
+                          }
+                        </div>
+                        <span className="flex-1 text-sm text-white/70 truncate">{c.nickname ?? c.displayName ?? '用戶'}</span>
+                        <button
+                          onClick={() => toggleMute(c.userId)}
+                          className={`p-2 rounded-xl transition-colors ${mutedUsers.has(c.userId) ? 'bg-rose-500/15 text-rose-400' : 'text-white/30 hover:text-white/60 hover:bg-white/5'}`}
+                          title={mutedUsers.has(c.userId) ? '解除靜音' : '靜音通知'}
+                        >
+                          {mutedUsers.has(c.userId) ? <BellOff className="w-4 h-4" /> : <Bell className="w-4 h-4" />}
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* 背景主題套用 */}
+              <div>
+                <p className="text-[10px] text-white/30 uppercase tracking-widest mb-3">背景 &amp; 主題</p>
+                <button
+                  onClick={applyThemeToAll}
+                  className="w-full flex items-center gap-3 px-4 py-3 bg-white/5 hover:bg-white/8 border border-white/8 rounded-xl text-sm text-white/70 hover:text-white transition-colors text-left"
+                >
+                  <Palette className="w-4 h-4 text-amber-400 shrink-0" />
+                  <div>
+                    <p>將目前主題套用至全部聊天室</p>
+                    <p className="text-xs text-white/30 mt-0.5">清除個別聊天室的主題設定</p>
+                  </div>
+                  <Check className="w-4 h-4 text-white/20 ml-auto shrink-0" />
+                </button>
+              </div>
+
+              {/* 隱私設定 */}
+              <div>
+                <p className="text-[10px] text-white/30 uppercase tracking-widest mb-3">隱私</p>
+                <div className="flex items-center justify-between px-4 py-3 bg-white/5 border border-white/8 rounded-xl">
+                  <div className="flex items-center gap-3">
+                    {hideOnlineStatus
+                      ? <EyeOff className="w-4 h-4 text-white/40 shrink-0" />
+                      : <Eye className="w-4 h-4 text-white/40 shrink-0" />
+                    }
+                    <div>
+                      <p className="text-sm text-white/70">隱藏上線狀態</p>
+                      <p className="text-xs text-white/30">其他人看不到你的上線時間</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={toggleHideOnline}
+                    className={`relative w-10 h-5 rounded-full transition-colors shrink-0 ${hideOnlineStatus ? 'bg-amber-500' : 'bg-white/15'}`}
+                  >
+                    <span className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${hideOnlineStatus ? 'translate-x-5' : 'translate-x-0.5'}`} />
+                  </button>
+                </div>
+              </div>
+
+            </div>
+          ) : null}
         </div>{/* end scrollable list area */}
       </div>{/* end left column */}
 
@@ -1235,13 +1390,30 @@ export default function MessagesPage() {
               <button onClick={closeConversation} className="text-white/40 hover:text-white transition-colors p-1 -ml-1 rounded-lg hover:bg-white/8">
                 <ArrowLeft className="w-4 h-4" />
               </button>
-              <div className="w-9 h-9 rounded-full overflow-hidden shrink-0 ring-2 ring-white/10">
+              {/* 大頭貼 — 點擊跳個人頁 */}
+              <Link href={`/u/${active.userId}`} className="w-9 h-9 rounded-full overflow-hidden shrink-0 ring-2 ring-white/10 hover:ring-amber-400/50 transition-all">
                 {active.avatarUrl
                   ? <img src={active.avatarUrl} alt="" className="w-full h-full object-cover" />
                   : <div className="w-full h-full bg-gradient-to-br from-amber-500/40 to-purple-600/40 flex items-center justify-center text-xs font-bold text-white/80">{initials(active.displayName)}</div>
                 }
+              </Link>
+              {/* 名字 — 備註名為標題，原名為副標 */}
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold text-white truncate leading-tight">
+                  {active.nickname ?? active.displayName ?? '私訊'}
+                </p>
+                {active.nickname && active.displayName && (
+                  <p className="text-[11px] text-white/35 truncate">{active.displayName}</p>
+                )}
+                {!active.nickname && (() => {
+                  const la = formatLastActive(active.lastActiveAt)
+                  return la ? <p className="text-[10px] text-emerald-400/70">{la}</p> : null
+                })()}
+                {active.nickname && (() => {
+                  const la = formatLastActive(active.lastActiveAt)
+                  return la ? <p className="text-[10px] text-emerald-400/70">{la}</p> : null
+                })()}
               </div>
-              <span className="font-semibold flex-1 truncate text-white">{active.displayName ?? '私訊'}</span>
               <button
                 onClick={() => setThemePanelOpen(p => !p)}
                 className={`p-1.5 rounded-xl transition-colors ${themePanelOpen ? 'bg-white/15 text-white' : 'text-white/30 hover:text-white/60'}`}

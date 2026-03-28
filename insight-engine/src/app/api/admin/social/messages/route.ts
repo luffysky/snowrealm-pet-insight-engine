@@ -7,6 +7,8 @@ interface ConversationRow extends Record<string, unknown> {
   other_user_id: string
   other_name: string | null
   other_avatar: string | null
+  last_active_at: string | null
+  nickname: string | null
   encrypted_content: string
   iv: string
   tag: string
@@ -22,6 +24,8 @@ interface ConversationResult {
   lastMessagePreview: string
   lastMessageAt: string
   unreadCount: number
+  lastActiveAt: string | null
+  nickname: string | null
 }
 
 /** GET /api/admin/social/messages — 列出所有對話 */
@@ -32,9 +36,11 @@ export async function GET(): Promise<NextResponse> {
 
   const rows = await query<ConversationRow>(
     `SELECT DISTINCT ON (other_user_id)
-      CASE WHEN from_user_id = $1 THEN to_user_id ELSE from_user_id END::text AS other_user_id,
+      CASE WHEN dm.from_user_id = $1 THEN dm.to_user_id ELSE dm.from_user_id END::text AS other_user_id,
       u.display_name AS other_name,
       u.avatar_url AS other_avatar,
+      CASE WHEN u.hide_online_status = true THEN NULL ELSE u.last_active_at END AS last_active_at,
+      cn.nickname,
       dm.encrypted_content,
       dm.iv,
       dm.tag,
@@ -46,6 +52,7 @@ export async function GET(): Promise<NextResponse> {
           AND dm2.read_at IS NULL)::text AS unread_count
     FROM direct_messages dm
     JOIN admin_users u ON u.id = CASE WHEN dm.from_user_id = $1 THEN dm.to_user_id ELSE dm.from_user_id END
+    LEFT JOIN user_contact_notes cn ON cn.noter_id = $1 AND cn.noted_user_id = u.id
     WHERE dm.from_user_id = $1 OR dm.to_user_id = $1
     ORDER BY other_user_id, dm.created_at DESC`,
     [userId]
@@ -66,6 +73,8 @@ export async function GET(): Promise<NextResponse> {
           lastMessagePreview: preview,
           lastMessageAt: row.created_at,
           unreadCount: parseInt(row.unread_count ?? '0', 10),
+          lastActiveAt: row.last_active_at ?? null,
+          nickname: row.nickname ?? null,
         }
       }
       const decrypted = decryptApiKey({ encrypted: row.encrypted_content, iv: row.iv, tag: row.tag })
@@ -96,6 +105,8 @@ export async function GET(): Promise<NextResponse> {
       lastMessagePreview: preview,
       lastMessageAt: row.created_at,
       unreadCount: parseInt(row.unread_count ?? '0', 10),
+      lastActiveAt: row.last_active_at ?? null,
+      nickname: row.nickname ?? null,
     }
   })
 
