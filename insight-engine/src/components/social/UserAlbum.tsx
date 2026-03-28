@@ -3,7 +3,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
 import {
   Plus, Trash2, Globe, Lock, X, Loader2, ChevronLeft, ChevronRight,
-  Pencil, FolderOpen, Check, GripVertical, Camera, BookImage, FolderInput,
+  Pencil, FolderOpen, Check, GripVertical, Camera, BookImage, FolderInput, MoreHorizontal,
 } from 'lucide-react'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -276,7 +276,6 @@ function AlbumDetail({
   const [dragSrc, setDragSrc] = useState<string | null>(null)
   const [moveModal, setMoveModal] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
-  const longPressRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
     // album.id === 'all' is the virtual "全部照片" entry — fetch without albumId filter
@@ -359,21 +358,7 @@ function AlbumDetail({
     })
   }
 
-  // Long press detection
-  const startLongPress = (id: string) => {
-    longPressRef.current = setTimeout(() => {
-      if (!selectionMode) {
-        setSelectionMode(true)
-        setSelected(new Set([id]))
-      }
-    }, 500)
-  }
-  const cancelLongPress = () => {
-    if (longPressRef.current) {
-      clearTimeout(longPressRef.current)
-      longPressRef.current = null
-    }
-  }
+  // (long press removed — use ··· button instead)
 
   // Drag reorder
   const handleDragStart = (id: string) => { setDragSrc(id) }
@@ -454,6 +439,12 @@ function AlbumDetail({
                   </button>
                 )}
                 <button
+                  onClick={() => setSelectionMode(true)}
+                  className="text-xs text-white/40 hover:text-white/70 px-3 py-1.5 border border-white/10 rounded-xl transition-colors"
+                >
+                  選取
+                </button>
+                <button
                   onClick={() => fileRef.current?.click()}
                   disabled={uploading}
                   className="flex items-center gap-1 px-3 py-1.5 bg-white/5 border border-white/10 rounded-xl text-white/40 hover:text-white/70 text-xs transition-colors disabled:opacity-40"
@@ -501,12 +492,7 @@ function AlbumDetail({
               onDragOver={e => handleDragOver(e, photo.id)}
               onDrop={() => handleDrop(photo.id)}
               onDragEnd={() => { setDragOver(null); setDragSrc(null) }}
-              onPointerDown={() => isOwner && startLongPress(photo.id)}
-              onPointerUp={cancelLongPress}
-              onPointerCancel={cancelLongPress}
-              onPointerMove={cancelLongPress}
               onClick={() => {
-                cancelLongPress()
                 if (selectionMode) {
                   toggleSelect(photo.id)
                 } else {
@@ -534,6 +520,16 @@ function AlbumDetail({
                 <div className="absolute top-1 left-1 p-1 bg-black/60 rounded-md">
                   <Lock className="w-2.5 h-2.5 text-white/70" />
                 </div>
+              )}
+
+              {/* Detail button (owner only, not in selection mode) */}
+              {isOwner && !selectionMode && (
+                <button
+                  onClick={e => { e.stopPropagation(); setDetailPhoto(photo) }}
+                  className="absolute bottom-1 right-1 w-6 h-6 rounded-md bg-black/60 flex items-center justify-center text-white/70 hover:text-white hover:bg-black/80 transition-colors"
+                >
+                  <MoreHorizontal className="w-3.5 h-3.5" />
+                </button>
               )}
             </div>
           ))}

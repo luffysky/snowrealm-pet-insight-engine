@@ -3,13 +3,24 @@ import { query, execute, queryOne } from '@/lib/db'
 import { headers } from 'next/headers'
 import { uploadToR2 } from '@/lib/r2'
 import AdmZip from 'adm-zip'
+import { verifyToken } from '@/lib/jwt'
 
-async function requireSuperAdmin() {
+async function requireSuperAdmin(req?: NextRequest) {
+  // Primary: middleware-injected headers
   const h = await headers()
   const role = h.get('x-user-role')
   const userId = h.get('x-user-id')
-  if (!userId || role !== 'super_admin') return null
-  return { sub: userId, role }
+  if (userId && role === 'super_admin') return { sub: userId, role }
+
+  // Fallback: read JWT cookie directly (used for multipart requests where middleware skips header injection)
+  const token = req?.cookies.get('admin_session')?.value
+  if (!token) return null
+  const payload = await verifyToken(token)
+  if (!payload) return null
+  const tenants = payload.tenants ?? []
+  const isSuper = tenants.some(t => t.role === 'super_admin') || payload.role === 'super_admin'
+  if (!isSuper) return null
+  return { sub: payload.sub, role: 'super_admin' }
 }
 
 interface PackRow extends Record<string, unknown> {
@@ -27,7 +38,7 @@ const IMAGE_EXTS = new Set(['.png', '.jpg', '.jpeg', '.gif', '.webp'])
 
 /** GET — 列出所有貼圖包（含每包數量），可用 ?type=sticker|emoji 篩選 */
 export async function GET(req: NextRequest): Promise<NextResponse> {
-  const auth = await requireSuperAdmin()
+  const auth = await requireSuperAdmin(req)
   if (!auth) return NextResponse.json({ error: '未授權' }, { status: 401 })
 
   const packType = new URL(req.url).searchParams.get('type')
@@ -52,7 +63,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
 
 /** POST — 上傳 zip 建立貼圖包 */
 export async function POST(req: NextRequest): Promise<NextResponse> {
-  const auth = await requireSuperAdmin()
+  const auth = await requireSuperAdmin(req)
   if (!auth) return NextResponse.json({ error: '未授權' }, { status: 401 })
 
   let formData: FormData
