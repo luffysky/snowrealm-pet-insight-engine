@@ -1,7 +1,17 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { ArrowLeft, Save, Eye, EyeOff, ImageIcon, Loader2, X, Tag, Check, Move } from 'lucide-react'
+import dynamic from 'next/dynamic'
+import { ArrowLeft, Save, Eye, EyeOff, ImageIcon, Loader2, X, Tag, Check, Move, Sparkles, Globe } from 'lucide-react'
+
+const BlogTipTapEditor = dynamic(() => import('./BlogTipTapEditor'), {
+  ssr: false,
+  loading: () => (
+    <div className="min-h-[400px] border border-white/10 rounded-xl flex items-center justify-center bg-white/3">
+      <Loader2 className="w-5 h-5 text-white/30 animate-spin" />
+    </div>
+  ),
+})
 
 interface BlogArticle {
   id?: string
@@ -26,7 +36,7 @@ const EMPTY: BlogArticle = {
 function slugify(text: string): string {
   return text
     .toLowerCase()
-    .replace(/[\u4e00-\u9fa5]/g, '') // remove CJK
+    .replace(/[\u4e00-\u9fa5]/g, '')
     .replace(/[^a-z0-9\s-]/g, '')
     .trim()
     .replace(/\s+/g, '-')
@@ -35,7 +45,7 @@ function slugify(text: string): string {
 }
 
 interface Props {
-  articleId?: string   // undefined = new article
+  articleId?: string
   onSaved: (id: string, slug: string) => void
   onCancel: () => void
 }
@@ -49,11 +59,14 @@ export function BlogEditor({ articleId, onSaved, onCancel }: Props) {
   const [tagInput, setTagInput] = useState('')
   const [uploadingCover, setUploadingCover] = useState(false)
   const slugCheckTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const editorRef = useRef<HTMLDivElement>(null)
   const coverInputRef = useRef<HTMLInputElement>(null)
   const [activeTab, setActiveTab] = useState<'write' | 'seo'>('write')
   const [adjustingPosition, setAdjustingPosition] = useState(false)
   const coverPreviewRef = useRef<HTMLDivElement>(null)
+
+  // AI state
+  const [aiSummaryLoading, setAiSummaryLoading] = useState(false)
+  const [aiSlugLoading, setAiSlugLoading] = useState(false)
 
   // Load existing article
   useEffect(() => {
@@ -61,8 +74,8 @@ export function BlogEditor({ articleId, onSaved, onCancel }: Props) {
     fetch(`/api/admin/social/blog/${articleId}`)
       .then(r => r.ok ? r.json() as Promise<{ article: {
         title: string; slug: string; summary: string | null; content: string
-        cover_image: string | null; tags: string[]; is_public: boolean
-        seo_title: string | null; seo_desc: string | null
+        cover_image: string | null; cover_image_position?: string; tags: string[]
+        is_public: boolean; seo_title: string | null; seo_desc: string | null
       } }> : null)
       .then(d => {
         if (!d) return
@@ -71,16 +84,14 @@ export function BlogEditor({ articleId, onSaved, onCancel }: Props) {
           id: articleId,
           title: a.title, slug: a.slug, summary: a.summary ?? '',
           content: a.content, coverImage: a.cover_image ?? '',
-          coverImagePosition: (a as { cover_image_position?: string }).cover_image_position ?? 'center center',
+          coverImagePosition: a.cover_image_position ?? 'center center',
           tags: a.tags ?? [], isPublic: a.is_public,
           seoTitle: a.seo_title ?? '', seoDesc: a.seo_desc ?? '',
         })
-        if (editorRef.current) editorRef.current.innerHTML = a.content
       })
       .finally(() => setLoading(false))
   }, [articleId])
 
-  // Auto-generate slug from title (only for new articles)
   const handleTitleChange = (title: string) => {
     const next = { ...form, title }
     if (!articleId && !form.slug) {
@@ -90,7 +101,6 @@ export function BlogEditor({ articleId, onSaved, onCancel }: Props) {
     setForm(next)
   }
 
-  // Debounced slug availability check
   const checkSlug = useCallback((slug: string) => {
     if (!slug || !/^[a-z0-9-]+$/.test(slug)) { setSlugStatus('idle'); return }
     setSlugStatus('checking')
@@ -132,7 +142,6 @@ export function BlogEditor({ articleId, onSaved, onCancel }: Props) {
     if (!form.slug.trim()) { setError('請輸入 Slug'); return }
     if (slugStatus === 'taken') { setError('Slug 已被使用，請更換'); return }
 
-    const content = editorRef.current?.innerHTML ?? ''
     setSaving(true); setError(null)
     try {
       const url = articleId ? `/api/admin/social/blog/${articleId}` : '/api/admin/social/blog'
@@ -144,7 +153,7 @@ export function BlogEditor({ articleId, onSaved, onCancel }: Props) {
           title: form.title.trim(),
           slug: form.slug.trim(),
           summary: form.summary || null,
-          content,
+          content: form.content,
           coverImage: form.coverImage || null,
           coverImagePosition: form.coverImagePosition || 'center center',
           tags: form.tags,
@@ -163,18 +172,51 @@ export function BlogEditor({ articleId, onSaved, onCancel }: Props) {
     } finally { setSaving(false) }
   }
 
-  const execCmd = (cmd: string, value?: string) => {
-    editorRef.current?.focus()
-    document.execCommand(cmd, false, value)
+  // AI: generate summary + seoTitle + seoDesc
+  const handleAiSummary = async () => {
+    if (!form.title.trim()) { setError('請先輸入標題'); return }
+    setAiSummaryLoading(true)
+    try {
+      const res = await fetch('/api/admin/social/blog/ai-meta', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: form.title, content: form.content, mode: 'summary' }),
+      })
+      if (res.ok) {
+        const data = await res.json() as { summary?: string; seoTitle?: string; seoDesc?: string }
+        setForm(f => ({
+          ...f,
+          summary: data.summary || f.summary,
+          seoTitle: data.seoTitle || f.seoTitle,
+          seoDesc: data.seoDesc || f.seoDesc,
+        }))
+      } else {
+        const err = await res.json() as { error?: string }
+        setError(err.error ?? 'AI 生成失敗')
+      }
+    } finally { setAiSummaryLoading(false) }
   }
 
-  const insertImage = async (file: File) => {
-    const fd = new FormData(); fd.append('file', file)
-    const res = await fetch('/api/admin/social/messages/upload', { method: 'POST', body: fd })
-    if (res.ok) {
-      const { url } = await res.json() as { url: string }
-      execCmd('insertImage', url)
-    }
+  // AI: translate title to English slug
+  const handleAiSlug = async () => {
+    if (!form.title.trim()) { setError('請先輸入標題'); return }
+    setAiSlugLoading(true)
+    try {
+      const res = await fetch('/api/admin/social/blog/ai-meta', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: form.title, mode: 'slug' }),
+      })
+      if (res.ok) {
+        const data = await res.json() as { slug?: string }
+        if (data.slug) {
+          setForm(f => ({ ...f, slug: data.slug! }))
+        }
+      } else {
+        const err = await res.json() as { error?: string }
+        setError(err.error ?? 'AI 翻譯失敗')
+      }
+    } finally { setAiSlugLoading(false) }
   }
 
   if (loading) return (
@@ -219,8 +261,9 @@ export function BlogEditor({ articleId, onSaved, onCancel }: Props) {
       </div>
 
       {error && (
-        <div className="shrink-0 px-4 py-2 bg-rose-500/15 border-b border-rose-500/20 text-xs text-rose-300">
+        <div className="shrink-0 px-4 py-2 bg-rose-500/15 border-b border-rose-500/20 text-xs text-rose-300 flex items-center justify-between">
           {error}
+          <button onClick={() => setError(null)}><X className="w-3.5 h-3.5" /></button>
         </div>
       )}
 
@@ -251,7 +294,18 @@ export function BlogEditor({ articleId, onSaved, onCancel }: Props) {
 
             {/* Slug */}
             <div>
-              <label className="text-[11px] text-white/40 font-medium uppercase tracking-widest block mb-1.5">文章 Slug</label>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="text-[11px] text-white/40 font-medium uppercase tracking-widest">文章 Slug</label>
+                <button
+                  type="button"
+                  onClick={handleAiSlug}
+                  disabled={aiSlugLoading || !form.title.trim()}
+                  className="flex items-center gap-1 px-2 py-0.5 bg-violet-500/15 hover:bg-violet-500/25 text-violet-300 rounded-lg text-[11px] transition-colors disabled:opacity-40"
+                >
+                  {aiSlugLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Globe className="w-3 h-3" />}
+                  AI 翻譯
+                </button>
+              </div>
               <div className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-xl px-3 py-2 focus-within:border-amber-400/30 transition-colors">
                 <span className="text-xs text-white/25 shrink-0">/</span>
                 <input
@@ -342,7 +396,18 @@ export function BlogEditor({ articleId, onSaved, onCancel }: Props) {
 
             {/* Summary */}
             <div>
-              <label className="text-[11px] text-white/40 font-medium uppercase tracking-widest block mb-1.5">文章摘要</label>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="text-[11px] text-white/40 font-medium uppercase tracking-widest">文章摘要</label>
+                <button
+                  type="button"
+                  onClick={handleAiSummary}
+                  disabled={aiSummaryLoading || !form.title.trim()}
+                  className="flex items-center gap-1 px-2 py-0.5 bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 rounded-lg text-[11px] transition-colors disabled:opacity-40"
+                >
+                  {aiSummaryLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
+                  AI 生成摘要
+                </button>
+              </div>
               <textarea
                 value={form.summary}
                 onChange={e => setForm(f => ({ ...f, summary: e.target.value }))}
@@ -352,59 +417,14 @@ export function BlogEditor({ articleId, onSaved, onCancel }: Props) {
               />
             </div>
 
-            {/* Editor */}
+            {/* Rich Text Editor */}
             <div>
               <label className="text-[11px] text-white/40 font-medium uppercase tracking-widest block mb-1.5">文章內容</label>
-              {/* Toolbar */}
-              <div className="flex flex-wrap gap-1 mb-2 p-2 bg-white/4 rounded-xl border border-white/8">
-                {[
-                  { label: 'B', cmd: 'bold', style: 'font-bold' },
-                  { label: 'I', cmd: 'italic', style: 'italic' },
-                  { label: 'U', cmd: 'underline', style: 'underline' },
-                ].map(t => (
-                  <button key={t.cmd} onMouseDown={e => { e.preventDefault(); execCmd(t.cmd) }}
-                    className={`w-7 h-7 rounded-lg bg-white/5 hover:bg-white/12 text-xs text-white/60 hover:text-white transition-colors ${t.style}`}
-                  >{t.label}</button>
-                ))}
-                <div className="w-px bg-white/10 mx-1" />
-                {['H1', 'H2', 'H3'].map((h, i) => (
-                  <button key={h} onMouseDown={e => { e.preventDefault(); execCmd('formatBlock', `h${i + 1}`) }}
-                    className="px-2 h-7 rounded-lg bg-white/5 hover:bg-white/12 text-[11px] text-white/60 hover:text-white transition-colors font-medium"
-                  >{h}</button>
-                ))}
-                <button onMouseDown={e => { e.preventDefault(); execCmd('formatBlock', 'p') }}
-                  className="px-2 h-7 rounded-lg bg-white/5 hover:bg-white/12 text-[11px] text-white/60 hover:text-white transition-colors">¶</button>
-                <div className="w-px bg-white/10 mx-1" />
-                <button onMouseDown={e => { e.preventDefault(); execCmd('insertUnorderedList') }}
-                  className="px-2 h-7 rounded-lg bg-white/5 hover:bg-white/12 text-xs text-white/60 hover:text-white transition-colors">• 清單</button>
-                <button onMouseDown={e => { e.preventDefault(); execCmd('insertOrderedList') }}
-                  className="px-2 h-7 rounded-lg bg-white/5 hover:bg-white/12 text-xs text-white/60 hover:text-white transition-colors">1. 清單</button>
-                <button onMouseDown={e => { e.preventDefault(); execCmd('formatBlock', 'blockquote') }}
-                  className="px-2 h-7 rounded-lg bg-white/5 hover:bg-white/12 text-xs text-white/60 hover:text-white transition-colors">&quot;</button>
-                <div className="w-px bg-white/10 mx-1" />
-                <label className="flex items-center">
-                  <button onMouseDown={e => e.preventDefault()}
-                    onClick={() => (document.getElementById('editor-img-upload') as HTMLInputElement)?.click()}
-                    className="px-2 h-7 rounded-lg bg-white/5 hover:bg-white/12 text-xs text-white/60 hover:text-white transition-colors"
-                  >🖼️ 圖片</button>
-                  <input id="editor-img-upload" type="file" accept="image/*" className="hidden"
-                    onChange={e => { const f = e.target.files?.[0]; if (f) insertImage(f) }}
-                  />
-                </label>
-              </div>
-              <div
-                ref={editorRef}
-                contentEditable
-                suppressContentEditableWarning
-                onInput={() => {}}
-                className="min-h-[320px] w-full bg-white/3 border border-white/10 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-amber-400/20 transition-colors
-                  [&_h1]:text-2xl [&_h1]:font-bold [&_h1]:my-3
-                  [&_h2]:text-xl [&_h2]:font-bold [&_h2]:my-2
-                  [&_h3]:text-lg [&_h3]:font-semibold [&_h3]:my-2
-                  [&_p]:my-1.5 [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:my-2
-                  [&_ol]:list-decimal [&_ol]:pl-5 [&_ol]:my-2
-                  [&_blockquote]:border-l-2 [&_blockquote]:border-amber-400/40 [&_blockquote]:pl-3 [&_blockquote]:italic [&_blockquote]:text-white/60 [&_blockquote]:my-2
-                  [&_img]:rounded-xl [&_img]:max-w-full [&_img]:my-3"
+              <BlogTipTapEditor
+                content={form.content}
+                onChange={html => setForm(f => ({ ...f, content: html }))}
+                articleId={articleId}
+                uploadEndpoint="/api/admin/social/messages/upload"
               />
             </div>
 
@@ -463,6 +483,19 @@ export function BlogEditor({ articleId, onSaved, onCancel }: Props) {
               <p className="text-base font-medium text-blue-400 truncate">{form.seoTitle || form.title || '文章標題'}</p>
               <p className="text-xs text-green-400/70 truncate mt-0.5">{typeof window !== 'undefined' ? window.location.origin : ''}/blogs/...</p>
               <p className="text-xs text-white/50 mt-1 line-clamp-2">{form.seoDesc || form.summary || '文章摘要描述'}</p>
+            </div>
+            <div>
+              <label className="text-[11px] text-white/40 font-medium uppercase tracking-widest block mb-1.5">一鍵 AI 生成 SEO</label>
+              <button
+                type="button"
+                onClick={handleAiSummary}
+                disabled={aiSummaryLoading || !form.title.trim()}
+                className="flex items-center gap-2 px-4 py-2.5 bg-amber-500/15 hover:bg-amber-500/25 border border-amber-400/20 text-amber-300 rounded-xl text-sm transition-colors disabled:opacity-40"
+              >
+                {aiSummaryLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                AI 生成摘要 + SEO 標題 + SEO 描述
+              </button>
+              <p className="text-[10px] text-white/25 mt-1.5">根據文章標題和內容自動生成，可在上方欄位手動調整</p>
             </div>
           </div>
         )}
