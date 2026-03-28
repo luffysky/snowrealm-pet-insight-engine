@@ -130,7 +130,23 @@
       "Bash(mkdir -p \"D:\\\\SnowRealmRebirth\\\\snowrealm-insight-engine\\\\insight-engine\\\\src\\\\app\\\\api\\\\report\\\\[slug]\")",
       "Bash(mkdir -p \"D:\\\\SnowRealmRebirth\\\\snowrealm-insight-engine\\\\insight-engine\\\\src\\\\app\\\\report\\\\[slug]\")",
       "Bash(mkdir -p \"D:\\\\SnowRealmRebirth\\\\snowrealm-insight-engine\\\\insight-engine\\\\src\\\\app\\\\story\\\\[responseId]\")",
-      "Bash(mkdir -p \"D:\\\\SnowRealmRebirth\\\\snowrealm-insight-engine\\\\insight-engine\\\\src\\\\app\\\\story-wall\\\\[surveySlug]\")"
+      "Bash(mkdir -p \"D:\\\\SnowRealmRebirth\\\\snowrealm-insight-engine\\\\insight-engine\\\\src\\\\app\\\\story-wall\\\\[surveySlug]\")",
+      "Bash(ls \"D:/SnowRealmRebirth/snowrealm-insight-engine/insight-engine/src/app/\\(public\\)/pricing/\")",
+      "Bash(ls \"D:/SnowRealmRebirth/snowrealm-insight-engine/insight-engine/src/app/\\(admin\\)/insight-admin/\")",
+      "Bash(ls \"D:/SnowRealmRebirth/snowrealm-insight-engine/insight-engine/src/app/\\(public\\)/\")",
+      "Bash(ls \"D:\\\\SnowRealmRebirth\\\\snowrealm-insight-engine\\\\insight-engine\\\\src\\\\app\\\\\\(public\\)\\\\notifications\")",
+      "Bash(cat \"D:\\\\SnowRealmRebirth\\\\snowrealm-insight-engine\\\\insight-engine\\\\src\\\\app\\\\\\(public\\)\\\\notifications\\\\page.tsx\")",
+      "Bash(npm list:*)",
+      "Bash(\"D:\\\\SnowRealmRebirth\\\\snowrealm-insight-engine\\\\insight-engine\\\\.gitignore\")",
+      "Bash(npm uninstall:*)",
+      "Bash(python3 -c \":*)",
+      "Bash(ls D:/SnowRealmRebirth/snowrealm-insight-engine/insight-engine/src/app/\\\\\\(public\\\\\\)/pricing/)",
+      "Bash(ls D:/SnowRealmRebirth/snowrealm-insight-engine/insight-engine/src/app/\\\\\\(public\\\\\\)/wallet/)",
+      "Bash(ls D:/SnowRealmRebirth/snowrealm-insight-engine/insight-engine/src/app/\\\\\\(super-admin\\\\\\)/snowrealm-insight-ctrl/)",
+      "Bash(ls /d/SnowRealmRebirth/snowrealm-insight-engine/insight-engine/src/app/'\\(public\\)'/)",
+      "Bash(npx next:*)",
+      "Bash(grep -n \"followers\\\\|follower\\\\|following\\\\|follow_count\\\\|FollowList\\\\|fetchFollow\" /d/SnowRealmRebirth/snowrealm-insight-engine/insight-engine/src/app/\\\\\\(public\\\\\\)/u/[userId]/page.tsx)",
+      "Bash(/d/SnowRealmRebirth/snowrealm-insight-engine/insight-engine/supabase/migrations/20260328_comment_likes.sql:*)"
     ]
   }
 }

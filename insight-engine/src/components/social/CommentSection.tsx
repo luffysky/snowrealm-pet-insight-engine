@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { Send, Reply, Trash2, Loader2, Smile, X, ChevronDown, ChevronUp } from 'lucide-react'
+import { Send, Trash2, Loader2, X, ChevronDown, ChevronUp, Heart } from 'lucide-react'
 import Link from 'next/link'
 import { GifPicker } from './GifPicker'
 import { FollowButton } from './FollowButton'
@@ -120,6 +120,45 @@ function CommentInput({ postId, parentId, onSubmitted, onCancel, placeholder, au
   )
 }
 
+function ReplyLikeButton({ reply, currentUserId }: { reply: SocialComment; currentUserId?: string }) {
+  const [liked, setLiked] = useState(reply.myLike)
+  const [count, setCount] = useState(reply.likesCount)
+
+  const handleLike = async () => {
+    if (!currentUserId) return
+    const prev = liked
+    setLiked(!prev)
+    setCount(c => prev ? c - 1 : c + 1)
+    try {
+      const res = await fetch('/api/admin/social/comments', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ commentId: reply.id, action: 'like' }),
+      })
+      if (res.ok) {
+        const data = await res.json() as { likesCount: number }
+        setCount(data.likesCount)
+      } else {
+        setLiked(prev)
+        setCount(c => prev ? c + 1 : c - 1)
+      }
+    } catch {
+      setLiked(prev)
+      setCount(c => prev ? c + 1 : c - 1)
+    }
+  }
+
+  return (
+    <button
+      onClick={handleLike}
+      className={`flex items-center gap-1 text-[10px] font-medium transition-colors ${liked ? 'text-rose-400' : 'text-white/25 hover:text-rose-400'}`}
+    >
+      <Heart className={`w-2.5 h-2.5 ${liked ? 'fill-rose-400' : ''}`} />
+      {count > 0 && <span>{count}</span>}
+    </button>
+  )
+}
+
 function CommentItem({
   comment,
   postId,
@@ -136,7 +175,33 @@ function CommentItem({
   const [replying, setReplying] = useState(false)
   const [showReplies, setShowReplies] = useState(true)
   const [deleting, setDeleting] = useState(false)
+  const [liked, setLiked] = useState(comment.myLike)
+  const [likesCount, setLikesCount] = useState(comment.likesCount)
   const isOwner = currentUserId === comment.userId
+
+  const handleLike = async () => {
+    if (!currentUserId) return
+    const prev = liked
+    setLiked(!prev)
+    setLikesCount(c => prev ? c - 1 : c + 1)
+    try {
+      const res = await fetch('/api/admin/social/comments', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ commentId: comment.id, action: 'like' }),
+      })
+      if (res.ok) {
+        const data = await res.json() as { likesCount: number }
+        setLikesCount(data.likesCount)
+      } else {
+        setLiked(prev)
+        setLikesCount(c => prev ? c + 1 : c - 1)
+      }
+    } catch {
+      setLiked(prev)
+      setLikesCount(c => prev ? c + 1 : c - 1)
+    }
+  }
 
   const handleDelete = async () => {
     if (!confirm('確定刪除這則留言？')) return
@@ -178,6 +243,13 @@ function CommentItem({
             <span className="text-[11px] text-white/25">
               {new Date(comment.createdAt).toLocaleDateString('zh-TW', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
             </span>
+            <button
+              onClick={handleLike}
+              className={`flex items-center gap-1 text-[11px] font-medium transition-colors ${liked ? 'text-rose-400' : 'text-white/30 hover:text-rose-400'}`}
+            >
+              <Heart className={`w-3 h-3 ${liked ? 'fill-rose-400' : ''}`} />
+              {likesCount > 0 && <span>{likesCount}</span>}
+            </button>
             <button onClick={() => setReplying(s => !s)} className="text-[11px] text-white/30 hover:text-amber-300 transition-colors font-medium">
               回覆
             </button>
@@ -231,9 +303,12 @@ function CommentItem({
                   <p className="text-sm text-white/80 break-words whitespace-pre-wrap">{reply.content.trim()}</p>
                   {reply.gifUrl && <img src={reply.gifUrl} alt="GIF" className="mt-1.5 h-16 rounded-lg" />}
                 </div>
-                <p className="text-[10px] text-white/20 mt-0.5 px-1">
-                  {new Date(reply.createdAt).toLocaleDateString('zh-TW', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                </p>
+                <div className="flex items-center gap-3 mt-0.5 px-1">
+                  <span className="text-[10px] text-white/20">
+                    {new Date(reply.createdAt).toLocaleDateString('zh-TW', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                  </span>
+                  <ReplyLikeButton reply={reply} currentUserId={currentUserId} />
+                </div>
               </div>
             </div>
           ))}

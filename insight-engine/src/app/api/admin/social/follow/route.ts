@@ -32,7 +32,6 @@ interface UserRow extends Record<string, unknown> {
  */
 export async function GET(req: NextRequest): Promise<NextResponse> {
   const ctx = await getTenantContext()
-  if (!ctx.userId) return NextResponse.json({ error: '未登入' }, { status: 401 })
 
   const { searchParams } = new URL(req.url)
   const targetUserId = searchParams.get('userId') ?? ctx.userId
@@ -44,14 +43,14 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
       `SELECT au.id, au.display_name, au.avatar_url,
               EXISTS(
                 SELECT 1 FROM user_follows f2
-                WHERE f2.follower_id = $2 AND f2.following_id::text = au.id::text
+                WHERE f2.follower_id::text = $2 AND f2.following_id = au.id
               ) AS is_following_back
        FROM user_follows uf
-       JOIN admin_users au ON au.id::text = uf.follower_id
-       WHERE uf.following_id = $1
+       JOIN admin_users au ON au.id = uf.follower_id
+       WHERE uf.following_id::text = $1
        ORDER BY uf.created_at DESC
        LIMIT 100`,
-      [targetUserId, ctx.userId]
+      [targetUserId, ctx.userId ?? '']
     )
     return NextResponse.json({ users })
   }
@@ -61,8 +60,8 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
     const users = await query<UserRow>(
       `SELECT au.id, au.display_name, au.avatar_url
        FROM user_follows uf
-       JOIN admin_users au ON au.id::text = uf.following_id
-       WHERE uf.follower_id = $1
+       JOIN admin_users au ON au.id = uf.following_id
+       WHERE uf.follower_id::text = $1
        ORDER BY uf.created_at DESC
        LIMIT 100`,
       [targetUserId]
@@ -73,15 +72,15 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
   // 預設：回傳統計數字
   const counts = await queryOne<CountRow>(
     `SELECT
-      (SELECT COUNT(*) FROM user_follows WHERE following_id = $1) AS followers,
-      (SELECT COUNT(*) FROM user_follows WHERE follower_id = $1) AS following`,
+      (SELECT COUNT(*) FROM user_follows WHERE following_id::text = $1) AS followers,
+      (SELECT COUNT(*) FROM user_follows WHERE follower_id::text = $1) AS following`,
     [targetUserId]
   )
 
   let isFollowing = false
   if (ctx.userId && ctx.userId !== targetUserId) {
     const row = await queryOne<FollowRow>(
-      `SELECT follower_id FROM user_follows WHERE follower_id = $1 AND following_id = $2`,
+      `SELECT follower_id FROM user_follows WHERE follower_id::text = $1 AND following_id::text = $2`,
       [ctx.userId, targetUserId]
     )
     isFollowing = !!row
@@ -108,7 +107,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
   try {
     await execute(
-      `INSERT INTO user_follows (follower_id, following_id) VALUES ($1, $2) ON CONFLICT DO NOTHING`,
+      `INSERT INTO user_follows (follower_id, following_id) VALUES ($1::uuid, $2::uuid) ON CONFLICT DO NOTHING`,
       [roleCheck.userId, targetUserId]
     )
     await pushFollowNotification(targetUserId, roleCheck.userId)
@@ -129,7 +128,7 @@ export async function DELETE(req: NextRequest): Promise<NextResponse> {
 
   try {
     await execute(
-      `DELETE FROM user_follows WHERE follower_id = $1 AND following_id = $2`,
+      `DELETE FROM user_follows WHERE follower_id::text = $1 AND following_id::text = $2`,
       [roleCheck.userId, targetUserId]
     )
     return NextResponse.json({ ok: true })

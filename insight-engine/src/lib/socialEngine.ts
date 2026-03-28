@@ -61,6 +61,8 @@ export interface SocialComment {
   gifUrl: string | null
   createdAt: string
   updatedAt: string
+  likesCount: number
+  myLike: boolean
   // joined
   authorName?: string
   authorAvatar?: string
@@ -321,6 +323,8 @@ interface CommentRow extends Record<string, unknown> {
   gif_url: string | null
   created_at: string
   updated_at: string
+  likes_count: number
+  my_like: boolean
   author_name: string | null
   author_avatar: string | null
 }
@@ -335,21 +339,27 @@ function rowToComment(row: CommentRow): SocialComment {
     gifUrl: row.gif_url,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+    likesCount: Number(row.likes_count ?? 0),
+    myLike: Boolean(row.my_like),
     authorName: row.author_name ?? undefined,
     authorAvatar: row.author_avatar ?? undefined,
   }
 }
 
-export async function getComments(postId: string): Promise<SocialComment[]> {
+export async function getComments(postId: string, viewerUserId?: string): Promise<SocialComment[]> {
   const rows = await query<CommentRow>(
     `SELECT c.*,
+      COALESCE(c.likes_count, 0) AS likes_count,
+      CASE WHEN $2::text IS NOT NULL THEN
+        EXISTS(SELECT 1 FROM comment_likes cl WHERE cl.comment_id = c.id AND cl.user_id::text = $2)
+      ELSE FALSE END AS my_like,
       COALESCE(u.display_name, u.username) AS author_name,
       u.avatar_url AS author_avatar
      FROM social_comments c
      JOIN admin_users u ON u.id = c.user_id
      WHERE c.post_id = $1
      ORDER BY c.created_at ASC`,
-    [postId]
+    [postId, viewerUserId ?? null]
   )
 
   const comments = rows.map(rowToComment)
@@ -378,6 +388,8 @@ export async function createComment(data: {
   const row = await queryOne<CommentRow>(
     `INSERT INTO social_comments (post_id, user_id, content, gif_url, parent_id)
      VALUES ($1,$2,$3,$4,$5) RETURNING *,
+     0 AS likes_count,
+     FALSE AS my_like,
      (SELECT COALESCE(display_name, username) FROM admin_users WHERE id = $2) AS author_name,
      (SELECT avatar_url FROM admin_users WHERE id = $2) AS author_avatar`,
     [data.postId, data.userId, data.content, data.gifUrl ?? null, data.parentId ?? null]
@@ -405,6 +417,29 @@ export async function deleteComment(commentId: string, userId: string): Promise<
   )
   if (c) await execute(`UPDATE social_posts SET comments_count = GREATEST(0, comments_count - 1) WHERE id = $1`, [c.post_id])
   return !!c
+}
+
+export async function toggleCommentLike(commentId: string, userId: string): Promise<{ action: 'added' | 'removed'; likesCount: number }> {
+  const existing = await queryOne<{ id: string }>(
+    `SELECT id FROM comment_likes WHERE comment_id::text = $1 AND user_id::text = $2`,
+    [commentId, userId]
+  )
+
+  if (existing) {
+    await execute(`DELETE FROM comment_likes WHERE id = $1`, [existing.id])
+    await execute(`UPDATE social_comments SET likes_count = GREATEST(0, likes_count - 1) WHERE id::text = $1`, [commentId])
+  } else {
+    await execute(
+      `INSERT INTO comment_likes (comment_id, user_id) VALUES ($1::uuid, $2::uuid) ON CONFLICT DO NOTHING`,
+      [commentId, userId]
+    )
+    await execute(`UPDATE social_comments SET likes_count = likes_count + 1 WHERE id::text = $1`, [commentId])
+  }
+
+  const c = await queryOne<{ likes_count: number }>(
+    `SELECT likes_count FROM social_comments WHERE id::text = $1`, [commentId]
+  )
+  return { action: existing ? 'removed' : 'added', likesCount: c?.likes_count ?? 0 }
 }
 
 // ===== Profile =====
