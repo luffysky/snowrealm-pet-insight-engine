@@ -427,6 +427,10 @@ export default function MessagesPage() {
   const [stickerPacks, setStickerPacks] = useState<StickerPack[]>([])
   const [stickerPackIdx, setStickerPackIdx] = useState(0)
   const [loadingStickers, setLoadingStickers] = useState(false)
+  const [stickerSubTab, setStickerSubTab] = useState<'sticker' | 'emoji'>('sticker')
+  const [emojiPacks, setEmojiPacks] = useState<StickerPack[]>([])
+  const [emojiPackIdx, setEmojiPackIdx] = useState(0)
+  const [loadingEmojiPacks, setLoadingEmojiPacks] = useState(false)
   const [emojiCategory, setEmojiCategory] = useState(0)
   const [plusMenuOpen, setPlusMenuOpen] = useState(false)
   const [lightbox, setLightbox] = useState<{ url: string; type: 'image' | 'video' } | null>(null)
@@ -580,7 +584,7 @@ export default function MessagesPage() {
         if (d?.messages) {
           const THEME_SYNC_PREFIX = '[THEME_SYNC]:'
           // Process theme sync proposals separately — don't show as chat bubbles
-          const pendingThemeSync = d.messages.find(m => !m.isMine && m.content.startsWith(THEME_SYNC_PREFIX))
+          const pendingThemeSync = d.messages.find(m => m.fromUserId !== meId && m.content.startsWith(THEME_SYNC_PREFIX))
           if (pendingThemeSync) {
             const raw = pendingThemeSync.content.slice(THEME_SYNC_PREFIX.length)
             let themeKey = raw
@@ -933,11 +937,22 @@ export default function MessagesPage() {
     if (stickerPacks.length > 0) return
     setLoadingStickers(true)
     try {
-      const res = await fetch('/api/stickers')
+      const res = await fetch('/api/stickers?type=sticker')
       const data = await res.json() as { packs: StickerPack[] }
       setStickerPacks(data.packs ?? [])
     } catch { /* ignore */ }
     finally { setLoadingStickers(false) }
+  }
+
+  const loadEmojiPacks = async () => {
+    if (emojiPacks.length > 0) return
+    setLoadingEmojiPacks(true)
+    try {
+      const res = await fetch('/api/stickers?type=emoji')
+      const data = await res.json() as { packs: StickerPack[] }
+      setEmojiPacks(data.packs ?? [])
+    } catch { /* ignore */ }
+    finally { setLoadingEmojiPacks(false) }
   }
 
   const sendSticker = (url: string) => {
@@ -1630,39 +1645,99 @@ export default function MessagesPage() {
 
                 {mediaPanel === 'sticker' && (
                   <div>
-                    {loadingStickers ? (
-                      <div className="flex justify-center py-6"><Loader2 className="w-5 h-5 text-white/25 animate-spin" /></div>
-                    ) : stickerPacks.length === 0 ? (
-                      <div className="py-6 text-center text-xs text-white/25">尚無貼圖包</div>
-                    ) : (
+                    {/* Sub-tabs: 貼圖 / 表情貼 */}
+                    <div className="flex border-b border-white/[0.06]">
+                      <button
+                        onClick={() => { setStickerSubTab('sticker'); void loadStickerPacks() }}
+                        className={`flex-1 py-2 text-xs font-medium transition-colors ${stickerSubTab === 'sticker' ? 'text-amber-400 border-b-2 border-amber-400' : 'text-white/35 hover:text-white/60'}`}
+                      >
+                        🎨 貼圖
+                      </button>
+                      <button
+                        onClick={() => { setStickerSubTab('emoji'); void loadEmojiPacks() }}
+                        className={`flex-1 py-2 text-xs font-medium transition-colors ${stickerSubTab === 'emoji' ? 'text-amber-400 border-b-2 border-amber-400' : 'text-white/35 hover:text-white/60'}`}
+                      >
+                        😊 表情貼
+                      </button>
+                    </div>
+
+                    {stickerSubTab === 'sticker' && (
                       <>
-                        <div className="flex gap-0.5 px-2 pt-2 overflow-x-auto">
-                          {stickerPacks.map((pack, idx) => (
-                            <button
-                              key={pack.id}
-                              onClick={() => setStickerPackIdx(idx)}
-                              className={`shrink-0 w-9 h-9 rounded-lg overflow-hidden border transition-all ${
-                                stickerPackIdx === idx ? 'border-amber-400/60' : 'border-white/10 hover:border-white/20'
-                              }`}
-                            >
-                              {pack.coverUrl
-                                ? <img src={pack.coverUrl} alt={pack.name} className="w-full h-full object-cover" />
-                                : <span className="text-lg leading-none flex items-center justify-center w-full h-full">🫶</span>
-                              }
-                            </button>
-                          ))}
-                        </div>
-                        <div className="grid grid-cols-6 gap-1 p-2 max-h-44 overflow-y-auto">
-                          {(stickerPacks[stickerPackIdx]?.stickers ?? []).map(s => (
-                            <button
-                              key={s.id}
-                              onClick={() => sendSticker(s.url)}
-                              className="aspect-square rounded-xl overflow-hidden hover:bg-white/10 transition-colors p-1"
-                            >
-                              <img src={s.url} alt="" className="w-full h-full object-contain" />
-                            </button>
-                          ))}
-                        </div>
+                        {loadingStickers ? (
+                          <div className="flex justify-center py-6"><Loader2 className="w-5 h-5 text-white/25 animate-spin" /></div>
+                        ) : stickerPacks.length === 0 ? (
+                          <div className="py-6 text-center text-xs text-white/25">尚無貼圖包</div>
+                        ) : (
+                          <>
+                            <div className="flex gap-0.5 px-2 pt-2 overflow-x-auto">
+                              {stickerPacks.map((pack, idx) => (
+                                <button
+                                  key={pack.id}
+                                  onClick={() => setStickerPackIdx(idx)}
+                                  className={`shrink-0 w-9 h-9 rounded-lg overflow-hidden border transition-all ${
+                                    stickerPackIdx === idx ? 'border-amber-400/60' : 'border-white/10 hover:border-white/20'
+                                  }`}
+                                >
+                                  {pack.coverUrl
+                                    ? <img src={pack.coverUrl} alt={pack.name} className="w-full h-full object-cover" />
+                                    : <span className="text-lg leading-none flex items-center justify-center w-full h-full">🫶</span>
+                                  }
+                                </button>
+                              ))}
+                            </div>
+                            <div className="grid grid-cols-6 gap-1 p-2 max-h-44 overflow-y-auto">
+                              {(stickerPacks[stickerPackIdx]?.stickers ?? []).map(s => (
+                                <button
+                                  key={s.id}
+                                  onClick={() => sendSticker(s.url)}
+                                  className="aspect-square rounded-xl overflow-hidden hover:bg-white/10 transition-colors p-1"
+                                >
+                                  <img src={s.url} alt="" className="w-full h-full object-contain" />
+                                </button>
+                              ))}
+                            </div>
+                          </>
+                        )}
+                      </>
+                    )}
+
+                    {stickerSubTab === 'emoji' && (
+                      <>
+                        {loadingEmojiPacks ? (
+                          <div className="flex justify-center py-6"><Loader2 className="w-5 h-5 text-white/25 animate-spin" /></div>
+                        ) : emojiPacks.length === 0 ? (
+                          <div className="py-6 text-center text-xs text-white/25">尚無表情貼包</div>
+                        ) : (
+                          <>
+                            <div className="flex gap-0.5 px-2 pt-2 overflow-x-auto">
+                              {emojiPacks.map((pack, idx) => (
+                                <button
+                                  key={pack.id}
+                                  onClick={() => setEmojiPackIdx(idx)}
+                                  className={`shrink-0 w-9 h-9 rounded-lg overflow-hidden border transition-all ${
+                                    emojiPackIdx === idx ? 'border-amber-400/60' : 'border-white/10 hover:border-white/20'
+                                  }`}
+                                >
+                                  {pack.coverUrl
+                                    ? <img src={pack.coverUrl} alt={pack.name} className="w-full h-full object-cover" />
+                                    : <span className="text-xl leading-none flex items-center justify-center w-full h-full">😊</span>
+                                  }
+                                </button>
+                              ))}
+                            </div>
+                            <div className="grid grid-cols-5 gap-1.5 p-2 max-h-44 overflow-y-auto">
+                              {(emojiPacks[emojiPackIdx]?.stickers ?? []).map(s => (
+                                <button
+                                  key={s.id}
+                                  onClick={() => sendSticker(s.url)}
+                                  className="aspect-square rounded-xl overflow-hidden hover:bg-white/10 transition-colors p-1"
+                                >
+                                  <img src={s.url} alt="" className="w-full h-full object-contain" />
+                                </button>
+                              ))}
+                            </div>
+                          </>
+                        )}
                       </>
                     )}
                   </div>
@@ -1720,7 +1795,7 @@ export default function MessagesPage() {
                         <Smile className="w-4 h-4 text-yellow-400" /> 表情
                       </button>
                       <button
-                        onClick={() => { setMediaPanel(p => p === 'sticker' ? null : 'sticker'); setPlusMenuOpen(false); void loadStickerPacks() }}
+                        onClick={() => { setMediaPanel(p => p === 'sticker' ? null : 'sticker'); setPlusMenuOpen(false); void loadStickerPacks(); setStickerSubTab('sticker') }}
                         className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-white/8 text-sm text-white/80 transition-colors border-t border-white/8"
                       >
                         <span className="text-base leading-none">🫶</span> 貼圖

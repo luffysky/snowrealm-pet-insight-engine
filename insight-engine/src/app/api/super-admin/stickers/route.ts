@@ -25,17 +25,27 @@ interface PackRow extends Record<string, unknown> {
 
 const IMAGE_EXTS = new Set(['.png', '.jpg', '.jpeg', '.gif', '.webp'])
 
-/** GET — 列出所有貼圖包（含每包數量） */
-export async function GET(): Promise<NextResponse> {
+/** GET — 列出所有貼圖包（含每包數量），可用 ?type=sticker|emoji 篩選 */
+export async function GET(req: NextRequest): Promise<NextResponse> {
   const auth = await requireSuperAdmin()
   if (!auth) return NextResponse.json({ error: '未授權' }, { status: 401 })
 
+  const packType = new URL(req.url).searchParams.get('type')
+
   const packs = await query<PackRow>(
-    `SELECT sp.*, COUNT(s.id)::text AS sticker_count
-     FROM sticker_packs sp
-     LEFT JOIN stickers s ON s.pack_id = sp.id
-     GROUP BY sp.id
-     ORDER BY sp.sort_order ASC, sp.created_at DESC`
+    packType
+      ? `SELECT sp.*, COUNT(s.id)::text AS sticker_count
+         FROM sticker_packs sp
+         LEFT JOIN stickers s ON s.pack_id = sp.id
+         WHERE COALESCE(sp.pack_type,'sticker') = $1
+         GROUP BY sp.id
+         ORDER BY sp.sort_order ASC, sp.created_at DESC`
+      : `SELECT sp.*, COUNT(s.id)::text AS sticker_count
+         FROM sticker_packs sp
+         LEFT JOIN stickers s ON s.pack_id = sp.id
+         GROUP BY sp.id
+         ORDER BY sp.sort_order ASC, sp.created_at DESC`,
+    packType ? [packType] : undefined
   )
   return NextResponse.json({ packs })
 }
@@ -57,14 +67,15 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   const name = (formData.get('name') as string | null)?.trim()
   const description = (formData.get('description') as string | null)?.trim() || null
   const file = formData.get('file') as File | null
+  const packType = (formData.get('packType') as string | null) ?? 'sticker'
 
   if (!name) return NextResponse.json({ error: '請填寫貼圖包名稱' }, { status: 400 })
 
   try {
     // 建立貼圖包（不管有沒有 zip）
     const pack = await queryOne<{ id: string }>(
-      `INSERT INTO sticker_packs (name, description) VALUES ($1, $2) RETURNING id`,
-      [name, description]
+      `INSERT INTO sticker_packs (name, description, pack_type) VALUES ($1, $2, $3) RETURNING id`,
+      [name, description, packType]
     )
     if (!pack) throw new Error('建立貼圖包失敗')
 

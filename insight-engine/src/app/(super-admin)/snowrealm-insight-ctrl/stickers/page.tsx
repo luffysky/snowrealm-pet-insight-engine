@@ -38,6 +38,7 @@ export default function StickersPage() {
   const [columnsEditing, setColumnsEditing] = useState<Record<string, number>>({})
 
   // Upload form
+  const [activeTab, setActiveTab] = useState<'sticker' | 'emoji'>('sticker')
   const [uploading, setUploading] = useState(false)
   const [uploadName, setUploadName] = useState('')
   const [uploadDesc, setUploadDesc] = useState('')
@@ -46,16 +47,17 @@ export default function StickersPage() {
   const fileRef = useRef<HTMLInputElement>(null)
   const addImgRef = useRef<HTMLInputElement>(null)
 
-  const loadPacks = async () => {
+  const loadPacks = async (tab?: 'sticker' | 'emoji') => {
     setLoading(true)
     try {
-      const res = await fetch('/api/super-admin/stickers')
+      const type = tab ?? activeTab
+      const res = await fetch(`/api/super-admin/stickers?type=${type}`)
       const data = await res.json() as { packs: StickerPack[] }
       setPacks(data.packs ?? [])
     } finally { setLoading(false) }
   }
 
-  useEffect(() => { void loadPacks() }, [])
+  useEffect(() => { void loadPacks(activeTab) }, [activeTab])
 
   const loadPackStickers = useCallback(async (packId: string) => {
     setLoadingStickers(packId)
@@ -101,11 +103,12 @@ export default function StickersPage() {
       const fd = new FormData()
       fd.append('name', uploadName.trim())
       fd.append('description', uploadDesc.trim())
+      fd.append('packType', activeTab)
       if (uploadFile) fd.append('file', uploadFile)
       const res = await fetch('/api/super-admin/stickers', { method: 'POST', body: fd })
       const data = await res.json() as { ok?: boolean; count?: number; error?: string }
       if (data.ok) {
-        setUploadMsg({ type: 'ok', text: uploadFile ? `✅ 上傳成功！共 ${data.count} 張貼圖` : '✅ 貼圖包已建立' })
+        setUploadMsg({ type: 'ok', text: uploadFile ? `✅ 上傳成功！共 ${data.count} 張圖片` : `✅ ${activeTab === 'emoji' ? '表情貼包' : '貼圖包'}已建立` })
         setUploadName('')
         setUploadDesc('')
         setUploadFile(null)
@@ -203,13 +206,27 @@ export default function StickersPage() {
 
   return (
     <div className="space-y-8">
-      <div className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-2xl bg-amber-500/15 flex items-center justify-center">
-          <Package className="w-5 h-5 text-amber-400" />
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-2xl bg-amber-500/15 flex items-center justify-center">
+            <Package className="w-5 h-5 text-amber-400" />
+          </div>
+          <div>
+            <h1 className="text-xl font-bold text-white">貼圖管理</h1>
+            <p className="text-sm text-slate-400">建立貼圖包・表情貼・上傳圖片・調整排序</p>
+          </div>
         </div>
-        <div>
-          <h1 className="text-xl font-bold text-white">貼圖管理</h1>
-          <p className="text-sm text-slate-400">建立貼圖包・上傳圖片・調整排序與格式</p>
+        {/* Tab switcher */}
+        <div className="flex bg-slate-900/60 border border-slate-700/50 rounded-xl p-1 gap-1">
+          {([['sticker', '🎨 貼圖包'], ['emoji', '😊 表情貼']] as const).map(([key, label]) => (
+            <button
+              key={key}
+              onClick={() => { setActiveTab(key); setExpandedPack(null); setUploadMsg(null) }}
+              className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${activeTab === key ? 'bg-amber-500/20 text-amber-300' : 'text-slate-400 hover:text-slate-200'}`}
+            >
+              {label}
+            </button>
+          ))}
         </div>
       </div>
 
