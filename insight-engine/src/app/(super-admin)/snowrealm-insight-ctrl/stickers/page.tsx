@@ -100,23 +100,40 @@ export default function StickersPage() {
     setUploading(true)
     setUploadMsg(null)
     try {
-      const fd = new FormData()
-      fd.append('name', uploadName.trim())
-      fd.append('description', uploadDesc.trim())
-      fd.append('packType', activeTab)
-      if (uploadFile) fd.append('file', uploadFile)
-      const res = await fetch('/api/super-admin/stickers', { method: 'POST', body: fd })
-      const data = await res.json() as { ok?: boolean; count?: number; error?: string }
-      if (data.ok) {
-        setUploadMsg({ type: 'ok', text: uploadFile ? `✅ 上傳成功！共 ${data.count} 張圖片` : `✅ ${activeTab === 'emoji' ? '表情貼包' : '貼圖包'}已建立` })
-        setUploadName('')
-        setUploadDesc('')
-        setUploadFile(null)
-        if (fileRef.current) fileRef.current.value = ''
-        await loadPacks()
-      } else {
-        setUploadMsg({ type: 'err', text: data.error ?? '上傳失敗' })
+      // Step 1: create the pack via JSON (avoids FormData parsing issues in Next.js 16)
+      const createRes = await fetch('/api/super-admin/stickers', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: uploadName.trim(), description: uploadDesc.trim(), packType: activeTab }),
+      })
+      const createData = await createRes.json() as { ok?: boolean; packId?: string; error?: string }
+      if (!createData.ok || !createData.packId) {
+        setUploadMsg({ type: 'err', text: createData.error ?? '建立失敗' })
+        return
       }
+
+      // Step 2: if zip provided, upload as octet-stream
+      if (uploadFile) {
+        const uploadRes = await fetch(`/api/super-admin/stickers?packId=${createData.packId}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/octet-stream' },
+          body: uploadFile,
+        })
+        const uploadData = await uploadRes.json() as { ok?: boolean; count?: number; error?: string }
+        if (uploadData.ok) {
+          setUploadMsg({ type: 'ok', text: `✅ 上傳成功！共 ${uploadData.count} 張圖片` })
+        } else {
+          setUploadMsg({ type: 'err', text: uploadData.error ?? '圖片上傳失敗（貼圖包已建立）' })
+        }
+      } else {
+        setUploadMsg({ type: 'ok', text: `✅ ${activeTab === 'emoji' ? '表情貼包' : '貼圖包'}已建立` })
+      }
+
+      setUploadName('')
+      setUploadDesc('')
+      setUploadFile(null)
+      if (fileRef.current) fileRef.current.value = ''
+      await loadPacks()
     } catch {
       setUploadMsg({ type: 'err', text: '網路錯誤，請重試' })
     } finally { setUploading(false) }
