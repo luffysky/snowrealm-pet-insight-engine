@@ -320,7 +320,7 @@ export function BgPicker({
               </button>
             </div>
 
-            <div className="p-3 max-h-[360px] overflow-y-auto">
+            <div className="p-3 max-h-[440px] overflow-y-auto">
               {/* 自訂上傳 */}
               <div className="mb-3">
                 <p className="text-[10px] text-white/30 font-medium mb-2 px-1">自訂圖片</p>

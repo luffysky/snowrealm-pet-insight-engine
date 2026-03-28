@@ -857,6 +857,17 @@ export default function MessagesPage() {
                   const audioUrl = isAudio ? msg.content.slice(AUDIO_PREFIX.length) : null
                   const isSticker = !recalled && msg.content.startsWith(STICKER_PREFIX)
                   const stickerUrl = isSticker ? msg.content.slice(STICKER_PREFIX.length) : null
+                  // 相容 public 私訊頁發出的媒體格式
+                  const isPublicAudio = !recalled && !isAudio && msg.content.startsWith('[audio:') && msg.content.endsWith(']')
+                  const publicAudioUrl = isPublicAudio ? msg.content.slice(7, -1) : null
+                  const isPublicVideo = !recalled && msg.content.startsWith('[video:') && msg.content.endsWith(']')
+                  const publicVideoUrl = isPublicVideo ? msg.content.slice(7, -1) : null
+                  const isImage = !recalled && msg.content.startsWith('[img:') && msg.content.endsWith(']')
+                  const imageUrl = isImage ? msg.content.slice(5, -1) : null
+                  const isGif = !recalled && msg.content.startsWith('[gif:') && msg.content.endsWith(']')
+                  const gifUrl = isGif ? msg.content.slice(5, -1) : null
+                  const isFileMsg = !recalled && msg.content.startsWith('[file:') && msg.content.endsWith(']')
+                  const fileParts = isFileMsg ? msg.content.slice(6, -1).split('|') : null
 
                   return (
                     <div
@@ -895,7 +906,7 @@ export default function MessagesPage() {
                               draggable={false}
                             />
                           </div>
-                        ) : isAudio && audioUrl ? (
+                        ) : (isAudio && audioUrl) || (isPublicAudio && publicAudioUrl) ? (
                           <div className={`px-3 py-2.5 rounded-2xl ${
                             isMine ? 'rounded-br-sm bg-gradient-to-br from-amber-500/90 to-orange-400/90 shadow-[0_4px_12px_rgba(245,158,11,0.25)]'
                                     : 'rounded-bl-sm bg-white/[0.08] border border-white/[0.08] shadow-[0_2px_8px_rgba(0,0,0,0.3)]'
@@ -905,11 +916,44 @@ export default function MessagesPage() {
                               <span className={`text-xs font-medium ${isMine ? 'text-white/80' : 'text-white/50'}`}>語音訊息</span>
                             </div>
                             <audio
-                              src={audioUrl}
+                              src={(audioUrl ?? publicAudioUrl)!}
                               controls
                               className="w-48 h-8"
                               style={{ colorScheme: 'dark' }}
                             />
+                          </div>
+                        ) : isPublicVideo && publicVideoUrl ? (
+                          <div className="rounded-2xl overflow-hidden max-w-[220px]">
+                            <video
+                              src={publicVideoUrl}
+                              controls
+                              className="w-full max-h-48 rounded-2xl"
+                              style={{ colorScheme: 'dark' }}
+                            />
+                          </div>
+                        ) : (isImage && imageUrl) || (isGif && gifUrl) ? (
+                          <div className="rounded-2xl overflow-hidden max-w-[220px]">
+                            <img
+                              src={(imageUrl ?? gifUrl)!}
+                              alt=""
+                              className="w-full max-h-60 object-cover rounded-2xl"
+                            />
+                          </div>
+                        ) : isFileMsg && fileParts ? (
+                          <div className={`px-3.5 py-2.5 rounded-2xl ${
+                            isMine
+                              ? 'bg-gradient-to-br from-amber-500/90 to-orange-400/90 rounded-br-sm'
+                              : 'bg-white/[0.08] border border-white/[0.08] rounded-bl-sm'
+                          }`}>
+                            <a
+                              href={fileParts[1]}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className={`flex items-center gap-2 text-sm ${isMine ? 'text-white' : 'text-white/80'}`}
+                            >
+                              <Paperclip className="w-4 h-4 shrink-0" />
+                              <span className="truncate max-w-[160px]">{fileParts[0] || '檔案'}</span>
+                            </a>
                           </div>
                         ) : (
                           <div className={`px-3.5 py-2.5 text-sm leading-relaxed break-words ${
