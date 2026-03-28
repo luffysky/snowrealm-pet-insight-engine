@@ -123,7 +123,10 @@ export default function StickersPage() {
         if (uploadData.ok) {
           setUploadMsg({ type: 'ok', text: `✅ 上傳成功！共 ${uploadData.count} 張圖片` })
         } else {
-          setUploadMsg({ type: 'err', text: uploadData.error ?? '圖片上傳失敗（貼圖包已建立）' })
+          // zip failed — delete the empty pack so it doesn't litter the list
+          await fetch(`/api/super-admin/stickers/${createData.packId}`, { method: 'DELETE' })
+          setUploadMsg({ type: 'err', text: uploadData.error ?? '圖片上傳失敗' })
+          return
         }
       } else {
         setUploadMsg({ type: 'ok', text: `✅ ${activeTab === 'emoji' ? '表情貼包' : '貼圖包'}已建立` })

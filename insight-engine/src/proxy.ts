@@ -160,9 +160,9 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
     if (!isSuper) {
       return NextResponse.json({ error: '權限不足：僅 super_admin 可存取' }, { status: 403 })
     }
-    // For multipart/form-data (file uploads), avoid header injection to prevent body drop bug in Next.js 16
+    // For binary uploads, avoid header injection to prevent body corruption bug in Next.js 16
     const contentType = request.headers.get('content-type') ?? ''
-    if (contentType.startsWith('multipart/form-data')) {
+    if (contentType.startsWith('multipart/form-data') || contentType.startsWith('application/octet-stream')) {
       return NextResponse.next()
     }
     return NextResponse.next({
