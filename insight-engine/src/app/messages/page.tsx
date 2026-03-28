@@ -391,6 +391,7 @@ interface Message {
   fromName: string | null
   fromAvatar: string | null
   editedAt: string | null
+  readAt: string | null
 }
 
 interface SSEMessage {
@@ -402,7 +403,11 @@ interface SSEMessage {
     fromUserId: string
     fromName: string | null
     fromAvatar: string | null
+    readAt: string | null
   }[]
+  isTyping?: boolean
+  readUpdates?: { id: string; readAt: string }[]
+  themeSync?: { themeKey: string; fromId: string } | null
 }
 
 export default function MessagesPage() {
@@ -447,6 +452,14 @@ export default function MessagesPage() {
   const [mainTab, setMainTab] = useState<'messages' | 'friends'>('messages')
   const [friends, setFriends] = useState<{ id: string; displayName: string | null; avatarUrl: string | null; relation: 'follower' | 'following' | 'mutual' }[]>([])
   const [friendsLoading, setFriendsLoading] = useState(false)
+  // ── 輸入中提示 ──
+  const [peerTyping, setPeerTyping] = useState(false)
+  const peerTypingTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const typingThrottle = useRef<ReturnType<typeof setTimeout> | null>(null)
+  // ── 主題共用 ──
+  const [pendingShareTheme, setPendingShareTheme] = useState<string | null>(null)
+  const pendingShareTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const [incomingThemeSync, setIncomingThemeSync] = useState<{ themeKey: string; fromId: string } | null>(null)
   // ── 語音錄音 ──
   const [recording, setRecording] = useState(false)
   const [recSeconds, setRecSeconds] = useState(0)
@@ -561,10 +574,19 @@ export default function MessagesPage() {
     esRef.current?.close()
 
     fetch(`/api/admin/social/messages/${active.userId}`)
-      .then(r => r.ok ? r.json() as Promise<{ messages: Message[] }> : null)
+      .then(r => r.ok ? r.json() as Promise<{ messages: (Omit<Message, 'isMine'> & { fromUserId: string; readAt: string | null })[] }> : null)
       .then(d => {
         if (d?.messages) {
-          setMessages(d.messages)
+          setMessages(d.messages.map(m => ({
+            id: m.id,
+            content: m.content,
+            createdAt: m.createdAt,
+            isMine: m.fromUserId === meId,
+            fromName: m.fromName,
+            fromAvatar: m.fromAvatar,
+            editedAt: m.editedAt,
+            readAt: m.readAt ?? null,
+          })))
           // Clear unread count for this conversation in the list
           setConversations(prev => prev.map(c =>
             c.userId === active.userId ? { ...c, unreadCount: 0 } : c
@@ -583,7 +605,9 @@ export default function MessagesPage() {
     es.onmessage = (e) => {
       try {
         const data = JSON.parse(e.data as string) as SSEMessage
-        if (data.type === 'messages' && data.messages && data.messages.length > 0) {
+
+        // New messages
+        if (data.messages && data.messages.length > 0) {
           setMessages(prev => {
             const existingIds = new Set(prev.map(m => m.id))
             const newMsgs = data.messages!
@@ -591,10 +615,34 @@ export default function MessagesPage() {
               .map(m => ({
                 id: m.id, content: m.content, createdAt: m.createdAt,
                 isMine: m.fromUserId === meId, fromName: m.fromName, fromAvatar: m.fromAvatar,
-                editedAt: null,
+                editedAt: null, readAt: m.readAt ?? null,
               }))
             return newMsgs.length > 0 ? [...prev, ...newMsgs] : prev
           })
+        }
+
+        // Typing indicator
+        if (data.isTyping !== undefined) {
+          if (data.isTyping) {
+            setPeerTyping(true)
+            if (peerTypingTimer.current) clearTimeout(peerTypingTimer.current)
+            peerTypingTimer.current = setTimeout(() => setPeerTyping(false), 5000)
+          } else {
+            if (!peerTyping) { /* no change */ }
+          }
+        }
+
+        // Read receipts
+        if (data.readUpdates && data.readUpdates.length > 0) {
+          setMessages(prev => prev.map(m => {
+            const upd = data.readUpdates!.find(u => u.id === m.id)
+            return upd ? { ...m, readAt: upd.readAt } : m
+          }))
+        }
+
+        // Incoming theme sync proposal
+        if (data.themeSync) {
+          setIncomingThemeSync(data.themeSync)
         }
       } catch { /* ignore */ }
     }
@@ -672,7 +720,7 @@ export default function MessagesPage() {
         setMessages(prev => [...prev, {
           id: data.message.id, content: full,
           createdAt: data.message.createdAt, isMine: true,
-          fromName: null, fromAvatar: null, editedAt: null,
+          fromName: null, fromAvatar: null, editedAt: null, readAt: null,
         }])
       }
     } catch { /* ignore */ }
@@ -731,6 +779,7 @@ export default function MessagesPage() {
             fromName: null,
             fromAvatar: null,
             editedAt: null,
+            readAt: null,
           }])
         } else {
           alert(`已轉傳給 ${targetName}`)
@@ -860,6 +909,26 @@ export default function MessagesPage() {
   const applyTheme = useCallback((key: string) => {
     setThemeKey(key)
     persist(key, bgCustomUrl, effects)
+    // Show share prompt for 6s
+    if (pendingShareTimer.current) clearTimeout(pendingShareTimer.current)
+    setPendingShareTheme(key)
+    pendingShareTimer.current = setTimeout(() => setPendingShareTheme(null), 6000)
+  }, [bgCustomUrl, effects, persist])
+
+  const sendThemeSync = useCallback((themeKey: string) => {
+    if (!active) return
+    setPendingShareTheme(null)
+    fetch('/api/admin/social/messages/theme-sync', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ toUserId: active.userId, themeKey }),
+    }).catch(() => {})
+  }, [active])
+
+  const acceptThemeSync = useCallback((themeKey: string) => {
+    setIncomingThemeSync(null)
+    setThemeKey(themeKey)
+    persist(themeKey, bgCustomUrl, effects)
   }, [bgCustomUrl, effects, persist])
 
   const applyCustomBg = useCallback((url: string) => {
@@ -1138,6 +1207,21 @@ export default function MessagesPage() {
                         </button>
                       ))}
                     </div>
+                    {/* Share theme prompt */}
+                    {pendingShareTheme && active && (
+                      <div className="flex items-center justify-between gap-2 px-3 py-2 bg-amber-500/10 border border-amber-500/20 rounded-xl text-xs">
+                        <span className="text-white/70">
+                          🎨 跟 <span className="text-amber-300 font-medium">{active.displayName ?? '對方'}</span> 共用此主題？
+                        </span>
+                        <div className="flex gap-2 shrink-0">
+                          <button
+                            onClick={() => sendThemeSync(pendingShareTheme)}
+                            className="px-2.5 py-1 bg-amber-500 text-slate-900 font-semibold rounded-lg hover:bg-amber-400 transition-colors"
+                          >共用</button>
+                          <button onClick={() => setPendingShareTheme(null)} className="text-white/30 hover:text-white/60">✕</button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
 
@@ -1389,12 +1473,34 @@ export default function MessagesPage() {
                       <p className={`text-[10px] mt-1 flex items-center gap-1 ${naked ? (msg.isMine ? 'text-white/30 justify-end px-1' : 'text-white/25 px-1') : msg.isMine ? 'text-white/50 justify-end' : 'text-white/35'}`}>
                         {msg.editedAt && <span className="opacity-60">已編輯</span>}
                         <span>{formatTime(msg.createdAt)}</span>
+                        {msg.isMine && msg.content !== '[已收回]' && (
+                          <span className={`leading-none ${msg.readAt ? 'text-sky-400' : 'text-white/30'}`} title={msg.readAt ? '已讀' : '未讀'}>
+                            {msg.readAt ? '✓✓' : '✓'}
+                          </span>
+                        )}
                       </p>
                     )}
                   </div>
                 </div>
                 )
               })}
+              {/* 對方輸入中提示 */}
+              {peerTyping && (
+                <div className="flex justify-start">
+                  <div className="flex items-center gap-2 px-3.5 py-2.5 rounded-2xl rounded-bl-[6px] max-w-[120px]"
+                    style={{ background: activeTheme.theirBg, border: activeTheme.theirBorder ?? 'none' }}
+                  >
+                    <span className="flex gap-0.5">
+                      {[0, 1, 2].map(i => (
+                        <span key={i} className="w-1.5 h-1.5 rounded-full bg-white/50 animate-bounce"
+                          style={{ animationDelay: `${i * 0.15}s`, animationDuration: '0.8s' }}
+                        />
+                      ))}
+                    </span>
+                    <span className="text-[10px]" style={{ color: activeTheme.theirText }}>輸入中</span>
+                  </div>
+                </div>
+              )}
               <div ref={bottomRef} />
               </div>{/* end scroll area */}
             </div>{/* end layered bg wrapper */}
@@ -1593,7 +1699,18 @@ export default function MessagesPage() {
                   <div className="flex-1 flex items-center bg-slate-800/80 border border-white/[0.08] rounded-3xl overflow-hidden focus-within:border-amber-500/40 transition-colors">
                     <input
                       value={input}
-                      onChange={e => setInput(e.target.value)}
+                      onChange={e => {
+                        setInput(e.target.value)
+                        // Throttle typing signal: send at most once every 2s
+                        if (!typingThrottle.current && active) {
+                          fetch('/api/admin/social/messages/typing', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ toUserId: active.userId }),
+                          }).catch(() => {})
+                          typingThrottle.current = setTimeout(() => { typingThrottle.current = null }, 2000)
+                        }
+                      }}
                       onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send() } }}
                       onFocus={() => { setMediaPanel(null); setPlusMenuOpen(false) }}
                       placeholder="輸入訊息..."
@@ -1716,6 +1833,27 @@ export default function MessagesPage() {
             </button>
           </div>
         </>
+      )}
+
+      {/* Incoming theme sync notification */}
+      {incomingThemeSync && (
+        <div className="fixed bottom-[calc(var(--bnav-h,76px)+1rem)] left-1/2 -translate-x-1/2 z-[80] w-[90vw] max-w-sm">
+          <div className="bg-slate-800/98 backdrop-blur-xl border border-amber-500/20 rounded-2xl px-4 py-3 shadow-2xl shadow-black/60 flex items-center gap-3">
+            <span className="text-xl">🎨</span>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm text-white/85 font-medium leading-snug">
+                對方邀你一起用「{CHAT_THEMES.find(t => t.key === incomingThemeSync.themeKey)?.label ?? incomingThemeSync.themeKey}」主題
+              </p>
+            </div>
+            <div className="flex gap-2 shrink-0">
+              <button
+                onClick={() => acceptThemeSync(incomingThemeSync.themeKey)}
+                className="px-3 py-1.5 bg-amber-500 text-slate-900 text-xs font-bold rounded-xl hover:bg-amber-400 transition-colors"
+              >套用</button>
+              <button onClick={() => setIncomingThemeSync(null)} className="text-white/30 hover:text-white/60 text-xs px-2">略過</button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Draggable DM bubble */}

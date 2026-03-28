@@ -10,8 +10,10 @@ export async function GET(request: NextRequest) {
   const limit = Math.min(parseInt(searchParams.get('limit') ?? '20'), 50)
   const offset = parseInt(searchParams.get('offset') ?? '0')
 
+  // 一般後台只管理自己的貼文，userId 參數必須是自己（或未指定）
+  const targetUserId = userId ?? ctx.userId ?? undefined
   const posts = await getPosts({
-    userId,
+    userId: targetUserId,
     viewerId: ctx.userId ?? undefined,
     type,
     limit,

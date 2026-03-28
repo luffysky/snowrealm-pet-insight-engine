@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server'
 import { getTenantContext } from '@/lib/tenant'
 import { query } from '@/lib/db'
 import { decryptApiKey } from '@/lib/aiCrypto'
+import { getIsTyping, pollThemeSync } from '@/lib/dmEventStore'
 
 interface MsgRow extends Record<string, unknown> {
   id: string
@@ -11,9 +12,15 @@ interface MsgRow extends Record<string, unknown> {
   iv: string
   tag: string
   read_at: string | null
+  recalled_at: string | null
   created_at: string
   from_name: string | null
   from_avatar: string | null
+}
+
+interface ReadRow extends Record<string, unknown> {
+  id: string
+  read_at: string
 }
 
 export async function GET(request: NextRequest) {
@@ -25,8 +32,10 @@ export async function GET(request: NextRequest) {
   if (!withUserId) return new Response('userId required', { status: 400 })
 
   const encoder = new TextEncoder()
-  // Use created_at for tracking instead of id (UUIDs are random, not sortable by time)
+
+  // Track last seen timestamps for deduplication
   let lastCreatedAt = searchParams.get('since') ?? new Date(Date.now() - 5000).toISOString()
+  let lastReadCheck = new Date(Date.now() - 5000).toISOString()
 
   const stream = new ReadableStream({
     async start(controller) {
@@ -34,10 +43,10 @@ export async function GET(request: NextRequest) {
         controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`))
       }
 
-      // Send heartbeat + poll for new messages
       const poll = async () => {
         try {
-          const rows = await query<MsgRow>(
+          // 1. New messages
+          const msgRows = await query<MsgRow>(
             `SELECT dm.*,
                au.display_name as from_name,
                au.avatar_url as from_avatar
@@ -53,35 +62,67 @@ export async function GET(request: NextRequest) {
             [ctx.userId, withUserId, lastCreatedAt]
           )
 
-          if (rows.length > 0) {
-            const messages = rows.map(r => {
-              let content = ''
-              try { content = decryptApiKey({ encrypted: r.encrypted_content, iv: r.iv, tag: r.tag }) } catch { content = '[解密失敗]' }
-              return {
-                id: r.id,
-                fromUserId: r.from_user_id,
-                toUserId: r.to_user_id,
-                content,
-                fromName: r.from_name,
-                fromAvatar: r.from_avatar,
-                readAt: r.read_at,
-                createdAt: r.created_at,
-              }
-            })
-            lastCreatedAt = rows[rows.length - 1].created_at
-            send({ type: 'messages', messages })
-          } else {
-            send({ type: 'ping' })
+          const newMessages = msgRows.map(r => {
+            let content = '[解密失敗]'
+            if (r.recalled_at) {
+              content = '[已收回]'
+            } else {
+              try { content = decryptApiKey({ encrypted: r.encrypted_content, iv: r.iv, tag: r.tag }) } catch { /* fallback */ }
+            }
+            return {
+              id: r.id,
+              fromUserId: r.from_user_id,
+              toUserId: r.to_user_id,
+              content,
+              fromName: r.from_name,
+              fromAvatar: r.from_avatar,
+              readAt: r.read_at,
+              createdAt: r.created_at,
+            }
+          })
+
+          if (msgRows.length > 0) {
+            lastCreatedAt = msgRows[msgRows.length - 1].created_at
           }
+
+          // 2. Read receipts: my messages that were just read by the other person
+          const readRows = await query<ReadRow>(
+            `SELECT id, read_at::text AS read_at
+             FROM direct_messages
+             WHERE from_user_id = $1 AND to_user_id = $2
+               AND read_at IS NOT NULL AND read_at > $3`,
+            [ctx.userId, withUserId, lastReadCheck]
+          )
+          if (readRows.length > 0) {
+            lastReadCheck = readRows[readRows.length - 1].read_at
+          }
+
+          // 3. Typing indicator (other person typing to me)
+          const isTyping = getIsTyping(withUserId, ctx.userId)
+
+          // 4. Theme sync proposal for me
+          const themeSyncEvent = pollThemeSync(ctx.userId)
+
+          // Always send so client gets typing/read updates even with no new messages
+          send({
+            type: newMessages.length > 0 ? 'messages' : 'ping',
+            messages: newMessages.length > 0 ? newMessages : undefined,
+            isTyping,
+            readUpdates: readRows.length > 0
+              ? readRows.map(r => ({ id: r.id, readAt: r.read_at }))
+              : undefined,
+            themeSync: themeSyncEvent
+              ? { themeKey: themeSyncEvent.themeKey, fromId: themeSyncEvent.fromId }
+              : undefined,
+          })
         } catch {
           send({ type: 'ping' })
         }
       }
 
       await poll()
-      const interval = setInterval(poll, 3000) // Poll every 3 seconds
+      const interval = setInterval(poll, 3000)
 
-      // Clean up when client disconnects
       request.signal.addEventListener('abort', () => {
         clearInterval(interval)
         controller.close()

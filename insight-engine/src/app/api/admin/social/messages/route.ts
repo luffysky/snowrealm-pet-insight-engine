@@ -10,6 +10,7 @@ interface ConversationRow extends Record<string, unknown> {
   encrypted_content: string
   iv: string
   tag: string
+  recalled_at: string | null
   created_at: string
   unread_count: string
 }
@@ -37,6 +38,7 @@ export async function GET(): Promise<NextResponse> {
       dm.encrypted_content,
       dm.iv,
       dm.tag,
+      dm.recalled_at,
       dm.created_at,
       (SELECT COUNT(*) FROM direct_messages dm2
         WHERE dm2.to_user_id = $1
@@ -55,6 +57,17 @@ export async function GET(): Promise<NextResponse> {
   const conversations: ConversationResult[] = rows.map(row => {
     let preview = '...'
     try {
+      if (row.recalled_at) {
+        preview = '此訊息已收回'
+        return {
+          userId: row.other_user_id,
+          displayName: row.other_name,
+          avatarUrl: row.other_avatar,
+          lastMessagePreview: preview,
+          lastMessageAt: row.created_at,
+          unreadCount: parseInt(row.unread_count ?? '0', 10),
+        }
+      }
       const decrypted = decryptApiKey({ encrypted: row.encrypted_content, iv: row.iv, tag: row.tag })
       if (decrypted.startsWith(AUDIO_PREFIX)) {
         preview = '🎵 語音訊息'
