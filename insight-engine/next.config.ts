@@ -3,6 +3,7 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   output: "standalone",
   serverBodySizeLimit: '50mb',
+  middlewareClientMaxBodySize: '50mb',
   reactCompiler: true,
   images: {
     remotePatterns: [
