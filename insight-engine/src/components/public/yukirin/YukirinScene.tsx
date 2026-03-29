@@ -156,10 +156,37 @@ export default function YukirinScene({
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null)
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null)
   const clickCooldownRef = useRef(false)
+  const mountedRef = useRef(true)
+
+  // 隨機身體轉向
+  const targetBodyYRotRef = useRef(0)
+  const currentBodyYRotRef = useRef(0)
+  const randomActionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // 點擊互動：隨機切換表情
   const CLICK_REACTIONS: YukirinMood[] = ['surprised', 'wink', 'excited', 'happy', 'relaxed']
   const clickReactionIdxRef = useRef(0)
+
+  // 揮手動畫
+  const playArmWave = useCallback((vrm: VRM) => {
+    const upperArm = vrm.humanoid.getNormalizedBoneNode('rightUpperArm')
+    const lowerArm = vrm.humanoid.getNormalizedBoneNode('rightLowerArm')
+    if (!upperArm) return
+    let t = 0
+    const wave = () => {
+      t += 0.07
+      upperArm.rotation.z = -1.0 + Math.sin(t * 3) * 0.3
+      upperArm.rotation.x = -0.1
+      if (lowerArm) lowerArm.rotation.z = 0.15 + Math.sin(t * 3 + 0.5) * 0.15
+      if (t < Math.PI * 2.5) {
+        requestAnimationFrame(wave)
+      } else {
+        upperArm.rotation.set(0, 0, 0)
+        if (lowerArm) lowerArm.rotation.set(0, 0, 0)
+      }
+    }
+    requestAnimationFrame(wave)
+  }, [])
 
   // 平滑過渡表情
   const transitionExpression = useCallback((vrm: VRM, target: YukirinMood, durationMs = 300) => {
@@ -255,6 +282,43 @@ export default function YukirinScene({
           playAnimation: (_name) => { /* Mixamo 動畫在下一版本加入 */ },
         })
       }
+
+      // 隨機 idle 動作排程
+      const idleActions = ['turn_left', 'turn_right', 'center', 'wave', 'look_left', 'look_right', 'idle'] as const
+      const scheduleRandomAction = () => {
+        if (!mountedRef.current) return
+        const action = idleActions[Math.floor(Math.random() * idleActions.length)]
+        switch (action) {
+          case 'turn_left':
+            targetBodyYRotRef.current = -(0.25 + Math.random() * 0.35)
+            break
+          case 'turn_right':
+            targetBodyYRotRef.current = 0.25 + Math.random() * 0.35
+            break
+          case 'center':
+            targetBodyYRotRef.current = (Math.random() - 0.5) * 0.1
+            break
+          case 'wave':
+            playArmWave(vrm)
+            targetBodyYRotRef.current = 0.2
+            setTimeout(() => { targetBodyYRotRef.current = 0 }, 3500)
+            break
+          case 'look_left':
+            mouseRef.current = { x: -0.9, y: mouseRef.current.y }
+            setTimeout(() => { mouseRef.current = { x: 0, y: 0 } }, 2500)
+            break
+          case 'look_right':
+            mouseRef.current = { x: 0.9, y: mouseRef.current.y }
+            setTimeout(() => { mouseRef.current = { x: 0, y: 0 } }, 2500)
+            break
+          case 'idle':
+          default:
+            break
+        }
+        const delay = 4000 + Math.random() * 9000
+        randomActionTimerRef.current = setTimeout(scheduleRandomAction, delay)
+      }
+      setTimeout(scheduleRandomAction, 3000)
     }).catch((err) => {
       console.error('[YukirinScene] VRM 載入失敗', err)
     })
@@ -369,6 +433,16 @@ export default function YukirinScene({
         }
       }
 
+      // 平滑身體轉向
+      if (vrm) {
+        currentBodyYRotRef.current = THREE.MathUtils.lerp(
+          currentBodyYRotRef.current,
+          targetBodyYRotRef.current,
+          Math.min(delta * 1.8, 1)
+        )
+        vrm.scene.rotation.y = currentBodyYRotRef.current
+      }
+
       // SpringBone 物理更新
       vrm?.update(delta)
 
@@ -411,6 +485,8 @@ export default function YukirinScene({
 
     // ── Cleanup ────────────────────────────────────────────────────────────
     return () => {
+      mountedRef.current = false
+      if (randomActionTimerRef.current) clearTimeout(randomActionTimerRef.current)
       cancelAnimationFrame(rafRef.current)
       window.removeEventListener('mousemove', onMouseMove)
       window.removeEventListener('deviceorientation', onDeviceOrientation)
@@ -419,7 +495,7 @@ export default function YukirinScene({
       renderer.dispose()
       container.removeChild(renderer.domElement)
     }
-  }, [cameraMode, mood, showBackground, onLoad, transitionExpression])
+  }, [cameraMode, mood, showBackground, onLoad, transitionExpression, playArmWave])
 
   return (
     <div
