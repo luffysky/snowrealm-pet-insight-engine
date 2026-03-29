@@ -21,13 +21,22 @@ export async function generateMetadata(
   const card = await fetchCard(responseId)
   if (!card) return { title: 'Not Found' }
 
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? 'https://insight.snowrealm.pet'
   return {
+    metadataBase: new URL(baseUrl),
     title: `${card.surveyTitle} — 我的故事卡片`,
     description: card.shareableOneLiner,
     openGraph: {
       title: `${card.surveyTitle} — 我的故事卡片`,
       description: card.shareableOneLiner,
       type: 'article',
+      url: `${baseUrl}/story/${responseId}`,
+      siteName: 'SnowRealm Insight Engine',
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: `${card.surveyTitle} — 我的故事卡片`,
+      description: card.shareableOneLiner,
     },
   }
 }

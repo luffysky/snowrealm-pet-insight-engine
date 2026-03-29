@@ -37,13 +37,22 @@ export async function generateMetadata(
     ? (data.report as InsightReport).summary?.slice(0, 120)
     : (data.report as StoryInsightReport).shareableOneLiner ?? ''
 
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? 'https://insight.snowrealm.pet'
   return {
+    metadataBase: new URL(baseUrl),
     title: `${title} — SnowRealm Insight Engine`,
     description: desc,
     openGraph: {
       title,
       description: desc ?? undefined,
       type: 'article',
+      url: `${baseUrl}/report/${slug}`,
+      siteName: 'SnowRealm Insight Engine',
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description: desc ?? undefined,
     },
   }
 }

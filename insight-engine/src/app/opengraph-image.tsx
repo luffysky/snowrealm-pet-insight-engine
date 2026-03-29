@@ -18,54 +18,63 @@ export default function Image() {
           justifyContent: 'center',
           background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%)',
           fontFamily: 'sans-serif',
+          padding: '60px',
         }}
       >
-        <div style={{ fontSize: 80, marginBottom: 24 }}>🐾</div>
+        {/* Icon */}
+        <div style={{ fontSize: 72, marginBottom: 28 }}>✨</div>
+
+        {/* Title */}
         <div
           style={{
-            fontSize: 48,
+            fontSize: 52,
             fontWeight: 'bold',
             color: '#f1f5f9',
             textAlign: 'center',
-            lineHeight: 1.3,
+            lineHeight: 1.25,
             maxWidth: '80%',
           }}
         >
-          如果有一天牠不在了
-        </div>
-        <div
-          style={{
-            fontSize: 48,
-            fontWeight: 'bold',
-            color: '#f1f5f9',
-            textAlign: 'center',
-            lineHeight: 1.3,
-          }}
-        >
-          你還能留下什麼？
-        </div>
-        <div
-          style={{
-            fontSize: 24,
-            color: '#94a3b8',
-            marginTop: 24,
-            textAlign: 'center',
-            maxWidth: '70%',
-          }}
-        >
-          花 2 分鐘填寫問卷，幫助我們打造更好的寵物紀錄平台
-        </div>
-        <div
-          style={{
-            fontSize: 20,
-            color: '#22d3ee',
-            marginTop: 40,
-            padding: '12px 32px',
-            border: '2px solid rgba(34, 211, 238, 0.3)',
-            borderRadius: 16,
-          }}
-        >
           SnowRealm Insight Engine
+        </div>
+
+        {/* Subtitle */}
+        <div
+          style={{
+            fontSize: 26,
+            color: '#94a3b8',
+            marginTop: 20,
+            textAlign: 'center',
+            maxWidth: '65%',
+            lineHeight: 1.5,
+          }}
+        >
+          AI 智慧問卷引擎 — 從問卷建立到 AI 洞察的一站式平台
+        </div>
+
+        {/* Feature pills */}
+        <div
+          style={{
+            display: 'flex',
+            gap: 16,
+            marginTop: 40,
+          }}
+        >
+          {['📊 數據分析', '🤖 AI 洞察', '💬 LINE 整合'].map((item) => (
+            <div
+              key={item}
+              style={{
+                fontSize: 18,
+                color: '#22d3ee',
+                padding: '10px 24px',
+                border: '1.5px solid rgba(34, 211, 238, 0.3)',
+                borderRadius: 24,
+                background: 'rgba(34, 211, 238, 0.06)',
+              }}
+            >
+              {item}
+            </div>
+          ))}
         </div>
       </div>
     ),
