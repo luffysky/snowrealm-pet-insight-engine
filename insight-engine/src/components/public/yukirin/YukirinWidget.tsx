@@ -6,6 +6,7 @@ import type { YukirinControls, YukirinMood } from './YukirinScene'
 
 const YukirinScene = dynamic(() => import('./YukirinScene'), { ssr: false })
 const YukirinOrbitModal = dynamic(() => import('./YukirinOrbitModal'), { ssr: false })
+const YukirinChatPanel = dynamic(() => import('./YukirinChatPanel'), { ssr: false })
 
 // ── 隨機台詞 ───────────────────────────────────────────────────────────────
 type Line = { text: string; mood: YukirinMood }
@@ -64,6 +65,7 @@ function SpeechBubble({ text, visible, onClose }: { text: string; visible: boole
 // ── 主元件 ────────────────────────────────────────────────────────────────
 export default function YukirinWidget() {
   const [open, setOpen] = useState(false)
+  const [chatOpen, setChatOpen] = useState(false)
   const [orbitOpen, setOrbitOpen] = useState(false)
   const [bubbleVisible, setBubbleVisible] = useState(false)
   const [currentLine, setCurrentLine] = useState<Line>(LINES[0])
@@ -164,6 +166,7 @@ export default function YukirinWidget() {
   const handleClose = useCallback(() => {
     if (isDraggingRef.current) return
     setOpen(false)
+    setChatOpen(false)
   }, [])
 
   return (
@@ -178,48 +181,66 @@ export default function YukirinWidget() {
     >
       {open ? (
         <div className="relative flex flex-col items-end">
-          {/* 氣泡 */}
-          <SpeechBubble
-            text={currentLine.text}
-            visible={bubbleVisible}
-            onClose={() => setBubbleVisible(false)}
-          />
 
-          {/* 雪凜 3D 視窗 */}
-          <div className="relative w-24 h-28 sm:w-28 sm:h-32">
-            {/* 關閉按鈕 */}
-            <button
-              onClick={handleClose}
-              className="absolute -top-2 -left-2 z-10 w-5 h-5 rounded-full bg-white/80 border border-[#b8a9e8]/40 flex items-center justify-center text-[10px] text-[#8a7ca8] hover:text-[#3d3155] shadow-sm transition-colors cursor-pointer"
-            >
-              ✕
-            </button>
-            {/* 展開 360° 按鈕 */}
-            <button
-              onClick={(e) => { e.stopPropagation(); if (!isDraggingRef.current) setOrbitOpen(true) }}
-              className="absolute -bottom-2 -right-2 z-10 w-5 h-5 rounded-full bg-white/80 border border-[#b8a9e8]/40 flex items-center justify-center text-[#8a7ca8] hover:text-[#3d3155] shadow-sm transition-colors cursor-pointer"
-              title="360° 旋轉視角"
-            >
-              <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor">
-                <path d="M0 0h3.5v1.5H1.5v2H0V0zm6.5 0H10v3.5H8.5v-2h-2V0zM0 6.5h1.5v2h2V10H0V6.5zM8.5 8.5v-2H10V10H6.5V8.5h2z"/>
-              </svg>
-            </button>
-
-            {/* 可點擊觸發說話 */}
-            <button
-              onClick={handleClick}
-              className="w-full h-full rounded-2xl overflow-hidden bg-gradient-to-b from-[#f3eeff] to-[#ffeef5] border border-[#b8a9e8]/30 shadow-[0_8px_32px_rgba(184,169,232,0.35)] cursor-pointer"
-              title="點我說話"
-            >
-              <YukirinScene
-                cameraMode="upperBody"
-                mood="happy"
-                showBackground={false}
-                onLoad={handleLoad}
-                className="w-full h-full"
+          {/* ── Chat Panel 模式 ─────────────────────────── */}
+          {chatOpen ? (
+            <YukirinChatPanel onClose={() => setChatOpen(false)} />
+          ) : (
+            <>
+              {/* 氣泡 */}
+              <SpeechBubble
+                text={currentLine.text}
+                visible={bubbleVisible}
+                onClose={() => setBubbleVisible(false)}
               />
-            </button>
-          </div>
+
+              {/* 雪凜 3D 視窗 */}
+              <div className="relative w-24 h-28 sm:w-28 sm:h-32">
+                {/* 關閉按鈕 */}
+                <button
+                  onClick={handleClose}
+                  className="absolute -top-2 -left-2 z-10 w-5 h-5 rounded-full bg-white/80 border border-[#b8a9e8]/40 flex items-center justify-center text-[10px] text-[#8a7ca8] hover:text-[#3d3155] shadow-sm transition-colors cursor-pointer"
+                >
+                  ✕
+                </button>
+                {/* 展開 360° 按鈕 */}
+                <button
+                  onClick={(e) => { e.stopPropagation(); if (!isDraggingRef.current) setOrbitOpen(true) }}
+                  className="absolute -bottom-2 -right-2 z-10 w-5 h-5 rounded-full bg-white/80 border border-[#b8a9e8]/40 flex items-center justify-center text-[#8a7ca8] hover:text-[#3d3155] shadow-sm transition-colors cursor-pointer"
+                  title="360° 旋轉視角"
+                >
+                  <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor">
+                    <path d="M0 0h3.5v1.5H1.5v2H0V0zm6.5 0H10v3.5H8.5v-2h-2V0zM0 6.5h1.5v2h2V10H0V6.5zM8.5 8.5v-2H10V10H6.5V8.5h2z"/>
+                  </svg>
+                </button>
+                {/* 開啟對話按鈕（左下） */}
+                <button
+                  onClick={(e) => { e.stopPropagation(); if (!isDraggingRef.current) setChatOpen(true) }}
+                  className="absolute -bottom-2 -left-2 z-10 w-5 h-5 rounded-full bg-white/80 border border-[#b8a9e8]/40 flex items-center justify-center text-[#8a7ca8] hover:text-[#3d3155] shadow-sm transition-colors cursor-pointer"
+                  title="跟雪凜說話"
+                >
+                  <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor">
+                    <path d="M1 1h8a1 1 0 011 1v5a1 1 0 01-1 1H3L1 10V2a1 1 0 011-1z"/>
+                  </svg>
+                </button>
+
+                {/* 可點擊觸發說話 */}
+                <button
+                  onClick={handleClick}
+                  className="w-full h-full rounded-2xl overflow-hidden bg-gradient-to-b from-[#f3eeff] to-[#ffeef5] border border-[#b8a9e8]/30 shadow-[0_8px_32px_rgba(184,169,232,0.35)] cursor-pointer"
+                  title="點我說話"
+                >
+                  <YukirinScene
+                    cameraMode="upperBody"
+                    mood="happy"
+                    showBackground={false}
+                    onLoad={handleLoad}
+                    className="w-full h-full"
+                  />
+                </button>
+              </div>
+            </>
+          )}
         </div>
       ) : (
         /* 收合狀態：迷你圓形按鈕 */
