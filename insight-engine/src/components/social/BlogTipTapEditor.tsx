@@ -456,11 +456,16 @@ export default function BlogTipTapEditor({
 
   // ─── Dropdown states ────────────────────────────────────────────────────
   const [openDropdown, setOpenDropdown] = useState<string | null>(null)
+  const [dropPositions, setDropPositions] = useState<Record<string, { top: number; left: number }>>({})
   const [searchQuery, setSearchQuery] = useState('')
   const [replaceQuery, setReplaceQuery] = useState('')
   const [showSearch, setShowSearch] = useState(false)
 
   const toggleDropdown = (name: string) => setOpenDropdown(p => p === name ? null : name)
+  const openDropdownAt = (name: string, pos: { top: number; left: number }) => {
+    setDropPositions(prev => ({ ...prev, [name]: pos }))
+    setOpenDropdown(name)
+  }
   const toolbarRef = useRef<HTMLDivElement>(null)
 
   // Close dropdown when clicking outside the toolbar
@@ -619,14 +624,17 @@ export default function BlogTipTapEditor({
 
   const Dropdown = ({ id, trigger, children }: { id: string; trigger: React.ReactNode; children: React.ReactNode }) => {
     const btnRef = useRef<HTMLButtonElement>(null)
-    const [dropPos, setDropPos] = useState<{ top: number; left: number } | null>(null)
     const handleOpen = () => {
-      if (openDropdown !== id && btnRef.current) {
+      if (btnRef.current) {
         const r = btnRef.current.getBoundingClientRect()
-        setDropPos({ top: r.bottom + 4, left: r.left })
+        if (openDropdown === id) {
+          setOpenDropdown(null)
+        } else {
+          openDropdownAt(id, { top: r.bottom + 4, left: r.left })
+        }
       }
-      toggleDropdown(id)
     }
+    const pos = dropPositions[id]
     return (
       <div className="relative" onClick={e => e.stopPropagation()}>
         <button
@@ -637,9 +645,9 @@ export default function BlogTipTapEditor({
         >
           {trigger}
         </button>
-        {openDropdown === id && dropPos && (
+        {openDropdown === id && pos && (
           <div
-            style={{ position: 'fixed', top: dropPos.top, left: dropPos.left, zIndex: 9999 }}
+            style={{ position: 'fixed', top: pos.top, left: pos.left, zIndex: 9999 }}
             className="bg-slate-800 border border-white/12 rounded-xl shadow-2xl overflow-hidden min-w-[180px]"
           >
             {children}
