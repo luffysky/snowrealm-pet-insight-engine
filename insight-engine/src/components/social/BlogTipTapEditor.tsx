@@ -369,12 +369,17 @@ export default function BlogTipTapEditor({
   const [showSearch, setShowSearch] = useState(false)
 
   const toggleDropdown = (name: string) => setOpenDropdown(p => p === name ? null : name)
+  const toolbarRef = useRef<HTMLDivElement>(null)
 
-  // Close dropdown when clicking outside
+  // Close dropdown when clicking outside the toolbar
   useEffect(() => {
-    const handleClick = () => setOpenDropdown(null)
-    document.addEventListener('click', handleClick)
-    return () => document.removeEventListener('click', handleClick)
+    const handleMouseDown = (e: MouseEvent) => {
+      if (toolbarRef.current && !toolbarRef.current.contains(e.target as globalThis.Node)) {
+        setOpenDropdown(null)
+      }
+    }
+    document.addEventListener('mousedown', handleMouseDown)
+    return () => document.removeEventListener('mousedown', handleMouseDown)
   }, [])
 
   // ─── Extensions ─────────────────────────────────────────────────────────
@@ -596,7 +601,7 @@ export default function BlogTipTapEditor({
       )}
 
       {/* Main Toolbar */}
-      <div className="flex flex-wrap items-center gap-0.5 px-2 py-1.5 border-b border-white/8 bg-white/[0.02] overflow-x-auto">
+      <div ref={toolbarRef} className="flex flex-wrap items-center gap-0.5 px-2 py-1.5 border-b border-white/8 bg-white/[0.02] overflow-x-auto">
 
         {/* Undo/Redo */}
         <Btn onClick={() => editor.chain().focus().undo().run()} title="復原 (Ctrl+Z)">

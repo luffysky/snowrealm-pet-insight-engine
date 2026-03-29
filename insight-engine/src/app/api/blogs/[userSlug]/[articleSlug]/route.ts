@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { queryOne, execute } from '@/lib/db'
+import { queryOne, execute, query } from '@/lib/db'
 import { getTenantContext } from '@/lib/tenant'
 
 interface ArticleRow extends Record<string, unknown> {
@@ -10,16 +10,28 @@ interface ArticleRow extends Record<string, unknown> {
   summary: string | null
   content: string
   cover_image: string | null
+  cover_image_position: string | null
   tags: string[]
   is_public: boolean
   view_count: number
   seo_title: string | null
   seo_desc: string | null
+  series_id: string | null
+  series_order: number | null
   published_at: string
   created_at: string
   author_name: string | null
   author_avatar: string | null
   blog_slug: string | null
+}
+
+interface SeriesArticleRow extends Record<string, unknown> {
+  id: string
+  title: string
+  slug: string
+  series_order: number | null
+  is_public: boolean
+  published_at: string
 }
 
 export async function GET(
@@ -65,5 +77,49 @@ export async function GET(
     [article.id]
   ).catch(() => {})
 
-  return NextResponse.json({ article })
+  // 上一篇 / 下一篇（同作者的公開文章） + 系列文章列表（如果有）
+  interface NavRow extends Record<string, unknown> { title: string; slug: string }
+  const queries: [
+    Promise<NavRow[]>,
+    Promise<NavRow[]>,
+    Promise<{ id: string; title: string; is_completed: boolean } | null>,
+    Promise<SeriesArticleRow[]>,
+  ] = [
+    query<NavRow>(
+      `SELECT title, slug FROM user_blog_articles
+       WHERE user_id::text = $1 AND is_public = true AND published_at < $2
+       ORDER BY published_at DESC LIMIT 1`,
+      [ownerRow.user_id, article.published_at]
+    ),
+    query<NavRow>(
+      `SELECT title, slug FROM user_blog_articles
+       WHERE user_id::text = $1 AND is_public = true AND published_at > $2
+       ORDER BY published_at ASC LIMIT 1`,
+      [ownerRow.user_id, article.published_at]
+    ),
+    article.series_id
+      ? queryOne<{ id: string; title: string; is_completed: boolean }>(
+          `SELECT id, title, is_completed FROM blog_series WHERE id = $1`,
+          [article.series_id]
+        )
+      : Promise.resolve(null),
+    article.series_id
+      ? query<SeriesArticleRow>(
+          `SELECT id, title, slug, series_order, is_public, published_at
+           FROM user_blog_articles
+           WHERE series_id = $1 AND is_public = true
+           ORDER BY series_order ASC NULLS LAST, published_at ASC`,
+          [article.series_id]
+        )
+      : Promise.resolve([]),
+  ]
+
+  const [prevRows, nextRows, seriesInfo, seriesArticles] = await Promise.all(queries)
+
+  return NextResponse.json({
+    article,
+    prev: prevRows[0] ?? null,
+    next: nextRows[0] ?? null,
+    series: seriesInfo ? { ...seriesInfo, articles: seriesArticles } : null,
+  })
 }

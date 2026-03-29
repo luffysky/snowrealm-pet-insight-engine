@@ -145,6 +145,47 @@ body {
   font-family: var(--font-sans), system-ui, sans-serif;
 }
 
+/* ── 部落格文章內容排版 ── */
+.blog-content hr {
+  border: none;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  margin: 2rem 0;
+}
+.blog-content p:empty {
+  min-height: 1.4em;
+  display: block;
+}
+/* 保留 TipTap inline 文字顏色 */
+.blog-content span[style*="color"] {
+  color: inherit;
+}
+.blog-content span[style] {
+  font-size: inherit;
+}
+/* Table styles */
+.blog-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1.5rem 0;
+}
+.blog-content th, .blog-content td {
+  border: 1px solid rgba(255,255,255,0.12);
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+}
+.blog-content th {
+  background: rgba(255,255,255,0.06);
+  font-weight: 600;
+}
+/* Task list */
+.blog-content ul[data-type="taskList"] { list-style: none; padding-left: 0.5rem; }
+.blog-content ul[data-type="taskList"] li { display: flex; align-items: flex-start; gap: 0.5rem; }
+/* Preserve line-height for empty paragraphs in prose */
+.blog-content .prose p:empty, .blog-content p:empty::before {
+  content: '\00a0';
+  display: block;
+}
+
 /* 自訂滾動條 */
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }

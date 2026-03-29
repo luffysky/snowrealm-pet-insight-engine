@@ -25,12 +25,22 @@ interface BlogArticle {
   isPublic: boolean
   seoTitle: string
   seoDesc: string
+  seriesId: string
+  seriesOrder: string
+}
+
+interface BlogSeries {
+  id: string
+  title: string
+  description: string | null
+  article_count: number
 }
 
 const EMPTY: BlogArticle = {
   title: '', slug: '', summary: '', content: '',
   coverImage: '', coverImagePosition: 'center center',
   tags: [], isPublic: true, seoTitle: '', seoDesc: '',
+  seriesId: '', seriesOrder: '',
 }
 
 function slugify(text: string): string {
@@ -60,9 +70,14 @@ export function BlogEditor({ articleId, onSaved, onCancel }: Props) {
   const [uploadingCover, setUploadingCover] = useState(false)
   const slugCheckTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const coverInputRef = useRef<HTMLInputElement>(null)
-  const [activeTab, setActiveTab] = useState<'write' | 'seo'>('write')
+  const [activeTab, setActiveTab] = useState<'write' | 'seo' | 'series'>('write')
   const [adjustingPosition, setAdjustingPosition] = useState(false)
   const coverPreviewRef = useRef<HTMLDivElement>(null)
+
+  // Series state
+  const [seriesList, setSeriesList] = useState<BlogSeries[]>([])
+  const [newSeriesTitle, setNewSeriesTitle] = useState('')
+  const [creatingSeries, setCreatingSeries] = useState(false)
 
   // AI state
   const [aiSummaryLoading, setAiSummaryLoading] = useState(false)
@@ -70,12 +85,13 @@ export function BlogEditor({ articleId, onSaved, onCancel }: Props) {
 
   // Load existing article
   useEffect(() => {
-    if (!articleId) return
+    if (!articleId) { setLoading(false); return }
     fetch(`/api/admin/social/blog/${articleId}`)
       .then(r => r.ok ? r.json() as Promise<{ article: {
         title: string; slug: string; summary: string | null; content: string
         cover_image: string | null; cover_image_position?: string; tags: string[]
         is_public: boolean; seo_title: string | null; seo_desc: string | null
+        series_id: string | null; series_order: number | null
       } }> : null)
       .then(d => {
         if (!d) return
@@ -87,10 +103,19 @@ export function BlogEditor({ articleId, onSaved, onCancel }: Props) {
           coverImagePosition: a.cover_image_position ?? 'center center',
           tags: a.tags ?? [], isPublic: a.is_public,
           seoTitle: a.seo_title ?? '', seoDesc: a.seo_desc ?? '',
+          seriesId: a.series_id ?? '', seriesOrder: a.series_order?.toString() ?? '',
         })
       })
       .finally(() => setLoading(false))
   }, [articleId])
+
+  // Load series list
+  useEffect(() => {
+    fetch('/api/admin/social/blog/series')
+      .then(r => r.ok ? r.json() as Promise<{ series: BlogSeries[] }> : null)
+      .then(d => { if (d) setSeriesList(d.series) })
+      .catch(() => {})
+  }, [])
 
   const handleTitleChange = (title: string) => {
     const next = { ...form, title }
@@ -160,6 +185,8 @@ export function BlogEditor({ articleId, onSaved, onCancel }: Props) {
           isPublic: form.isPublic,
           seoTitle: form.seoTitle || null,
           seoDesc: form.seoDesc || null,
+          seriesId: form.seriesId || null,
+          seriesOrder: form.seriesOrder ? parseInt(form.seriesOrder) : null,
         }),
       })
       if (!res.ok) {
@@ -269,13 +296,13 @@ export function BlogEditor({ articleId, onSaved, onCancel }: Props) {
 
       {/* Tab bar */}
       <div className="shrink-0 flex gap-1 px-4 pt-3 border-b border-white/6">
-        {(['write', 'seo'] as const).map(tab => (
+        {(['write', 'series', 'seo'] as const).map(tab => (
           <button key={tab} onClick={() => setActiveTab(tab)}
             className={`px-4 py-2 text-xs font-medium border-b-2 -mb-px transition-colors ${
               activeTab === tab ? 'text-amber-400 border-amber-400' : 'text-white/35 border-transparent hover:text-white/60'
             }`}
           >
-            {tab === 'write' ? '✍️ 撰寫' : '🔍 SEO'}
+            {tab === 'write' ? '✍️ 撰寫' : tab === 'series' ? '📚 系列' : '🔍 SEO'}
           </button>
         ))}
       </div>
@@ -453,6 +480,123 @@ export function BlogEditor({ articleId, onSaved, onCancel }: Props) {
                 <button onClick={addTag} className="px-3 py-2 bg-white/8 hover:bg-white/12 text-white/50 rounded-xl text-xs transition-colors">新增</button>
               </div>
             </div>
+          </div>
+        )}
+
+        {activeTab === 'series' && (
+          <div className="max-w-3xl mx-auto px-4 py-6 space-y-6">
+            {/* Current series assignment */}
+            <div>
+              <label className="text-[11px] text-white/40 font-medium uppercase tracking-widest block mb-2">所屬系列</label>
+              <select
+                value={form.seriesId}
+                onChange={e => setForm(f => ({ ...f, seriesId: e.target.value }))}
+                className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white outline-none focus:border-amber-400/30 transition-colors appearance-none"
+              >
+                <option value="">（不屬於任何系列）</option>
+                {seriesList.map(s => (
+                  <option key={s.id} value={s.id}>{s.title}（共 {s.article_count} 篇）</option>
+                ))}
+              </select>
+            </div>
+
+            {form.seriesId && (
+              <div>
+                <label className="text-[11px] text-white/40 font-medium uppercase tracking-widest block mb-2">系列排序（第幾篇）</label>
+                <input
+                  type="number"
+                  min="1"
+                  value={form.seriesOrder}
+                  onChange={e => setForm(f => ({ ...f, seriesOrder: e.target.value }))}
+                  placeholder="例：1（空白則自動排到最後）"
+                  className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white placeholder-white/25 outline-none focus:border-amber-400/30 transition-colors"
+                />
+                <p className="text-[10px] text-white/25 mt-1">數字越小排越前面，留空則排在系列最後</p>
+              </div>
+            )}
+
+            {/* Create new series */}
+            <div className="pt-2 border-t border-white/8">
+              <p className="text-[11px] text-white/40 font-medium uppercase tracking-widest mb-3">建立新系列</p>
+              <div className="flex gap-2">
+                <input
+                  value={newSeriesTitle}
+                  onChange={e => setNewSeriesTitle(e.target.value)}
+                  onKeyDown={async e => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault()
+                      if (!newSeriesTitle.trim() || creatingSeries) return
+                      setCreatingSeries(true)
+                      try {
+                        const res = await fetch('/api/admin/social/blog/series', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ title: newSeriesTitle.trim() }),
+                        })
+                        if (res.ok) {
+                          const data = await res.json() as { series: BlogSeries & { article_count?: number } }
+                          const newSeries = { ...data.series, article_count: 0 }
+                          setSeriesList(prev => [newSeries, ...prev])
+                          setForm(f => ({ ...f, seriesId: newSeries.id }))
+                          setNewSeriesTitle('')
+                        }
+                      } finally { setCreatingSeries(false) }
+                    }
+                  }}
+                  placeholder="輸入系列名稱後按 Enter"
+                  className="flex-1 bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-sm text-white placeholder-white/25 outline-none focus:border-amber-400/30 transition-colors"
+                />
+                <button
+                  disabled={!newSeriesTitle.trim() || creatingSeries}
+                  onClick={async () => {
+                    if (!newSeriesTitle.trim() || creatingSeries) return
+                    setCreatingSeries(true)
+                    try {
+                      const res = await fetch('/api/admin/social/blog/series', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ title: newSeriesTitle.trim() }),
+                      })
+                      if (res.ok) {
+                        const data = await res.json() as { series: BlogSeries & { article_count?: number } }
+                        const newSeries = { ...data.series, article_count: 0 }
+                        setSeriesList(prev => [newSeries, ...prev])
+                        setForm(f => ({ ...f, seriesId: newSeries.id }))
+                        setNewSeriesTitle('')
+                      }
+                    } finally { setCreatingSeries(false) }
+                  }}
+                  className="px-3 py-2 bg-white/8 hover:bg-white/12 text-white/50 rounded-xl text-xs transition-colors disabled:opacity-40"
+                >
+                  {creatingSeries ? '建立中...' : '新增'}
+                </button>
+              </div>
+            </div>
+
+            {/* Series list */}
+            {seriesList.length > 0 && (
+              <div className="pt-2 border-t border-white/8 space-y-2">
+                <p className="text-[11px] text-white/40 font-medium uppercase tracking-widest">我的系列</p>
+                {seriesList.map(s => (
+                  <div
+                    key={s.id}
+                    className={`flex items-center gap-3 px-3 py-2.5 rounded-xl border transition-all cursor-pointer ${
+                      form.seriesId === s.id
+                        ? 'bg-amber-500/15 border-amber-400/30 text-amber-300'
+                        : 'bg-white/[0.03] border-white/8 text-white/60 hover:bg-white/[0.06]'
+                    }`}
+                    onClick={() => setForm(f => ({ ...f, seriesId: f.seriesId === s.id ? '' : s.id }))}
+                  >
+                    <span className="text-base">📚</span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">{s.title}</p>
+                      <p className="text-[10px] text-white/30">{s.article_count} 篇文章</p>
+                    </div>
+                    {form.seriesId === s.id && <span className="text-xs text-amber-400">✓ 已選</span>}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 

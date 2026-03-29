@@ -16,6 +16,10 @@ interface BlogArticleRow extends Record<string, unknown> {
   view_count: number
   seo_title: string | null
   seo_desc: string | null
+  series_id: string | null
+  series_order: number | null
+  series_title?: string | null
+  series_is_completed?: boolean | null
   published_at: string
   created_at: string
   updated_at: string
@@ -27,7 +31,10 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
   if (!ctx.userId) return NextResponse.json({ error: '未登入' }, { status: 401 })
 
   const article = await queryOne<BlogArticleRow>(
-    `SELECT * FROM user_blog_articles WHERE id::text = $1 AND user_id::text = $2`,
+    `SELECT a.*, s.title AS series_title, s.is_completed AS series_is_completed
+     FROM user_blog_articles a
+     LEFT JOIN blog_series s ON s.id = a.series_id
+     WHERE a.id::text = $1 AND a.user_id::text = $2`,
     [id, ctx.userId]
   )
   if (!article) return NextResponse.json({ error: '找不到文章' }, { status: 404 })
@@ -51,6 +58,8 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     isPublic?: boolean
     seoTitle?: string | null
     seoDesc?: string | null
+    seriesId?: string | null
+    seriesOrder?: number | null
   }
 
   // 如果要改 slug，先確認唯一性
@@ -77,8 +86,10 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
        is_public            = COALESCE($10, is_public),
        seo_title            = CASE WHEN $11::boolean THEN $12 ELSE seo_title END,
        seo_desc             = CASE WHEN $13::boolean THEN $14 ELSE seo_desc END,
+       series_id            = CASE WHEN $15::boolean THEN $16::uuid ELSE series_id END,
+       series_order         = CASE WHEN $17::boolean THEN $18 ELSE series_order END,
        updated_at           = NOW()
-     WHERE id::text = $15 AND user_id::text = $16
+     WHERE id::text = $19 AND user_id::text = $20
      RETURNING *`,
     [
       body.title ?? null,
@@ -91,6 +102,8 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       body.isPublic ?? null,
       'seoTitle' in body, body.seoTitle ?? null,
       'seoDesc' in body, body.seoDesc ?? null,
+      'seriesId' in body, body.seriesId ?? null,
+      'seriesOrder' in body, body.seriesOrder ?? null,
       id, ctx.userId,
     ]
   )

@@ -2,6 +2,12 @@ import { Metadata } from 'next'
 import Link from 'next/link'
 import Image from 'next/image'
 import { notFound } from 'next/navigation'
+import { ReadingProgress, ArticleReactions, ArticleComments } from './ArticleClient'
+import ShareArticleButton from './ShareArticleButton'
+
+interface ArticleNav { title: string; slug: string }
+
+interface SeriesArticle { id: string; title: string; slug: string; series_order: number | null }
 
 interface ArticleData {
   article: {
@@ -18,11 +24,16 @@ interface ArticleData {
     view_count: number
     seo_title: string | null
     seo_desc: string | null
+    series_id: string | null
+    series_order: number | null
     published_at: string
     author_name: string | null
     author_avatar: string | null
     blog_slug: string | null
   }
+  prev: ArticleNav | null
+  next: ArticleNav | null
+  series: { id: string; title: string; is_completed: boolean; articles: SeriesArticle[] } | null
 }
 
 async function getArticle(userSlug: string, articleSlug: string): Promise<ArticleData | null> {
@@ -60,6 +71,11 @@ export async function generateMetadata({
   }
 }
 
+function estimateReadTime(content: string): number {
+  const words = content.replace(/<[^>]*>/g, '').length
+  return Math.max(1, Math.round(words / 400))
+}
+
 export default async function ArticlePage({
   params,
 }: {
@@ -67,118 +83,229 @@ export default async function ArticlePage({
 }) {
   const { userSlug, articleSlug } = await params
   const data = await getArticle(userSlug, articleSlug)
-
   if (!data) notFound()
 
-  const { article } = data
+  const { article, prev, next, series } = data
   const backSlug = article.blog_slug ?? userSlug
+  const readTime = estimateReadTime(article.content)
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? 'https://insight.snowrealm.pet'
+  const shareUrl = `${baseUrl}/blogs/${backSlug}/${articleSlug}`
 
   return (
     <div className="min-h-screen bg-slate-950 text-white" style={{ paddingBottom: 'var(--bnav-h, 76px)' }}>
-      {/* Back link */}
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 pt-8">
-        <Link
-          href={`/blogs/${backSlug}`}
-          className="inline-flex items-center gap-1.5 text-sm text-white/40 hover:text-white/70 transition-colors"
-        >
-          ← {article.author_name ?? '部落格'}
-        </Link>
-      </div>
+      <ReadingProgress />
 
-      {/* Cover image */}
+      {/* Cover image — full bleed */}
       {article.cover_image && (
-        <div className="max-w-3xl mx-auto px-4 sm:px-6 mt-6">
-          <div className="relative w-full h-64 rounded-2xl overflow-hidden">
-            <Image
-              src={article.cover_image}
-              alt={article.title}
-              fill
-              className="object-cover"
-              style={{ objectPosition: article.cover_image_position ?? 'center center' }}
-              priority
-            />
-          </div>
+        <div className="relative w-full h-[45vh] min-h-[240px] max-h-[480px] overflow-hidden">
+          <Image
+            src={article.cover_image}
+            alt={article.title}
+            fill
+            className="object-cover"
+            style={{ objectPosition: article.cover_image_position ?? 'center center' }}
+            priority
+          />
+          {/* Gradient overlay */}
+          <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/60 to-transparent" />
         </div>
       )}
 
-      {/* Article header */}
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 mt-8">
-        {/* Tags */}
-        {article.tags.length > 0 && (
-          <div className="flex flex-wrap gap-2 mb-4">
-            {article.tags.map(tag => (
-              <span key={tag} className="text-xs px-2.5 py-1 bg-amber-500/10 text-amber-400/80 rounded-full">
-                {tag}
-              </span>
-            ))}
-          </div>
-        )}
+      <div className="max-w-2xl mx-auto px-5 sm:px-6">
 
-        <h1 className="text-2xl sm:text-3xl font-bold leading-tight">{article.title}</h1>
+        {/* Breadcrumbs */}
+        <nav className={`flex items-center gap-1.5 text-xs text-white/30 ${article.cover_image ? '-mt-6 relative z-10' : 'pt-10'}`}>
+          <Link href="/blogs" className="hover:text-white/60 transition-colors">部落格</Link>
+          <span>/</span>
+          <Link href={`/blogs/${backSlug}`} className="hover:text-white/60 transition-colors">
+            {article.author_name ?? backSlug}
+          </Link>
+          <span>/</span>
+          <span className="text-white/50 truncate max-w-[160px]">{article.title}</span>
+        </nav>
 
-        {article.summary && (
-          <p className="text-base text-white/55 mt-3 leading-relaxed">{article.summary}</p>
-        )}
-
-        {/* Author + meta */}
-        <div className="flex items-center gap-3 mt-5 pb-6 border-b border-white/8">
-          {article.author_avatar ? (
-            <Image
-              src={article.author_avatar}
-              alt={article.author_name ?? ''}
-              width={36}
-              height={36}
-              className="rounded-full object-cover"
-            />
-          ) : (
-            <div className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center text-sm">✍️</div>
+        {/* Article header */}
+        <header className="mt-6 mb-10">
+          {/* Tags */}
+          {article.tags.length > 0 && (
+            <div className="flex flex-wrap gap-1.5 mb-4">
+              {article.tags.map(tag => (
+                <span key={tag} className="text-[11px] px-2.5 py-0.5 bg-amber-500/10 text-amber-400/70 rounded-full border border-amber-500/15">
+                  {tag}
+                </span>
+              ))}
+            </div>
           )}
-          <div>
-            <p className="text-sm font-medium text-white/75">{article.author_name ?? userSlug}</p>
-            <p className="text-xs text-white/30">
-              {new Date(article.published_at).toLocaleDateString('zh-TW', {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric',
-              })}
-              {' · '}
-              👁 {article.view_count}
+
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold leading-tight tracking-tight text-white">
+            {article.title}
+          </h1>
+
+          {article.summary && (
+            <p className="text-base text-white/50 mt-3 leading-relaxed">
+              {article.summary}
             </p>
-          </div>
-          {!article.is_public && (
-            <span className="ml-auto text-xs px-2 py-0.5 bg-white/8 text-white/35 rounded-full">私人</span>
           )}
+
+          {/* Author meta row */}
+          <div className="flex items-center gap-3 mt-6 py-4 border-y border-white/[0.07]">
+            {article.author_avatar ? (
+              <Image
+                src={article.author_avatar}
+                alt={article.author_name ?? ''}
+                width={40}
+                height={40}
+                className="rounded-full object-cover ring-2 ring-white/10"
+              />
+            ) : (
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-amber-500/30 to-violet-500/30 border border-white/10 flex items-center justify-center text-base">
+                ✍️
+              </div>
+            )}
+            <div className="flex-1">
+              <p className="text-sm font-medium text-white/80">{article.author_name ?? userSlug}</p>
+              <div className="flex items-center gap-2 text-xs text-white/30 mt-0.5">
+                <span>
+                  {new Date(article.published_at).toLocaleDateString('zh-TW', {
+                    year: 'numeric', month: 'long', day: 'numeric',
+                  })}
+                </span>
+                <span>·</span>
+                <span>約 {readTime} 分鐘讀完</span>
+                <span>·</span>
+                <span>👁 {article.view_count.toLocaleString()}</span>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        {/* Article content */}
+        <article
+          className="blog-content prose prose-invert max-w-none
+            prose-headings:text-white prose-headings:font-bold prose-headings:tracking-tight
+            prose-p:text-white/75 prose-p:leading-[1.85] prose-p:my-5
+            prose-a:text-amber-400 prose-a:no-underline hover:prose-a:underline
+            prose-strong:text-white/90 prose-strong:font-semibold
+            prose-em:text-white/70
+            prose-blockquote:border-l-2 prose-blockquote:border-amber-500/50 prose-blockquote:bg-white/[0.02] prose-blockquote:rounded-r-xl prose-blockquote:py-1 prose-blockquote:pl-4 prose-blockquote:text-white/55 prose-blockquote:not-italic
+            prose-code:text-amber-300 prose-code:bg-amber-500/10 prose-code:rounded prose-code:px-1.5 prose-code:py-0.5 prose-code:text-sm prose-code:before:content-none prose-code:after:content-none
+            prose-pre:bg-slate-900 prose-pre:border prose-pre:border-white/8 prose-pre:rounded-2xl prose-pre:shadow-xl
+            prose-img:rounded-2xl prose-img:shadow-xl prose-img:my-8
+            prose-li:text-white/70 prose-li:leading-relaxed
+            prose-ol:my-5 prose-ul:my-5
+            prose-h1:text-2xl prose-h1:mt-10 prose-h1:mb-4
+            prose-h2:text-xl prose-h2:mt-8 prose-h2:mb-3
+            prose-h3:text-lg prose-h3:mt-6 prose-h3:mb-2"
+          dangerouslySetInnerHTML={{ __html: article.content }}
+        />
+
+        {/* Series navigation */}
+        {series && (
+          <div className="mt-12 pt-8 border-t border-white/[0.07]">
+            <div className="bg-white/[0.03] border border-white/8 rounded-2xl overflow-hidden">
+              <div className="px-5 py-4 border-b border-white/8 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="text-base">📚</span>
+                  <div>
+                    <p className="text-xs text-white/40">系列文章</p>
+                    <p className="text-sm font-semibold text-white/85">{series.title}</p>
+                  </div>
+                </div>
+                {series.is_completed && (
+                  <span className="text-[10px] px-2 py-0.5 bg-emerald-500/15 text-emerald-400 rounded-full border border-emerald-500/20">已完結</span>
+                )}
+              </div>
+              <div className="divide-y divide-white/[0.05]">
+                {series.articles.map((a, idx) => {
+                  const isCurrent = a.id === article.id
+                  return (
+                    <Link
+                      key={a.id}
+                      href={isCurrent ? '#' : `/blogs/${backSlug}/${a.slug}`}
+                      className={`flex items-center gap-3 px-5 py-3 transition-colors ${
+                        isCurrent
+                          ? 'bg-amber-500/10 cursor-default'
+                          : 'hover:bg-white/[0.04]'
+                      }`}
+                    >
+                      <span className={`shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
+                        isCurrent ? 'bg-amber-500/30 text-amber-300' : 'bg-white/8 text-white/35'
+                      }`}>
+                        {a.series_order ?? idx + 1}
+                      </span>
+                      <span className={`text-sm leading-snug line-clamp-1 flex-1 ${
+                        isCurrent ? 'text-amber-300 font-medium' : 'text-white/60'
+                      }`}>
+                        {a.title}
+                      </span>
+                      {isCurrent && <span className="shrink-0 text-[10px] text-amber-400/70">本篇</span>}
+                    </Link>
+                  )
+                })}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Reactions + Share */}
+        <div className="mt-12 pt-8 border-t border-white/[0.07] space-y-5">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-4 justify-between">
+            <div>
+              <p className="text-xs text-white/30 mb-3">覺得這篇文章如何？</p>
+              <ArticleReactions userSlug={backSlug} articleSlug={articleSlug} />
+            </div>
+            <ShareArticleButton
+              title={article.title}
+              summary={article.summary ?? ''}
+              author={article.author_name ?? userSlug}
+              url={shareUrl}
+            />
+          </div>
         </div>
-      </div>
 
-      {/* Content */}
-      <article
-        className="max-w-3xl mx-auto px-4 sm:px-6 py-8 prose prose-invert prose-slate max-w-none
-          prose-headings:text-white prose-headings:font-bold
-          prose-p:text-white/75 prose-p:leading-relaxed
-          prose-a:text-amber-400 prose-a:no-underline hover:prose-a:underline
-          prose-strong:text-white/90
-          prose-blockquote:border-amber-500/40 prose-blockquote:text-white/55
-          prose-code:text-amber-300 prose-code:bg-white/5 prose-code:rounded prose-code:px-1
-          prose-pre:bg-white/5 prose-pre:border prose-pre:border-white/8
-          prose-img:rounded-xl prose-img:shadow-lg
-          prose-li:text-white/75
-          prose-hr:border-white/10"
-        dangerouslySetInnerHTML={{ __html: article.content }}
-      />
+        {/* Prev / Next navigation */}
+        {(prev || next) && (
+          <div className="mt-10 grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {prev ? (
+              <Link
+                href={`/blogs/${backSlug}/${prev.slug}`}
+                className="group flex flex-col gap-1.5 p-4 rounded-2xl bg-white/[0.03] border border-white/[0.07] hover:bg-white/[0.06] hover:border-white/15 transition-all"
+              >
+                <span className="text-[11px] text-white/30 flex items-center gap-1">
+                  ← 上一篇
+                </span>
+                <span className="text-sm text-white/70 font-medium group-hover:text-white/90 transition-colors line-clamp-2 leading-snug">
+                  {prev.title}
+                </span>
+              </Link>
+            ) : <div />}
+            {next ? (
+              <Link
+                href={`/blogs/${backSlug}/${next.slug}`}
+                className="group flex flex-col gap-1.5 p-4 rounded-2xl bg-white/[0.03] border border-white/[0.07] hover:bg-white/[0.06] hover:border-white/15 transition-all text-right sm:items-end"
+              >
+                <span className="text-[11px] text-white/30 flex items-center gap-1 justify-end">
+                  下一篇 →
+                </span>
+                <span className="text-sm text-white/70 font-medium group-hover:text-white/90 transition-colors line-clamp-2 leading-snug">
+                  {next.title}
+                </span>
+              </Link>
+            ) : <div />}
+          </div>
+        )}
 
-      {/* Footer */}
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 pb-16">
-        <div className="border-t border-white/8 pt-8 flex items-center justify-between">
-          <Link
-            href={`/blogs/${backSlug}`}
-            className="text-sm text-white/40 hover:text-white/70 transition-colors"
-          >
+        {/* Comments */}
+        <div className="mt-12 pt-8 border-t border-white/[0.07]">
+          <ArticleComments userSlug={backSlug} articleSlug={articleSlug} />
+        </div>
+
+        {/* Footer */}
+        <div className="mt-12 pb-16 flex items-center justify-between text-xs text-white/20">
+          <Link href={`/blogs/${backSlug}`} className="hover:text-white/50 transition-colors">
             ← 回到 {article.author_name ?? '部落格'}
           </Link>
-          <div className="text-xs text-white/20">
-            {new Date(article.published_at).toLocaleDateString('zh-TW')}
-          </div>
+          <span>{new Date(article.published_at).toLocaleDateString('zh-TW')}</span>
         </div>
       </div>
     </div>
