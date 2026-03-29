@@ -22,7 +22,7 @@ export default function YukirinOrbitModal({ onClose }: { onClose: () => void }) 
       />
 
       {/* 場景全螢幕 */}
-      <div className="absolute inset-0">
+      <div className="absolute inset-0" style={{ touchAction: 'none' }}>
         <YukirinScene
           cameraMode="fullBody"
           mood="happy"

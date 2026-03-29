@@ -620,6 +620,7 @@ export default function YukirinScene({
     <div
       ref={mountRef}
       className={`w-full h-full cursor-pointer ${className}`}
+      style={allowOrbit ? { touchAction: 'none' } : undefined}
       aria-hidden="true"
     />
   )

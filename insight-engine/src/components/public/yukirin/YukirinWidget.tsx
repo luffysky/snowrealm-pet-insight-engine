@@ -92,6 +92,7 @@ export default function YukirinWidget() {
         setIsGrabbing(true)
       }
       if (!isDraggingRef.current) return
+      ev.preventDefault() // 阻止 iOS 滾動
       const newX = Math.max(0, Math.min(window.innerWidth  - el.offsetWidth,  startWx + dx))
       const newY = Math.max(0, Math.min(window.innerHeight - el.offsetHeight, startWy + dy))
       setWidgetPos({ x: newX, y: newY })
@@ -102,11 +103,11 @@ export default function YukirinWidget() {
       document.removeEventListener('pointermove', handleMove)
       document.removeEventListener('pointerup',   handleUp)
       setIsGrabbing(false)
-      // 延遲清除，讓 click 事件先觸發再重置
       setTimeout(() => { isDraggingRef.current = false }, 50)
     }
 
-    document.addEventListener('pointermove', handleMove)
+    // passive: false 讓 iOS 允許 preventDefault
+    document.addEventListener('pointermove', handleMove, { passive: false })
     document.addEventListener('pointerup',   handleUp)
   }, [])
 
