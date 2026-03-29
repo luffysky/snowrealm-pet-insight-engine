@@ -57,9 +57,14 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     if (file.size > MAX_SIZE) return NextResponse.json({ error: '檔案最大 50MB' }, { status: 400 })
 
     // Try to detect by MIME type first, then by extension
-    let mediaType = ALLOWED_TYPES[file.type]
+    // Normalize MIME: strip codec params (e.g. "audio/webm;codecs=opus" → "audio/webm")
+    const normalizedMime = file.type.split(';')[0].toLowerCase()
+    let mediaType = ALLOWED_TYPES[normalizedMime]
     if (!mediaType) {
       const ext = file.name.split('.').pop()?.toLowerCase()
+      // Note: webm/mp4 are ambiguous (can be audio or video). When MIME type is missing,
+      // assume video for these — but voice recordings always carry a proper MIME type,
+      // so they will have been resolved above before reaching this fallback.
       const extMap: Record<string, string> = {
         jpg: 'img', jpeg: 'img', png: 'img', webp: 'img', gif: 'img', heic: 'img', heif: 'img',
         mp4: 'video', webm: 'video', mov: 'video', avi: 'video', mkv: 'video', '3gp': 'video', m4v: 'video',
@@ -86,7 +91,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       pdf: 'application/pdf', zip: 'application/zip', txt: 'text/plain',
     }
     const ext = file.name.split('.').pop()?.toLowerCase() ?? ''
-    const resolvedContentType = file.type || mimeMap[ext] || 'application/octet-stream'
+    const resolvedContentType = normalizedMime || mimeMap[ext] || 'application/octet-stream'
 
     const buffer = Buffer.from(await file.arrayBuffer())
     const url = await uploadToR2(buffer, file.name, resolvedContentType, 'dm')

@@ -64,7 +64,7 @@
 - DB migration：`share_slug`、`is_public`、`share_title`、`share_views` 欄位
 - `ai-insight route` 新增 PATCH handler（`share`/`unshare`/`update_title`）
 - 新增 `app/api/report/[slug]/route.ts`（公開 API，不需登入）
-- 公開報告頁 `app/report/[slug]/page.tsx` 已完成（4 種渲染模式） ✅
+- 新增 `app/report/[slug]/page.tsx`（公開報告頁 + OG Meta + CTA）
 - 新增 `components/admin/ShareCard.tsx`（插畫 + 摘要 + 儲存 PNG）
 - 新增 `components/admin/ShareCardModal.tsx`
 - `insight/page.tsx` 加「📤 分享」按鈕 → 開 ShareCardModal
@@ -93,7 +93,7 @@
 
 ### FEAT-5 貼圖個別圖片上傳
 - `[packId]/stickers/route.ts` 目前仍用 `req.formData()`
-- 同樣需要改為 `application/octet-stream` 模式，避免重蹈 ZIP 問題
+- 需改為 `application/octet-stream` 模式，避免重蹈 ZIP 問題
 
 ---
 
@@ -178,6 +178,126 @@
 ### 系統設定
 - `site-settings` 頁面新增 Bot 文案設定區塊（welcome/intro/default_reply/completion）
 - `tenantBranding.ts` 整合至 Official Bot（替換毛行天下硬編碼文案）
+
+---
+
+## 📚 部落格功能待辦
+
+> 目前已完成：系列文章、留言區、Emoji 反應、閱讀進度條、分享卡、上/下一篇、麵包屑、瀏覽次數
+
+### BLOG-1 文章目錄（Table of Contents）
+- 自動從文章 h2/h3 標題生成浮動目錄（側邊欄或頂部展開）
+- 點擊標題平滑捲動到對應段落
+- 閱讀進度到達某段落時，目錄對應項目自動 highlight
+- 對長文非常有用
+
+### BLOG-2 閱讀完成提示
+- 當閱讀進度 progress ≥ 95% 時，顯示「🎉 你讀完了！」小提示
+- 可搭配增加反應的 nudge（「覺得這篇如何？」）
+
+### BLOG-3 作者簡介卡
+- 文章底部顯示作者頭像、bio、文章數
+- 引導讀者繼續看其他文章（顯示最新 2-3 篇）
+- 從 `user_blog_settings` 讀取 bio 欄位
+
+### BLOG-4 相關文章推薦
+- 依相同標籤推薦 3 篇，放在留言區上方
+- `SELECT ... WHERE $1 = ANY(tags) AND id != $2 ORDER BY published_at DESC LIMIT 3`
+
+### BLOG-5 標題錨點連結
+- hover h2/h3 時，旁邊出現 `#` 圖示
+- 點擊複製 URL + 跳轉到該段落的錨點連結
+- 需要在 `article dangerouslySetInnerHTML` 的渲染後用 JS 動態加 id 和點擊事件
+
+### BLOG-6 文章訂閱 / 通知
+- 讀者輸入 email 訂閱作者新文章
+- DB：`blog_subscribers (id, author_user_id, email, created_at)`
+- 有新文章 `is_public = true` 時自動發信
+- 作者後台可查看訂閱人數
+
+### BLOG-7 草稿預覽連結（私密分享）
+- `is_public = false` 的文章可生成帶 token 的預覽連結
+- 用來分享給朋友審稿，不公開索引
+- DB：`user_blog_articles` 加 `preview_token TEXT UNIQUE`
+- 頁面：`/blogs/preview/[token]` 不需登入，不計瀏覽次數
+
+### BLOG-8 封面圖 AI 生成
+- 文章沒有封面時，點「✨ AI 生成封面」按鈕
+- 根據文章標題 + 摘要自動產出封面圖（DALL-E 3 或 Cloudflare AI）
+- 生成後上傳到 R2，存入 `cover_image`
+
+### BLOG-9 文章統計頁（後台）
+- 每篇文章的瀏覽趨勢折線圖（需 `blog_views` 日誌表）
+- 反應分布圓餅圖
+- 留言數趨勢
+- 類似 Medium 的 per-article stats 頁面
+- 位置：`insight-admin/social/blog/[id]/stats/page.tsx`
+
+### BLOG-10 留言審核 + 關鍵字過濾
+- `is_approved` 欄位已存在，加後台審核 UI
+- 自訂關鍵字黑名單（`blog_comment_blocklist` 表）
+- 留言包含黑名單關鍵字 → `is_approved = false`
+- 後台通知：有待審留言時 badge 提示
+
+### BLOG-11 部落格首頁版型切換
+- 讀者瀏覽 `/blogs/{userSlug}` 時可切換三種版型：
+  - 卡片牆（預設，目前格式）
+  - 雜誌版（左大圖 + 右側文字列表）
+  - 簡約列表（只顯示標題 + 日期）
+- 作者在 `user_blog_settings` 設定預設版型
+- 讀者可自行切換（存 localStorage）
+
+### BLOG-12 Paywall 付費解鎖
+- 文章可設定「前 N 字免費，後面需訂閱」
+- DB：`user_blog_articles` 加 `is_paywall BOOLEAN`、`paywall_preview_chars INT`
+- 整合 LINE Pay / 藍新金流
+- 訂閱記錄：`blog_subscriptions (reader_email, author_user_id, expires_at)`
+
+### BLOG-13 TipTap AI 輔助（選取文字後操作）
+- 選取一段文字 → 浮動工具列出現 AI 選項：
+  - ✨ 潤稿（改善表達）
+  - 🌐 翻成英文
+  - 📝 擴寫（增加細節）
+  - ✂️ 精簡（縮短）
+- 呼叫 `/api/admin/social/blog/ai-rewrite`
+- 直接在 TipTap 中替換選取文字
+
+### BLOG-14 部落格 RSS Feed
+- 自動產生 RSS 2.0 / Atom feed
+- 路徑：`/blogs/{userSlug}/feed.xml`
+- 只包含 `is_public = true` 的文章
+- 讓讀者可以用 RSS 閱讀器訂閱
+
+### BLOG-15 文章封存 / 分類
+- 在系列文章之外，支援輕量的「分類」標籤
+- 作者可建立自訂分類（如「技術」「生活」「食記」）
+- 部落格首頁可按分類篩選
+- 與現有 `tags` 的差異：分類是作者定義的一級結構，tags 是多選自由標籤
+
+### BLOG-16 深色/淺色模式切換
+- 部落格文章頁支援讀者自行切換深色 / 淺色
+- 目前全是深色（`bg-slate-950`），加一個 toggle 按鈕
+- 淺色模式：白底、黑字、prose 預設色系
+
+### BLOG-17 文章字型大小調整
+- 讀者可調整文章字體大小（小 / 中 / 大）
+- 存 localStorage，下次保持設定
+- 改變 `article` 元素的 `text-sm` / `text-base` / `text-lg` class
+
+### BLOG-18 程式碼區塊語法高亮 + 複製按鈕
+- TipTap CodeBlock 目前沒有語法高亮
+- 整合 `lowlight`（已是 TipTap 官方推薦）
+- 程式碼區塊右上角加「複製」按鈕（`navigator.clipboard.writeText`）
+
+### BLOG-19 文章預覽 OG 卡片測試工具
+- 後台「SEO」頁面加一個「測試 OG 卡片」按鈕
+- 呼叫 Facebook Sharing Debugger API 或直接顯示 og:image 預覽
+- 讓作者確認分享出去的卡片長什麼樣子
+
+### BLOG-20 部落格整體搜尋
+- `/blogs` 首頁加搜尋框，可搜尋所有公開文章的標題 + 摘要
+- PostgreSQL full-text search：`tsvector`（或 simple ILIKE）
+- 支援作者篩選、標籤篩選、日期範圍
 
 ---
 
