@@ -420,71 +420,92 @@ export default function YukirinScene({
     }
     window.addEventListener('deviceorientation', onDeviceOrientation)
 
-    // ── Orbit 互動（allowOrbit 模式） ──────────────────────────────────────
-    const onOrbitPointerDown = (e: PointerEvent) => {
-      orbitPointersRef.current.set(e.pointerId, { x: e.clientX, y: e.clientY })
-      container.setPointerCapture(e.pointerId)
-      const ptrs = orbitPointersRef.current
-      if (ptrs.size === 1) {
-        orbitRef.current.isDragging = true
-        orbitRef.current.dragMoved = false
-        orbitRef.current.lastX = e.clientX
-        orbitRef.current.lastY = e.clientY
-      } else if (ptrs.size === 2) {
-        orbitRef.current.isDragging = false
-        const pts = Array.from(ptrs.values())
-        const dx = pts[1].x - pts[0].x
-        const dy = pts[1].y - pts[0].y
-        orbitRef.current.pinchDist = Math.sqrt(dx * dx + dy * dy)
-      }
-    }
-    const onOrbitPointerMove = (e: PointerEvent) => {
-      orbitPointersRef.current.set(e.pointerId, { x: e.clientX, y: e.clientY })
-      const ptrs = orbitPointersRef.current
-      if (ptrs.size === 2) {
-        const pts = Array.from(ptrs.values())
-        const dx = pts[1].x - pts[0].x
-        const dy = pts[1].y - pts[0].y
-        const dist = Math.sqrt(dx * dx + dy * dy)
-        const pinchDelta = orbitRef.current.pinchDist - dist
-        orbitRef.current.targetRadius = Math.max(0.7, Math.min(5, orbitRef.current.targetRadius + pinchDelta * 0.012))
-        orbitRef.current.pinchDist = dist
-        return
-      }
-      if (!orbitRef.current.isDragging) return
-      const dx = e.clientX - orbitRef.current.lastX
-      const dy = e.clientY - orbitRef.current.lastY
-      orbitRef.current.lastX = e.clientX
-      orbitRef.current.lastY = e.clientY
-      if (Math.abs(dx) > 2 || Math.abs(dy) > 2) orbitRef.current.dragMoved = true
-      orbitRef.current.targetTheta -= dx * 0.008
-      orbitRef.current.targetPhi = Math.max(0.08, Math.min(Math.PI * 0.88, orbitRef.current.targetPhi + dy * 0.008))
-    }
-    const onOrbitPointerUp = (e: PointerEvent) => {
-      orbitPointersRef.current.delete(e.pointerId)
-      if (orbitPointersRef.current.size === 0) orbitRef.current.isDragging = false
-    }
-    const onOrbitWheel = (e: WheelEvent) => {
-      e.preventDefault()
-      orbitRef.current.targetRadius = Math.max(0.7, Math.min(5, orbitRef.current.targetRadius + e.deltaY * 0.004))
-    }
+    // ── Orbit 互動（allowOrbit 模式，掛在 canvas 上）────────────────────────
+    const canvas = renderer.domElement
+    let orbitCleanup: (() => void) | null = null
 
     if (allowOrbit) {
-      // 初始化 orbit 狀態（根據相機預設計算球座標）
+      // 初始化球座標
       const p = CAMERA_PRESETS[cameraMode]
-      const dx = p.pos[0] - p.target[0], dy = p.pos[1] - p.target[1], dz = p.pos[2] - p.target[2]
-      const r = Math.sqrt(dx * dx + dy * dy + dz * dz)
+      const dx0 = p.pos[0] - p.target[0], dy0 = p.pos[1] - p.target[1], dz0 = p.pos[2] - p.target[2]
+      const r0 = Math.sqrt(dx0 * dx0 + dy0 * dy0 + dz0 * dz0)
       orbitRef.current = {
-        theta: Math.atan2(dx, dz), phi: Math.acos(Math.max(-1, Math.min(1, dy / r))),
-        radius: r, targetTheta: Math.atan2(dx, dz),
-        targetPhi: Math.acos(Math.max(-1, Math.min(1, dy / r))),
-        targetRadius: r, isDragging: false, dragMoved: false,
-        lastX: 0, lastY: 0, pinchDist: 0,
+        theta: Math.atan2(dx0, dz0),
+        phi: Math.acos(Math.max(-1, Math.min(1, dy0 / r0))),
+        radius: r0,
+        targetTheta: Math.atan2(dx0, dz0),
+        targetPhi: Math.acos(Math.max(-1, Math.min(1, dy0 / r0))),
+        targetRadius: r0,
+        isDragging: false, dragMoved: false, lastX: 0, lastY: 0, pinchDist: 0,
       }
-      container.addEventListener('pointerdown', onOrbitPointerDown)
-      container.addEventListener('pointermove', onOrbitPointerMove)
-      container.addEventListener('pointerup',   onOrbitPointerUp)
-      container.addEventListener('wheel', onOrbitWheel, { passive: false })
+      canvas.style.touchAction = 'none'
+
+      const onCanvasDown = (e: PointerEvent) => {
+        e.preventDefault()
+        const pid = e.pointerId
+        orbitPointersRef.current.set(pid, { x: e.clientX, y: e.clientY })
+
+        if (orbitPointersRef.current.size === 1) {
+          orbitRef.current.isDragging = true
+          orbitRef.current.dragMoved = false
+          orbitRef.current.lastX = e.clientX
+          orbitRef.current.lastY = e.clientY
+        } else if (orbitPointersRef.current.size === 2) {
+          orbitRef.current.isDragging = false
+          const pts = Array.from(orbitPointersRef.current.values())
+          const ddx = pts[1].x - pts[0].x, ddy = pts[1].y - pts[0].y
+          orbitRef.current.pinchDist = Math.sqrt(ddx * ddx + ddy * ddy)
+        }
+
+        // document-level 追蹤，指針離開 canvas 也不斷
+        const onDocMove = (ev: PointerEvent) => {
+          if (ev.pointerId !== pid) return
+          ev.preventDefault()
+          orbitPointersRef.current.set(pid, { x: ev.clientX, y: ev.clientY })
+
+          if (orbitPointersRef.current.size >= 2) {
+            const pts = Array.from(orbitPointersRef.current.values())
+            const ddx = pts[1].x - pts[0].x, ddy = pts[1].y - pts[0].y
+            const dist = Math.sqrt(ddx * ddx + ddy * ddy)
+            orbitRef.current.targetRadius = Math.max(0.7, Math.min(5,
+              orbitRef.current.targetRadius + (orbitRef.current.pinchDist - dist) * 0.012))
+            orbitRef.current.pinchDist = dist
+            return
+          }
+          if (!orbitRef.current.isDragging) return
+          const ddx2 = ev.clientX - orbitRef.current.lastX
+          const ddy2 = ev.clientY - orbitRef.current.lastY
+          orbitRef.current.lastX = ev.clientX
+          orbitRef.current.lastY = ev.clientY
+          if (Math.abs(ddx2) > 2 || Math.abs(ddy2) > 2) orbitRef.current.dragMoved = true
+          orbitRef.current.targetTheta -= ddx2 * 0.008
+          orbitRef.current.targetPhi = Math.max(0.08,
+            Math.min(Math.PI * 0.88, orbitRef.current.targetPhi + ddy2 * 0.008))
+        }
+        const onDocUp = (ev: PointerEvent) => {
+          if (ev.pointerId !== pid) return
+          orbitPointersRef.current.delete(pid)
+          if (orbitPointersRef.current.size === 0) orbitRef.current.isDragging = false
+          document.removeEventListener('pointermove', onDocMove)
+          document.removeEventListener('pointerup',   onDocUp)
+        }
+        document.addEventListener('pointermove', onDocMove, { passive: false })
+        document.addEventListener('pointerup',   onDocUp)
+      }
+
+      const onWheel = (e: WheelEvent) => {
+        e.preventDefault()
+        orbitRef.current.targetRadius = Math.max(0.7,
+          Math.min(5, orbitRef.current.targetRadius + e.deltaY * 0.004))
+      }
+
+      canvas.addEventListener('pointerdown', onCanvasDown, { passive: false })
+      canvas.addEventListener('wheel',       onWheel,      { passive: false })
+
+      orbitCleanup = () => {
+        canvas.removeEventListener('pointerdown', onCanvasDown)
+        canvas.removeEventListener('wheel',       onWheel)
+      }
     }
 
     // ── 動畫主迴圈 ─────────────────────────────────────────────────────────
@@ -605,12 +626,7 @@ export default function YukirinScene({
       window.removeEventListener('deviceorientation', onDeviceOrientation)
       window.removeEventListener('resize', onResize)
       container.removeEventListener('click', onClick)
-      if (allowOrbit) {
-        container.removeEventListener('pointerdown', onOrbitPointerDown)
-        container.removeEventListener('pointermove', onOrbitPointerMove)
-        container.removeEventListener('pointerup',   onOrbitPointerUp)
-        container.removeEventListener('wheel', onOrbitWheel)
-      }
+      orbitCleanup?.()
       renderer.dispose()
       container.removeChild(renderer.domElement)
     }
