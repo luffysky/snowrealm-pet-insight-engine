@@ -110,6 +110,8 @@ interface YukirinSceneProps {
   mood?: YukirinMood
   /** 是否顯示背景玻璃球 */
   showBackground?: boolean
+  /** 開啟 360° 軌道旋轉（拖拽/捏合/滾輪） */
+  allowOrbit?: boolean
   /** 外部注入的 mood 變更（從 AI Guide 觸發） */
   onLoad?: (controls: YukirinControls) => void
   className?: string
@@ -142,6 +144,7 @@ export default function YukirinScene({
   cameraMode = 'fullBody',
   mood = 'happy',
   showBackground = true,
+  allowOrbit = false,
   onLoad,
   className = '',
 }: YukirinSceneProps) {
@@ -162,6 +165,14 @@ export default function YukirinScene({
   const targetBodyYRotRef = useRef(0)
   const currentBodyYRotRef = useRef(0)
   const randomActionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // Orbit 軌道旋轉
+  const orbitRef = useRef({
+    theta: 0, phi: Math.PI / 2, radius: 2.2,
+    targetTheta: 0, targetPhi: Math.PI / 2, targetRadius: 2.2,
+    isDragging: false, dragMoved: false, lastX: 0, lastY: 0, pinchDist: 0,
+  })
+  const orbitPointersRef = useRef(new Map<number, { x: number; y: number }>())
 
   // 點擊互動：隨機切換表情
   const CLICK_REACTIONS: YukirinMood[] = ['surprised', 'wink', 'excited', 'happy', 'relaxed']
@@ -353,6 +364,8 @@ export default function YukirinScene({
     const onClick = (e: MouseEvent) => {
       const vrm = vrmRef.current
       if (!vrm || clickCooldownRef.current) return
+      // orbit 模式下若有拖動就不觸發互動
+      if (allowOrbit && orbitRef.current.dragMoved) return
 
       const rect = container.getBoundingClientRect()
       const ndcX = ((e.clientX - rect.left) / rect.width) * 2 - 1
@@ -407,6 +420,73 @@ export default function YukirinScene({
     }
     window.addEventListener('deviceorientation', onDeviceOrientation)
 
+    // ── Orbit 互動（allowOrbit 模式） ──────────────────────────────────────
+    const onOrbitPointerDown = (e: PointerEvent) => {
+      orbitPointersRef.current.set(e.pointerId, { x: e.clientX, y: e.clientY })
+      container.setPointerCapture(e.pointerId)
+      const ptrs = orbitPointersRef.current
+      if (ptrs.size === 1) {
+        orbitRef.current.isDragging = true
+        orbitRef.current.dragMoved = false
+        orbitRef.current.lastX = e.clientX
+        orbitRef.current.lastY = e.clientY
+      } else if (ptrs.size === 2) {
+        orbitRef.current.isDragging = false
+        const pts = Array.from(ptrs.values())
+        const dx = pts[1].x - pts[0].x
+        const dy = pts[1].y - pts[0].y
+        orbitRef.current.pinchDist = Math.sqrt(dx * dx + dy * dy)
+      }
+    }
+    const onOrbitPointerMove = (e: PointerEvent) => {
+      orbitPointersRef.current.set(e.pointerId, { x: e.clientX, y: e.clientY })
+      const ptrs = orbitPointersRef.current
+      if (ptrs.size === 2) {
+        const pts = Array.from(ptrs.values())
+        const dx = pts[1].x - pts[0].x
+        const dy = pts[1].y - pts[0].y
+        const dist = Math.sqrt(dx * dx + dy * dy)
+        const pinchDelta = orbitRef.current.pinchDist - dist
+        orbitRef.current.targetRadius = Math.max(0.7, Math.min(5, orbitRef.current.targetRadius + pinchDelta * 0.012))
+        orbitRef.current.pinchDist = dist
+        return
+      }
+      if (!orbitRef.current.isDragging) return
+      const dx = e.clientX - orbitRef.current.lastX
+      const dy = e.clientY - orbitRef.current.lastY
+      orbitRef.current.lastX = e.clientX
+      orbitRef.current.lastY = e.clientY
+      if (Math.abs(dx) > 2 || Math.abs(dy) > 2) orbitRef.current.dragMoved = true
+      orbitRef.current.targetTheta -= dx * 0.008
+      orbitRef.current.targetPhi = Math.max(0.08, Math.min(Math.PI * 0.88, orbitRef.current.targetPhi + dy * 0.008))
+    }
+    const onOrbitPointerUp = (e: PointerEvent) => {
+      orbitPointersRef.current.delete(e.pointerId)
+      if (orbitPointersRef.current.size === 0) orbitRef.current.isDragging = false
+    }
+    const onOrbitWheel = (e: WheelEvent) => {
+      e.preventDefault()
+      orbitRef.current.targetRadius = Math.max(0.7, Math.min(5, orbitRef.current.targetRadius + e.deltaY * 0.004))
+    }
+
+    if (allowOrbit) {
+      // 初始化 orbit 狀態（根據相機預設計算球座標）
+      const p = CAMERA_PRESETS[cameraMode]
+      const dx = p.pos[0] - p.target[0], dy = p.pos[1] - p.target[1], dz = p.pos[2] - p.target[2]
+      const r = Math.sqrt(dx * dx + dy * dy + dz * dz)
+      orbitRef.current = {
+        theta: Math.atan2(dx, dz), phi: Math.acos(Math.max(-1, Math.min(1, dy / r))),
+        radius: r, targetTheta: Math.atan2(dx, dz),
+        targetPhi: Math.acos(Math.max(-1, Math.min(1, dy / r))),
+        targetRadius: r, isDragging: false, dragMoved: false,
+        lastX: 0, lastY: 0, pinchDist: 0,
+      }
+      container.addEventListener('pointerdown', onOrbitPointerDown)
+      container.addEventListener('pointermove', onOrbitPointerMove)
+      container.addEventListener('pointerup',   onOrbitPointerUp)
+      container.addEventListener('wheel', onOrbitWheel, { passive: false })
+    }
+
     // ── 動畫主迴圈 ─────────────────────────────────────────────────────────
     const animate = () => {
       rafRef.current = requestAnimationFrame(animate)
@@ -450,8 +530,24 @@ export default function YukirinScene({
         }
       }
 
-      // 平滑身體轉向
-      if (vrm) {
+      // Orbit 相機（allowOrbit 模式）
+      if (allowOrbit) {
+        const orb = orbitRef.current
+        const s = Math.min(delta * 10, 1)
+        orb.theta  = THREE.MathUtils.lerp(orb.theta,  orb.targetTheta,  s)
+        orb.phi    = THREE.MathUtils.lerp(orb.phi,    orb.targetPhi,    s)
+        orb.radius = THREE.MathUtils.lerp(orb.radius, orb.targetRadius, Math.min(delta * 8, 1))
+        const t = CAMERA_PRESETS[cameraMode].target
+        camera.position.set(
+          t[0] + orb.radius * Math.sin(orb.phi) * Math.sin(orb.theta),
+          t[1] + orb.radius * Math.cos(orb.phi),
+          t[2] + orb.radius * Math.sin(orb.phi) * Math.cos(orb.theta),
+        )
+        camera.lookAt(t[0], t[1], t[2])
+      }
+
+      // 平滑身體轉向（orbit 模式下不隨機轉身，保持穩定）
+      if (!allowOrbit && vrm) {
         currentBodyYRotRef.current = THREE.MathUtils.lerp(
           currentBodyYRotRef.current,
           targetBodyYRotRef.current,
@@ -509,10 +605,16 @@ export default function YukirinScene({
       window.removeEventListener('deviceorientation', onDeviceOrientation)
       window.removeEventListener('resize', onResize)
       container.removeEventListener('click', onClick)
+      if (allowOrbit) {
+        container.removeEventListener('pointerdown', onOrbitPointerDown)
+        container.removeEventListener('pointermove', onOrbitPointerMove)
+        container.removeEventListener('pointerup',   onOrbitPointerUp)
+        container.removeEventListener('wheel', onOrbitWheel)
+      }
       renderer.dispose()
       container.removeChild(renderer.domElement)
     }
-  }, [cameraMode, mood, showBackground, onLoad, transitionExpression, playArmWave])
+  }, [cameraMode, mood, showBackground, allowOrbit, onLoad, transitionExpression, playArmWave])
 
   return (
     <div

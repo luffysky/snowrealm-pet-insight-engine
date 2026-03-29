@@ -5,6 +5,7 @@ import dynamic from 'next/dynamic'
 import type { YukirinControls, YukirinMood } from './YukirinScene'
 
 const YukirinScene = dynamic(() => import('./YukirinScene'), { ssr: false })
+const YukirinOrbitModal = dynamic(() => import('./YukirinOrbitModal'), { ssr: false })
 
 // ── 隨機台詞 ───────────────────────────────────────────────────────────────
 type Line = { text: string; mood: YukirinMood }
@@ -63,6 +64,7 @@ function SpeechBubble({ text, visible, onClose }: { text: string; visible: boole
 // ── 主元件 ────────────────────────────────────────────────────────────────
 export default function YukirinWidget() {
   const [open, setOpen] = useState(false)
+  const [orbitOpen, setOrbitOpen] = useState(false)
   const [bubbleVisible, setBubbleVisible] = useState(false)
   const [currentLine, setCurrentLine] = useState<Line>(LINES[0])
   const yukirinRef = useRef<YukirinControls | null>(null)
@@ -197,6 +199,16 @@ export default function YukirinWidget() {
             >
               ✕
             </button>
+            {/* 展開 360° 按鈕 */}
+            <button
+              onClick={(e) => { e.stopPropagation(); if (!isDraggingRef.current) setOrbitOpen(true) }}
+              className="absolute -bottom-2 -right-2 z-10 w-5 h-5 rounded-full bg-white/80 border border-[#b8a9e8]/40 flex items-center justify-center text-[#8a7ca8] hover:text-[#3d3155] shadow-sm transition-colors cursor-pointer"
+              title="360° 旋轉視角"
+            >
+              <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor">
+                <path d="M0 0h3.5v1.5H1.5v2H0V0zm6.5 0H10v3.5H8.5v-2h-2V0zM0 6.5h1.5v2h2V10H0V6.5zM8.5 8.5v-2H10V10H6.5V8.5h2z"/>
+              </svg>
+            </button>
 
             {/* 可點擊觸發說話 */}
             <button
@@ -223,6 +235,11 @@ export default function YukirinWidget() {
         >
           <span className="flex items-center justify-center w-full h-full text-xl">🌸</span>
         </button>
+      )}
+
+      {/* 360° Orbit Modal */}
+      {orbitOpen && (
+        <YukirinOrbitModal onClose={() => setOrbitOpen(false)} />
       )}
     </div>
   )
