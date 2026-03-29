@@ -2,7 +2,7 @@ import { Metadata } from 'next'
 import Link from 'next/link'
 import Image from 'next/image'
 import { notFound } from 'next/navigation'
-import { ReadingProgress, ArticleReactions, ArticleComments } from './ArticleClient'
+import { ReadingProgress, ArticleReactions, ArticleComments, ArticleThemeToggle } from './ArticleClient'
 import ShareArticleButton from './ShareArticleButton'
 
 interface ArticleNav { title: string; slug: string }
@@ -113,7 +113,7 @@ export default async function ArticlePage({
 
       <div className="max-w-2xl mx-auto px-5 sm:px-6">
 
-        {/* Breadcrumbs */}
+        {/* Breadcrumbs + theme toggle */}
         <nav className={`flex items-center gap-1.5 text-xs text-white/30 ${article.cover_image ? '-mt-6 relative z-10' : 'pt-10'}`}>
           <Link href="/blogs" className="hover:text-white/60 transition-colors">部落格</Link>
           <span>/</span>
@@ -122,6 +122,9 @@ export default async function ArticlePage({
           </Link>
           <span>/</span>
           <span className="text-white/50 truncate max-w-[160px]">{article.title}</span>
+          <span className="ml-auto">
+            <ArticleThemeToggle />
+          </span>
         </nav>
 
         {/* Article header */}

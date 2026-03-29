@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
+import { Sun, Moon } from 'lucide-react'
 
 // ─── Reading Progress Bar ─────────────────────────────────────────────────────
 export function ReadingProgress() {
@@ -238,5 +239,44 @@ export function ArticleComments({ userSlug, articleSlug }: CommentsProps) {
         </div>
       </form>
     </div>
+  )
+}
+
+// ─── Dark / Light Mode Toggle ─────────────────────────────────────────────────
+export function ArticleThemeToggle() {
+  const [isDark, setIsDark] = useState(true)
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('blog-theme')
+      if (saved === 'light') {
+        setIsDark(false)
+        document.documentElement.classList.add('blog-light')
+      }
+    } catch { /* ignore */ }
+  }, [])
+
+  const toggle = () => {
+    const toLight = isDark
+    setIsDark(!isDark)
+    try {
+      if (toLight) {
+        document.documentElement.classList.add('blog-light')
+        localStorage.setItem('blog-theme', 'light')
+      } else {
+        document.documentElement.classList.remove('blog-light')
+        localStorage.setItem('blog-theme', 'dark')
+      }
+    } catch { /* ignore */ }
+  }
+
+  return (
+    <button
+      onClick={toggle}
+      title={isDark ? '切換淺色模式' : '切換深色模式'}
+      className="flex items-center justify-center w-8 h-8 rounded-full bg-white/[0.07] hover:bg-white/[0.12] text-white/50 hover:text-white/80 transition-all"
+    >
+      {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+    </button>
   )
 }

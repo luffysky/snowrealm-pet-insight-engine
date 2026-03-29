@@ -42,7 +42,7 @@ import {
   Subscript as SubscriptIcon, Superscript as SuperscriptIcon,
   FileCode, Minus, Type, CheckSquare, Indent, Outdent,
   Video, Search, X, Plus, Trash2, Columns, Rows, Merge, Split,
-  ChevronDown, Loader2,
+  ChevronDown, Loader2, GripVertical,
 } from 'lucide-react'
 
 // ─── Custom Extensions ─────────────────────────────────────────────────────
@@ -344,6 +344,98 @@ const HIGHLIGHTS = [
   '#FFF9C4','#DCEDC8','#B3E5FC','#F8BBD9','#FFE0B2','#FFCDD2',
 ]
 
+// ─── Draggable Float Bar (replaces BubbleMenu) ──────────────────────────────
+
+import type { Editor } from '@tiptap/react'
+
+function DraggableFloatBar({ editor, setLink }: { editor: Editor; setLink: () => void }) {
+  const [visible, setVisible] = useState(false)
+  const [autoPos, setAutoPos] = useState({ x: 0, y: 0 })
+  const [manualDelta, setManualDelta] = useState({ x: 0, y: 0 })
+  const [isDragging, setIsDragging] = useState(false)
+  const dragOrigin = useRef({ mouseX: 0, mouseY: 0, deltaX: 0, deltaY: 0 })
+  const barRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const onSel = () => {
+      const { selection } = editor.state
+      if (selection.empty) { setVisible(false); return }
+      try {
+        const coords = editor.view.coordsAtPos(selection.from)
+        setAutoPos({ x: coords.left, y: coords.top - 48 })
+        setVisible(true)
+      } catch { /* ignore */ }
+    }
+    const onBlur = () => setVisible(false)
+    editor.on('selectionUpdate', onSel)
+    editor.on('blur', onBlur)
+    return () => { editor.off('selectionUpdate', onSel); editor.off('blur', onBlur) }
+  }, [editor])
+
+  const onDragStart = (e: React.MouseEvent) => {
+    e.preventDefault()
+    dragOrigin.current = { mouseX: e.clientX, mouseY: e.clientY, deltaX: manualDelta.x, deltaY: manualDelta.y }
+    setIsDragging(true)
+  }
+
+  useEffect(() => {
+    if (!isDragging) return
+    const onMove = (e: MouseEvent) => setManualDelta({
+      x: dragOrigin.current.deltaX + (e.clientX - dragOrigin.current.mouseX),
+      y: dragOrigin.current.deltaY + (e.clientY - dragOrigin.current.mouseY),
+    })
+    const onUp = () => setIsDragging(false)
+    document.addEventListener('mousemove', onMove)
+    document.addEventListener('mouseup', onUp)
+    return () => { document.removeEventListener('mousemove', onMove); document.removeEventListener('mouseup', onUp) }
+  }, [isDragging])
+
+  const FBtn = ({ onClick, active, title, children }: { onClick: () => void; active?: boolean; title: string; children: React.ReactNode }) => (
+    <button type="button" title={title} onClick={onClick}
+      className={`flex items-center justify-center h-7 min-w-[28px] px-1.5 rounded-lg text-xs transition-colors ${active ? 'bg-amber-500/25 text-amber-300' : 'text-white/55 hover:bg-white/10 hover:text-white/90'}`}>
+      {children}
+    </button>
+  )
+
+  if (!visible) return null
+
+  return (
+    <div
+      ref={barRef}
+      style={{ position: 'fixed', left: autoPos.x + manualDelta.x, top: autoPos.y + manualDelta.y, zIndex: 9999 }}
+      className="flex items-center gap-0.5 p-1 bg-slate-800/95 backdrop-blur-sm border border-white/12 shadow-xl rounded-xl select-none"
+    >
+      {/* Drag handle */}
+      <div onMouseDown={onDragStart}
+        className={`flex items-center justify-center h-7 w-5 text-white/25 hover:text-white/60 transition-colors ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
+        title="拖曳工具列">
+        <GripVertical className="w-3 h-3" />
+      </div>
+      <div className="w-px h-4 bg-white/10 mx-0.5" />
+      <FBtn onClick={() => editor.chain().focus().toggleBold().run()} active={editor.isActive('bold')} title="粗體"><Bold className="w-3.5 h-3.5" /></FBtn>
+      <FBtn onClick={() => editor.chain().focus().toggleItalic().run()} active={editor.isActive('italic')} title="斜體"><Italic className="w-3.5 h-3.5" /></FBtn>
+      <FBtn onClick={() => editor.chain().focus().toggleUnderline?.().run()} active={editor.isActive('underline')} title="底線"><UnderlineIcon className="w-3.5 h-3.5" /></FBtn>
+      <FBtn onClick={setLink} active={editor.isActive('link')} title="連結"><LinkIcon className="w-3.5 h-3.5" /></FBtn>
+      <div className="w-px h-4 bg-white/10 mx-0.5" />
+      <FBtn onClick={() => editor.chain().focus().toggleBlockquote().run()} active={editor.isActive('blockquote')} title="引用"><Quote className="w-3.5 h-3.5" /></FBtn>
+      {(['2','3','4'] as const).map(lv => (
+        <FBtn key={lv} onClick={() => editor.chain().focus().toggleHeading({ level: parseInt(lv) as any }).run()} active={editor.isActive('heading', { level: parseInt(lv) })} title={`H${lv}`}>
+          <span className="font-bold text-[11px]">H{lv}</span>
+        </FBtn>
+      ))}
+      <div className="w-px h-4 bg-white/10 mx-0.5" />
+      <div className="flex items-center gap-1 px-0.5">
+        {['#EF4444','#3B82F6','#22C55E','#EAB308','#A855F7'].map(c => (
+          <button key={c} type="button" title={c}
+            className="w-3.5 h-3.5 rounded-full border border-white/20 hover:scale-125 transition-transform"
+            style={{ backgroundColor: c }}
+            onClick={() => editor.chain().focus().setColor(c).run()} />
+        ))}
+      </div>
+    </div>
+  )
+}
+
 // ─── Main Component ─────────────────────────────────────────────────────────
 
 interface Props {
@@ -525,22 +617,37 @@ export default function BlogTipTapEditor({
 
   const Sep = () => <div className="w-px h-5 bg-white/10 mx-0.5 shrink-0" />
 
-  const Dropdown = ({ id, trigger, children }: { id: string; trigger: React.ReactNode; children: React.ReactNode }) => (
-    <div className="relative" onClick={e => e.stopPropagation()}>
-      <button
-        type="button"
-        onClick={() => toggleDropdown(id)}
-        className="flex items-center gap-0.5 h-7 px-1.5 rounded-lg text-xs text-white/55 hover:bg-white/10 hover:text-white/90 transition-colors"
-      >
-        {trigger}
-      </button>
-      {openDropdown === id && (
-        <div className="absolute top-full left-0 mt-1 z-50 bg-slate-800 border border-white/12 rounded-xl shadow-2xl overflow-hidden min-w-[180px]">
-          {children}
-        </div>
-      )}
-    </div>
-  )
+  const Dropdown = ({ id, trigger, children }: { id: string; trigger: React.ReactNode; children: React.ReactNode }) => {
+    const btnRef = useRef<HTMLButtonElement>(null)
+    const [dropPos, setDropPos] = useState<{ top: number; left: number } | null>(null)
+    const handleOpen = () => {
+      if (openDropdown !== id && btnRef.current) {
+        const r = btnRef.current.getBoundingClientRect()
+        setDropPos({ top: r.bottom + 4, left: r.left })
+      }
+      toggleDropdown(id)
+    }
+    return (
+      <div className="relative" onClick={e => e.stopPropagation()}>
+        <button
+          ref={btnRef}
+          type="button"
+          onClick={handleOpen}
+          className="flex items-center gap-0.5 h-7 px-1.5 rounded-lg text-xs text-white/55 hover:bg-white/10 hover:text-white/90 transition-colors"
+        >
+          {trigger}
+        </button>
+        {openDropdown === id && dropPos && (
+          <div
+            style={{ position: 'fixed', top: dropPos.top, left: dropPos.left, zIndex: 9999 }}
+            className="bg-slate-800 border border-white/12 rounded-xl shadow-2xl overflow-hidden min-w-[180px]"
+          >
+            {children}
+          </div>
+        )}
+      </div>
+    )
+  }
 
   const DItem = ({
     onClick, active, children,
@@ -560,45 +667,8 @@ export default function BlogTipTapEditor({
 
   return (
     <div className="border border-white/10 rounded-xl bg-slate-900/60 overflow-hidden">
-      {/* Bubble Menu */}
-      {editor && (
-        <BubbleMenu
-          editor={editor}
-          tippyOptions={{ duration: 80, maxWidth: 500, placement: 'top-start', delay: [800, 0] }}
-          className="flex items-center gap-0.5 p-1 bg-slate-800 border border-white/12 shadow-xl rounded-xl"
-        >
-          <Btn onClick={() => editor.chain().focus().toggleBold().run()} active={editor.isActive('bold')} title="粗體">
-            <Bold className="w-3.5 h-3.5" />
-          </Btn>
-          <Btn onClick={() => editor.chain().focus().toggleItalic().run()} active={editor.isActive('italic')} title="斜體">
-            <Italic className="w-3.5 h-3.5" />
-          </Btn>
-          <Btn onClick={setLink} active={editor.isActive('link')} title="連結">
-            <LinkIcon className="w-3.5 h-3.5" />
-          </Btn>
-          <div className="w-px h-4 bg-white/10 mx-0.5" />
-          {(['2','3','4'] as const).map(level => (
-            <Btn
-              key={level}
-              onClick={() => editor.chain().focus().toggleHeading({ level: parseInt(level) as any }).run()}
-              active={editor.isActive('heading', { level: parseInt(level) })}
-              title={`H${level}`}
-            >
-              <span className="font-bold text-[11px]">H{level}</span>
-            </Btn>
-          ))}
-          <div className="w-px h-4 bg-white/10 mx-0.5" />
-          <div className="flex items-center gap-1 px-1">
-            {['#EF4444','#3B82F6','#22C55E','#EAB308'].map(c => (
-              <button key={c} type="button"
-                className="w-4 h-4 rounded-full border border-white/20 hover:scale-110 transition-transform"
-                style={{ backgroundColor: c }}
-                onClick={() => editor.chain().focus().setColor(c).run()}
-              />
-            ))}
-          </div>
-        </BubbleMenu>
-      )}
+      {/* Draggable Float Bar — replaces BubbleMenu */}
+      {editor && <DraggableFloatBar editor={editor} setLink={setLink} />}
 
       {/* Main Toolbar */}
       <div ref={toolbarRef} className="flex flex-wrap items-center gap-0.5 px-2 py-1.5 border-b border-white/8 bg-white/[0.02] overflow-x-auto">
