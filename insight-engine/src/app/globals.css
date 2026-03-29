@@ -1,5 +1,42 @@
 @import "tailwindcss";
 
+/* ── SnowRealm Insight 薰衣草色系設計系統 ── */
+:root {
+  /* 主色調 */
+  --lavender:       #b8a9e8;
+  --lavender-light: #d8d0f0;
+  --lavender-pale:  #eee8ff;
+  --peach:          #f5b8b5;
+  --peach-light:    #fdd5d1;
+  --peach-pale:     #fff0ee;
+  --ice:            #a8d8ea;
+  --ice-light:      #d0eef7;
+  --mint:           #b5e8d5;
+  --gold:           #f0d88a;
+
+  /* 玻璃面板 */
+  --glass-bg:       rgba(255,255,255,0.18);
+  --glass-bg-light: rgba(255,255,255,0.42);
+  --glass-border:   rgba(255,255,255,0.3);
+  --glass-shadow:   0 8px 32px rgba(100,80,180,0.1);
+
+  /* 文字 */
+  --text-bright: rgba(240,235,255,0.9);
+  --text-normal: rgba(220,210,245,0.7);
+  --text-muted:  rgba(200,190,230,0.5);
+  --text-dark:   #3d3155;
+  --text-medium: #8a7ca8;
+  --text-light:  #b5a8d0;
+
+  /* 字體 */
+  --font-display: var(--font-zen-maru), var(--font-noto-tc), 'Noto Sans TC', sans-serif;
+  --font-body:    var(--font-noto-tc), var(--font-zen-maru), 'Noto Sans TC', sans-serif;
+
+  /* 背景漸層 */
+  --gradient-bg: linear-gradient(150deg, #f3eeff 0%, #ffeef5 35%, #eef5ff 65%, #fff5ee 100%);
+  --gradient-primary: linear-gradient(135deg, #b8a9e8, #f5b8b5);
+}
+
 /* ── Public UI 淺色/深色模式 CSS 變數 ── */
 :root {
   /* 公開頁預設：淺色 */
@@ -46,17 +83,21 @@ html.dark {
   animation: spherePop 0.42s ease-out forwards;
 }
 
-/* Admin 區段強制深色（不隨 pub 模式切換） */
-.admin-root, .admin-root * {
-  color-scheme: dark;
+/* Admin 區段使用淺色系（新風格） */
+.admin-root {
+  color-scheme: light;
+  --t-accent: #6b5fa8;
+  --t-accent-bg: rgba(184,169,232,0.15);
+  --t-accent-border: rgba(184,169,232,0.30);
 }
 
-/* ── 首頁深色模式 ── */
+/* ── 首頁背景 ── */
 .home-page {
-  --home-bg: radial-gradient(circle at top, #fff8fd 0%, #eef8ff 38%, #dff1ff 68%, #d9ecff 100%);
+  --home-bg: linear-gradient(150deg, #f3eeff 0%, #ffeef5 35%, #eef5ff 65%, #fff5ee 100%);
   background: var(--home-bg);
-  color: #0f172a;
+  color: #3d3155;
   transition: background 0.3s ease, color 0.3s ease;
+  font-family: var(--font-display);
 }
 
 html.dark .home-page {
@@ -143,6 +184,13 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans), system-ui, sans-serif;
+}
+
+/* ── 公開頁預設背景（admin-root 不受影響）── */
+body:not(:has(.admin-root)) {
+  background: linear-gradient(150deg, #f3eeff 0%, #ffeef5 35%, #eef5ff 65%, #fff5ee 100%);
+  background-attachment: fixed;
+  min-height: 100vh;
 }
 
 /* ── 部落格文章內容排版 ── */
@@ -2366,10 +2414,11 @@ button:hover .option-emoji-bounce {
 }
 
 .glass-sidebar {
-  background: rgba(2,6,23,0.75);
-  backdrop-filter: blur(40px) saturate(200%);
-  -webkit-backdrop-filter: blur(40px) saturate(200%);
-  border-right: 1px solid rgba(255,255,255,0.06);
+  background: rgba(255,255,255,0.62);
+  backdrop-filter: blur(40px) saturate(180%);
+  -webkit-backdrop-filter: blur(40px) saturate(180%);
+  border-right: 1px solid rgba(184,169,232,0.22);
+  box-shadow: 4px 0 32px rgba(184,169,232,0.10);
 }
 
 .glass-btn {
@@ -2440,3 +2489,12 @@ button:hover .option-emoji-bounce {
 .tiptap-editor li { margin-bottom: 0.2rem; }
 .tiptap-editor a { color: rgba(251,191,36,0.8); text-decoration: underline; }
 .tiptap-editor p.is-editor-empty:first-child::before { content: attr(data-placeholder); color: rgba(255,255,255,0.2); pointer-events: none; float: left; height: 0; }
+
+/* ── 隱藏 scrollbar（水平捲動卡片用）── */
+.scrollbar-none {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}

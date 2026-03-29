@@ -70,16 +70,16 @@ export default function TenantsPage() {
     fetchTenants()
   }
 
-  if (loading) return <div className="text-slate-400 py-12 text-center">載入中...</div>
+  if (loading) return <div className="text-[#8a7ca8] py-12 text-center">載入中...</div>
   if (error && tenants.length === 0) return <div className="text-red-400 py-12 text-center">{error}</div>
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-white">🏢 租戶管理</h1>
+        <h1 className="text-xl sm:text-2xl font-bold text-[#3d3155]">🏢 租戶管理</h1>
         <button
           onClick={() => setShowAdd(!showAdd)}
-          className="px-4 py-2 text-sm bg-t-btn hover:bg-t-btn-hover text-white rounded-lg cursor-pointer"
+          className="px-4 py-2 text-sm bg-gradient-to-r from-[#b8a9e8] to-[#f5b8b5] hover:opacity-90 text-white rounded-lg cursor-pointer"
         >
           {showAdd ? '取消' : '新增租戶'}
         </button>
@@ -88,24 +88,24 @@ export default function TenantsPage() {
       {error && <p className="text-red-400 text-sm">{error}</p>}
 
       {showAdd && (
-        <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-4 space-y-3">
+        <div className="bg-white/35 backdrop-blur-sm border border-[#b8a9e8]/20 rounded-xl p-4 space-y-3">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <input
               placeholder="名稱"
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
-              className="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm"
+              className="bg-white/60 border border-[#b8a9e8]/20 rounded-lg px-3 py-2 text-[#3d3155] text-sm"
             />
             <input
               placeholder="slug（英數字小寫+連字號）"
               value={form.slug}
               onChange={(e) => setForm({ ...form, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '') })}
-              className="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm"
+              className="bg-white/60 border border-[#b8a9e8]/20 rounded-lg px-3 py-2 text-[#3d3155] text-sm"
             />
             <select
               value={form.plan}
               onChange={(e) => setForm({ ...form, plan: e.target.value })}
-              className="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm"
+              className="bg-white/60 border border-[#b8a9e8]/20 rounded-lg px-3 py-2 text-[#3d3155] text-sm"
             >
               <option value="free">Free</option>
               <option value="pro">Pro</option>
@@ -122,11 +122,11 @@ export default function TenantsPage() {
         </div>
       )}
 
-      <div className="bg-slate-800/50 border border-slate-700 rounded-xl overflow-hidden">
+      <div className="bg-white/35 backdrop-blur-sm border border-[#b8a9e8]/20 rounded-xl overflow-hidden">
         <div className="overflow-x-auto">
         <table className="w-full text-sm min-w-150">
           <thead>
-            <tr className="border-b border-slate-700 text-slate-400">
+            <tr className="border-b border-[#b8a9e8]/20 text-[#8a7ca8]">
               <th className="text-left px-4 py-3">名稱</th>
               <th className="text-left px-4 py-3">Slug</th>
               <th className="text-left px-4 py-3">方案</th>
@@ -137,14 +137,14 @@ export default function TenantsPage() {
           </thead>
           <tbody>
             {tenants.map((t) => (
-              <tr key={t.id} className="border-b border-slate-700/50 hover:bg-slate-800/30">
-                <td className="px-4 py-3 text-white font-medium">{t.name}</td>
-                <td className="px-4 py-3 text-slate-400 font-mono text-xs">{t.slug}</td>
+              <tr key={t.id} className="border-b border-[#b8a9e8]/20 hover:bg-white/50/30">
+                <td className="px-4 py-3 text-[#3d3155] font-medium">{t.name}</td>
+                <td className="px-4 py-3 text-[#8a7ca8] font-mono text-xs">{t.slug}</td>
                 <td className="px-4 py-3">
                   <span className={`text-xs px-2 py-0.5 rounded ${
-                    t.plan === 'pro' ? 'bg-t-accent-bg text-t-accent'
+                    t.plan === 'pro' ? 'bg-[#b8a9e8]/20 text-t-accent'
                     : t.plan === 'enterprise' ? 'bg-purple-500/20 text-purple-400'
-                    : 'bg-slate-600/30 text-slate-400'}`}>
+                    : 'bg-[#b8a9e8]/15/30 text-[#8a7ca8]'}`}>
                     {t.plan}
                   </span>
                 </td>
@@ -153,7 +153,7 @@ export default function TenantsPage() {
                     {t.is_active ? '啟用' : '停用'}
                   </span>
                 </td>
-                <td className="px-4 py-3 text-slate-500 text-xs">
+                <td className="px-4 py-3 text-[#3d3155]0 text-xs">
                   {new Date(t.created_at).toLocaleDateString('zh-TW')}
                 </td>
                 <td className="px-4 py-3 text-right">

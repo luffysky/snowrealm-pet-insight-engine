@@ -131,15 +131,15 @@ export default function AccountSettingsPage() {
     }
   }
 
-  if (loading) return <p className="text-white/50 animate-pulse">載入中...</p>
+  if (loading) return <p className="text-[#b5a8d0] animate-pulse">載入中...</p>
   if (!profile) return <p className="text-red-400">無法載入帳號資料</p>
 
-  const inputCls = 'w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white text-sm focus:border-t-accent-border focus:outline-none'
+  const inputCls = 'w-full px-3 py-2 bg-white/60 border border-[#b8a9e8]/30 rounded-lg text-[#3d3155] text-sm focus:border-[#b8a9e8]/30 focus:outline-none'
 
   return (
     <div className="max-w-2xl mx-auto space-y-8">
       <div className="flex flex-wrap items-center gap-3">
-        <h1 className="text-2xl font-bold text-white">⚙️ 帳號設定</h1>
+        <h1 className="text-xl sm:text-2xl font-bold text-[#3d3155]">⚙️ 帳號設定</h1>
         {profile.platformPartner && (
           <span
             className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/35"
@@ -156,26 +156,26 @@ export default function AccountSettingsPage() {
       )}
 
       {/* 個人資料 */}
-      <section className="bg-t-card-bg border border-t-card-border rounded-xl p-6 space-y-4">
-        <h2 className="text-lg font-semibold text-white/90">👤 個人資料</h2>
+      <section className="bg-white/40 backdrop-blur-sm border border-[#b8a9e8]/25 rounded-xl p-6 space-y-4">
+        <h2 className="text-lg font-semibold text-[#3d3155]/90">👤 個人資料</h2>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="block text-xs text-slate-500 mb-1">Email</label>
-            <p className="text-sm text-white/70 bg-slate-800 px-3 py-2 rounded-lg border border-slate-700/50">
-              {profile.email || <span className="text-slate-500 italic">未設定</span>}
+            <label className="block text-xs text-[#3d3155]0 mb-1">Email</label>
+            <p className="text-sm text-[#3d3155]/70 bg-white/50 px-3 py-2 rounded-lg border border-[#b8a9e8]/20">
+              {profile.email || <span className="text-[#3d3155]0 italic">未設定</span>}
             </p>
           </div>
           <div>
-            <label className="block text-xs text-slate-500 mb-1">手機號碼</label>
-            <p className="text-sm text-white/70 bg-slate-800 px-3 py-2 rounded-lg border border-slate-700/50">
-              {profile.phone || <span className="text-slate-500 italic">未設定</span>}
+            <label className="block text-xs text-[#3d3155]0 mb-1">手機號碼</label>
+            <p className="text-sm text-[#3d3155]/70 bg-white/50 px-3 py-2 rounded-lg border border-[#b8a9e8]/20">
+              {profile.phone || <span className="text-[#3d3155]0 italic">未設定</span>}
             </p>
           </div>
         </div>
 
         <div>
-          <label className="block text-xs text-slate-500 mb-1">顯示名稱</label>
+          <label className="block text-xs text-[#3d3155]0 mb-1">顯示名稱</label>
           <div className="flex gap-2">
             <input
               type="text"
@@ -187,7 +187,7 @@ export default function AccountSettingsPage() {
             <button
               onClick={handleSaveName}
               disabled={savingName || editName.trim() === (profile.displayName || '')}
-              className="px-4 py-2 bg-t-btn hover:bg-t-btn-hover disabled:bg-slate-700 disabled:text-slate-500 text-white rounded-lg text-sm shrink-0 transition-colors cursor-pointer"
+              className="px-4 py-2 bg-gradient-to-r from-[#b8a9e8] to-[#f5b8b5] hover:opacity-90 disabled:bg-[#b8a9e8]/10 disabled:text-[#b5a8d0] text-white rounded-lg text-sm shrink-0 transition-colors cursor-pointer"
             >
               {savingName ? '...' : '儲存'}
             </button>
@@ -197,30 +197,30 @@ export default function AccountSettingsPage() {
           )}
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-slate-700/50">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-[#b8a9e8]/20">
           <div>
-            <label className="block text-xs text-slate-500 mb-1">角色</label>
-            <p className="text-sm text-white/70">{profile.role === 'super_admin' ? 'admin' : profile.role}</p>
+            <label className="block text-xs text-[#3d3155]0 mb-1">角色</label>
+            <p className="text-sm text-[#3d3155]/70">{profile.role === 'super_admin' ? 'admin' : profile.role}</p>
           </div>
           <div>
-            <label className="block text-xs text-slate-500 mb-1">建立時間</label>
-            <p className="text-sm text-white/70">
+            <label className="block text-xs text-[#3d3155]0 mb-1">建立時間</label>
+            <p className="text-sm text-[#3d3155]/70">
               {new Date(profile.createdAt).toLocaleDateString('zh-TW')}
             </p>
           </div>
         </div>
 
-        <p className="text-xs text-slate-500">
+        <p className="text-xs text-[#3d3155]0">
           Email 與手機號碼僅用於身份驗證，不會公開顯示。如需變更請聯繫管理員。
         </p>
       </section>
 
       {/* 修改密碼 */}
-      <section className="bg-t-card-bg border border-t-card-border rounded-xl p-6 space-y-4">
-        <h2 className="text-lg font-semibold text-white/90">🔑 修改密碼</h2>
+      <section className="bg-white/40 backdrop-blur-sm border border-[#b8a9e8]/25 rounded-xl p-6 space-y-4">
+        <h2 className="text-lg font-semibold text-[#3d3155]/90">🔑 修改密碼</h2>
 
         <div>
-          <label className="block text-xs text-slate-500 mb-1">目前密碼</label>
+          <label className="block text-xs text-[#3d3155]0 mb-1">目前密碼</label>
           <div className="relative">
             <input
               type={showCurrentPw ? 'text' : 'password'}
@@ -230,14 +230,14 @@ export default function AccountSettingsPage() {
               className={inputCls}
             />
             <button type="button" onClick={() => setShowCurrentPw(!showCurrentPw)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 cursor-pointer text-sm">
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-[#3d3155]0 hover:text-slate-300 cursor-pointer text-sm">
               {showCurrentPw ? '🙈' : '👁'}
             </button>
           </div>
         </div>
 
         <div>
-          <label className="block text-xs text-slate-500 mb-1">新密碼（至少 6 個字元）</label>
+          <label className="block text-xs text-[#3d3155]0 mb-1">新密碼（至少 6 個字元）</label>
           <div className="relative">
             <input
               type={showNewPw ? 'text' : 'password'}
@@ -247,14 +247,14 @@ export default function AccountSettingsPage() {
               className={inputCls}
             />
             <button type="button" onClick={() => setShowNewPw(!showNewPw)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 cursor-pointer text-sm">
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-[#3d3155]0 hover:text-slate-300 cursor-pointer text-sm">
               {showNewPw ? '🙈' : '👁'}
             </button>
           </div>
         </div>
 
         <div>
-          <label className="block text-xs text-slate-500 mb-1">確認新密碼</label>
+          <label className="block text-xs text-[#3d3155]0 mb-1">確認新密碼</label>
           <input
             type="password"
             value={confirmPw}
@@ -271,7 +271,7 @@ export default function AccountSettingsPage() {
         <button
           onClick={handleChangePassword}
           disabled={savingPw || !currentPw || !newPw}
-          className="px-4 py-2 bg-t-btn hover:bg-t-btn-hover disabled:bg-slate-700 disabled:text-slate-500 text-white rounded-lg text-sm font-medium transition-colors cursor-pointer"
+          className="px-4 py-2 bg-gradient-to-r from-[#b8a9e8] to-[#f5b8b5] hover:opacity-90 disabled:bg-[#b8a9e8]/10 disabled:text-[#b5a8d0] text-white rounded-lg text-sm font-medium transition-colors cursor-pointer"
         >
           {savingPw ? '修改中...' : '確認修改密碼'}
         </button>
@@ -280,7 +280,7 @@ export default function AccountSettingsPage() {
       {/* 刪除帳號 */}
       <section className="bg-red-500/5 border border-red-500/20 rounded-xl p-6 space-y-4">
         <h2 className="text-lg font-semibold text-red-400">⚠️ 刪除帳號</h2>
-        <p className="text-sm text-white/50">
+        <p className="text-sm text-[#3d3155]/50">
           帳號刪除後將保留 30 天備份。期間內可聯繫管理員恢復帳號。
           超過 30 天後資料將被永久移除。問卷資料和回覆紀錄將保留在組織中。
         </p>
@@ -300,7 +300,7 @@ export default function AccountSettingsPage() {
                 type="password"
                 value={deletePassword}
                 onChange={(e) => setDeletePassword(e.target.value)}
-                className="w-full px-3 py-2 bg-slate-900 border border-red-500/30 rounded-lg text-white text-sm focus:border-red-500 focus:outline-none"
+                className="w-full px-3 py-2 bg-white/60 border border-red-500/30 rounded-lg text-[#3d3155] text-sm focus:border-red-500 focus:outline-none"
                 autoComplete="current-password"
               />
             </div>
@@ -313,7 +313,7 @@ export default function AccountSettingsPage() {
                 value={deleteConfirm}
                 onChange={(e) => setDeleteConfirm(e.target.value)}
                 placeholder="刪除我的帳號"
-                className="w-full px-3 py-2 bg-slate-900 border border-red-500/30 rounded-lg text-white text-sm focus:border-red-500 focus:outline-none placeholder:text-slate-600"
+                className="w-full px-3 py-2 bg-white/60 border border-red-500/30 rounded-lg text-[#3d3155] text-sm focus:border-red-500 focus:outline-none placeholder:text-[#b5a8d0]"
               />
             </div>
             {deleteError && <p className="text-sm text-red-400">{deleteError}</p>}
@@ -327,7 +327,7 @@ export default function AccountSettingsPage() {
               </button>
               <button
                 onClick={() => { setShowDelete(false); setDeleteError(''); setDeletePassword(''); setDeleteConfirm('') }}
-                className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg text-sm transition-colors cursor-pointer"
+                className="px-4 py-2 bg-[#b8a9e8]/15 hover:bg-[#b8a9e8]/25 text-[#6b5fa8] border border-[#b8a9e8]/25 rounded-lg text-sm transition-colors cursor-pointer"
               >
                 取消
               </button>

@@ -109,9 +109,9 @@ export default function StoryWallAdminPage() {
 
   if (!surveySlug) {
     return (
-      <div className="space-y-6">
-        <h1 className="text-2xl font-bold text-white">故事牆管理</h1>
-        <div className="bg-white/5 border border-white/10 rounded-xl p-8 text-center text-slate-400">
+      <div className="space-y-4 sm:space-y-6">
+        <h1 className="text-xl sm:text-2xl font-bold text-[#3d3155]">故事牆管理</h1>
+        <div className="bg-white/5 border border-white/10 rounded-xl p-8 text-center text-[#8a7ca8]">
           請先從上方選擇一份問卷以查看故事牆內容。
         </div>
       </div>
@@ -119,14 +119,14 @@ export default function StoryWallAdminPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* 頁面標題列 */}
       <div className="flex items-center justify-between flex-wrap gap-3">
-        <h1 className="text-2xl font-bold text-white">📖 故事牆管理</h1>
+        <h1 className="text-xl sm:text-2xl font-bold text-[#3d3155]">📖 故事牆管理</h1>
         <div className="flex items-center gap-2">
           <button
             onClick={handleCopyLink}
-            className="px-3 py-1.5 bg-white/10 hover:bg-white/15 text-white text-sm rounded-lg border border-white/10 transition-colors"
+            className="px-3 py-1.5 bg-[#b8a9e8]/15 hover:bg-[#b8a9e8]/25 text-[#6b5fa8] text-sm rounded-lg border border-[#b8a9e8]/25 transition-colors"
           >
             {copySuccess ? '✅ 已複製' : '📋 複製故事牆連結'}
           </button>
@@ -142,15 +142,15 @@ export default function StoryWallAdminPage() {
       {/* 統計卡 */}
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
         <div className="bg-white/5 border border-white/10 rounded-xl p-4">
-          <p className="text-xs text-slate-400 mb-1">總故事數</p>
-          <p className="text-2xl font-bold text-white">{total}</p>
+          <p className="text-xs text-[#8a7ca8] mb-1">總故事數</p>
+          <p className="text-xl sm:text-2xl font-bold text-[#3d3155]">{total}</p>
         </div>
         <div className="bg-white/5 border border-white/10 rounded-xl p-4">
-          <p className="text-xs text-slate-400 mb-1">本月新增</p>
+          <p className="text-xs text-[#8a7ca8] mb-1">本月新增</p>
           <p className="text-2xl font-bold text-emerald-400">{thisMonthCount}</p>
         </div>
         <div className="bg-white/5 border border-white/10 rounded-xl p-4">
-          <p className="text-xs text-slate-400 mb-1">問卷</p>
+          <p className="text-xs text-[#8a7ca8] mb-1">問卷</p>
           <p className="text-sm font-medium text-slate-300 truncate">{selectedSurvey?.title ?? '—'}</p>
         </div>
       </div>
@@ -163,8 +163,8 @@ export default function StoryWallAdminPage() {
             onClick={() => setActiveTab(tab)}
             className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
               activeTab === tab
-                ? 'bg-white/15 text-white'
-                : 'text-slate-400 hover:text-white'
+                ? 'bg-[#b8a9e8]/25 text-[#6b5fa8]'
+                : 'text-[#8a7ca8] hover:text-[#3d3155]'
             }`}
           >
             {TAB_LABELS[tab]}
@@ -174,9 +174,9 @@ export default function StoryWallAdminPage() {
 
       {/* 故事列表 */}
       {loading ? (
-        <p className="text-slate-400 animate-pulse">載入中…</p>
+        <p className="text-[#8a7ca8] animate-pulse">載入中…</p>
       ) : filteredItems.length === 0 ? (
-        <div className="bg-white/5 border border-white/10 rounded-xl p-8 text-center text-slate-400">
+        <div className="bg-white/5 border border-white/10 rounded-xl p-8 text-center text-[#8a7ca8]">
           {activeTab === 'all' ? '目前沒有故事卡片。填答者完成問卷並同意分享後會顯示在這裡。' : `沒有「${TAB_LABELS[activeTab]}」的故事。`}
         </div>
       ) : (
@@ -197,7 +197,7 @@ export default function StoryWallAdminPage() {
         <div className="text-center pt-2">
           <button
             onClick={handlePreview}
-            className="px-6 py-2.5 bg-white/10 hover:bg-white/15 text-white text-sm rounded-xl border border-white/10 transition-colors"
+            className="px-6 py-2.5 bg-[#b8a9e8]/15 hover:bg-[#b8a9e8]/25 text-[#6b5fa8] text-sm rounded-xl border border-[#b8a9e8]/25 transition-colors"
           >
             🌐 前往公開故事牆頁面
           </button>
@@ -223,7 +223,7 @@ function StoryCard({ item, actionLoading, onAction }: StoryCardProps) {
     }`}>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 mb-1 flex-wrap">
-          <span className="text-xs font-mono text-slate-500">#{shortId(item.responseId)}</span>
+          <span className="text-xs font-mono text-[#3d3155]0">#{shortId(item.responseId)}</span>
           {item.isPinned && (
             <span className="text-xs px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">
               📌 置頂
@@ -234,7 +234,7 @@ function StoryCard({ item, actionLoading, onAction }: StoryCardProps) {
           </span>
         </div>
         <p className="text-sm text-slate-300 truncate">{item.shareableOneLiner}</p>
-        <p className="text-xs text-slate-500 mt-1">{formatDate(item.createdAt)}</p>
+        <p className="text-xs text-[#3d3155]0 mt-1">{formatDate(item.createdAt)}</p>
       </div>
 
       <div className="flex items-center gap-2 shrink-0">
@@ -242,7 +242,7 @@ function StoryCard({ item, actionLoading, onAction }: StoryCardProps) {
           href={`/story/${item.responseId}`}
           target="_blank"
           rel="noopener noreferrer"
-          className="px-2.5 py-1.5 text-xs bg-white/10 hover:bg-white/15 text-slate-300 rounded-lg border border-white/10 transition-colors"
+          className="px-2.5 py-1.5 text-xs bg-[#b8a9e8]/12 hover:bg-[#b8a9e8]/15 text-slate-300 rounded-lg border border-white/10 transition-colors"
         >
           查看
         </a>

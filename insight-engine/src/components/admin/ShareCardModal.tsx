@@ -50,14 +50,14 @@ export function ShareCardModal({
       />
 
       {/* Modal */}
-      <div className="relative bg-slate-900 border border-slate-700 rounded-2xl p-6 w-full max-w-lg space-y-5 shadow-2xl overflow-y-auto max-h-[90vh]">
+      <div className="relative bg-white/60 border border-[#b8a9e8]/20 rounded-[20px] p-6 w-full max-w-lg space-y-5 shadow-2xl overflow-y-auto max-h-[90vh]">
         {/* Header */}
         <div className="flex items-center justify-between">
-          <h3 className="text-base font-semibold text-white">📤 分享報告</h3>
+          <h3 className="text-base font-semibold text-[#3d3155]">📤 分享報告</h3>
           <button
             type="button"
             onClick={onClose}
-            className="text-slate-400 hover:text-white transition-colors cursor-pointer text-lg leading-none"
+            className="text-[#8a7ca8] hover:text-[#3d3155] transition-colors cursor-pointer text-lg leading-none"
           >
             ✕
           </button>
@@ -78,9 +78,9 @@ export function ShareCardModal({
 
         {/* URL section */}
         <div className="space-y-2">
-          <p className="text-xs text-slate-400">公開連結</p>
-          <div className="flex items-center gap-2 bg-slate-800 border border-slate-700 rounded-xl px-3 py-2">
-            <span className="flex-1 text-sm text-white/80 truncate font-mono">{shareUrl}</span>
+          <p className="text-xs text-[#8a7ca8]">公開連結</p>
+          <div className="flex items-center gap-2 bg-white/50 border border-[#b8a9e8]/20 rounded-xl px-3 py-2">
+            <span className="flex-1 text-sm text-[#3d3155] truncate font-mono">{shareUrl}</span>
             <button
               type="button"
               onClick={handleCopy}
@@ -104,7 +104,7 @@ export function ShareCardModal({
           <button
             type="button"
             onClick={onClose}
-            className="flex-1 text-sm font-medium px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-xl transition-colors cursor-pointer"
+            className="flex-1 text-sm font-medium px-4 py-2 bg-[#b8a9e8]/15 hover:bg-[#b8a9e8]/25 text-[#6b5fa8] border border-[#b8a9e8]/25 rounded-xl transition-colors cursor-pointer"
           >
             關閉
           </button>
@@ -112,7 +112,7 @@ export function ShareCardModal({
 
         {/* Unshare */}
         {onUnshare && (
-          <div className="border-t border-slate-700 pt-4">
+          <div className="border-t border-[#b8a9e8]/20 pt-4">
             <button
               type="button"
               onClick={onUnshare}

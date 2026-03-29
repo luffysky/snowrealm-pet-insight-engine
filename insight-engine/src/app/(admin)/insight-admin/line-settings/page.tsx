@@ -39,7 +39,7 @@ function SourceBadge({ source, verified }: { source: string; verified?: boolean 
   if (verified === false) return <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-red-500/20 text-red-400">✗ 驗證失敗</span>
   if (source === 'db') return <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-cyan-500/20 text-cyan-400">DB</span>
   if (source === 'env') return <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-400">ENV</span>
-  return <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-slate-500/20 text-slate-400">未設定</span>
+  return <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-[#b5a8d0]/20 text-[#8a7ca8]">未設定</span>
 }
 
 export default function LineSettingsPage() {
@@ -106,26 +106,26 @@ export default function LineSettingsPage() {
     login:    configs.filter((c) => c.group === 'login'),
   }
 
-  if (loading) return <p className="text-white/50">載入中...</p>
+  if (loading) return <p className="text-[#b5a8d0]">載入中...</p>
 
   return (
-    <div className="space-y-6 max-w-3xl">
+    <div className="space-y-4 sm:space-y-6 max-w-3xl">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-white/90">LINE 設定</h1>
+        <h1 className="text-xl sm:text-2xl font-bold text-[#3d3155]/90">LINE 設定</h1>
         <div className="flex gap-2">
           <button type="button" onClick={() => setActiveTab('settings')}
-            className={`px-3 py-1.5 rounded-lg text-sm transition-colors cursor-pointer ${activeTab === 'settings' ? 'bg-t-accent-bg text-t-accent border border-t-card-border' : 'bg-slate-800 text-slate-400 border border-slate-700 hover:text-white'}`}>
+            className={`px-3 py-1.5 rounded-lg text-sm transition-colors cursor-pointer ${activeTab === 'settings' ? 'bg-[#b8a9e8]/20 text-t-accent border border-[#b8a9e8]/25' : 'bg-white/50 text-[#8a7ca8] border border-[#b8a9e8]/20 hover:text-[#3d3155]'}`}>
             環境設定
           </button>
           <button type="button" onClick={() => setActiveTab('guide')}
-            className={`px-3 py-1.5 rounded-lg text-sm transition-colors cursor-pointer ${activeTab === 'guide' ? 'bg-t-accent-bg text-t-accent border border-t-card-border' : 'bg-slate-800 text-slate-400 border border-slate-700 hover:text-white'}`}>
+            className={`px-3 py-1.5 rounded-lg text-sm transition-colors cursor-pointer ${activeTab === 'guide' ? 'bg-[#b8a9e8]/20 text-t-accent border border-[#b8a9e8]/25' : 'bg-white/50 text-[#8a7ca8] border border-[#b8a9e8]/20 hover:text-[#3d3155]'}`}>
             設定指南
           </button>
         </div>
       </div>
 
       {activeTab === 'settings' && (
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-6">
           {(['insight', 'official', 'admin', 'richmenu', 'login'] as const).map((group) => {
             const meta = GROUP_META[group]
             const items = grouped[group]
@@ -133,15 +133,15 @@ export default function LineSettingsPage() {
             const result = testKey ? testResult[testKey] : null
 
             return (
-              <section key={group} className="bg-t-card-bg border border-t-card-border rounded-2xl p-6 space-y-4">
+              <section key={group} className="bg-white/40 backdrop-blur-sm border border-[#b8a9e8]/25 rounded-[20px] p-6 space-y-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h2 className="text-lg font-semibold text-white/80">{meta.emoji} {meta.title}</h2>
-                    {meta.desc && <p className="text-xs text-slate-500 mt-0.5">{meta.desc}</p>}
+                    <h2 className="text-lg font-semibold text-[#3d3155]">{meta.emoji} {meta.title}</h2>
+                    {meta.desc && <p className="text-xs text-[#3d3155]0 mt-0.5">{meta.desc}</p>}
                   </div>
                   {testKey && (
                     <button type="button" onClick={() => handleTest(testKey)} disabled={testing === testKey}
-                      className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg text-sm text-slate-300 disabled:opacity-40 transition-colors cursor-pointer">
+                      className="px-3 py-1.5 bg-white/50 hover:bg-[#b8a9e8]/10 border border-[#b8a9e8]/20 rounded-lg text-sm text-slate-300 disabled:opacity-40 transition-colors cursor-pointer">
                       {testing === testKey ? '測試中...' : '🔍 測試連線'}
                     </button>
                   )}
@@ -164,7 +164,7 @@ export default function LineSettingsPage() {
                       <div key={item.key} className="flex flex-col gap-2">
                         <div className="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-3">
                           <div className="sm:w-36 sm:shrink-0 space-y-0.5">
-                            <span className="text-sm text-white/50">{item.label}</span>
+                            <span className="text-sm text-[#3d3155]/50">{item.label}</span>
                             {item.description && (
                               <p className="text-[10px] text-slate-600 leading-tight">{item.description}</p>
                             )}
@@ -179,15 +179,15 @@ export default function LineSettingsPage() {
                                 onChange={(e) => setEditValue(e.target.value)}
                                 placeholder={EXAMPLE_FORMAT[item.key] || '輸入值'}
                                 autoComplete="off"
-                                className="w-full min-w-0 flex-1 px-3 py-1.5 bg-slate-800 border border-slate-600 rounded-lg text-sm text-white/80 placeholder:text-slate-600"
+                                className="w-full min-w-0 flex-1 px-3 py-1.5 bg-white/50 border border-[#b8a9e8]/30 rounded-lg text-sm text-[#3d3155] placeholder:text-[#b5a8d0]"
                               />
                               <div className="flex gap-2 shrink-0">
                                 <button type="button" onClick={() => handleSave(item.key)} disabled={saving}
-                                  className="px-3 py-1.5 bg-t-btn hover:bg-t-btn-hover disabled:opacity-40 text-white rounded-lg text-sm cursor-pointer">
+                                  className="px-3 py-1.5 bg-gradient-to-r from-[#b8a9e8] to-[#f5b8b5] hover:opacity-90 disabled:opacity-40 text-white rounded-lg text-sm cursor-pointer">
                                   {saving ? '...' : '儲存'}
                                 </button>
                                 <button type="button" onClick={() => { setEditingKey(null); setEditValue('') }}
-                                  className="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded-lg text-sm cursor-pointer">
+                                  className="px-3 py-1.5 bg-[#b8a9e8]/10 hover:bg-[#b8a9e8]/15 text-slate-300 rounded-lg text-sm cursor-pointer">
                                   取消
                                 </button>
                               </div>
@@ -195,7 +195,7 @@ export default function LineSettingsPage() {
                           ) : (
                             <div className="flex-1 w-full min-w-0 flex flex-col gap-2 sm:flex-row sm:items-center">
                               <div className="flex items-center gap-2 min-w-0 flex-1">
-                                <span className={`text-sm font-mono truncate min-w-0 flex-1 sm:max-w-xs ${item.source === 'none' ? 'text-slate-600 italic' : 'text-white/60'}`}>
+                                <span className={`text-sm font-mono truncate min-w-0 flex-1 sm:max-w-xs ${item.source === 'none' ? 'text-slate-600 italic' : 'text-[#8a7ca8]'}`}>
                                   {item.source === 'none'
                                     ? EXAMPLE_FORMAT[item.key] || '尚未設定'
                                     : item.isSecret && !showValue[item.key]
@@ -205,7 +205,7 @@ export default function LineSettingsPage() {
                                 </span>
                                 {item.isSecret && item.source !== 'none' && (
                                   <button type="button" onClick={() => setShowValue((prev) => ({ ...prev, [item.key]: !prev[item.key] }))}
-                                    className="text-xs text-slate-500 hover:text-slate-300 cursor-pointer shrink-0">
+                                    className="text-xs text-[#3d3155]0 hover:text-slate-300 cursor-pointer shrink-0">
                                     {showValue[item.key] ? '🙈' : '👁'}
                                   </button>
                                 )}
@@ -233,12 +233,12 @@ export default function LineSettingsPage() {
             )
           })}
 
-          <div className="bg-slate-800/30 border border-slate-700/30 rounded-xl p-4 text-sm text-slate-500 space-y-1">
-            <p>ℹ️ <strong className="text-slate-400">來源說明</strong></p>
+          <div className="bg-white/50/30 border border-[#b8a9e8]/10 rounded-xl p-4 text-sm text-[#3d3155]0 space-y-1">
+            <p>ℹ️ <strong className="text-[#8a7ca8]">來源說明</strong></p>
             <p><span className="text-emerald-400">✓ 已驗證</span> = 測試連線成功&nbsp;&nbsp;
               <span className="text-cyan-400">DB</span> = 已在後台設定（加密儲存）&nbsp;&nbsp;
               <span className="text-amber-400">ENV</span> = 使用環境變數&nbsp;&nbsp;
-              <span className="text-slate-400">未設定</span> = 灰色為範例格式</p>
+              <span className="text-[#8a7ca8]">未設定</span> = 灰色為範例格式</p>
             <p className="text-slate-600">敏感值（Token / Secret）以 AES-256-GCM 加密存儲，前端只顯示遮罩值</p>
           </div>
         </div>
@@ -260,33 +260,33 @@ function SetupGuide() {
   }
 
   const CopyBlock = ({ label, value, id }: { label: string; value: string; id: string }) => (
-    <div className="bg-slate-900 rounded-lg p-3 flex items-center justify-between gap-3">
+    <div className="bg-white/40 backdrop-blur-sm rounded-[14px] p-3 flex items-center justify-between gap-3">
       <div className="min-w-0">
-        <p className="text-xs text-slate-500 mb-1">{label}</p>
+        <p className="text-xs text-[#3d3155]0 mb-1">{label}</p>
         <code className="text-sm text-green-300 break-all">{value}</code>
       </div>
       <button type="button" onClick={() => copy(value, id)}
-        className="shrink-0 px-2.5 py-1.5 bg-slate-700 hover:bg-slate-600 rounded-lg text-xs text-slate-300 transition-colors cursor-pointer">
+        className="shrink-0 px-2.5 py-1.5 bg-[#b8a9e8]/10 hover:bg-[#b8a9e8]/15 rounded-lg text-xs text-slate-300 transition-colors cursor-pointer">
         {copied === id ? '✅ 已複製' : '📋 複製'}
       </button>
     </div>
   )
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Step 0: Overview */}
-      <section className="bg-linear-to-r from-cyan-900/20 to-blue-900/20 border border-cyan-700/30 rounded-2xl p-6 space-y-3">
+      <section className="bg-gradient-to-r from-cyan-900/20 to-blue-900/20 border border-cyan-700/30 rounded-[20px] p-6 space-y-3">
         <h2 className="text-lg font-semibold text-t-accent">📖 串接 LINE 功能教學</h2>
         <p className="text-sm text-slate-300 leading-relaxed">
           要在本系統使用 LINE 推播、自動回覆、問卷提醒等功能，您需要先到 LINE 開發者後台建立自己的 Channel，
-          然後將取得的金鑰填入左邊的「環境設定」分頁，並在 <strong className="text-white/90">Messaging API</strong> 設定
+          然後將取得的金鑰填入左邊的「環境設定」分頁，並在 <strong className="text-[#3d3155]">Messaging API</strong> 設定
           Webhook URL 且 Verify 成功。完成後系統才能收事件、發訊息。
         </p>
-        <p className="text-xs text-slate-500">
+        <p className="text-xs text-[#3d3155]0">
           更完整的「官方帳號 vs Insight、Rich Menu、Webhook 是否互斥」說明見專案{' '}
-          <code className="text-slate-400">docs/line-official-vs-insight.md</code>。
+          <code className="text-[#8a7ca8]">docs/line-official-vs-insight.md</code>。
         </p>
-        <div className="bg-slate-900/50 rounded-lg p-3 text-sm text-slate-400 space-y-1">
+        <div className="bg-white/40 backdrop-blur-sm rounded-lg p-3 text-sm text-[#8a7ca8] space-y-1">
           <p>💡 <strong className="text-slate-300">需要的東西</strong></p>
           <ul className="list-disc pl-5 space-y-0.5">
             <li>一個 LINE 帳號</li>
@@ -297,9 +297,9 @@ function SetupGuide() {
       </section>
 
       {/* Step 1 */}
-      <section className="bg-slate-800/50 border border-slate-700/50 rounded-2xl p-6 space-y-4">
+      <section className="bg-white/35 backdrop-blur-sm border border-[#b8a9e8]/20 rounded-[20px] p-6 space-y-4">
         <div className="flex items-center gap-3">
-          <span className="w-8 h-8 rounded-full bg-t-accent-bg text-t-accent flex items-center justify-center text-sm font-bold shrink-0">1</span>
+          <span className="w-8 h-8 rounded-full bg-[#b8a9e8]/20 text-t-accent flex items-center justify-center text-sm font-bold shrink-0">1</span>
           <h2 className="text-lg font-semibold text-t-accent">建立 LINE Official Account</h2>
         </div>
         <ol className="text-sm text-slate-300 space-y-3 list-decimal pl-5 leading-relaxed">
@@ -313,15 +313,15 @@ function SetupGuide() {
           <li>填寫帳號名稱（品牌名稱）、選擇類別</li>
           <li>設定大頭貼（建議 640×640 px）和狀態消息</li>
         </ol>
-        <div className="bg-slate-900/50 rounded-lg p-3 text-sm text-slate-500">
+        <div className="bg-white/40 backdrop-blur-sm rounded-lg p-3 text-sm text-[#3d3155]0">
           💡 如果已有官方帳號可跳過此步驟
         </div>
       </section>
 
       {/* Step 2 */}
-      <section className="bg-slate-800/50 border border-slate-700/50 rounded-2xl p-6 space-y-4">
+      <section className="bg-white/35 backdrop-blur-sm border border-[#b8a9e8]/20 rounded-[20px] p-6 space-y-4">
         <div className="flex items-center gap-3">
-          <span className="w-8 h-8 rounded-full bg-t-accent-bg text-t-accent flex items-center justify-center text-sm font-bold shrink-0">2</span>
+          <span className="w-8 h-8 rounded-full bg-[#b8a9e8]/20 text-t-accent flex items-center justify-center text-sm font-bold shrink-0">2</span>
           <h2 className="text-lg font-semibold text-t-accent">啟用 Messaging API</h2>
         </div>
         <ol className="text-sm text-slate-300 space-y-3 list-decimal pl-5 leading-relaxed">
@@ -339,34 +339,34 @@ function SetupGuide() {
       </section>
 
       {/* Step 3 */}
-      <section className="bg-slate-800/50 border border-slate-700/50 rounded-2xl p-6 space-y-4">
+      <section className="bg-white/35 backdrop-blur-sm border border-[#b8a9e8]/20 rounded-[20px] p-6 space-y-4">
         <div className="flex items-center gap-3">
-          <span className="w-8 h-8 rounded-full bg-t-accent-bg text-t-accent flex items-center justify-center text-sm font-bold shrink-0">3</span>
+          <span className="w-8 h-8 rounded-full bg-[#b8a9e8]/20 text-t-accent flex items-center justify-center text-sm font-bold shrink-0">3</span>
           <h2 className="text-lg font-semibold text-t-accent">取得金鑰</h2>
         </div>
         <p className="text-sm text-slate-300 leading-relaxed">
           在 LINE Developers Console → 您的 Channel 裡，找到以下資訊：
         </p>
-        <div className="bg-slate-900 rounded-xl p-4 space-y-3">
+        <div className="bg-white/40 backdrop-blur-sm rounded-[20px] p-4 space-y-3">
           <div className="flex items-start gap-3">
             <span className="text-lg">🔑</span>
             <div>
-              <p className="text-sm font-medium text-white/80">Channel Access Token</p>
-              <p className="text-xs text-slate-500 mt-0.5">Messaging API 分頁 → 最下面「Channel access token」→ 點「Issue」產生</p>
+              <p className="text-sm font-medium text-[#3d3155]">Channel Access Token</p>
+              <p className="text-xs text-[#3d3155]0 mt-0.5">Messaging API 分頁 → 最下面「Channel access token」→ 點「Issue」產生</p>
             </div>
           </div>
           <div className="flex items-start gap-3">
             <span className="text-lg">🔐</span>
             <div>
-              <p className="text-sm font-medium text-white/80">Channel Secret</p>
-              <p className="text-xs text-slate-500 mt-0.5">Basic settings 分頁 → 「Channel secret」</p>
+              <p className="text-sm font-medium text-[#3d3155]">Channel Secret</p>
+              <p className="text-xs text-[#3d3155]0 mt-0.5">Basic settings 分頁 → 「Channel secret」</p>
             </div>
           </div>
           <div className="flex items-start gap-3">
             <span className="text-lg">🆔</span>
             <div>
-              <p className="text-sm font-medium text-white/80">Channel ID</p>
-              <p className="text-xs text-slate-500 mt-0.5">Basic settings 分頁 → 「Channel ID」（一串數字）</p>
+              <p className="text-sm font-medium text-[#3d3155]">Channel ID</p>
+              <p className="text-xs text-[#3d3155]0 mt-0.5">Basic settings 分頁 → 「Channel ID」（一串數字）</p>
             </div>
           </div>
         </div>
@@ -376,7 +376,7 @@ function SetupGuide() {
       </section>
 
       {/* Step 4 */}
-      <section className="bg-slate-800/50 border border-slate-700/50 rounded-2xl p-6 space-y-4">
+      <section className="bg-white/35 backdrop-blur-sm border border-[#b8a9e8]/20 rounded-[20px] p-6 space-y-4">
         <div className="flex items-center gap-3">
           <span className="w-8 h-8 rounded-full bg-amber-500/20 text-amber-300 flex items-center justify-center text-sm font-bold shrink-0">4</span>
           <h2 className="text-lg font-semibold text-amber-400">設定 Webhook URL（重要！）</h2>
@@ -388,12 +388,12 @@ function SetupGuide() {
           <CopyBlock label="官方帳號（用戶互動 / 自動回覆 / 關注追蹤）" value={`${baseUrl}/api/line/webhook/official`} id="wh-official" />
           <CopyBlock label="Insight 帳號（管理員通知 / 問卷推播）" value={`${baseUrl}/api/line/webhook`} id="wh-insight" />
         </div>
-        <div className="bg-slate-900/50 rounded-lg p-3 text-sm text-slate-400 space-y-2">
+        <div className="bg-white/40 backdrop-blur-sm rounded-lg p-3 text-sm text-[#8a7ca8] space-y-2">
           <p>📌 <strong className="text-slate-300">設定步驟</strong></p>
           <ol className="list-decimal pl-5 space-y-1">
             <li>貼上對應的 Webhook URL</li>
             <li>勾選「Use webhook」</li>
-            <li>點「Verify」→ 顯示 <code className="bg-slate-700 px-1 rounded text-green-300">Success</code> 即成功</li>
+            <li>點「Verify」→ 顯示 <code className="bg-[#b8a9e8]/10 px-1 rounded text-green-300">Success</code> 即成功</li>
           </ol>
         </div>
         <div className="bg-amber-900/20 border border-amber-700/30 rounded-lg p-3 text-sm text-amber-300 space-y-2">
@@ -405,7 +405,7 @@ function SetupGuide() {
       </section>
 
       {/* Step 5 */}
-      <section className="bg-slate-800/50 border border-slate-700/50 rounded-2xl p-6 space-y-4">
+      <section className="bg-white/35 backdrop-blur-sm border border-[#b8a9e8]/20 rounded-[20px] p-6 space-y-4">
         <div className="flex items-center gap-3">
           <span className="w-8 h-8 rounded-full bg-amber-500/20 text-amber-300 flex items-center justify-center text-sm font-bold shrink-0">5</span>
           <h2 className="text-lg font-semibold text-amber-400">關閉自動回應（重要！）</h2>
@@ -417,10 +417,10 @@ function SetupGuide() {
           </a>{' '}
           → 設定 → 回應設定：
         </p>
-        <ul className="text-sm text-slate-400 space-y-2 list-disc pl-5">
-          <li><strong className="text-slate-300">回應模式</strong>：選擇 <code className="bg-slate-700 px-1 rounded text-t-accent">Bot</code></li>
-          <li><strong className="text-slate-300">自動回應訊息</strong>：<code className="bg-slate-700 px-1 rounded text-red-300">停用</code></li>
-          <li><strong className="text-slate-300">Webhook</strong>：<code className="bg-slate-700 px-1 rounded text-green-300">啟用</code></li>
+        <ul className="text-sm text-[#8a7ca8] space-y-2 list-disc pl-5">
+          <li><strong className="text-slate-300">回應模式</strong>：選擇 <code className="bg-[#b8a9e8]/10 px-1 rounded text-t-accent">Bot</code></li>
+          <li><strong className="text-slate-300">自動回應訊息</strong>：<code className="bg-[#b8a9e8]/10 px-1 rounded text-red-300">停用</code></li>
+          <li><strong className="text-slate-300">Webhook</strong>：<code className="bg-[#b8a9e8]/10 px-1 rounded text-green-300">啟用</code></li>
         </ul>
         <div className="bg-red-900/20 border border-red-700/30 rounded-lg p-3 text-sm text-red-300">
           ❌ 不關閉「自動回應訊息」的話，LINE 內建回覆會跟系統的 API 回覆互相衝突
@@ -428,7 +428,7 @@ function SetupGuide() {
       </section>
 
       {/* Step 6 */}
-      <section className="bg-slate-800/50 border border-slate-700/50 rounded-2xl p-6 space-y-4">
+      <section className="bg-white/35 backdrop-blur-sm border border-[#b8a9e8]/20 rounded-[20px] p-6 space-y-4">
         <div className="flex items-center gap-3">
           <span className="w-8 h-8 rounded-full bg-green-500/20 text-green-300 flex items-center justify-center text-sm font-bold shrink-0">6</span>
           <h2 className="text-lg font-semibold text-green-400">回來填入金鑰 & 測試</h2>
@@ -445,35 +445,35 @@ function SetupGuide() {
       </section>
 
       {/* FAQ */}
-      <section className="bg-slate-800/50 border border-slate-700/50 rounded-2xl p-6 space-y-4">
+      <section className="bg-white/35 backdrop-blur-sm border border-[#b8a9e8]/20 rounded-[20px] p-6 space-y-4">
         <h2 className="text-lg font-semibold text-slate-300">❓ 常見問題</h2>
         <div className="space-y-4">
           <div>
-            <p className="text-sm font-medium text-white/80">Q：需要付費嗎？</p>
-            <p className="text-sm text-slate-400 mt-1">A：LINE 官方帳號免費方案每月可發 200 則推播訊息，一般使用足夠。超過可升級輕量方案。</p>
+            <p className="text-sm font-medium text-[#3d3155]">Q：需要付費嗎？</p>
+            <p className="text-sm text-[#8a7ca8] mt-1">A：LINE 官方帳號免費方案每月可發 200 則推播訊息，一般使用足夠。超過可升級輕量方案。</p>
           </div>
           <div>
-            <p className="text-sm font-medium text-white/80">Q：需要建幾個 Channel？</p>
-            <p className="text-sm text-slate-400 mt-1">A：基本只需 1 個（官方帳號）。如果想分開管理「用戶互動」和「管理員通知」才需要建 2 個。</p>
+            <p className="text-sm font-medium text-[#3d3155]">Q：需要建幾個 Channel？</p>
+            <p className="text-sm text-[#8a7ca8] mt-1">A：基本只需 1 個（官方帳號）。如果想分開管理「用戶互動」和「管理員通知」才需要建 2 個。</p>
           </div>
           <div>
-            <p className="text-sm font-medium text-white/80">Q：Verify 失敗怎麼辦？</p>
-            <p className="text-sm text-slate-400 mt-1">A：確認 Webhook URL 貼對了、系統有在運行中。Channel Secret 如果填錯，簽名驗證會失敗。</p>
+            <p className="text-sm font-medium text-[#3d3155]">Q：Verify 失敗怎麼辦？</p>
+            <p className="text-sm text-[#8a7ca8] mt-1">A：確認 Webhook URL 貼對了、系統有在運行中。Channel Secret 如果填錯，簽名驗證會失敗。</p>
           </div>
           <div>
-            <p className="text-sm font-medium text-white/80">Q：可以用現有的 LINE 官方帳號嗎？</p>
-            <p className="text-sm text-slate-400 mt-1">A：可以！只要在 LINE Developers Console 把它連結到 Messaging API 即可。但要注意 Webhook URL 只能設一個，如果其他服務也在用要先確認。</p>
+            <p className="text-sm font-medium text-[#3d3155]">Q：可以用現有的 LINE 官方帳號嗎？</p>
+            <p className="text-sm text-[#8a7ca8] mt-1">A：可以！只要在 LINE Developers Console 把它連結到 Messaging API 即可。但要注意 Webhook URL 只能設一個，如果其他服務也在用要先確認。</p>
           </div>
           <div>
-            <p className="text-sm font-medium text-white/80">Q：Token 貼到你們後台，LINE Developers 就自動完成了嗎？</p>
-            <p className="text-sm text-slate-400 mt-1">
+            <p className="text-sm font-medium text-[#3d3155]">Q：Token 貼到你們後台，LINE Developers 就自動完成了嗎？</p>
+            <p className="text-sm text-[#8a7ca8] mt-1">
               A：<strong>不會。</strong>後台只儲存金鑰供我們伺服器呼叫 LINE API 與驗簽。您仍須在 <strong>同一個 Channel</strong> 的 Messaging API 頁面手動貼上 Webhook、開啟 Use webhook，並看到 Verify 成功。
             </p>
           </div>
           <div>
-            <p className="text-sm font-medium text-white/80">Q：Rich Menu 只能預設一個？官方跟後台都要怎麼辦？</p>
-            <p className="text-sm text-slate-400 mt-1">
-              A：對<strong>同一個 Bot（同一個 Channel）</strong>，全體使用者的預設 Rich Menu 同一時間只有一個。若需要「給顧客的選單」和「給管理員的選單」並存，請使用<strong>兩個</strong> Messaging API Channel（Official + Insight），在 Rich Menu 頁用分頁分別管理。詳見 <code className="text-slate-500">docs/line-official-vs-insight.md</code>。
+            <p className="text-sm font-medium text-[#3d3155]">Q：Rich Menu 只能預設一個？官方跟後台都要怎麼辦？</p>
+            <p className="text-sm text-[#8a7ca8] mt-1">
+              A：對<strong>同一個 Bot（同一個 Channel）</strong>，全體使用者的預設 Rich Menu 同一時間只有一個。若需要「給顧客的選單」和「給管理員的選單」並存，請使用<strong>兩個</strong> Messaging API Channel（Official + Insight），在 Rich Menu 頁用分頁分別管理。詳見 <code className="text-[#3d3155]0">docs/line-official-vs-insight.md</code>。
             </p>
           </div>
         </div>

@@ -92,21 +92,21 @@ export default function BroadcastPage() {
 
   return (
     <div className="space-y-8">
-      <h1 className="text-2xl font-bold text-white/90">LINE 推播</h1>
+      <h1 className="text-xl sm:text-2xl font-bold text-[#3d3155]/90">LINE 推播</h1>
 
       {/* 發送表單 */}
-      <div className="bg-slate-800/50 border border-slate-700/50 rounded-2xl p-6 space-y-4">
+      <div className="bg-white/35 backdrop-blur-sm border border-[#b8a9e8]/20 rounded-[20px] p-6 space-y-4">
         {/* 模板選擇 */}
         {templates.length > 0 && (
           <div>
-            <label className="block text-sm text-slate-400 mb-1">套用模板</label>
+            <label className="block text-sm text-[#8a7ca8] mb-1">套用模板</label>
             <select
               value=""
               onChange={(e) => {
                 const tpl = templates.find((t) => t.id === e.target.value)
                 if (tpl) setText(tpl.content)
               }}
-              className="w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded-lg text-white text-sm"
+              className="w-full px-3 py-2 bg-white/60 border border-[#b8a9e8]/30 rounded-lg text-[#3d3155] text-sm"
             >
               <option value="">自由輸入（或選擇模板）</option>
               {templates.map((t) => (
@@ -117,13 +117,13 @@ export default function BroadcastPage() {
         )}
 
         <div>
-          <label className="block text-sm text-slate-400 mb-1">推播訊息</label>
+          <label className="block text-sm text-[#8a7ca8] mb-1">推播訊息</label>
           <textarea
             value={text}
             onChange={(e) => setText(e.target.value)}
             rows={4}
             placeholder="輸入要推播的訊息..."
-            className="w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded-lg text-white text-sm resize-none"
+            className="w-full px-3 py-2 bg-white/60 border border-[#b8a9e8]/30 rounded-lg text-[#3d3155] text-sm resize-none"
           />
         </div>
 
@@ -143,11 +143,11 @@ export default function BroadcastPage() {
         {useTag && (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm text-slate-400 mb-1">標籤類型</label>
+              <label className="block text-sm text-[#8a7ca8] mb-1">標籤類型</label>
               <select
                 value={tagKey}
                 onChange={(e) => { setTagKey(e.target.value); setTagValue('') }}
-                className="w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded-lg text-white text-sm"
+                className="w-full px-3 py-2 bg-white/60 border border-[#b8a9e8]/30 rounded-lg text-[#3d3155] text-sm"
               >
                 <option value="">選擇標籤</option>
                 {uniqueKeys.map((k) => (
@@ -156,11 +156,11 @@ export default function BroadcastPage() {
               </select>
             </div>
             <div>
-              <label className="block text-sm text-slate-400 mb-1">標籤值</label>
+              <label className="block text-sm text-[#8a7ca8] mb-1">標籤值</label>
               <select
                 value={tagValue}
                 onChange={(e) => setTagValue(e.target.value)}
-                className="w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded-lg text-white text-sm"
+                className="w-full px-3 py-2 bg-white/60 border border-[#b8a9e8]/30 rounded-lg text-[#3d3155] text-sm"
               >
                 <option value="">選擇值</option>
                 {valuesForKey.map((t) => (
@@ -186,12 +186,12 @@ export default function BroadcastPage() {
 
         {useSchedule && (
           <div>
-            <label className="block text-sm text-slate-400 mb-1">排程時間</label>
+            <label className="block text-sm text-[#8a7ca8] mb-1">排程時間</label>
             <input
               type="datetime-local"
               value={scheduledAt}
               onChange={(e) => setScheduledAt(e.target.value)}
-              className="px-3 py-2 bg-slate-900 border border-slate-600 rounded-lg text-white text-sm"
+              className="px-3 py-2 bg-white/60 border border-[#b8a9e8]/30 rounded-lg text-[#3d3155] text-sm"
             />
           </div>
         )}
@@ -201,7 +201,7 @@ export default function BroadcastPage() {
             type="button"
             onClick={handleSend}
             disabled={sending || !text.trim() || (useTag && (!tagKey || !tagValue)) || (useSchedule && !scheduledAt)}
-            className="px-6 py-2 bg-t-btn hover:bg-t-btn-hover disabled:opacity-50 text-white rounded-lg text-sm transition-colors cursor-pointer"
+            className="px-6 py-2 bg-gradient-to-r from-[#b8a9e8] to-[#f5b8b5] hover:opacity-90 disabled:opacity-50 text-white rounded-lg text-sm transition-colors cursor-pointer"
           >
             {sending ? '發送中...' : useSchedule ? '排程推播' : useTag ? '分眾推播' : '群發所有好友'}
           </button>
@@ -211,33 +211,33 @@ export default function BroadcastPage() {
 
       {/* 推播紀錄 */}
       <div className="space-y-4">
-        <h2 className="text-lg font-semibold text-white/80">推播紀錄</h2>
+        <h2 className="text-lg font-semibold text-[#3d3155]">推播紀錄</h2>
         {logs.length === 0 ? (
-          <p className="text-slate-500 text-sm">尚無推播紀錄</p>
+          <p className="text-[#3d3155]0 text-sm">尚無推播紀錄</p>
         ) : (
-          <div className="bg-slate-800/50 border border-slate-700/50 rounded-2xl overflow-hidden">
+          <div className="bg-white/35 backdrop-blur-sm border border-[#b8a9e8]/20 rounded-[20px] overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-slate-700/50">
-                    <th className="text-left px-4 py-3 text-slate-400 font-medium">時間</th>
-                    <th className="text-left px-4 py-3 text-slate-400 font-medium">訊息</th>
-                    <th className="text-left px-4 py-3 text-slate-400 font-medium">對象</th>
-                    <th className="text-left px-4 py-3 text-slate-400 font-medium">排程</th>
-                    <th className="text-right px-4 py-3 text-slate-400 font-medium">人數</th>
+                  <tr className="border-b border-[#b8a9e8]/20">
+                    <th className="text-left px-4 py-3 text-[#8a7ca8] font-medium">時間</th>
+                    <th className="text-left px-4 py-3 text-[#8a7ca8] font-medium">訊息</th>
+                    <th className="text-left px-4 py-3 text-[#8a7ca8] font-medium">對象</th>
+                    <th className="text-left px-4 py-3 text-[#8a7ca8] font-medium">排程</th>
+                    <th className="text-right px-4 py-3 text-[#8a7ca8] font-medium">人數</th>
                   </tr>
                 </thead>
                 <tbody>
                   {logs.map((log) => (
-                    <tr key={log.id} className="border-b border-slate-700/30">
+                    <tr key={log.id} className="border-b border-[#b8a9e8]/10">
                       <td className="px-4 py-3 text-slate-300 whitespace-nowrap">
                         {new Date(log.created_at).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' })}
                       </td>
                       <td className="px-4 py-3 text-slate-300 max-w-xs truncate">{log.message}</td>
-                      <td className="px-4 py-3 text-slate-400">
+                      <td className="px-4 py-3 text-[#8a7ca8]">
                         {log.tag_filter ? `${log.tag_filter.key}=${log.tag_filter.value}` : '全部好友'}
                       </td>
-                      <td className="px-4 py-3 text-slate-400 whitespace-nowrap">
+                      <td className="px-4 py-3 text-[#8a7ca8] whitespace-nowrap">
                         {log.scheduled_at
                           ? (log.sent_count === 0
                             ? `⏰ ${new Date(log.scheduled_at).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' })}`

@@ -64,20 +64,20 @@ export function AiBasicGeneratePanel({ onDone, onCancel }: AiBasicGeneratePanelP
     }
   }
 
-  const inputClass = 'w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded-lg text-white text-sm focus:outline-none focus:ring-1 focus:ring-cyan-500/50'
+  const inputClass = 'w-full px-3 py-2 bg-white/60 border border-[#b8a9e8]/30 rounded-lg text-[#3d3155] text-sm focus:outline-none focus:ring-1 focus:ring-cyan-500/50'
 
   return (
-    <div className="bg-slate-800/80 border border-cyan-500/20 rounded-xl p-6 space-y-5 mt-4">
+    <div className="bg-white/60 backdrop-blur-sm border border-cyan-500/20 rounded-xl p-6 space-y-5 mt-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+        <h3 className="text-lg font-semibold text-[#3d3155] flex items-center gap-2">
           🤖 AI 生成文案設定
         </h3>
-        <button onClick={onCancel} className="text-slate-400 hover:text-slate-200 text-sm cursor-pointer">✕</button>
+        <button onClick={onCancel} className="text-[#8a7ca8] hover:text-[#3d3155] text-sm cursor-pointer">✕</button>
       </div>
 
       <div className="space-y-4">
         <div>
-          <label className="block text-sm text-slate-400 mb-1">問卷主題 *</label>
+          <label className="block text-sm text-[#8a7ca8] mb-1">問卷主題 *</label>
           <input
             type="text"
             value={topic}
@@ -87,7 +87,7 @@ export function AiBasicGeneratePanel({ onDone, onCancel }: AiBasicGeneratePanelP
           />
         </div>
         <div>
-          <label className="block text-sm text-slate-400 mb-1">詳細描述（選填）</label>
+          <label className="block text-sm text-[#8a7ca8] mb-1">詳細描述（選填）</label>
           <textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
@@ -97,7 +97,7 @@ export function AiBasicGeneratePanel({ onDone, onCancel }: AiBasicGeneratePanelP
           />
         </div>
         <div>
-          <label className="block text-sm text-slate-400 mb-1">目標受眾（選填）</label>
+          <label className="block text-sm text-[#8a7ca8] mb-1">目標受眾（選填）</label>
           <input
             type="text"
             value={targetAudience}
@@ -109,7 +109,7 @@ export function AiBasicGeneratePanel({ onDone, onCancel }: AiBasicGeneratePanelP
 
         {error && <p className="text-sm text-red-400">{error}</p>}
         {metaInfo && (
-          <p className="text-xs text-slate-500">
+          <p className="text-xs text-[#3d3155]0">
             模型：{metaInfo.provider}/{metaInfo.model} {metaInfo.isFree ? '(免費額度)' : ''}
           </p>
         )}
@@ -118,11 +118,11 @@ export function AiBasicGeneratePanel({ onDone, onCancel }: AiBasicGeneratePanelP
           <button
             onClick={handleGenerate}
             disabled={generating}
-            className="px-4 py-2 bg-linear-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 disabled:opacity-50 text-white rounded-lg text-sm transition-all cursor-pointer"
+            className="px-4 py-2 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 disabled:opacity-50 text-white rounded-lg text-sm transition-all cursor-pointer"
           >
             {generating ? '🔄 AI 思考中...' : '✨ 自動生成問卷文案'}
           </button>
-          <button onClick={onCancel} className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded-lg text-sm cursor-pointer">
+          <button onClick={onCancel} className="px-4 py-2 bg-[#b8a9e8]/10 hover:bg-[#b8a9e8]/15 text-slate-300 rounded-lg text-sm cursor-pointer">
             取消
           </button>
         </div>

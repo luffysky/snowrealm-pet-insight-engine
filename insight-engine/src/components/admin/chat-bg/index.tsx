@@ -163,7 +163,7 @@ function CssBgLayer({ id }: { id: BgId }) {
   if (id === 'blizzard') return (
     <div className="absolute inset-0 overflow-hidden" style={{ background: 'linear-gradient(180deg,#050d1e 0%,#0a1830 50%,#050d1e 100%)' }}>
       {Array.from({ length: 50 }).map((_, i) => (
-        <div key={i} className="absolute select-none pointer-events-none text-white/70" style={{
+        <div key={i} className="absolute select-none pointer-events-none text-[#3d3155]" style={{
           left: `${(i * 197 + 13) % 100}%`,
           top: '-10px',
           fontSize: `${6 + (i % 4) * 3}px`,
@@ -256,7 +256,7 @@ export function ChatBgLayer({ bgId, customUrl }: { bgId: BgId; customUrl?: strin
 
   if (def.isThree) {
     return (
-      <Suspense fallback={<div className="absolute inset-0 bg-slate-900" />}>
+      <Suspense fallback={<div className="absolute inset-0 bg-white/50" />}>
         {bgId === 'stars' && <StarsBg />}
         {bgId === 'geo'   && <GeoBg />}
         {bgId === 'wave'  && <NeonWaveBg />}
@@ -325,7 +325,7 @@ export function BgPicker({
       <button
         onClick={() => setOpen(v => !v)}
         title="更換背景"
-        className="p-2 rounded-xl text-white/25 hover:text-white/60 hover:bg-white/6 transition-colors"
+        className="p-2 rounded-xl text-[#b5a8d0] hover:text-[#8a7ca8] hover:bg-white/6 transition-colors"
       >
         <Palette className="w-4 h-4" />
       </button>
@@ -333,10 +333,10 @@ export function BgPicker({
       {open && (
         <>
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
-          <div className="absolute right-0 top-full mt-2 z-50 w-80 bg-slate-900/98 backdrop-blur-2xl border border-white/12 rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.6)] overflow-hidden">
+          <div className="absolute right-0 top-full mt-2 z-50 w-80 bg-white/50/98 backdrop-blur-2xl border border-white/12 rounded-[20px] shadow-[0_8px_32px_rgba(0,0,0,0.6)] overflow-hidden">
             <div className="flex items-center justify-between px-4 py-3 border-b border-white/8">
-              <p className="text-xs font-semibold text-white/70">聊天背景</p>
-              <button onClick={() => setOpen(false)} className="text-white/30 hover:text-white transition-colors">
+              <p className="text-xs font-semibold text-[#3d3155]/70">聊天背景</p>
+              <button onClick={() => setOpen(false)} className="text-[#8a7ca8] hover:text-[#3d3155] transition-colors">
                 <X className="w-4 h-4" />
               </button>
             </div>
@@ -344,11 +344,11 @@ export function BgPicker({
             <div className="p-3 max-h-[480px] overflow-y-auto">
               {/* 自訂上傳 */}
               <div className="mb-3">
-                <p className="text-[10px] text-white/30 font-medium mb-2 px-1">自訂圖片</p>
+                <p className="text-[10px] text-[#8a7ca8] font-medium mb-2 px-1">自訂圖片</p>
                 <button
                   onClick={() => fileRef.current?.click()}
                   disabled={uploading}
-                  className="w-full flex items-center gap-2 px-3 py-2.5 rounded-xl border border-dashed border-white/15 hover:border-white/30 hover:bg-white/5 transition-colors text-xs text-white/40 hover:text-white/70"
+                  className="w-full flex items-center gap-2 px-3 py-2.5 rounded-xl border border-dashed border-white/15 hover:border-white/30 hover:bg-[#b8a9e8]/10 transition-colors text-xs text-[#b5a8d0] hover:text-[#3d3155]"
                 >
                   {uploading ? (
                     <span className="w-4 h-4 border-2 border-white/20 border-t-white/60 rounded-full animate-spin" />
@@ -364,14 +364,14 @@ export function BgPicker({
                       className="w-8 h-8 rounded-lg shrink-0 ring-2 ring-violet-500"
                       style={{ backgroundImage: `url(${customUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' }}
                     />
-                    <span className="text-[10px] text-white/50 flex-1 truncate">自訂背景</span>
+                    <span className="text-[10px] text-[#b5a8d0] flex-1 truncate">自訂背景</span>
                     <Check className="w-3 h-3 text-violet-400" />
                   </div>
                 )}
               </div>
 
               {/* 內建背景 */}
-              <p className="text-[10px] text-white/30 font-medium mb-2 px-1">內建背景 <span className="text-emerald-400">全部免費</span></p>
+              <p className="text-[10px] text-[#8a7ca8] font-medium mb-2 px-1">內建背景 <span className="text-emerald-400">全部免費</span></p>
               <div className="grid grid-cols-4 gap-2">
                 {CHAT_BACKGROUNDS.map(def => {
                   const isOwned = true  // All backgrounds are now free
@@ -390,14 +390,14 @@ export function BgPicker({
                         <div className="w-full h-full" style={{ background: def.swatch }} />
                         {isActive && (
                           <div className="absolute inset-0 flex items-center justify-center bg-black/20">
-                            <Check className="w-4 h-4 text-white" />
+                            <Check className="w-4 h-4 text-[#3d3155]" />
                           </div>
                         )}
                         {def.isThree && (
                           <div className="absolute top-1 right-1 text-[8px] bg-black/40 rounded px-0.5">3D</div>
                         )}
                       </button>
-                      <span className="text-[9px] text-white/35 truncate w-14 text-center leading-tight">
+                      <span className="text-[9px] text-[#8a7ca8] truncate w-14 text-center leading-tight">
                         {def.emoji} {def.name}
                       </span>
                     </div>

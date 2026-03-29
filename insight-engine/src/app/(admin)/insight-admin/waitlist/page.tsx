@@ -168,15 +168,15 @@ export default function AdminWaitlistPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-white">封測名單</h1>
+        <h1 className="text-xl sm:text-2xl font-bold text-[#3d3155]">封測名單</h1>
         <div className="flex items-center gap-3">
-          <p className="text-sm text-slate-400">共 {total} 人</p>
+          <p className="text-sm text-[#8a7ca8]">共 {total} 人</p>
           <button
             onClick={() => setShowAdd(!showAdd)}
-            className="px-4 py-2 bg-t-btn text-white rounded-lg hover:bg-t-btn-hover text-sm transition-colors cursor-pointer"
+            className="px-4 py-2 bg-gradient-to-r from-[#b8a9e8] to-[#f5b8b5] text-white rounded-lg hover:opacity-90 text-sm transition-colors cursor-pointer"
           >
             {showAdd ? '取消' : '+ 新增'}
           </button>
@@ -185,7 +185,7 @@ export default function AdminWaitlistPage() {
 
       {/* Toast */}
       {toast && (
-        <div className="fixed top-4 right-4 z-50 bg-slate-800 text-white px-4 py-2 rounded-lg shadow-lg border border-slate-600 text-sm animate-pulse">
+        <div className="fixed top-4 right-4 z-50 bg-white/90 text-[#3d3155] px-4 py-2 rounded-lg shadow-lg border border-[#b8a9e8]/30 text-sm animate-pulse">
           {toast}
         </div>
       )}
@@ -193,12 +193,12 @@ export default function AdminWaitlistPage() {
       {/* Confirm Modal */}
       {confirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-          <div className="bg-slate-800 border border-slate-700 rounded-xl p-6 max-w-sm w-full mx-4 space-y-4">
-            <p className="text-white">{confirm.message}</p>
+          <div className="bg-white/50 border border-[#b8a9e8]/20 rounded-xl p-6 max-w-sm w-full mx-4 space-y-4">
+            <p className="text-[#3d3155]">{confirm.message}</p>
             <div className="flex justify-end gap-2">
               <button
                 onClick={() => setConfirm(null)}
-                className="px-4 py-2 rounded-lg text-sm bg-slate-700 text-slate-300 hover:bg-slate-600 cursor-pointer"
+                className="px-4 py-2 rounded-lg text-sm bg-[#b8a9e8]/10 text-slate-300 hover:bg-[#b8a9e8]/15 cursor-pointer"
               >
                 取消
               </button>
@@ -215,32 +215,32 @@ export default function AdminWaitlistPage() {
 
       {/* Add Form */}
       {showAdd && (
-        <div className="bg-slate-800/80 rounded-xl p-4 space-y-3 border border-slate-700">
-          <h3 className="text-white font-medium">新增封測成員</h3>
+        <div className="bg-white/60 backdrop-blur-sm rounded-xl p-4 space-y-3 border border-[#b8a9e8]/20">
+          <h3 className="text-[#3d3155] font-medium">新增封測成員</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <input
               placeholder="Email *"
               value={addForm.email}
               onChange={(e) => setAddForm({ ...addForm, email: e.target.value })}
-              className="bg-slate-900 text-white px-3 py-2 rounded border border-slate-600 text-sm"
+              className="bg-white/60 text-[#3d3155] px-3 py-2 rounded border border-[#b8a9e8]/30 text-sm"
             />
             <input
               placeholder="暱稱"
               value={addForm.nickname}
               onChange={(e) => setAddForm({ ...addForm, nickname: e.target.value })}
-              className="bg-slate-900 text-white px-3 py-2 rounded border border-slate-600 text-sm"
+              className="bg-white/60 text-[#3d3155] px-3 py-2 rounded border border-[#b8a9e8]/30 text-sm"
             />
             <input
               placeholder="聯繫方式（LINE ID 或電話）"
               value={addForm.contact_info}
               onChange={(e) => setAddForm({ ...addForm, contact_info: e.target.value })}
-              className="bg-slate-900 text-white px-3 py-2 rounded border border-slate-600 text-sm"
+              className="bg-white/60 text-[#3d3155] px-3 py-2 rounded border border-[#b8a9e8]/30 text-sm"
             />
             <input
               placeholder="來源"
               value={addForm.source}
               onChange={(e) => setAddForm({ ...addForm, source: e.target.value })}
-              className="bg-slate-900 text-white px-3 py-2 rounded border border-slate-600 text-sm"
+              className="bg-white/60 text-[#3d3155] px-3 py-2 rounded border border-[#b8a9e8]/30 text-sm"
             />
           </div>
           {addError && <p className="text-red-400 text-sm">{addError}</p>}
@@ -256,10 +256,10 @@ export default function AdminWaitlistPage() {
 
       {/* Batch bar */}
       {batchMode && (
-        <div className="flex items-center justify-between bg-slate-800/80 border border-slate-700 rounded-xl px-4 py-3">
+        <div className="flex items-center justify-between bg-white/60 backdrop-blur-sm border border-[#b8a9e8]/20 rounded-xl px-4 py-3">
           <button
             onClick={exitBatchMode}
-            className="text-sm text-slate-400 hover:text-white cursor-pointer"
+            className="text-sm text-[#8a7ca8] hover:text-[#3d3155] cursor-pointer"
           >
             取消選取
           </button>
@@ -278,23 +278,23 @@ export default function AdminWaitlistPage() {
 
       {/* Table */}
       {loading ? (
-        <p className="text-slate-400 animate-pulse">載入中…</p>
+        <p className="text-[#8a7ca8] animate-pulse">載入中…</p>
       ) : entries.length === 0 ? (
-        <div className="bg-slate-800/50 border border-slate-700/50 rounded-2xl p-8 text-center text-slate-500">
+        <div className="bg-white/35 backdrop-blur-sm border border-[#b8a9e8]/20 rounded-[20px] p-8 text-center text-[#3d3155]0">
           尚無報名資料
         </div>
       ) : (
-        <div className="bg-slate-800/50 border border-slate-700/50 rounded-2xl overflow-hidden">
+        <div className="bg-white/35 backdrop-blur-sm border border-[#b8a9e8]/20 rounded-[20px] overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-slate-700/50">
-                  <th className="text-left px-4 py-3 text-slate-400 font-medium">暱稱</th>
-                  <th className="text-left px-4 py-3 text-slate-400 font-medium">Email</th>
-                  <th className="text-left px-4 py-3 text-slate-400 font-medium">聯繫方式</th>
-                  <th className="text-left px-4 py-3 text-slate-400 font-medium">來源</th>
-                  <th className="text-left px-4 py-3 text-slate-400 font-medium">加入時間</th>
-                  <th className="text-left px-4 py-3 text-slate-400 font-medium">操作</th>
+                <tr className="border-b border-[#b8a9e8]/20">
+                  <th className="text-left px-4 py-3 text-[#8a7ca8] font-medium">暱稱</th>
+                  <th className="text-left px-4 py-3 text-[#8a7ca8] font-medium">Email</th>
+                  <th className="text-left px-4 py-3 text-[#8a7ca8] font-medium">聯繫方式</th>
+                  <th className="text-left px-4 py-3 text-[#8a7ca8] font-medium">來源</th>
+                  <th className="text-left px-4 py-3 text-[#8a7ca8] font-medium">加入時間</th>
+                  <th className="text-left px-4 py-3 text-[#8a7ca8] font-medium">操作</th>
                   {batchMode && (
                     <th className="px-4 py-3 text-right">
                       <input
@@ -313,7 +313,7 @@ export default function AdminWaitlistPage() {
                   return (
                     <tr
                       key={entry.id}
-                      className="border-b border-slate-700/30 hover:bg-slate-700/20"
+                      className="border-b border-[#b8a9e8]/10 hover:bg-[#b8a9e8]/8"
                     >
                       {/* 暱稱 */}
                       <td className="px-4 py-3">
@@ -321,10 +321,10 @@ export default function AdminWaitlistPage() {
                           <input
                             value={editForm.nickname}
                             onChange={(e) => setEditForm({ ...editForm, nickname: e.target.value })}
-                            className="bg-slate-900 text-white px-2 py-1 rounded border border-slate-600 text-sm w-full"
+                            className="bg-white/60 text-[#3d3155] px-2 py-1 rounded border border-[#b8a9e8]/30 text-sm w-full"
                           />
                         ) : (
-                          <span className="text-white/90">{entry.nickname || <span className="text-slate-600">—</span>}</span>
+                          <span className="text-[#3d3155]">{entry.nickname || <span className="text-slate-600">—</span>}</span>
                         )}
                       </td>
                       {/* Email */}
@@ -333,10 +333,10 @@ export default function AdminWaitlistPage() {
                           <input
                             value={editForm.email}
                             onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
-                            className="bg-slate-900 text-white px-2 py-1 rounded border border-slate-600 text-sm w-full"
+                            className="bg-white/60 text-[#3d3155] px-2 py-1 rounded border border-[#b8a9e8]/30 text-sm w-full"
                           />
                         ) : (
-                          <span className="text-white/90">{entry.email}</span>
+                          <span className="text-[#3d3155]">{entry.email}</span>
                         )}
                       </td>
                       {/* 聯繫方式 */}
@@ -345,7 +345,7 @@ export default function AdminWaitlistPage() {
                           <input
                             value={editForm.contact_info}
                             onChange={(e) => setEditForm({ ...editForm, contact_info: e.target.value })}
-                            className="bg-slate-900 text-white px-2 py-1 rounded border border-slate-600 text-sm w-full"
+                            className="bg-white/60 text-[#3d3155] px-2 py-1 rounded border border-[#b8a9e8]/30 text-sm w-full"
                           />
                         ) : (
                           <span className="text-t-accent/80">{entry.contact_info || <span className="text-slate-600">—</span>}</span>
@@ -357,14 +357,14 @@ export default function AdminWaitlistPage() {
                           <input
                             value={editForm.source}
                             onChange={(e) => setEditForm({ ...editForm, source: e.target.value })}
-                            className="bg-slate-900 text-white px-2 py-1 rounded border border-slate-600 text-sm w-full"
+                            className="bg-white/60 text-[#3d3155] px-2 py-1 rounded border border-[#b8a9e8]/30 text-sm w-full"
                           />
                         ) : (
-                          <span className="text-slate-400">{entry.source ?? '—'}</span>
+                          <span className="text-[#8a7ca8]">{entry.source ?? '—'}</span>
                         )}
                       </td>
                       {/* 時間 */}
-                      <td className="px-4 py-3 text-slate-400 whitespace-nowrap">
+                      <td className="px-4 py-3 text-[#8a7ca8] whitespace-nowrap">
                         {formatDateTime(entry.created_at)}
                       </td>
                       {/* 操作 */}
@@ -379,7 +379,7 @@ export default function AdminWaitlistPage() {
                             </button>
                             <button
                               onClick={() => setEditingId(null)}
-                              className="px-2 py-1 rounded text-xs bg-slate-700 text-slate-300 hover:bg-slate-600 cursor-pointer"
+                              className="px-2 py-1 rounded text-xs bg-[#b8a9e8]/10 text-slate-300 hover:bg-[#b8a9e8]/15 cursor-pointer"
                             >
                               取消
                             </button>
@@ -388,7 +388,7 @@ export default function AdminWaitlistPage() {
                           <div className="flex gap-1">
                             <button
                               onClick={() => startEdit(entry)}
-                              className="px-2 py-1 rounded text-xs bg-t-accent-bg text-t-accent hover:bg-t-accent-bg cursor-pointer"
+                              className="px-2 py-1 rounded text-xs bg-[#b8a9e8]/20 text-t-accent hover:bg-[#b8a9e8]/20 cursor-pointer"
                             >
                               編輯
                             </button>

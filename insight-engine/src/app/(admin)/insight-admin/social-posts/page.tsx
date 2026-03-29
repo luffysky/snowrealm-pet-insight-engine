@@ -189,11 +189,11 @@ export default function AdminSocialPostsPage() {
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-6 space-y-4 sm:space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold text-white">社群貼文管理</h1>
-          <p className="text-sm text-white/40 mt-0.5">管理社群貼文與部落格文章</p>
+          <h1 className="text-xl font-bold text-[#3d3155]">社群貼文管理</h1>
+          <p className="text-sm text-[#b5a8d0] mt-0.5">管理社群貼文與部落格文章</p>
         </div>
       </div>
 
@@ -207,8 +207,8 @@ export default function AdminSocialPostsPage() {
         ].map(s => (
           <div key={s.label} className="bg-white/[0.04] border border-white/8 rounded-xl p-3 text-center">
             <p className="text-lg">{s.icon}</p>
-            <p className="text-xl font-bold text-white">{s.value}</p>
-            <p className="text-xs text-white/40">{s.label}</p>
+            <p className="text-xl font-bold text-[#3d3155]">{s.value}</p>
+            <p className="text-xs text-[#b5a8d0]">{s.label}</p>
           </div>
         ))}
       </div>
@@ -216,12 +216,12 @@ export default function AdminSocialPostsPage() {
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#8a7ca8]" />
           <input
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="搜尋內容、標題、作者..."
-            className="w-full pl-9 pr-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-sm text-white placeholder-white/30 focus:outline-none focus:border-white/20"
+            className="w-full pl-9 pr-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-sm text-[#3d3155] placeholder-white/30 focus:outline-none focus:border-white/20"
           />
         </div>
         <div className="flex gap-2 flex-wrap">
@@ -235,7 +235,7 @@ export default function AdminSocialPostsPage() {
               className={`px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${
                 typeFilter === k
                   ? 'bg-amber-500/20 border border-amber-400/30 text-amber-300'
-                  : 'bg-white/5 border border-white/10 text-white/50 hover:text-white/80'
+                  : 'bg-white/5 border border-white/10 text-[#b5a8d0] hover:text-[#3d3155]'
               }`}
             >{l}</button>
           ))}
@@ -243,11 +243,11 @@ export default function AdminSocialPostsPage() {
       </div>
 
       {/* List */}
-      <div className="bg-white/[0.03] border border-white/8 rounded-2xl overflow-hidden">
+      <div className="bg-white/[0.03] border border-white/8 rounded-[20px] overflow-hidden">
         {loading && allItems.length === 0 ? (
-          <div className="p-8 text-center text-white/30">載入中...</div>
+          <div className="p-8 text-center text-[#8a7ca8]">載入中...</div>
         ) : filtered.length === 0 ? (
-          <div className="p-8 text-center text-white/30">沒有內容</div>
+          <div className="p-8 text-center text-[#8a7ca8]">沒有內容</div>
         ) : (
           <div className="divide-y divide-white/5">
             {filtered.map(item => (
@@ -273,7 +273,7 @@ export default function AdminSocialPostsPage() {
               loadSocial(false).finally(() => setLoading(false))
             }}
             disabled={loading}
-            className="px-6 py-2.5 bg-white/5 border border-white/10 rounded-xl text-sm text-white/60 hover:text-white hover:bg-white/10 transition-colors disabled:opacity-50"
+            className="px-6 py-2.5 bg-white/5 border border-white/10 rounded-xl text-sm text-[#8a7ca8] hover:text-[#3d3155] hover:bg-[#b8a9e8]/12 transition-colors disabled:opacity-50"
           >
             {loading ? '載入中...' : '載入更多'}
           </button>
@@ -306,7 +306,7 @@ function ItemRow({ item, onDelete, onTogglePublic, deleting, toggling }: ItemRow
   return (
     <div className={`p-4 flex gap-3 hover:bg-white/[0.02] transition-colors ${!item.isPublic ? 'opacity-50' : ''}`}>
       {/* Avatar / icon */}
-      <div className="w-9 h-9 rounded-full bg-gradient-to-br from-amber-500/30 to-purple-500/30 flex items-center justify-center text-xs font-bold text-white/80 overflow-hidden shrink-0">
+      <div className="w-9 h-9 rounded-full bg-gradient-to-br from-amber-500/30 to-purple-500/30 flex items-center justify-center text-xs font-bold text-[#3d3155] overflow-hidden shrink-0">
         {item.authorAvatar
           ? <img src={item.authorAvatar} alt="" className="w-full h-full object-cover" />
           : initials
@@ -317,9 +317,9 @@ function ItemRow({ item, onDelete, onTogglePublic, deleting, toggling }: ItemRow
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 mb-1 flex-wrap">
           {item.authorName && (
-            <span className="text-sm font-medium text-white/80">{item.authorName}</span>
+            <span className="text-sm font-medium text-[#3d3155]">{item.authorName}</span>
           )}
-          <span className="text-xs text-white/30">{timeStr}</span>
+          <span className="text-xs text-[#8a7ca8]">{timeStr}</span>
 
           {item.source === 'blog' && (
             <span className="text-[10px] px-1.5 py-0.5 bg-amber-500/15 text-amber-400 rounded-full flex items-center gap-0.5">
@@ -347,9 +347,9 @@ function ItemRow({ item, onDelete, onTogglePublic, deleting, toggling }: ItemRow
         </div>
 
         {item.title && (
-          <p className="text-sm font-semibold text-white/90 mb-0.5 truncate">{item.title}</p>
+          <p className="text-sm font-semibold text-[#3d3155]/90 mb-0.5 truncate">{item.title}</p>
         )}
-        <p className="text-xs text-white/50 leading-relaxed line-clamp-2">{item.contentPreview}</p>
+        <p className="text-xs text-[#b5a8d0] leading-relaxed line-clamp-2">{item.contentPreview}</p>
 
         {item.tags.length > 0 && (
           <div className="flex flex-wrap gap-1 mt-1.5">
@@ -359,7 +359,7 @@ function ItemRow({ item, onDelete, onTogglePublic, deleting, toggling }: ItemRow
           </div>
         )}
 
-        <div className="flex items-center gap-3 mt-1.5 text-xs text-white/25">
+        <div className="flex items-center gap-3 mt-1.5 text-xs text-[#b5a8d0]">
           {item.source === 'social' ? (
             <>
               <span>❤️ {item.likesCount}</span>
@@ -375,14 +375,14 @@ function ItemRow({ item, onDelete, onTogglePublic, deleting, toggling }: ItemRow
       {/* Actions */}
       <div className="flex items-start gap-1 shrink-0">
         <a href={viewUrl} target="_blank" rel="noopener noreferrer"
-          className="p-1.5 rounded-lg text-white/30 hover:text-white/70 hover:bg-white/5 transition-colors"
+          className="p-1.5 rounded-lg text-[#8a7ca8] hover:text-[#3d3155] hover:bg-[#b8a9e8]/10 transition-colors"
           title="查看"
         >
           <Eye className="w-4 h-4" />
         </a>
         {editUrl && (
           <a href={editUrl}
-            className="p-1.5 rounded-lg text-white/30 hover:text-blue-400 hover:bg-blue-500/10 transition-colors"
+            className="p-1.5 rounded-lg text-[#8a7ca8] hover:text-blue-400 hover:bg-blue-500/10 transition-colors"
             title="編輯文章"
           >
             <FileText className="w-4 h-4" />
@@ -393,8 +393,8 @@ function ItemRow({ item, onDelete, onTogglePublic, deleting, toggling }: ItemRow
           disabled={toggling}
           className={`p-1.5 rounded-lg transition-colors ${
             item.isPublic
-              ? 'text-white/30 hover:text-amber-400 hover:bg-amber-500/10'
-              : 'text-amber-400 hover:text-white/50 hover:bg-white/5'
+              ? 'text-[#8a7ca8] hover:text-amber-400 hover:bg-amber-500/10'
+              : 'text-amber-400 hover:text-[#b5a8d0] hover:bg-[#b8a9e8]/10'
           }`}
           title={item.isPublic ? '隱藏' : '公開'}
         >
@@ -409,7 +409,7 @@ function ItemRow({ item, onDelete, onTogglePublic, deleting, toggling }: ItemRow
         <button
           onClick={onDelete}
           disabled={deleting}
-          className="p-1.5 rounded-lg text-white/30 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+          className="p-1.5 rounded-lg text-[#8a7ca8] hover:text-red-400 hover:bg-red-500/10 transition-colors"
           title="刪除"
         >
           {deleting ? (

@@ -27,19 +27,20 @@ import {
 /* ─── shared ─── */
 
 const CHART_COLORS = [
-  '#22d3ee', '#a78bfa', '#f472b6', '#34d399',
-  '#fbbf24', '#fb923c', '#60a5fa',
+  '#b8a9e8', '#f5b8b5', '#a8d8ea', '#a8e8c8',
+  '#f5d8a8', '#e8b8d8', '#b8d8f5',
 ]
 
 const TOOLTIP_STYLE = {
-  backgroundColor: '#1e293b',
-  border: '1px solid #334155',
-  borderRadius: '8px',
-  color: '#e2e8f0',
+  backgroundColor: 'rgba(255,255,255,0.92)',
+  border: '1px solid rgba(184,169,232,0.3)',
+  borderRadius: '12px',
+  color: '#3d3155',
+  boxShadow: '0 4px 16px rgba(184,169,232,0.2)',
 }
 
-const TICK = { fill: '#94a3b8', fontSize: 12 }
-const AXIS = { stroke: '#475569' }
+const TICK = { fill: '#8a7ca8', fontSize: 12 }
+const AXIS = { stroke: '#d4c8f0' }
 
 type ChartType = 'bar' | 'line' | 'area' | 'pie' | 'radar'
 
@@ -68,8 +69,8 @@ function ChartTypeSwitcher({
           onClick={() => onChange(t)}
           className={`px-2 py-1 rounded text-xs transition-colors ${
             active === t
-              ? 'bg-slate-600 text-white'
-              : 'bg-slate-800 text-slate-500 hover:text-slate-300'
+              ? 'bg-[#b8a9e8]/30 text-[#6b5fa8]'
+              : 'bg-[#b8a9e8]/10 text-[#b5a8d0] hover:text-[#6b5fa8]'
           }`}
           title={t}
         >
@@ -91,11 +92,11 @@ function RenderBarLabel({
 }) {
   return (
     <BarChart data={data}>
-      <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
+      <CartesianGrid strokeDasharray="3 3" stroke="rgba(184,169,232,0.2)" />
       <XAxis dataKey={dataKeyX} tick={TICK} axisLine={AXIS} />
       <YAxis tick={TICK} axisLine={AXIS} />
       <Tooltip contentStyle={TOOLTIP_STYLE} />
-      <Bar dataKey="count" fill="#22d3ee" radius={[4, 4, 0, 0]} />
+      <Bar dataKey="count" fill="#b8a9e8" radius={[4, 4, 0, 0]} />
     </BarChart>
   )
 }
@@ -109,11 +110,11 @@ function RenderLineLabel({
 }) {
   return (
     <LineChart data={data}>
-      <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
+      <CartesianGrid strokeDasharray="3 3" stroke="rgba(184,169,232,0.2)" />
       <XAxis dataKey={dataKeyX} tick={TICK} axisLine={AXIS} />
       <YAxis tick={TICK} axisLine={AXIS} />
       <Tooltip contentStyle={TOOLTIP_STYLE} />
-      <Line type="monotone" dataKey="count" stroke="#a78bfa" strokeWidth={2} dot={{ fill: '#a78bfa', r: 4 }} />
+      <Line type="monotone" dataKey="count" stroke="#b8a9e8" strokeWidth={2} dot={{ fill: '#b8a9e8', r: 4 }} />
     </LineChart>
   )
 }
@@ -127,17 +128,17 @@ function RenderAreaLabel({
 }) {
   return (
     <AreaChart data={data}>
-      <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
+      <CartesianGrid strokeDasharray="3 3" stroke="rgba(184,169,232,0.2)" />
       <XAxis dataKey={dataKeyX} tick={TICK} axisLine={AXIS} />
       <YAxis tick={TICK} axisLine={AXIS} />
       <Tooltip contentStyle={TOOLTIP_STYLE} />
       <defs>
         <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="5%" stopColor="#22d3ee" stopOpacity={0.4} />
-          <stop offset="95%" stopColor="#22d3ee" stopOpacity={0} />
+          <stop offset="5%" stopColor="#b8a9e8" stopOpacity={0.35} />
+          <stop offset="95%" stopColor="#b8a9e8" stopOpacity={0} />
         </linearGradient>
       </defs>
-      <Area type="monotone" dataKey="count" stroke="#22d3ee" fill="url(#areaGrad)" strokeWidth={2} />
+      <Area type="monotone" dataKey="count" stroke="#b8a9e8" fill="url(#areaGrad)" strokeWidth={2} />
     </AreaChart>
   )
 }
@@ -170,10 +171,10 @@ function RenderPieLabel({ data }: { data: { label: string; count: number }[] }) 
 function RenderRadarLabel({ data }: { data: Record<string, unknown>[] }) {
   return (
     <RadarChart cx="50%" cy="50%" outerRadius="70%" data={data}>
-      <PolarGrid stroke="#334155" />
+      <PolarGrid stroke="rgba(184,169,232,0.3)" />
       <PolarAngleAxis dataKey="label" tick={TICK} />
       <PolarRadiusAxis tick={TICK} />
-      <Radar dataKey="count" stroke="#a78bfa" fill="#a78bfa" fillOpacity={0.3} />
+      <Radar dataKey="count" stroke="#b8a9e8" fill="#b8a9e8" fillOpacity={0.25} />
       <Tooltip contentStyle={TOOLTIP_STYLE} />
     </RadarChart>
   )
@@ -192,9 +193,9 @@ export function BarChartBlock({ title, data, defaultType = 'bar' }: BarChartBloc
   const types: ChartType[] = ['bar', 'line', 'area', 'pie', 'radar']
 
   return (
-    <div className="bg-t-card-bg border border-t-card-border rounded-2xl p-6">
+    <div className="rounded-[20px] border border-[#b8a9e8]/25 bg-white/40 backdrop-blur-sm p-4 sm:p-6 shadow-[0_4px_20px_rgba(184,169,232,0.10)]">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-sm text-slate-400">{title}</h3>
+        <h3 className="text-sm text-[#8a7ca8] font-medium">{title}</h3>
         <ChartTypeSwitcher types={types} active={type} onChange={setType} />
       </div>
       <ResponsiveContainer width="100%" height={250}>
@@ -226,9 +227,9 @@ export function LineChartBlock({ title, data, defaultType = 'line' }: LineChartB
   const mapped = data.map((d) => ({ label: d.date, count: d.count }))
 
   return (
-    <div className="bg-t-card-bg border border-t-card-border rounded-2xl p-6">
+    <div className="rounded-[20px] border border-[#b8a9e8]/25 bg-white/40 backdrop-blur-sm p-4 sm:p-6 shadow-[0_4px_20px_rgba(184,169,232,0.10)]">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-sm text-slate-400">{title}</h3>
+        <h3 className="text-sm text-[#8a7ca8] font-medium">{title}</h3>
         <ChartTypeSwitcher types={types} active={type} onChange={setType} />
       </div>
       <ResponsiveContainer width="100%" height={250}>
@@ -255,9 +256,9 @@ export function PieChartBlock({ title, data, defaultType = 'pie' }: PieChartBloc
   const types: ChartType[] = ['pie', 'bar', 'radar']
 
   return (
-    <div className="bg-t-card-bg border border-t-card-border rounded-2xl p-6">
+    <div className="rounded-[20px] border border-[#b8a9e8]/25 bg-white/40 backdrop-blur-sm p-4 sm:p-6 shadow-[0_4px_20px_rgba(184,169,232,0.10)]">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-sm text-slate-400">{title}</h3>
+        <h3 className="text-sm text-[#8a7ca8] font-medium">{title}</h3>
         <ChartTypeSwitcher types={types} active={type} onChange={setType} />
       </div>
       <ResponsiveContainer width="100%" height={250}>

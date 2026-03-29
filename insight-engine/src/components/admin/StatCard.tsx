@@ -6,11 +6,11 @@ interface StatCardProps {
 
 export function StatCard({ title, value, subtitle }: StatCardProps) {
   return (
-    <div className="bg-t-card-bg border border-t-card-border rounded-2xl p-6">
-      <p className="text-sm text-slate-400 mb-1">{title}</p>
-      <p className="text-3xl font-bold text-t-accent">{value}</p>
+    <div className="rounded-[20px] border border-[#b8a9e8]/25 bg-white/40 backdrop-blur-sm p-4 sm:p-6 shadow-[0_4px_20px_rgba(184,169,232,0.10)]">
+      <p className="text-xs sm:text-sm text-[#8a7ca8] mb-1">{title}</p>
+      <p className="text-2xl sm:text-3xl font-bold text-[#6b5fa8]">{value}</p>
       {subtitle && (
-        <p className="text-xs text-slate-500 mt-1">{subtitle}</p>
+        <p className="text-xs text-[#b5a8d0] mt-1">{subtitle}</p>
       )}
     </div>
   )

@@ -171,21 +171,21 @@ export default function AiSettingsPage() {
 
   if (loading) {
     return (
-      <div className="space-y-6">
-        <h1 className="text-2xl font-bold text-white">🤖 AI 設定</h1>
-        <div className="text-slate-400 animate-pulse">載入中...</div>
+      <div className="space-y-4 sm:space-y-6">
+        <h1 className="text-xl sm:text-2xl font-bold text-[#3d3155]">🤖 AI 設定</h1>
+        <div className="text-[#8a7ca8] animate-pulse">載入中...</div>
       </div>
     )
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-white">🤖 AI 設定</h1>
+        <h1 className="text-xl sm:text-2xl font-bold text-[#3d3155]">🤖 AI 設定</h1>
         {setupStep === 'list' && (
           <button
             onClick={() => setSetupStep('provider')}
-            className="px-4 py-2 bg-t-btn hover:bg-t-btn-hover text-white rounded-lg text-sm font-medium transition-colors cursor-pointer"
+            className="px-4 py-2 bg-gradient-to-r from-[#b8a9e8] to-[#f5b8b5] hover:opacity-90 text-white rounded-lg text-sm font-medium transition-colors cursor-pointer"
           >
             + 新增 AI Provider
           </button>
@@ -205,33 +205,33 @@ export default function AiSettingsPage() {
 
       {/* 免費額度狀態 */}
       {stats && (
-        <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-4">
+        <div className="bg-white/35 backdrop-blur-sm border border-[#b8a9e8]/20 rounded-xl p-4">
           <h3 className="text-sm font-medium text-slate-300 mb-3">📊 免費額度</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="bg-t-card-bg rounded-lg p-3">
-              <p className="text-xs text-slate-500">AI 生成問卷</p>
-              <p className="text-lg font-bold text-white">
+            <div className="bg-white/40 backdrop-blur-sm rounded-lg p-3">
+              <p className="text-xs text-[#3d3155]0">AI 生成問卷</p>
+              <p className="text-lg font-bold text-[#3d3155]">
                 {stats.platformPartner ? (
                   <>略過上限檢查（本帳號）</>
                 ) : (
                   <>
                     剩餘 {Math.max(0, stats.freeQuota.generate.limit - stats.freeQuota.generate.used)} 次
-                    <span className="text-xs text-slate-500 ml-2 font-normal">
+                    <span className="text-xs text-[#3d3155]0 ml-2 font-normal">
                       （已用 {stats.freeQuota.generate.used} / {stats.freeQuota.generate.limit}）
                     </span>
                   </>
                 )}
               </p>
             </div>
-            <div className="bg-t-card-bg rounded-lg p-3">
-              <p className="text-xs text-slate-500">AI 重新生成</p>
-              <p className="text-lg font-bold text-white">
+            <div className="bg-white/40 backdrop-blur-sm rounded-lg p-3">
+              <p className="text-xs text-[#3d3155]0">AI 重新生成</p>
+              <p className="text-lg font-bold text-[#3d3155]">
                 {stats.platformPartner ? (
                   <>略過上限檢查（本帳號）</>
                 ) : (
                   <>
                     剩餘 {Math.max(0, stats.freeQuota.regenerate.limit - stats.freeQuota.regenerate.used)} 次
-                    <span className="text-xs text-slate-500 ml-2 font-normal">
+                    <span className="text-xs text-[#3d3155]0 ml-2 font-normal">
                       （已用 {stats.freeQuota.regenerate.used} / {stats.freeQuota.regenerate.limit}）
                     </span>
                   </>
@@ -239,7 +239,7 @@ export default function AiSettingsPage() {
               </p>
             </div>
           </div>
-          <p className="text-xs text-slate-500 mt-2">
+          <p className="text-xs text-[#3d3155]0 mt-2">
             💡 免費額度使用平台 Key（GPT-4o-mini）。用完後需設定自己的 API Key 才能繼續使用。
             {stats.platformPartner && ' 你的帳號為合作夥伴：平台 Key 不套用上述次數上限。'}
           </p>
@@ -248,10 +248,10 @@ export default function AiSettingsPage() {
 
       {/* ===== 引導式設定流程 ===== */}
       {setupStep === 'provider' && (
-        <div className="bg-slate-800/50 border border-t-accent-border rounded-xl p-6 space-y-4">
+        <div className="bg-white/35 backdrop-blur-sm border border-[#b8a9e8]/30 rounded-xl p-6 space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-lg font-medium text-white">Step 1：選擇 AI Provider</h3>
-            <button onClick={resetSetup} className="text-slate-400 hover:text-white text-sm cursor-pointer">✕ 取消</button>
+            <h3 className="text-lg font-medium text-[#3d3155]">Step 1：選擇 AI Provider</h3>
+            <button onClick={resetSetup} className="text-[#8a7ca8] hover:text-[#3d3155] text-sm cursor-pointer">✕ 取消</button>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             {PROVIDERS.map((p) => (
@@ -264,13 +264,13 @@ export default function AiSettingsPage() {
                 }}
                 className={`p-4 rounded-xl border text-left transition-all cursor-pointer ${
                   selectedProvider === p.value
-                    ? 'border-t-accent-border bg-t-accent-bg'
-                    : 'border-slate-700 hover:border-slate-500 bg-t-card-bg'
+                    ? 'border-[#b8a9e8]/30 bg-[#b8a9e8]/20'
+                    : 'border-[#b8a9e8]/20 hover:border-[#b8a9e8]/35 bg-white/40 backdrop-blur-sm'
                 }`}
               >
                 <span className="text-2xl">{p.icon}</span>
-                <p className="text-white font-medium mt-2">{p.label}</p>
-                <p className="text-xs text-slate-400 mt-1">{p.models.length} 個模型可用</p>
+                <p className="text-[#3d3155] font-medium mt-2">{p.label}</p>
+                <p className="text-xs text-[#8a7ca8] mt-1">{p.models.length} 個模型可用</p>
               </button>
             ))}
           </div>
@@ -278,31 +278,31 @@ export default function AiSettingsPage() {
       )}
 
       {setupStep === 'apikey' && providerInfo && (
-        <div className="bg-slate-800/50 border border-t-accent-border rounded-xl p-6 space-y-4">
+        <div className="bg-white/35 backdrop-blur-sm border border-[#b8a9e8]/30 rounded-xl p-6 space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-lg font-medium text-white">
+            <h3 className="text-lg font-medium text-[#3d3155]">
               Step 2：輸入 {providerInfo.label} API Key
             </h3>
-            <button onClick={resetSetup} className="text-slate-400 hover:text-white text-sm cursor-pointer">✕ 取消</button>
+            <button onClick={resetSetup} className="text-[#8a7ca8] hover:text-[#3d3155] text-sm cursor-pointer">✕ 取消</button>
           </div>
           <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-3 text-xs text-amber-300">
             🔒 API Key 會以 AES-256-GCM 加密儲存，前端永遠不會看到明文。
           </div>
           <div className="space-y-3">
             <div>
-              <label className="block text-sm text-slate-400 mb-1">API Key</label>
+              <label className="block text-sm text-[#8a7ca8] mb-1">API Key</label>
               <input
                 type="password"
                 value={apiKeyInput}
                 onChange={(e) => setApiKeyInput(e.target.value)}
                 placeholder={selectedProvider === 'openai' ? 'sk-proj-...' : 'sk-ant-...'}
-                className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white text-sm focus:border-t-accent-border focus:outline-none"
+                className="w-full px-3 py-2 bg-white/60 border border-[#b8a9e8]/30 rounded-lg text-[#3d3155] text-sm focus:border-[#b8a9e8]/30 focus:outline-none"
               />
             </div>
             <button
               onClick={() => setSetupStep('model')}
               disabled={!apiKeyInput.trim()}
-              className="px-4 py-2 bg-t-btn hover:bg-t-btn-hover disabled:bg-slate-700 disabled:text-slate-500 text-white rounded-lg text-sm font-medium transition-colors cursor-pointer"
+              className="px-4 py-2 bg-gradient-to-r from-[#b8a9e8] to-[#f5b8b5] hover:opacity-90 disabled:bg-[#b8a9e8]/10 disabled:text-[#b5a8d0] text-white rounded-lg text-sm font-medium transition-colors cursor-pointer"
             >
               下一步 →
             </button>
@@ -311,18 +311,18 @@ export default function AiSettingsPage() {
       )}
 
       {setupStep === 'model' && providerInfo && (
-        <div className="bg-slate-800/50 border border-t-accent-border rounded-xl p-6 space-y-4">
+        <div className="bg-white/35 backdrop-blur-sm border border-[#b8a9e8]/30 rounded-xl p-6 space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-lg font-medium text-white">Step 3：選擇預設模型</h3>
-            <button onClick={resetSetup} className="text-slate-400 hover:text-white text-sm cursor-pointer">✕ 取消</button>
+            <h3 className="text-lg font-medium text-[#3d3155]">Step 3：選擇預設模型</h3>
+            <button onClick={resetSetup} className="text-[#8a7ca8] hover:text-[#3d3155] text-sm cursor-pointer">✕ 取消</button>
           </div>
           <div className="space-y-3">
             <div>
-              <label className="block text-sm text-slate-400 mb-1">預設模型</label>
+              <label className="block text-sm text-[#8a7ca8] mb-1">預設模型</label>
               <select
                 value={selectedModel}
                 onChange={(e) => setSelectedModel(e.target.value)}
-                className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white text-sm focus:border-t-accent-border focus:outline-none"
+                className="w-full px-3 py-2 bg-white/60 border border-[#b8a9e8]/30 rounded-lg text-[#3d3155] text-sm focus:border-[#b8a9e8]/30 focus:outline-none"
               >
                 {providerInfo.models.map((m) => (
                   <option key={m} value={m}>{m}</option>
@@ -341,14 +341,14 @@ export default function AiSettingsPage() {
             <div className="flex gap-2">
               <button
                 onClick={() => setSetupStep('apikey')}
-                className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg text-sm transition-colors cursor-pointer"
+                className="px-4 py-2 bg-[#b8a9e8]/15 hover:bg-[#b8a9e8]/25 text-[#6b5fa8] border border-[#b8a9e8]/25 rounded-lg text-sm transition-colors cursor-pointer"
               >
                 ← 上一步
               </button>
               <button
                 onClick={handleSave}
                 disabled={saving}
-                className="px-4 py-2 bg-t-btn hover:bg-t-btn-hover disabled:bg-slate-700 text-white rounded-lg text-sm font-medium transition-colors cursor-pointer"
+                className="px-4 py-2 bg-gradient-to-r from-[#b8a9e8] to-[#f5b8b5] hover:opacity-90 disabled:bg-[#b8a9e8]/15 text-[#6b5fa8] border border-[#b8a9e8]/25 rounded-lg text-sm font-medium transition-colors cursor-pointer"
               >
                 {saving ? '儲存中...' : '✅ 儲存設定'}
               </button>
@@ -360,11 +360,11 @@ export default function AiSettingsPage() {
       {setupStep === 'done' && (
         <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-6 text-center space-y-3">
           <p className="text-2xl">✅</p>
-          <p className="text-white font-medium">AI Provider 設定完成！</p>
-          <p className="text-sm text-slate-400">你現在可以使用 AI 自動生成問卷了。</p>
+          <p className="text-[#3d3155] font-medium">AI Provider 設定完成！</p>
+          <p className="text-sm text-[#8a7ca8]">你現在可以使用 AI 自動生成問卷了。</p>
           <button
             onClick={resetSetup}
-            className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg text-sm transition-colors cursor-pointer"
+            className="px-4 py-2 bg-[#b8a9e8]/15 hover:bg-[#b8a9e8]/25 text-[#6b5fa8] border border-[#b8a9e8]/25 rounded-lg text-sm transition-colors cursor-pointer"
           >
             返回列表
           </button>
@@ -374,17 +374,17 @@ export default function AiSettingsPage() {
       {/* ===== 已設定的 Provider 列表 ===== */}
       {setupStep === 'list' && (
         <div className="space-y-3">
-          <h3 className="text-sm font-medium text-slate-400">已設定的 AI Provider</h3>
+          <h3 className="text-sm font-medium text-[#8a7ca8]">已設定的 AI Provider</h3>
           {configs.length === 0 ? (
-            <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-8 text-center">
-              <p className="text-slate-500 text-sm">尚未設定任何 AI Provider</p>
+            <div className="bg-white/35 backdrop-blur-sm border border-[#b8a9e8]/20 rounded-xl p-8 text-center">
+              <p className="text-[#3d3155]0 text-sm">尚未設定任何 AI Provider</p>
               <p className="text-xs text-slate-600 mt-1">
                 點擊上方「+ 新增 AI Provider」開始設定，或使用免費額度體驗。
               </p>
             </div>
           ) : (
             configs.map((c) => (
-              <div key={c.id} className="bg-slate-800/50 border border-slate-700 rounded-xl p-4">
+              <div key={c.id} className="bg-white/35 backdrop-blur-sm border border-[#b8a9e8]/20 rounded-xl p-4">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div className="flex items-center gap-3">
                     <span className="text-xl">
@@ -392,17 +392,17 @@ export default function AiSettingsPage() {
                     </span>
                     <div>
                       <div className="flex items-center gap-2">
-                        <span className="text-white font-medium">{c.displayName}</span>
+                        <span className="text-[#3d3155] font-medium">{c.displayName}</span>
                         {c.isPrimary && (
-                          <span className="px-1.5 py-0.5 bg-t-accent-bg text-t-accent text-xs rounded">主要</span>
+                          <span className="px-1.5 py-0.5 bg-[#b8a9e8]/20 text-t-accent text-xs rounded">主要</span>
                         )}
                         <span className={`px-1.5 py-0.5 text-xs rounded ${
-                          c.isActive ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-600 text-slate-400'
+                          c.isActive ? 'bg-emerald-500/20 text-emerald-400' : 'bg-[#b8a9e8]/15 text-[#8a7ca8]'
                         }`}>
                           {c.isActive ? '啟用' : '停用'}
                         </span>
                       </div>
-                      <p className="text-xs text-slate-500 mt-0.5">
+                      <p className="text-xs text-[#3d3155]0 mt-0.5">
                         模型: {c.defaultModel} · Key: {c.hasKey ? '已設定' : '未設定'}
                       </p>
                     </div>
@@ -411,20 +411,20 @@ export default function AiSettingsPage() {
                     <button
                       onClick={() => handleVerify(c.id)}
                       disabled={verifying === c.id}
-                      className="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-white rounded-lg text-xs transition-colors cursor-pointer"
+                      className="px-3 py-1.5 bg-[#b8a9e8]/15 hover:bg-[#b8a9e8]/25 text-[#6b5fa8] border border-[#b8a9e8]/25 rounded-lg text-xs transition-colors cursor-pointer"
                     >
                       {verifying === c.id ? '驗證中...' : '🔍 驗證'}
                     </button>
                     <button
                       onClick={() => handleToggle(c.id)}
-                      className="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-white rounded-lg text-xs transition-colors cursor-pointer"
+                      className="px-3 py-1.5 bg-[#b8a9e8]/15 hover:bg-[#b8a9e8]/25 text-[#6b5fa8] border border-[#b8a9e8]/25 rounded-lg text-xs transition-colors cursor-pointer"
                     >
                       {c.isActive ? '停用' : '啟用'}
                     </button>
                     {!c.isPrimary && (
                       <button
                         onClick={() => handleSetPrimary(c.id)}
-                        className="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-white rounded-lg text-xs transition-colors cursor-pointer"
+                        className="px-3 py-1.5 bg-[#b8a9e8]/15 hover:bg-[#b8a9e8]/25 text-[#6b5fa8] border border-[#b8a9e8]/25 rounded-lg text-xs transition-colors cursor-pointer"
                       >
                         設為主要
                       </button>
@@ -435,7 +435,7 @@ export default function AiSettingsPage() {
                         setEditModel(c.defaultModel)
                         setEditApiKey('')
                       }}
-                      className="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-white rounded-lg text-xs transition-colors cursor-pointer"
+                      className="px-3 py-1.5 bg-[#b8a9e8]/15 hover:bg-[#b8a9e8]/25 text-[#6b5fa8] border border-[#b8a9e8]/25 rounded-lg text-xs transition-colors cursor-pointer"
                     >
                       ✏️ 編輯
                     </button>
@@ -450,14 +450,14 @@ export default function AiSettingsPage() {
 
                 {/* 內聯編輯 */}
                 {editingConfig === c.id && (
-                  <div className="mt-3 p-3 bg-slate-900/60 border border-slate-600/60 rounded-xl space-y-3">
+                  <div className="mt-3 p-3 bg-white/40 backdrop-blur-sm border border-[#b8a9e8]/30/60 rounded-xl space-y-3">
                     <p className="text-xs font-medium text-slate-300">編輯 Provider 設定</p>
                     <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
-                      <label className="text-xs text-slate-400 w-20 shrink-0">模型</label>
+                      <label className="text-xs text-[#8a7ca8] w-20 shrink-0">模型</label>
                       <select
                         value={editModel}
                         onChange={(e) => setEditModel(e.target.value)}
-                        className="flex-1 bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-sm text-white/80"
+                        className="flex-1 bg-white/50 border border-[#b8a9e8]/20 rounded-lg px-3 py-1.5 text-sm text-[#3d3155]"
                       >
                         {(PROVIDERS.find((p) => p.value === c.provider)?.models ?? [c.defaultModel]).map((m) => (
                           <option key={m} value={m}>{m}</option>
@@ -465,26 +465,26 @@ export default function AiSettingsPage() {
                       </select>
                     </div>
                     <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
-                      <label className="text-xs text-slate-400 w-20 shrink-0">新 API Key</label>
+                      <label className="text-xs text-[#8a7ca8] w-20 shrink-0">新 API Key</label>
                       <input
                         type="password"
                         value={editApiKey}
                         onChange={(e) => setEditApiKey(e.target.value)}
                         placeholder="留空則不更新 Key"
-                        className="flex-1 bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-sm text-white/80"
+                        className="flex-1 bg-white/50 border border-[#b8a9e8]/20 rounded-lg px-3 py-1.5 text-sm text-[#3d3155]"
                       />
                     </div>
                     <div className="flex justify-end gap-2">
                       <button
                         onClick={() => { setEditingConfig(null); setEditModel(''); setEditApiKey('') }}
-                        className="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-white rounded-lg text-xs cursor-pointer"
+                        className="px-3 py-1.5 bg-[#b8a9e8]/15 hover:bg-[#b8a9e8]/25 text-[#6b5fa8] border border-[#b8a9e8]/25 rounded-lg text-xs cursor-pointer"
                       >
                         取消
                       </button>
                       <button
                         onClick={() => handleEditSave(c.id)}
                         disabled={editSaving}
-                        className="px-3 py-1.5 bg-t-btn hover:bg-t-btn-hover text-white rounded-lg text-xs cursor-pointer disabled:opacity-50"
+                        className="px-3 py-1.5 bg-gradient-to-r from-[#b8a9e8] to-[#f5b8b5] hover:opacity-90 text-white rounded-lg text-xs cursor-pointer disabled:opacity-50"
                       >
                         {editSaving ? '儲存中...' : '儲存變更'}
                       </button>
@@ -512,7 +512,7 @@ export default function AiSettingsPage() {
                     <div className="flex gap-2">
                       <button
                         onClick={() => setDeleteConfirm(null)}
-                        className="px-3 py-1 bg-slate-700 text-white rounded text-xs cursor-pointer"
+                        className="px-3 py-1 bg-[#b8a9e8]/15 text-[#6b5fa8] border border-[#b8a9e8]/25 rounded text-xs cursor-pointer"
                       >
                         取消
                       </button>
@@ -533,12 +533,12 @@ export default function AiSettingsPage() {
 
       {/* ===== 使用統計 ===== */}
       {stats && stats.usage.length > 0 && setupStep === 'list' && (
-        <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-4">
+        <div className="bg-white/35 backdrop-blur-sm border border-[#b8a9e8]/20 rounded-xl p-4">
           <h3 className="text-sm font-medium text-slate-300 mb-3">📈 使用統計</h3>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="text-slate-500 text-xs">
+                <tr className="text-[#3d3155]0 text-xs">
                   <th className="text-left pb-2">動作</th>
                   <th className="text-left pb-2">Key 來源</th>
                   <th className="text-right pb-2">次數</th>
@@ -548,7 +548,7 @@ export default function AiSettingsPage() {
               </thead>
               <tbody className="text-slate-300">
                 {stats.usage.map((u, i) => (
-                  <tr key={i} className="border-t border-slate-800">
+                  <tr key={i} className="border-t border-[#b8a9e8]/20">
                     <td className="py-2">{u.action === 'generate' ? '生成' : '重新生成'}</td>
                     <td className="py-2">{u.keySource === 'platform_key' ? '平台' : '自有'}</td>
                     <td className="text-right py-2">{u.count}</td>

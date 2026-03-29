@@ -137,7 +137,7 @@ export function EmojiPicker({ value, onSelect, onClear }: EmojiPickerProps) {
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className="w-9 h-9 rounded-lg bg-slate-800 border border-slate-700 hover:border-slate-500 flex items-center justify-center text-lg transition-colors cursor-pointer"
+        className="w-9 h-9 rounded-lg bg-white/50 border border-[#b8a9e8]/20 hover:border-[#b8a9e8]/35 flex items-center justify-center text-lg transition-colors cursor-pointer"
         title="選擇 Emoji"
       >
         {value || '😀'}
@@ -160,15 +160,15 @@ export function EmojiPicker({ value, onSelect, onClear }: EmojiPickerProps) {
 
       {/* Dropdown Panel */}
       {open && (
-        <div className="absolute z-50 top-full mt-1 left-0 w-[320px] bg-slate-900 border border-slate-700 rounded-xl shadow-2xl shadow-black/50 overflow-hidden">
+        <div className="absolute z-50 top-full mt-1 left-0 w-[320px] bg-white/60 border border-[#b8a9e8]/20 rounded-xl shadow-2xl shadow-black/50 overflow-hidden">
           {/* Search */}
-          <div className="p-2 border-b border-slate-800">
+          <div className="p-2 border-b border-[#b8a9e8]/20">
             <input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="搜尋 emoji..."
-              className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-sm text-white/80 placeholder:text-white/30 focus:outline-none focus:border-cyan-500/50"
+              className="w-full bg-white/50 border border-[#b8a9e8]/20 rounded-lg px-3 py-1.5 text-sm text-[#3d3155] placeholder:text-[#8a7ca8] focus:outline-none focus:border-cyan-500/50"
               autoFocus
             />
           </div>
@@ -183,7 +183,7 @@ export function EmojiPicker({ value, onSelect, onClear }: EmojiPickerProps) {
                 className={`px-2 py-1 rounded-lg text-xs whitespace-nowrap transition-colors cursor-pointer ${
                   category === cat.id
                     ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30'
-                    : 'text-white/40 hover:text-white/60 hover:bg-slate-800 border border-transparent'
+                    : 'text-[#b5a8d0] hover:text-[#8a7ca8] hover:bg-white/50 border border-transparent'
                 }`}
               >
                 <span className="mr-1">{cat.icon}</span>
@@ -202,7 +202,7 @@ export function EmojiPicker({ value, onSelect, onClear }: EmojiPickerProps) {
                     key={`${emoji}-${i}`}
                     type="button"
                     onClick={() => handlePick(emoji)}
-                    className={`w-8 h-8 rounded-md flex items-center justify-center text-lg hover:bg-slate-700 hover:scale-110 transition-all cursor-pointer ${
+                    className={`w-8 h-8 rounded-md flex items-center justify-center text-lg hover:bg-[#b8a9e8]/10 hover:scale-110 transition-all cursor-pointer ${
                       value === emoji ? 'bg-cyan-500/20 ring-1 ring-cyan-500/40' : ''
                     }`}
                   >
@@ -213,15 +213,15 @@ export function EmojiPicker({ value, onSelect, onClear }: EmojiPickerProps) {
           </div>
 
           {/* Quick Insert */}
-          <div className="px-2 py-1.5 border-t border-slate-800 flex items-center justify-between">
-            <span className="text-[10px] text-white/30">快捷</span>
+          <div className="px-2 py-1.5 border-t border-[#b8a9e8]/20 flex items-center justify-between">
+            <span className="text-[10px] text-[#8a7ca8]">快捷</span>
             <div className="flex gap-0.5">
               {['🐾', '❤️', '🌟', '📸', '🎮', '💎', '🏆', '✨'].map((emoji) => (
                 <button
                   key={emoji}
                   type="button"
                   onClick={() => handlePick(emoji)}
-                  className="w-6 h-6 rounded flex items-center justify-center text-sm hover:bg-slate-700 cursor-pointer"
+                  className="w-6 h-6 rounded flex items-center justify-center text-sm hover:bg-[#b8a9e8]/10 cursor-pointer"
                 >
                   {emoji}
                 </button>

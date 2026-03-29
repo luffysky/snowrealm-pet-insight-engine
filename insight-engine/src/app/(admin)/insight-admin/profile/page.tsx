@@ -233,7 +233,7 @@ function ProfilePage() {
   const bannerStyle = getThemeStyle(profile?.profileTheme ?? null, profile?.bannerUrl ?? null)
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white">
+    <div className="min-h-screen bg-transparent text-[#3d3155]">
       {/* Toast */}
       {toast && (
         <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 bg-emerald-500 text-white text-sm font-medium px-4 py-2 rounded-full shadow-lg">
@@ -241,7 +241,7 @@ function ProfilePage() {
         </div>
       )}
 
-      <div className="max-w-2xl mx-auto px-4 py-8 space-y-6">
+      <div className="max-w-2xl mx-auto px-4 py-8 space-y-4 sm:space-y-6">
 
         {/* Profile Card */}
         <div className="bg-gradient-to-br from-white/5 to-white/2 border border-white/10 rounded-3xl overflow-hidden">
@@ -267,8 +267,8 @@ function ProfilePage() {
 
           {/* Theme picker */}
           {showThemePicker && isOwnProfile && (
-            <div className="px-4 py-3 bg-slate-900/80 border-b border-white/8">
-              <p className="text-xs text-white/40 mb-2">選擇主題色</p>
+            <div className="px-4 py-3 bg-white/55 backdrop-blur-sm border-b border-white/8">
+              <p className="text-xs text-[#b5a8d0] mb-2">選擇主題色</p>
               <div className="flex flex-wrap gap-2">
                 {PROFILE_THEMES.map(t => (
                   <button
@@ -287,14 +287,14 @@ function ProfilePage() {
             {/* Avatar */}
             <div className="flex items-end justify-between mb-4">
               <div className="relative group">
-                <div className="w-20 h-20 rounded-2xl border-4 border-slate-950 bg-gradient-to-br from-amber-500/40 to-purple-500/40 flex items-center justify-center text-2xl font-bold text-white overflow-hidden shadow-xl">
+                <div className="w-20 h-20 rounded-[20px] border-4 border-slate-950 bg-gradient-to-br from-amber-500/40 to-purple-500/40 flex items-center justify-center text-xl sm:text-2xl font-bold text-[#3d3155] overflow-hidden shadow-xl">
                   {profile?.avatarUrl
                     ? <img src={profile.avatarUrl} alt="" className="w-full h-full object-cover" />
                     : initials}
                 </div>
                 {isOwnProfile && (
-                  <label className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
-                    {uploading ? <Loader2 className="w-6 h-6 text-white animate-spin" /> : <Camera className="w-6 h-6 text-white" />}
+                  <label className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-[20px] opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
+                    {uploading ? <Loader2 className="w-6 h-6 text-white animate-spin" /> : <Camera className="w-6 h-6 text-[#3d3155]" />}
                     <input type="file" accept="image/*" className="hidden" onChange={handleAvatarUpload} />
                   </label>
                 )}
@@ -303,13 +303,13 @@ function ProfilePage() {
                 {isOwnProfile ? (
                   <>
                     <Link href="/articles" target="_blank"
-                      className="flex items-center gap-1.5 px-3 py-1.5 border border-white/15 rounded-xl text-xs text-white/60 hover:text-white hover:border-white/30 transition-colors"
+                      className="flex items-center gap-1.5 px-3 py-1.5 border border-white/15 rounded-xl text-xs text-[#8a7ca8] hover:text-[#3d3155] hover:border-white/30 transition-colors"
                     >
                       <Globe className="w-3.5 h-3.5" /> 公開頁面
                     </Link>
                     <button onClick={() => setEditing(s => !s)}
                       className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-colors ${
-                        editing ? 'bg-white/10 text-white/60' : 'bg-amber-500/20 border border-amber-400/30 text-amber-300 hover:bg-amber-500/30'
+                        editing ? 'bg-[#b8a9e8]/12 text-[#8a7ca8]' : 'bg-amber-500/20 border border-amber-400/30 text-amber-300 hover:bg-amber-500/30'
                       }`}
                     >
                       <Edit2 className="w-3.5 h-3.5" /> {editing ? '取消' : '編輯資料'}
@@ -331,10 +331,10 @@ function ProfilePage() {
             {!editing ? (
               <div className="space-y-3">
                 <div>
-                  <h1 className="text-xl font-bold text-white">{displayName}</h1>
-                  <p className="text-sm text-white/40">@{me?.userName}</p>
+                  <h1 className="text-xl font-bold text-[#3d3155]">{displayName}</h1>
+                  <p className="text-sm text-[#b5a8d0]">@{me?.userName}</p>
                 </div>
-                {profile?.bio && <p className="text-sm text-white/60 leading-relaxed">{profile.bio}</p>}
+                {profile?.bio && <p className="text-sm text-[#8a7ca8] leading-relaxed">{profile.bio}</p>}
                 <div className="flex flex-wrap gap-3">
                   {profile?.websiteUrl && (
                     <a href={ensureHttps(profile.websiteUrl)} target="_blank" rel="noreferrer"
@@ -358,8 +358,8 @@ function ProfilePage() {
                     </a>
                   )}
                 </div>
-                <div className="flex gap-4 text-xs text-white/30">
-                  <span><strong className="text-white/60">{posts.length}</strong> 篇貼文</span>
+                <div className="flex gap-4 text-xs text-[#8a7ca8]">
+                  <span><strong className="text-[#8a7ca8]">{posts.length}</strong> 篇貼文</span>
                   {!profile?.isProfilePublic && <span className="text-amber-400/60">🔒 私人模式</span>}
                 </div>
               </div>
@@ -367,48 +367,48 @@ function ProfilePage() {
               <div className="space-y-3">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="text-xs text-white/40 mb-1 block">顯示名稱</label>
+                    <label className="text-xs text-[#b5a8d0] mb-1 block">顯示名稱</label>
                     <input value={form.displayName} onChange={e => setForm(p => ({ ...p, displayName: e.target.value }))}
                       placeholder={me?.userName}
-                      className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-xl text-sm text-white placeholder-white/20 outline-none focus:border-amber-400/40"
+                      className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-xl text-sm text-[#3d3155] placeholder-[#b5a8d0] outline-none focus:border-amber-400/40"
                     />
                   </div>
                   <div>
-                    <label className="text-xs text-white/40 mb-1 block">個人網站</label>
+                    <label className="text-xs text-[#b5a8d0] mb-1 block">個人網站</label>
                     <input value={form.websiteUrl} onChange={e => setForm(p => ({ ...p, websiteUrl: e.target.value }))}
                       placeholder="https://..."
-                      className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-xl text-sm text-white placeholder-white/20 outline-none focus:border-amber-400/40"
+                      className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-xl text-sm text-[#3d3155] placeholder-[#b5a8d0] outline-none focus:border-amber-400/40"
                     />
                   </div>
                 </div>
                 <div>
-                  <label className="text-xs text-white/40 mb-1 block">個人簡介</label>
+                  <label className="text-xs text-[#b5a8d0] mb-1 block">個人簡介</label>
                   <textarea value={form.bio} onChange={e => setForm(p => ({ ...p, bio: e.target.value }))}
                     placeholder="介紹一下自己..."
                     rows={2}
-                    className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-xl text-sm text-white placeholder-white/20 outline-none focus:border-amber-400/40 resize-none"
+                    className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-xl text-sm text-[#3d3155] placeholder-[#b5a8d0] outline-none focus:border-amber-400/40 resize-none"
                   />
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="text-xs text-white/40 mb-1 flex items-center gap-1"><InstagramIcon className="w-3 h-3 text-pink-400" /> Instagram</label>
+                    <label className="text-xs text-[#b5a8d0] mb-1 flex items-center gap-1"><InstagramIcon className="w-3 h-3 text-pink-400" /> Instagram</label>
                     <input value={form.instagramHandle} onChange={e => setForm(p => ({ ...p, instagramHandle: e.target.value }))}
                       placeholder="username"
-                      className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-xl text-sm text-white placeholder-white/20 outline-none focus:border-pink-400/40"
+                      className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-xl text-sm text-[#3d3155] placeholder-[#b5a8d0] outline-none focus:border-pink-400/40"
                     />
                   </div>
                   <div>
-                    <label className="text-xs text-white/40 mb-1 flex items-center gap-1"><TwitterIcon className="w-3 h-3 text-blue-400" /> Twitter / X</label>
+                    <label className="text-xs text-[#b5a8d0] mb-1 flex items-center gap-1"><TwitterIcon className="w-3 h-3 text-blue-400" /> Twitter / X</label>
                     <input value={form.twitterHandle} onChange={e => setForm(p => ({ ...p, twitterHandle: e.target.value }))}
                       placeholder="username"
-                      className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-xl text-sm text-white placeholder-white/20 outline-none focus:border-blue-400/40"
+                      className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-xl text-sm text-[#3d3155] placeholder-[#b5a8d0] outline-none focus:border-blue-400/40"
                     />
                   </div>
                 </div>
                 <div className="flex items-center justify-between">
-                  <label className="flex items-center gap-2 text-sm text-white/60 cursor-pointer">
+                  <label className="flex items-center gap-2 text-sm text-[#8a7ca8] cursor-pointer">
                     <div onClick={() => setForm(p => ({ ...p, isProfilePublic: !p.isProfilePublic }))}
-                      className={`w-10 h-5 rounded-full transition-colors relative ${form.isProfilePublic ? 'bg-emerald-500' : 'bg-white/15'}`}
+                      className={`w-10 h-5 rounded-full transition-colors relative ${form.isProfilePublic ? 'bg-emerald-500' : 'bg-[#b8a9e8]/15'}`}
                     >
                       <span className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-all ${form.isProfilePublic ? 'left-5' : 'left-0.5'}`} />
                     </div>
@@ -443,7 +443,7 @@ function ProfilePage() {
           {(['posts', 'articles'] as const).map(tab => (
             <button key={tab} onClick={() => setActiveTab(tab)}
               className={`px-5 py-2.5 text-sm font-medium transition-colors ${
-                activeTab === tab ? 'text-amber-300 border-b-2 border-amber-400 -mb-px' : 'text-white/40 hover:text-white/70'
+                activeTab === tab ? 'text-amber-300 border-b-2 border-amber-400 -mb-px' : 'text-[#b5a8d0] hover:text-[#3d3155]'
               }`}
             >
               {tab === 'posts' ? '短貼文' : '長文章'}
@@ -454,12 +454,12 @@ function ProfilePage() {
         {/* Posts feed */}
         {loading ? (
           <div className="space-y-4">
-            {[1, 2].map(i => <div key={i} className="h-32 bg-white/5 rounded-2xl animate-pulse" />)}
+            {[1, 2].map(i => <div key={i} className="h-32 bg-white/5 rounded-[20px] animate-pulse" />)}
           </div>
         ) : posts.length === 0 ? (
           <div className="text-center py-16">
             <p className="text-4xl mb-3">✨</p>
-            <p className="text-white/40 text-sm">還沒有{activeTab === 'posts' ? '貼文' : '文章'}，來發第一篇吧！</p>
+            <p className="text-[#b5a8d0] text-sm">還沒有{activeTab === 'posts' ? '貼文' : '文章'}，來發第一篇吧！</p>
           </div>
         ) : (
           <div className="space-y-4">
@@ -475,7 +475,7 @@ function ProfilePage() {
 
 export default function ProfilePageWrapper() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-slate-950" />}>
+    <Suspense fallback={<div className="min-h-screen bg-transparent" />}>
       <ProfilePage />
     </Suspense>
   )

@@ -27,8 +27,8 @@ export default function FunnelPage() {
       .finally(() => setLoading(false))
   }, [selectedSurveyId, route])
 
-  if (loading) return <p className="text-slate-400">載入中…</p>
-  if (data.length === 0) return <p className="text-slate-400">尚無填答資料</p>
+  if (loading) return <p className="text-[#8a7ca8]">載入中…</p>
+  if (data.length === 0) return <p className="text-[#8a7ca8]">尚無填答資料</p>
 
   const maxReached = Math.max(...data.map((d) => d.reached), 1)
 
@@ -46,15 +46,15 @@ export default function FunnelPage() {
 
   return (
     <div className="space-y-8">
-      <div className="flex items-center justify-between flex-wrap gap-4">
+      <div className="flex items-center justify-between flex-wrap gap-2 sm:gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-white">📉 漏斗分析</h1>
-          <p className="text-slate-400 mt-1">每一題的到達人數與跳出率</p>
+          <h1 className="text-xl sm:text-2xl font-bold text-[#3d3155]">📉 漏斗分析</h1>
+          <p className="text-[#8a7ca8] mt-1">每一題的到達人數與跳出率</p>
         </div>
         <select
           value={route}
           onChange={(e) => setRoute(e.target.value)}
-          className="bg-slate-800 border border-slate-700 text-white rounded-lg px-3 py-2 text-sm"
+          className="bg-white/60 border border-[#b8a9e8]/30 text-[#3d3155] rounded-lg px-3 py-2 text-sm"
         >
           {ROUTES.map((r) => (
             <option key={r.value} value={r.value}>{r.label}</option>
@@ -63,8 +63,8 @@ export default function FunnelPage() {
       </div>
 
       {/* 漏斗圖 */}
-      <div className="bg-slate-900 rounded-xl border border-t-card-border p-6">
-        <h2 className="text-lg font-semibold text-white mb-4">到達人數</h2>
+      <div className="bg-white/40 backdrop-blur-sm rounded-[20px] border border-[#b8a9e8]/25 p-6">
+        <h2 className="text-lg font-semibold text-[#3d3155] mb-4">到達人數</h2>
         <ResponsiveContainer width="100%" height={400}>
           <BarChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
@@ -98,12 +98,12 @@ export default function FunnelPage() {
       </div>
 
       {/* 跳出率表格 */}
-      <div className="bg-slate-900 rounded-xl border border-t-card-border p-6">
-        <h2 className="text-lg font-semibold text-white mb-4">各題跳出率</h2>
+      <div className="bg-white/40 backdrop-blur-sm rounded-[20px] border border-[#b8a9e8]/25 p-6">
+        <h2 className="text-lg font-semibold text-[#3d3155] mb-4">各題跳出率</h2>
         <div className="overflow-x-auto">
         <table className="w-full text-sm min-w-125">
           <thead>
-            <tr className="border-b border-slate-700 text-slate-400">
+            <tr className="border-b border-[#b8a9e8]/20 text-[#8a7ca8]">
               <th className="text-left py-2 px-3">題號</th>
               <th className="text-left py-2 px-3">題目內容</th>
               <th className="text-right py-2 px-3">到達</th>
@@ -115,7 +115,7 @@ export default function FunnelPage() {
             {data.map((d) => (
               <tr
                 key={d.step}
-                className={`border-b border-t-card-border hover:bg-slate-800/50 ${
+                className={`border-b border-[#b8a9e8]/25 hover:bg-white/35 backdrop-blur-sm ${
                   d.isHotspot ? 'bg-red-500/5' : ''
                 }`}
               >

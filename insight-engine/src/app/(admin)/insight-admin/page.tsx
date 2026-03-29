@@ -24,9 +24,9 @@ function getQualityLabel(score: number): string {
 }
 
 const QUALITY_COLOR: Record<string, string> = {
-  '優良': 'text-emerald-400',
-  '良好': 'text-cyan-400',
-  '普通': 'text-amber-400',
+  '優良': 'text-emerald-500',
+  '良好': 'text-[#b8a9e8]',
+  '普通': 'text-amber-500',
   '待改善': 'text-red-400',
 }
 
@@ -55,16 +55,16 @@ export default function AdminDashboardPage() {
       .finally(() => setLoading(false))
   }, [selectedSurveyId])
 
-  if (loading) return <p className="text-slate-400 animate-pulse">載入中…</p>
+  if (loading) return <p className="text-[#b5a8d0] animate-pulse">載入中…</p>
 
   if (!selectedSurveyId || !stats) {
     return (
-      <div className="space-y-6">
-        <h1 className="text-2xl font-bold text-white">Dashboard</h1>
-        <div className="bg-t-card-bg border border-t-card-border rounded-2xl p-8 text-center space-y-4">
+      <div className="space-y-4 sm:space-y-6">
+        <h1 className="text-xl sm:text-2xl font-bold text-[#3d3155]" style={{ fontFamily: 'var(--font-zen-maru), var(--font-noto-tc), sans-serif' }}>Dashboard</h1>
+        <div className="rounded-[20px] border border-[#b8a9e8]/25 bg-white/40 backdrop-blur-sm p-6 sm:p-8 text-center space-y-4 shadow-[0_4px_20px_rgba(184,169,232,0.12)]">
           <p className="text-4xl">📊</p>
-          <p className="text-lg text-white/80">尚未建立問卷</p>
-          <p className="text-sm text-slate-400">前往「問卷管理」建立你的第一份問卷，開始收集數據</p>
+          <p className="text-lg text-[#3d3155] font-medium">尚未建立問卷</p>
+          <p className="text-sm text-[#8a7ca8]">前往「問卷管理」建立你的第一份問卷，開始收集數據</p>
         </div>
       </div>
     )
@@ -92,14 +92,14 @@ export default function AdminDashboardPage() {
   }))
 
   return (
-    <div className="space-y-8">
-      <h1 className="text-2xl font-bold text-white">Dashboard</h1>
+    <div className="space-y-4 sm:space-y-8">
+      <h1 className="text-xl sm:text-2xl font-bold text-[#3d3155]" style={{ fontFamily: 'var(--font-zen-maru), var(--font-noto-tc), sans-serif' }}>Dashboard</h1>
 
       {/* 自動摘要 */}
       <SummaryButton surveyId={selectedSurveyId} />
 
       {/* KPI 卡片 — 第一排 */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-4">
         <StatCard title="總填寫數" value={stats.totalResponses} />
         <StatCard
           title="完成率"
@@ -110,21 +110,21 @@ export default function AdminDashboardPage() {
       </div>
 
       {/* KPI 卡片 — 第二排 */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-4">
         <StatCard
           title="平均填答時間"
           value={formatCompletionTime(stats.avgCompletionTime ?? 0)}
         />
-        <div className="bg-t-card-bg border border-t-card-border rounded-2xl p-6">
-          <p className="text-sm text-slate-400 mb-1">數據品質</p>
+        <div className="rounded-[20px] border border-[#b8a9e8]/25 bg-white/40 backdrop-blur-sm p-4 sm:p-6 shadow-[0_4px_20px_rgba(184,169,232,0.10)]">
+          <p className="text-xs sm:text-sm text-[#8a7ca8] mb-1">數據品質</p>
           <div className="flex items-baseline gap-2">
-            <p className="text-3xl font-bold text-t-accent">{stats.responseQuality?.score ?? 0}</p>
-            <span className={`text-sm font-medium ${QUALITY_COLOR[qualityLabel] ?? 'text-slate-400'}`}>
+            <p className="text-2xl sm:text-3xl font-bold text-[#6b5fa8]">{stats.responseQuality?.score ?? 0}</p>
+            <span className={`text-sm font-medium ${QUALITY_COLOR[qualityLabel] ?? 'text-[#8a7ca8]'}`}>
               {qualityLabel}
             </span>
           </div>
           {qualitySubtitle && (
-            <p className="text-xs text-slate-500 mt-1">{qualitySubtitle}</p>
+            <p className="text-xs text-[#b5a8d0] mt-1">{qualitySubtitle}</p>
           )}
         </div>
         <StatCard
@@ -138,7 +138,7 @@ export default function AdminDashboardPage() {
       <LineChartBlock title="最近 7 天填寫趨勢" data={stats.dailyTrend} />
 
       {/* 回覆速度 + 功能偏好 + 情感分佈 */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-2 sm:gap-4">
         {velocityData.length > 0 && (
           <BarChartBlock title="回覆速度分佈" data={velocityData} />
         )}
@@ -150,13 +150,13 @@ export default function AdminDashboardPage() {
           }))}
         />
       </div>
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-2 sm:gap-4">
         <PieChartBlock title="情感等級分佈" data={emotionData} />
       </div>
 
       {/* 最近填答 */}
       <div>
-        <h2 className="text-lg font-semibold text-white mb-4">最近填答</h2>
+        <h2 className="text-lg font-semibold text-[#3d3155] mb-4">最近填答</h2>
         <ResponseTable responses={recentResponses} />
       </div>
     </div>

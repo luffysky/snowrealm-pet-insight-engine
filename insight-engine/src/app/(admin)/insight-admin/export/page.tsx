@@ -47,22 +47,22 @@ export default function ExportPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-bold text-white">📦 資料匯出中心</h1>
-        <p className="text-slate-400 mt-1 text-sm">匯出問卷資料為 CSV 格式，可用 Excel 開啟</p>
+        <h1 className="text-xl sm:text-2xl font-bold text-[#3d3155]">📦 資料匯出中心</h1>
+        <p className="text-[#8a7ca8] mt-1 text-sm">匯出問卷資料為 CSV 格式，可用 Excel 開啟</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {EXPORT_TYPES.map(et => (
-          <div key={et.key} className="bg-white/5 border border-white/10 rounded-2xl p-6 space-y-4">
+          <div key={et.key} className="bg-white/5 border border-white/10 rounded-[20px] p-6 space-y-4">
             <div className="text-3xl">{et.icon}</div>
-            <h3 className="text-lg font-semibold text-white">{et.title}</h3>
-            <p className="text-sm text-white/50">{et.desc}</p>
+            <h3 className="text-lg font-semibold text-[#3d3155]">{et.title}</h3>
+            <p className="text-sm text-[#3d3155]/50">{et.desc}</p>
 
             {et.key === 'responses' && (
               <select
                 value={selectedSurvey}
                 onChange={e => setSelectedSurvey(e.target.value)}
-                className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-white focus:outline-none"
+                className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-[#3d3155] focus:outline-none"
               >
                 <option value="">全部問卷</option>
                 {surveys.map(s => (

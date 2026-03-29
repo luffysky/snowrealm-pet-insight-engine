@@ -51,7 +51,7 @@ interface SubscriptionData {
 const PLAN_ORDER = ['free', 'pro', 'business'] as const
 
 const PLAN_BADGE_COLORS: Record<string, string> = {
-  free: 'bg-slate-600 text-slate-200',
+  free: 'bg-[#b8a9e8]/15 text-[#3d3155]',
   pro: 'bg-blue-600 text-blue-100',
   business: 'bg-purple-600 text-purple-100',
   enterprise: 'bg-amber-600 text-amber-100',
@@ -115,15 +115,15 @@ function UsageCard({ label, used, limit }: { label: string; used: number; limit:
   const pct = usagePercent(used, limit)
   return (
     <div className="bg-white/5 border border-white/10 rounded-xl p-5">
-      <p className="text-sm text-slate-400 mb-3">{label}</p>
-      <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden mb-2">
+      <p className="text-sm text-[#8a7ca8] mb-3">{label}</p>
+      <div className="w-full h-2 bg-[#b8a9e8]/12 rounded-full overflow-hidden mb-2">
         <div
           className={`h-full rounded-full transition-all duration-500 ${progressBarColor(pct)}`}
           style={{ width: `${limit === -1 ? 0 : pct}%` }}
         />
       </div>
-      <p className="text-sm text-white/80">
-        已用 <span className="font-semibold text-white">{used}</span> / {formatLimit(limit)}
+      <p className="text-sm text-[#3d3155]">
+        已用 <span className="font-semibold text-[#3d3155]">{used}</span> / {formatLimit(limit)}
       </p>
     </div>
   )
@@ -207,10 +207,10 @@ function UpgradeModal({
       onClick={handleBackdropClick}
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
     >
-      <div className="bg-slate-900 border border-white/10 rounded-2xl w-full max-w-md p-6 space-y-5">
+      <div className="bg-white/60 border border-white/10 rounded-[20px] w-full max-w-md p-6 space-y-5">
         <div className="flex items-center justify-between">
-          <h3 className="text-lg font-bold text-white">升級至 {planName}</h3>
-          <button onClick={onClose} className="text-slate-400 hover:text-white cursor-pointer">
+          <h3 className="text-lg font-bold text-[#3d3155]">升級至 {planName}</h3>
+          <button onClick={onClose} className="text-[#8a7ca8] hover:text-[#3d3155] cursor-pointer">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
@@ -218,25 +218,25 @@ function UpgradeModal({
         </div>
 
         <div>
-          <label className="block text-sm text-slate-400 mb-1.5">收據 Email</label>
+          <label className="block text-sm text-[#8a7ca8] mb-1.5">收據 Email</label>
           <input
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="you@example.com"
-            className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white text-sm placeholder:text-slate-600 focus:outline-none focus:border-blue-500/50"
+            className="w-full bg-white/60 border border-[#b8a9e8]/25 rounded-lg px-3 py-2 text-[#3d3155] text-sm placeholder:text-[#b5a8d0] focus:outline-none focus:border-blue-500/50"
           />
         </div>
 
         <div>
-          <label className="block text-sm text-slate-400 mb-1.5">付款週期</label>
+          <label className="block text-sm text-[#8a7ca8] mb-1.5">付款週期</label>
           <div className="grid grid-cols-2 gap-3">
             <button
               onClick={() => setPeriod('monthly')}
               className={`rounded-lg border px-3 py-2.5 text-sm cursor-pointer transition-colors ${
                 period === 'monthly'
                   ? 'border-blue-500 bg-blue-500/10 text-blue-400'
-                  : 'border-white/10 text-slate-400 hover:border-white/20'
+                  : 'border-white/10 text-[#8a7ca8] hover:border-white/20'
               }`}
             >
               月繳 {formatPrice(prices.monthly)}/月
@@ -246,7 +246,7 @@ function UpgradeModal({
               className={`rounded-lg border px-3 py-2.5 text-sm cursor-pointer transition-colors ${
                 period === 'yearly'
                   ? 'border-blue-500 bg-blue-500/10 text-blue-400'
-                  : 'border-white/10 text-slate-400 hover:border-white/20'
+                  : 'border-white/10 text-[#8a7ca8] hover:border-white/20'
               }`}
             >
               年繳 {formatPrice(prices.yearly)}/年
@@ -255,8 +255,8 @@ function UpgradeModal({
         </div>
 
         <div className="bg-white/5 rounded-lg p-4 text-center">
-          <p className="text-sm text-slate-400 mb-1">應付金額</p>
-          <p className="text-2xl font-bold text-white">{formatPrice(displayPrice)}</p>
+          <p className="text-sm text-[#8a7ca8] mb-1">應付金額</p>
+          <p className="text-xl sm:text-2xl font-bold text-[#3d3155]">{formatPrice(displayPrice)}</p>
         </div>
 
         {error && <p className="text-sm text-red-400">{error}</p>}
@@ -354,15 +354,15 @@ function SubscriptionPageInner() {
 
   useEffect(() => { fetchSubscription() }, [fetchSubscription])
 
-  if (loading) return <p className="text-slate-400 animate-pulse">載入中…</p>
+  if (loading) return <p className="text-[#8a7ca8] animate-pulse">載入中…</p>
   if (error || !data) return <p className="text-red-400">{error || '資料載入失敗'}</p>
 
   const currentPlanIdx = PLAN_ORDER.indexOf(data.plan as typeof PLAN_ORDER[number])
-  const statusInfo = STATUS_LABELS[data.status] ?? { label: data.status, color: 'text-slate-400' }
+  const statusInfo = STATUS_LABELS[data.status] ?? { label: data.status, color: 'text-[#8a7ca8]' }
 
   return (
     <div className="space-y-8 pb-12">
-      <h1 className="text-2xl font-bold text-white">訂閱管理</h1>
+      <h1 className="text-xl sm:text-2xl font-bold text-[#3d3155]">訂閱管理</h1>
 
       {paymentStatus && <StatusBanner status={paymentStatus} />}
 
@@ -376,17 +376,17 @@ function SubscriptionPageInner() {
       )}
 
       {/* ─── Section 1: Current Plan ─── */}
-      <section className="bg-white/5 border border-white/10 rounded-2xl p-6">
+      <section className="bg-white/5 border border-white/10 rounded-[20px] p-6">
         <div className="flex flex-wrap items-center gap-3 mb-2">
-          <span className="text-xs text-slate-500 uppercase tracking-wider">目前方案</span>
-          <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${PLAN_BADGE_COLORS[data.plan] ?? 'bg-slate-600 text-slate-200'}`}>
+          <span className="text-xs text-[#3d3155]0 uppercase tracking-wider">目前方案</span>
+          <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${PLAN_BADGE_COLORS[data.plan] ?? 'bg-[#b8a9e8]/15 text-[#3d3155]'}`}>
             {data.planName}
           </span>
           <span className={`text-sm font-medium ${statusInfo.color}`}>{statusInfo.label}</span>
         </div>
         {data.periodEnd && (
-          <p className="text-sm text-slate-400">
-            帳期至 <span className="text-white/80">{formatDate(data.periodEnd)}</span>
+          <p className="text-sm text-[#8a7ca8]">
+            帳期至 <span className="text-[#3d3155]">{formatDate(data.periodEnd)}</span>
           </p>
         )}
         {data.cancelAt && (
@@ -400,7 +400,7 @@ function SubscriptionPageInner() {
           <div className="mt-4 pt-4 border-t border-white/10">
             {data.cancelAt ? (
               <div className="flex items-center gap-3">
-                <p className="text-sm text-slate-400 flex-1">
+                <p className="text-sm text-[#8a7ca8] flex-1">
                   已設定到期不續訂。帳期結束前仍可正常使用。
                 </p>
                 <button
@@ -418,7 +418,7 @@ function SubscriptionPageInner() {
                 </p>
                 <button
                   onClick={() => setCancelConfirm(false)}
-                  className="px-4 py-2 rounded-lg text-sm bg-white/10 hover:bg-white/15 text-slate-300 cursor-pointer transition-colors"
+                  className="px-4 py-2 rounded-lg text-sm bg-[#b8a9e8]/12 hover:bg-[#b8a9e8]/15 text-slate-300 cursor-pointer transition-colors"
                 >
                   返回
                 </button>
@@ -433,7 +433,7 @@ function SubscriptionPageInner() {
             ) : (
               <button
                 onClick={() => setCancelConfirm(true)}
-                className="text-sm text-slate-500 hover:text-red-400 cursor-pointer transition-colors underline"
+                className="text-sm text-[#3d3155]0 hover:text-red-400 cursor-pointer transition-colors underline"
               >
                 取消訂閱
               </button>
@@ -444,7 +444,7 @@ function SubscriptionPageInner() {
 
       {/* ─── Section 2: Usage Dashboard ─── */}
       <section>
-        <h2 className="text-lg font-semibold text-white mb-4">使用量</h2>
+        <h2 className="text-lg font-semibold text-[#3d3155] mb-4">使用量</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <UsageCard label="本月回覆數" used={data.usage.responses.used} limit={data.usage.responses.limit} />
           <UsageCard label="問卷數" used={data.usage.surveys.used} limit={data.usage.surveys.limit} />
@@ -455,7 +455,7 @@ function SubscriptionPageInner() {
 
       {/* ─── Section 3: Plan Comparison ─── */}
       <section>
-        <h2 className="text-lg font-semibold text-white mb-4">方案比較</h2>
+        <h2 className="text-lg font-semibold text-[#3d3155] mb-4">方案比較</h2>
         <div className="overflow-x-auto">
           <PlanComparisonTable
             plans={data.plans}
@@ -469,12 +469,12 @@ function SubscriptionPageInner() {
       {/* ─── Section 4: Payment History ─── */}
       {data.payments.length > 0 && (
         <section>
-          <h2 className="text-lg font-semibold text-white mb-4">付款紀錄</h2>
-          <div className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden">
+          <h2 className="text-lg font-semibold text-[#3d3155] mb-4">付款紀錄</h2>
+          <div className="bg-white/5 border border-white/10 rounded-[20px] overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-white/10 text-left text-slate-400">
+                  <tr className="border-b border-white/10 text-left text-[#8a7ca8]">
                     <th className="px-5 py-3 font-medium">日期</th>
                     <th className="px-5 py-3 font-medium">交易編號</th>
                     <th className="px-5 py-3 font-medium text-right">金額</th>
@@ -485,10 +485,10 @@ function SubscriptionPageInner() {
                   {data.payments.map((p) => (
                     <tr key={p.id} className="border-b border-white/5 last:border-0">
                       <td className="px-5 py-3 text-slate-300">{formatDate(p.created_at)}</td>
-                      <td className="px-5 py-3 text-slate-400 font-mono text-xs">{p.trade_no ?? '—'}</td>
-                      <td className="px-5 py-3 text-white text-right">{formatPrice(p.amount)}</td>
+                      <td className="px-5 py-3 text-[#8a7ca8] font-mono text-xs">{p.trade_no ?? '—'}</td>
+                      <td className="px-5 py-3 text-[#3d3155] text-right">{formatPrice(p.amount)}</td>
                       <td className="px-5 py-3 text-center">
-                        <span className={`inline-block px-2 py-0.5 rounded-full text-xs border ${PAYMENT_STATUS_BADGE[p.status] ?? 'bg-slate-500/20 text-slate-400 border-slate-500/30'}`}>
+                        <span className={`inline-block px-2 py-0.5 rounded-full text-xs border ${PAYMENT_STATUS_BADGE[p.status] ?? 'bg-[#b5a8d0]/20 text-[#8a7ca8] border-[#b8a9e8]/35/30'}`}>
                           {PAYMENT_STATUS_LABEL[p.status] ?? p.status}
                         </span>
                       </td>
@@ -519,7 +519,7 @@ function SubscriptionPageInner() {
 
 export default function SubscriptionPage() {
   return (
-    <Suspense fallback={<p className="text-slate-400 animate-pulse">載入中…</p>}>
+    <Suspense fallback={<p className="text-[#8a7ca8] animate-pulse">載入中…</p>}>
       <SubscriptionPageInner />
     </Suspense>
   )
@@ -542,7 +542,7 @@ function PlanComparisonTable({
     <table className="w-full text-sm">
       <thead>
         <tr className="border-b border-white/10">
-          <th className="text-left px-5 py-4 text-slate-400 font-medium w-36" />
+          <th className="text-left px-5 py-4 text-[#8a7ca8] font-medium w-36" />
           {PLAN_ORDER.map((key) => {
             const p = plans[key]
             if (!p) return null
@@ -550,7 +550,7 @@ function PlanComparisonTable({
             return (
               <th key={key} className={`px-5 py-4 text-center ${isCurrent ? 'bg-white/5' : ''}`}>
                 <div className="flex flex-col items-center gap-1">
-                  <span className="text-white font-semibold">{p.name}</span>
+                  <span className="text-[#3d3155] font-semibold">{p.name}</span>
                   {isCurrent && (
                     <span className="text-[10px] bg-blue-500/20 text-blue-400 border border-blue-500/30 px-2 py-0.5 rounded-full">
                       目前方案
@@ -565,14 +565,14 @@ function PlanComparisonTable({
       <tbody>
         {/* Price row */}
         <tr className="border-b border-white/5">
-          <td className="px-5 py-3 text-slate-400">月費</td>
+          <td className="px-5 py-3 text-[#8a7ca8]">月費</td>
           {PLAN_ORDER.map((key) => {
             const p = plans[key]
             if (!p) return null
             const isCurrent = key === currentPlan
             return (
               <td key={key} className={`px-5 py-3 text-center ${isCurrent ? 'bg-white/5' : ''}`}>
-                <span className="text-white font-semibold">
+                <span className="text-[#3d3155] font-semibold">
                   {p.price === 0 ? 'NT$0' : `NT$${p.price.toLocaleString()}/月`}
                 </span>
               </td>
@@ -581,7 +581,7 @@ function PlanComparisonTable({
         </tr>
         {/* Yearly price row */}
         <tr className="border-b border-white/5">
-          <td className="px-5 py-3 text-slate-400">年費</td>
+          <td className="px-5 py-3 text-[#8a7ca8]">年費</td>
           {PLAN_ORDER.map((key) => {
             const prices = PLAN_PRICES[key]
             const isCurrent = key === currentPlan
@@ -597,7 +597,7 @@ function PlanComparisonTable({
         {/* Feature rows */}
         {FEATURE_ROWS.map((row) => (
           <tr key={row.key} className="border-b border-white/5">
-            <td className="px-5 py-3 text-slate-400">{row.label}</td>
+            <td className="px-5 py-3 text-[#8a7ca8]">{row.label}</td>
             {PLAN_ORDER.map((key) => {
               const p = plans[key]
               if (!p) return null
@@ -621,7 +621,7 @@ function PlanComparisonTable({
             if (isCurrent) {
               return (
                 <td key={key} className="px-5 py-4 text-center bg-white/5">
-                  <span className="text-sm text-slate-500">目前方案</span>
+                  <span className="text-sm text-[#3d3155]0">目前方案</span>
                 </td>
               )
             }
@@ -633,7 +633,7 @@ function PlanComparisonTable({
                   className={`px-4 py-2 rounded-lg text-sm font-medium cursor-pointer transition-colors ${
                     isHigher
                       ? 'bg-blue-600 hover:bg-blue-700 text-white'
-                      : 'bg-white/5 hover:bg-white/10 text-slate-300 border border-white/10'
+                      : 'bg-white/5 hover:bg-[#b8a9e8]/12 text-slate-300 border border-white/10'
                   }`}
                 >
                   {isHigher ? '升級' : '降級'}

@@ -131,20 +131,20 @@ export default function TagRulesPage() {
   }, {})
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between gap-4 flex-wrap">
-        <h1 className="text-2xl font-bold text-white">標籤規則管理</h1>
+    <div className="space-y-4 sm:space-y-6">
+      <div className="flex items-center justify-between gap-2 sm:gap-4 flex-wrap">
+        <h1 className="text-xl sm:text-2xl font-bold text-[#3d3155]">標籤規則管理</h1>
         <div className="flex items-center gap-3">
           <input
             type="text"
             placeholder="搜尋 question_key 或 tag_key..."
             value={filter}
             onChange={(e) => setFilter(e.target.value)}
-            className="bg-slate-800 text-white border border-slate-700 rounded-lg px-3 py-1.5 text-sm w-full sm:w-64"
+            className="bg-white/60 text-[#3d3155] border border-[#b8a9e8]/20 rounded-lg px-3 py-1.5 text-sm w-full sm:w-64"
           />
           <button
             onClick={() => setShowAdd(!showAdd)}
-            className="bg-t-btn hover:bg-t-btn-hover text-white px-4 py-1.5 rounded-lg text-sm font-medium"
+            className="bg-gradient-to-r from-[#b8a9e8] to-[#f5b8b5] hover:opacity-90 text-white px-4 py-1.5 rounded-lg text-sm font-medium"
           >
             {showAdd ? '收起' : '+ 新增規則'}
           </button>
@@ -153,17 +153,17 @@ export default function TagRulesPage() {
 
       {/* 新增表單 */}
       {showAdd && (
-        <div className="bg-slate-800/60 border border-slate-700/50 rounded-xl p-4 space-y-3">
+        <div className="bg-white/40 backdrop-blur-sm border border-[#b8a9e8]/20 rounded-xl p-4 space-y-3">
           <h3 className="text-sm font-medium text-slate-300">新增標籤規則</h3>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
             <Field label="題目 Key" value={newRule.questionKey} onChange={(v) => setNewRule({ ...newRule, questionKey: v })} placeholder="q1" />
             <Field label="答案值" value={newRule.answerValue} onChange={(v) => setNewRule({ ...newRule, answerValue: v })} placeholder="答案文字" />
             <div>
-              <label className="text-xs text-slate-400 block mb-1">匹配模式</label>
+              <label className="text-xs text-[#8a7ca8] block mb-1">匹配模式</label>
               <select
                 value={newRule.matchMode}
                 onChange={(e) => setNewRule({ ...newRule, matchMode: e.target.value })}
-                className="bg-slate-700 text-white border border-slate-600 rounded px-2 py-1.5 text-sm w-full"
+                className="bg-white/60 text-[#3d3155] border border-[#b8a9e8]/30 rounded px-2 py-1.5 text-sm w-full"
               >
                 <option value="exact">exact（完全匹配）</option>
                 <option value="contains">contains（多選包含）</option>
@@ -173,12 +173,12 @@ export default function TagRulesPage() {
             <Field label="標籤 Key" value={newRule.tagKey} onChange={(v) => setNewRule({ ...newRule, tagKey: v })} placeholder="pet_type" />
             <Field label="標籤 Value" value={newRule.tagValue} onChange={(v) => setNewRule({ ...newRule, tagValue: v })} placeholder="dog" />
             <div>
-              <label className="text-xs text-slate-400 block mb-1">優先順序</label>
+              <label className="text-xs text-[#8a7ca8] block mb-1">優先順序</label>
               <input
                 type="number"
                 value={newRule.priority}
                 onChange={(e) => setNewRule({ ...newRule, priority: parseInt(e.target.value) || 0 })}
-                className="bg-slate-700 text-white border border-slate-600 rounded px-2 py-1.5 text-sm w-full"
+                className="bg-white/60 text-[#3d3155] border border-[#b8a9e8]/30 rounded px-2 py-1.5 text-sm w-full"
               />
             </div>
           </div>
@@ -195,23 +195,23 @@ export default function TagRulesPage() {
       {/* 二次確認 Modal */}
       {confirmAction && (
         <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
-          <div className="bg-slate-800 border border-slate-700 rounded-2xl p-6 max-w-md w-full space-y-4">
-            <h3 className="text-lg font-bold text-white">確認操作</h3>
+          <div className="bg-white/50 border border-[#b8a9e8]/20 rounded-[20px] p-6 max-w-md w-full space-y-4">
+            <h3 className="text-lg font-bold text-[#3d3155]">確認操作</h3>
             <p className="text-slate-300 text-sm">{confirmAction.label}</p>
             <div className="flex gap-3 justify-end">
               <button
                 onClick={() => setConfirmAction(null)}
-                className="text-slate-400 hover:text-white px-4 py-2 rounded-lg text-sm"
+                className="text-[#8a7ca8] hover:text-[#3d3155] px-4 py-2 rounded-lg text-sm"
               >
                 取消
               </button>
               <button
                 onClick={executeConfirm}
                 disabled={saving}
-                className={`px-4 py-2 rounded-lg text-sm font-medium text-white ${
+                className={`px-4 py-2 rounded-lg text-sm font-medium text-[#3d3155] ${
                   confirmAction.type === 'delete'
                     ? 'bg-red-600 hover:bg-red-500'
-                    : 'bg-t-btn hover:bg-t-btn-hover'
+                    : 'bg-gradient-to-r from-[#b8a9e8] to-[#f5b8b5] hover:opacity-90'
                 } disabled:opacity-40`}
               >
                 {saving ? '執行中...' : '確認執行'}
@@ -223,32 +223,32 @@ export default function TagRulesPage() {
 
       {/* 規則列表 */}
       {loading ? (
-        <p className="text-slate-500 text-center py-12">載入中...</p>
+        <p className="text-[#3d3155]0 text-center py-12">載入中...</p>
       ) : Object.keys(grouped).length === 0 ? (
-        <p className="text-slate-500 text-center py-12">尚無規則</p>
+        <p className="text-[#3d3155]0 text-center py-12">尚無規則</p>
       ) : (
         Object.entries(grouped)
           .sort(([a], [b]) => a.localeCompare(b))
           .map(([qKey, items]) => (
-            <div key={qKey} className="bg-slate-800/50 border border-slate-700/50 rounded-2xl overflow-x-auto">
-              <div className="px-4 py-3 bg-slate-800/80 border-b border-slate-700/50">
+            <div key={qKey} className="bg-white/35 backdrop-blur-sm border border-[#b8a9e8]/20 rounded-[20px] overflow-x-auto">
+              <div className="px-4 py-3 bg-white/60 backdrop-blur-sm border-b border-[#b8a9e8]/20">
                 <h3 className="text-sm font-medium text-t-accent">{qKey}</h3>
               </div>
-              <div className="divide-y divide-slate-700/40">
+              <div className="divide-y divide-[#b8a9e8]/15/40">
                 {items.map((rule) => (
                   <div key={rule.id} className={`px-4 py-3 text-sm flex items-center gap-3 ${editId !== rule.id ? 'flex-wrap' : ''} ${!rule.is_active ? 'opacity-40' : ''}`}>
                     {editId === rule.id ? (
                       // 編輯模式
                       <div className="flex-1 grid grid-cols-2 md:grid-cols-6 gap-2">
-                        <input value={editData.answer_value ?? ''} onChange={(e) => setEditData({ ...editData, answer_value: e.target.value })} className="bg-slate-700 text-white border border-slate-600 rounded px-2 py-1 text-xs" placeholder="答案值" />
-                        <select value={editData.match_mode ?? 'exact'} onChange={(e) => setEditData({ ...editData, match_mode: e.target.value })} className="bg-slate-700 text-white border border-slate-600 rounded px-2 py-1 text-xs">
+                        <input value={editData.answer_value ?? ''} onChange={(e) => setEditData({ ...editData, answer_value: e.target.value })} className="bg-white/60 text-[#3d3155] border border-[#b8a9e8]/30 rounded px-2 py-1 text-xs" placeholder="答案值" />
+                        <select value={editData.match_mode ?? 'exact'} onChange={(e) => setEditData({ ...editData, match_mode: e.target.value })} className="bg-white/60 text-[#3d3155] border border-[#b8a9e8]/30 rounded px-2 py-1 text-xs">
                           <option value="exact">exact</option>
                           <option value="contains">contains</option>
                           <option value="any">any</option>
                         </select>
-                        <input value={editData.tag_key ?? ''} onChange={(e) => setEditData({ ...editData, tag_key: e.target.value })} className="bg-slate-700 text-white border border-slate-600 rounded px-2 py-1 text-xs" placeholder="tag_key" />
-                        <input value={editData.tag_value ?? ''} onChange={(e) => setEditData({ ...editData, tag_value: e.target.value })} className="bg-slate-700 text-white border border-slate-600 rounded px-2 py-1 text-xs" placeholder="tag_value" />
-                        <input type="number" value={editData.priority ?? 0} onChange={(e) => setEditData({ ...editData, priority: parseInt(e.target.value) || 0 })} className="bg-slate-700 text-white border border-slate-600 rounded px-2 py-1 text-xs w-16" />
+                        <input value={editData.tag_key ?? ''} onChange={(e) => setEditData({ ...editData, tag_key: e.target.value })} className="bg-white/60 text-[#3d3155] border border-[#b8a9e8]/30 rounded px-2 py-1 text-xs" placeholder="tag_key" />
+                        <input value={editData.tag_value ?? ''} onChange={(e) => setEditData({ ...editData, tag_value: e.target.value })} className="bg-white/60 text-[#3d3155] border border-[#b8a9e8]/30 rounded px-2 py-1 text-xs" placeholder="tag_value" />
+                        <input type="number" value={editData.priority ?? 0} onChange={(e) => setEditData({ ...editData, priority: parseInt(e.target.value) || 0 })} className="bg-white/60 text-[#3d3155] border border-[#b8a9e8]/30 rounded px-2 py-1 text-xs w-16" />
                         <div className="flex gap-1">
                           <button
                             onClick={() => {
@@ -265,7 +265,7 @@ export default function TagRulesPage() {
                           </button>
                           <button
                             onClick={() => { setEditId(null); setEditData({}) }}
-                            className="text-slate-400 hover:text-white px-2 py-1 rounded text-xs"
+                            className="text-[#8a7ca8] hover:text-[#3d3155] px-2 py-1 rounded text-xs"
                           >
                             取消
                           </button>
@@ -274,10 +274,10 @@ export default function TagRulesPage() {
                     ) : (
                       // 顯示模式
                       <>
-                        <span className="text-slate-400 w-36 shrink-0 truncate">{rule.answer_value ?? '(any)'}</span>
-                        <span className="text-slate-500 w-16 shrink-0">{rule.match_mode}</span>
-                        <span className="text-white font-mono">{rule.tag_key}</span>
-                        <span className="text-slate-400">=</span>
+                        <span className="text-[#8a7ca8] w-36 shrink-0 truncate">{rule.answer_value ?? '(any)'}</span>
+                        <span className="text-[#3d3155]0 w-16 shrink-0">{rule.match_mode}</span>
+                        <span className="text-[#3d3155] font-mono">{rule.tag_key}</span>
+                        <span className="text-[#8a7ca8]">=</span>
                         <span className="text-emerald-400 font-mono">{rule.tag_value}</span>
                         {rule.priority > 0 && (
                           <span className="text-xs text-amber-400 bg-amber-400/10 px-1.5 py-0.5 rounded">P{rule.priority}</span>
@@ -294,7 +294,7 @@ export default function TagRulesPage() {
                                 priority: rule.priority,
                               })
                             }}
-                            className="text-slate-400 hover:text-t-accent px-1.5 py-0.5 text-xs"
+                            className="text-[#8a7ca8] hover:text-t-accent px-1.5 py-0.5 text-xs"
                           >
                             編輯
                           </button>
@@ -333,7 +333,7 @@ export default function TagRulesPage() {
           ))
       )}
 
-      <p className="text-xs text-slate-500 text-center">
+      <p className="text-xs text-[#3d3155]0 text-center">
         共 {rules.length} 條規則 · 問卷提交時自動依規則產生標籤
       </p>
     </div>
@@ -345,13 +345,13 @@ function Field({ label, value, onChange, placeholder }: {
 }) {
   return (
     <div>
-      <label className="text-xs text-slate-400 block mb-1">{label}</label>
+      <label className="text-xs text-[#8a7ca8] block mb-1">{label}</label>
       <input
         type="text"
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className="bg-slate-700 text-white border border-slate-600 rounded px-2 py-1.5 text-sm w-full"
+        className="bg-white/60 text-[#3d3155] border border-[#b8a9e8]/30 rounded px-2 py-1.5 text-sm w-full"
       />
     </div>
   )

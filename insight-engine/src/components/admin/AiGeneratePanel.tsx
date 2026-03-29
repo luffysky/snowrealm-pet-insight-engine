@@ -119,22 +119,22 @@ export function AiGeneratePanel({ surveyId, existingCount, onDone, onCancel }: A
     }
   }
 
-  const inputClass = 'w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded-lg text-white text-sm focus:outline-none focus:ring-1 focus:ring-cyan-500/50'
+  const inputClass = 'w-full px-3 py-2 bg-white/60 border border-[#b8a9e8]/30 rounded-lg text-[#3d3155] text-sm focus:outline-none focus:ring-1 focus:ring-cyan-500/50'
 
   return (
-    <div className="bg-slate-800/80 border border-cyan-500/20 rounded-xl p-6 space-y-5">
+    <div className="bg-white/60 backdrop-blur-sm border border-cyan-500/20 rounded-xl p-6 space-y-5">
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+        <h3 className="text-lg font-semibold text-[#3d3155] flex items-center gap-2">
           🤖 AI 生成題目
         </h3>
-        <button onClick={onCancel} className="text-slate-400 hover:text-slate-200 text-sm cursor-pointer">✕</button>
+        <button onClick={onCancel} className="text-[#8a7ca8] hover:text-[#3d3155] text-sm cursor-pointer">✕</button>
       </div>
 
       {/* Step 1: Input */}
       {!results && (
         <div className="space-y-4">
           <div>
-            <label className="block text-sm text-slate-400 mb-1">問卷主題 *</label>
+            <label className="block text-sm text-[#8a7ca8] mb-1">問卷主題 *</label>
             <input
               type="text"
               value={topic}
@@ -144,7 +144,7 @@ export function AiGeneratePanel({ surveyId, existingCount, onDone, onCancel }: A
             />
           </div>
           <div>
-            <label className="block text-sm text-slate-400 mb-1">詳細描述（選填）</label>
+            <label className="block text-sm text-[#8a7ca8] mb-1">詳細描述（選填）</label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
@@ -155,7 +155,7 @@ export function AiGeneratePanel({ surveyId, existingCount, onDone, onCancel }: A
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm text-slate-400 mb-1">目標受眾（選填）</label>
+              <label className="block text-sm text-[#8a7ca8] mb-1">目標受眾（選填）</label>
               <input
                 type="text"
                 value={targetAudience}
@@ -165,7 +165,7 @@ export function AiGeneratePanel({ surveyId, existingCount, onDone, onCancel }: A
               />
             </div>
             <div>
-              <label className="block text-sm text-slate-400 mb-1">題數</label>
+              <label className="block text-sm text-[#8a7ca8] mb-1">題數</label>
               <input
                 type="number"
                 value={questionCount}
@@ -183,11 +183,11 @@ export function AiGeneratePanel({ surveyId, existingCount, onDone, onCancel }: A
             <button
               onClick={handleGenerate}
               disabled={generating}
-              className="px-4 py-2 bg-linear-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 disabled:opacity-50 text-white rounded-lg text-sm transition-all cursor-pointer"
+              className="px-4 py-2 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 disabled:opacity-50 text-white rounded-lg text-sm transition-all cursor-pointer"
             >
               {generating ? '🔄 AI 生成中...' : '✨ 開始生成'}
             </button>
-            <button onClick={onCancel} className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded-lg text-sm cursor-pointer">
+            <button onClick={onCancel} className="px-4 py-2 bg-[#b8a9e8]/10 hover:bg-[#b8a9e8]/15 text-slate-300 rounded-lg text-sm cursor-pointer">
               取消
             </button>
           </div>
@@ -198,7 +198,7 @@ export function AiGeneratePanel({ surveyId, existingCount, onDone, onCancel }: A
       {results && (
         <div className="space-y-4">
           {meta && (
-            <p className="text-xs text-slate-500">
+            <p className="text-xs text-[#3d3155]0">
               模型：{meta.provider}/{meta.model} {meta.isFree ? '(免費額度)' : ''}
             </p>
           )}
@@ -221,7 +221,7 @@ export function AiGeneratePanel({ surveyId, existingCount, onDone, onCancel }: A
                 className={`rounded-xl p-3 border cursor-pointer transition-colors ${
                   selected.has(i)
                     ? 'bg-cyan-500/10 border-cyan-500/30'
-                    : 'bg-slate-900/50 border-slate-700/50 opacity-50'
+                    : 'bg-white/40 backdrop-blur-sm border-[#b8a9e8]/20 opacity-50'
                 }`}
               >
                 <div className="flex items-start gap-3">
@@ -229,11 +229,11 @@ export function AiGeneratePanel({ surveyId, existingCount, onDone, onCancel }: A
                     type="checkbox"
                     checked={selected.has(i)}
                     onChange={() => toggleSelect(i)}
-                    className="mt-1 w-4 h-4 rounded border-slate-600 bg-slate-700 text-cyan-500 accent-cyan-500 cursor-pointer"
+                    className="mt-1 w-4 h-4 rounded border-[#b8a9e8]/30 bg-[#b8a9e8]/10 text-cyan-500 accent-cyan-500 cursor-pointer"
                   />
                   <div className="flex-1 space-y-1">
                     <div className="flex items-center gap-2">
-                      <span className="text-xs text-white/30 font-mono">{q.key}</span>
+                      <span className="text-xs text-[#8a7ca8] font-mono">{q.key}</span>
                       <span className={`text-xs px-1.5 py-0.5 rounded ${
                         q.type === 'single' ? 'bg-blue-500/20 text-blue-400'
                         : q.type === 'multiple' ? 'bg-purple-500/20 text-purple-400'
@@ -241,9 +241,9 @@ export function AiGeneratePanel({ surveyId, existingCount, onDone, onCancel }: A
                       }`}>{q.type}</span>
                       {q.isRequired && <span className="text-xs text-red-400/60">必填</span>}
                     </div>
-                    <p className="text-sm text-white/80">{q.content}</p>
+                    <p className="text-sm text-[#3d3155]">{q.content}</p>
                     {q.options.length > 0 && (
-                      <p className="text-xs text-white/40">
+                      <p className="text-xs text-[#b5a8d0]">
                         選項：{q.options.map((o) => o.label).join('、')}
                       </p>
                     )}
@@ -265,11 +265,11 @@ export function AiGeneratePanel({ surveyId, existingCount, onDone, onCancel }: A
             </button>
             <button
               onClick={() => { setResults(null); setSelected(new Set()) }}
-              className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded-lg text-sm cursor-pointer"
+              className="px-4 py-2 bg-[#b8a9e8]/10 hover:bg-[#b8a9e8]/15 text-slate-300 rounded-lg text-sm cursor-pointer"
             >
               重新生成
             </button>
-            <button onClick={onCancel} className="text-sm text-slate-500 hover:text-slate-300 cursor-pointer">
+            <button onClick={onCancel} className="text-sm text-[#3d3155]0 hover:text-slate-300 cursor-pointer">
               取消
             </button>
           </div>

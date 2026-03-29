@@ -62,11 +62,11 @@ export default function ThemeSettingsPage() {
   }, [slug])
 
   if (!slug) {
-    return <div className="text-white/50 py-12 text-center">請先在上方選擇一份問卷</div>
+    return <div className="text-[#b5a8d0] py-12 text-center">請先在上方選擇一份問卷</div>
   }
 
   if (!settings) {
-    return <div className="text-white/50 py-12 text-center">載入中...</div>
+    return <div className="text-[#b5a8d0] py-12 text-center">載入中...</div>
   }
 
   const toggleTheme = (key: SurveyTheme) => {
@@ -108,12 +108,12 @@ export default function ThemeSettingsPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-bold text-white/95">🎨 問卷主題設定</h1>
-        <p className="text-sm text-white/50 mt-1">管理問卷可用風格、預設主題與裝飾強度</p>
+        <h1 className="text-xl sm:text-2xl font-bold text-[#3d3155]/95">🎨 問卷主題設定</h1>
+        <p className="text-sm text-[#3d3155]/50 mt-1">管理問卷可用風格、預設主題與裝飾強度</p>
       </div>
 
       {/* 允許使用者自選 */}
-      <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
+      <div className="bg-white/5 border border-white/10 rounded-[20px] p-6">
         <label className="flex items-center gap-3 cursor-pointer">
           <input
             type="checkbox"
@@ -122,8 +122,8 @@ export default function ThemeSettingsPage() {
             className="w-5 h-5 rounded accent-t-accent"
           />
           <div>
-            <p className="text-white/90 font-medium">允許使用者自選主題</p>
-            <p className="text-sm text-white/40">開啟後，問卷封面會顯示風格選擇器</p>
+            <p className="text-[#3d3155] font-medium">允許使用者自選主題</p>
+            <p className="text-sm text-[#b5a8d0]">開啟後，問卷封面會顯示風格選擇器</p>
           </div>
         </label>
       </div>
@@ -138,7 +138,7 @@ export default function ThemeSettingsPage() {
           return (
             <div
               key={t.key}
-              className={`border rounded-2xl p-6 transition-all ${
+              className={`border rounded-[20px] p-6 transition-all ${
                 isAvailable
                   ? 'bg-white/5 border-white/15'
                   : 'bg-white/2 border-white/5 opacity-60'
@@ -149,14 +149,14 @@ export default function ThemeSettingsPage() {
                   <span className="text-3xl">{t.icon}</span>
                   <div>
                     <div className="flex items-center gap-2">
-                      <h3 className="text-lg font-bold text-white/90">{t.label}</h3>
+                      <h3 className="text-lg font-bold text-[#3d3155]/90">{t.label}</h3>
                       {isDefault && (
-                        <span className="text-xs px-2 py-0.5 bg-t-accent-bg text-t-accent rounded-full">
+                        <span className="text-xs px-2 py-0.5 bg-[#b8a9e8]/20 text-t-accent rounded-full">
                           預設
                         </span>
                       )}
                     </div>
-                    <p className="text-sm text-white/40">{t.desc}</p>
+                    <p className="text-sm text-[#b5a8d0]">{t.desc}</p>
                   </div>
                 </div>
 
@@ -165,7 +165,7 @@ export default function ThemeSettingsPage() {
                   {isAvailable && !isDefault && (
                     <button
                       onClick={() => setSettings({ ...settings, defaultTheme: t.key })}
-                      className="text-xs px-3 py-1.5 border border-white/10 rounded-lg text-white/50 hover:text-t-accent hover:border-t-card-border transition-colors cursor-pointer"
+                      className="text-xs px-3 py-1.5 border border-white/10 rounded-lg text-[#b5a8d0] hover:text-t-accent hover:border-[#b8a9e8]/25 transition-colors cursor-pointer"
                     >
                       設為預設
                     </button>
@@ -176,7 +176,7 @@ export default function ThemeSettingsPage() {
                     className={`text-xs px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${
                       isAvailable
                         ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-400/30'
-                        : 'bg-white/5 text-white/40 border border-white/10'
+                        : 'bg-white/5 text-[#b5a8d0] border border-white/10'
                     }`}
                   >
                     {isAvailable ? '已啟用' : '已停用'}
@@ -187,7 +187,7 @@ export default function ThemeSettingsPage() {
               {/* 裝飾強度 */}
               {isAvailable && (
                 <div className="border-t border-white/5 pt-4 mt-2">
-                  <p className="text-sm text-white/50 mb-3">裝飾強度</p>
+                  <p className="text-sm text-[#3d3155]/50 mb-3">裝飾強度</p>
                   <div className="flex gap-3">
                     {([1, 2, 3] as Intensity[]).map(level => {
                       const info = INTENSITY_LABELS[level]
@@ -198,8 +198,8 @@ export default function ThemeSettingsPage() {
                           onClick={() => setIntensity(t.key, level)}
                           className={`flex-1 px-4 py-3 rounded-xl border text-center transition-all cursor-pointer ${
                             isActive
-                              ? 'bg-t-accent-bg border-t-card-border text-t-accent'
-                              : 'bg-white/3 border-white/8 text-white/40 hover:border-white/15'
+                              ? 'bg-[#b8a9e8]/20 border-[#b8a9e8]/25 text-t-accent'
+                              : 'bg-white/3 border-white/8 text-[#b5a8d0] hover:border-white/15'
                           }`}
                         >
                           <div className="text-sm font-medium">
@@ -223,7 +223,7 @@ export default function ThemeSettingsPage() {
         <button
           onClick={save}
           disabled={saving}
-          className="px-6 py-2.5 bg-t-accent-bg border border-t-card-border text-t-accent rounded-xl hover:bg-t-accent-bg disabled:opacity-40 transition-colors cursor-pointer"
+          className="px-6 py-2.5 bg-[#b8a9e8]/20 border border-[#b8a9e8]/25 text-t-accent rounded-xl hover:bg-[#b8a9e8]/20 disabled:opacity-40 transition-colors cursor-pointer"
         >
           {saving ? '儲存中...' : '儲存設定'}
         </button>
@@ -235,11 +235,11 @@ export default function ThemeSettingsPage() {
       </div>
 
       {/* 預覽說明 */}
-      <div className="bg-white/3 border border-white/5 rounded-2xl p-6">
-        <h3 className="text-sm font-medium text-white/60 mb-3">裝飾強度說明</h3>
-        <div className="space-y-3 text-sm text-white/40">
+      <div className="bg-white/3 border border-white/5 rounded-[20px] p-6">
+        <h3 className="text-sm font-medium text-[#8a7ca8] mb-3">裝飾強度說明</h3>
+        <div className="space-y-3 text-sm text-[#b5a8d0]">
           <div>
-            <span className="text-white/70 font-medium">🎮 遊戲冒險</span>
+            <span className="text-[#3d3155] font-medium">🎮 遊戲冒險</span>
             <ul className="mt-1 ml-4 space-y-0.5 list-disc">
               <li>✦ 輕量：金色配色 + 基本卡片樣式</li>
               <li>✦✦ 標準：+ XP 進度條、冒險地圖節點</li>
@@ -247,7 +247,7 @@ export default function ThemeSettingsPage() {
             </ul>
           </div>
           <div>
-            <span className="text-white/70 font-medium">🔮 未來科技</span>
+            <span className="text-[#3d3155] font-medium">🔮 未來科技</span>
             <ul className="mt-1 ml-4 space-y-0.5 list-disc">
               <li>✦ 輕量：液態玻璃配色 + 基本毛玻璃效果</li>
               <li>✦✦ 標準：+ 流動光暈邊框、霓虹脈衝</li>

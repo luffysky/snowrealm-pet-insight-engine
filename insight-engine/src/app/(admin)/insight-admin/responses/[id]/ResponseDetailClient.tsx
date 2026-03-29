@@ -55,13 +55,13 @@ export function ResponseDetailClient({ detail }: { detail: ResponseDetail }) {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between flex-wrap gap-4">
+    <div className="space-y-4 sm:space-y-6">
+      <div className="flex items-center justify-between flex-wrap gap-2 sm:gap-4">
         <div className="flex items-center gap-4">
           <Link href=".." className="text-sm text-cyan-400 hover:text-cyan-300">
             ← 返回列表
           </Link>
-          <h1 className="text-2xl font-bold text-white">填答詳情</h1>
+          <h1 className="text-xl sm:text-2xl font-bold text-[#3d3155]">填答詳情</h1>
         </div>
         <div className="flex items-center gap-2">
           {confirmDelete ? (
@@ -75,7 +75,7 @@ export function ResponseDetailClient({ detail }: { detail: ResponseDetail }) {
               </button>
               <button
                 onClick={() => setConfirmDelete(false)}
-                className="px-3 py-1.5 text-slate-400 hover:text-slate-200 text-sm cursor-pointer"
+                className="px-3 py-1.5 text-[#8a7ca8] hover:text-[#3d3155] text-sm cursor-pointer"
               >
                 取消
               </button>
@@ -92,12 +92,12 @@ export function ResponseDetailClient({ detail }: { detail: ResponseDetail }) {
       </div>
 
       {/* 基本資訊 */}
-      <div className="bg-slate-800/50 border border-slate-700/50 rounded-2xl p-6 space-y-3">
-        <h2 className="text-lg font-semibold text-white">基本資訊</h2>
+      <div className="bg-white/35 backdrop-blur-sm border border-[#b8a9e8]/20 rounded-[20px] p-6 space-y-3">
+        <h2 className="text-lg font-semibold text-[#3d3155]">基本資訊</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
           {/* 狀態 - editable */}
           <div>
-            <p className="text-slate-400 mb-1">狀態</p>
+            <p className="text-[#8a7ca8] mb-1">狀態</p>
             <select
               value={status}
               onChange={async (e) => {
@@ -106,7 +106,7 @@ export function ResponseDetailClient({ detail }: { detail: ResponseDetail }) {
                 if (ok) setStatus(v)
               }}
               disabled={saving}
-              className="bg-slate-700 border border-slate-600 rounded-lg px-2 py-1 text-white text-sm focus:outline-none focus:ring-1 focus:ring-cyan-500/50 cursor-pointer [&>option]:bg-slate-800"
+              className="bg-white/60 border border-[#b8a9e8]/30 rounded-lg px-2 py-1 text-[#3d3155] text-sm focus:outline-none focus:ring-1 focus:ring-cyan-500/50 cursor-pointer [&>option]:bg-white [&>option]:text-[#3d3155]"
             >
               <option value="completed">已完成</option>
               <option value="in_progress">進行中</option>
@@ -114,7 +114,7 @@ export function ResponseDetailClient({ detail }: { detail: ResponseDetail }) {
           </div>
           {/* 來源 - editable */}
           <div>
-            <p className="text-slate-400 mb-1">來源</p>
+            <p className="text-[#8a7ca8] mb-1">來源</p>
             <input
               type="text"
               value={source}
@@ -126,20 +126,20 @@ export function ResponseDetailClient({ detail }: { detail: ResponseDetail }) {
               onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur() }}
               disabled={saving}
               placeholder="-"
-              className="bg-slate-700 border border-slate-600 rounded-lg px-2 py-1 text-white text-sm w-full focus:outline-none focus:ring-1 focus:ring-cyan-500/50"
+              className="bg-white/60 border border-[#b8a9e8]/30 rounded-lg px-2 py-1 text-[#3d3155] text-sm w-full focus:outline-none focus:ring-1 focus:ring-cyan-500/50"
             />
           </div>
           <div>
-            <p className="text-slate-400">提交時間</p>
-            <p className="text-white">
+            <p className="text-[#8a7ca8]">提交時間</p>
+            <p className="text-[#3d3155]">
               {detail.submittedAt
                 ? new Date(detail.submittedAt).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' })
                 : '-'}
             </p>
           </div>
           <div>
-            <p className="text-slate-400">建立時間</p>
-            <p className="text-white">
+            <p className="text-[#8a7ca8]">建立時間</p>
+            <p className="text-[#3d3155]">
               {new Date(detail.createdAt).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' })}
             </p>
           </div>
@@ -147,9 +147,9 @@ export function ResponseDetailClient({ detail }: { detail: ResponseDetail }) {
       </div>
 
       {/* 備註 */}
-      <div className="bg-slate-800/50 border border-slate-700/50 rounded-2xl p-6 space-y-3">
+      <div className="bg-white/35 backdrop-blur-sm border border-[#b8a9e8]/20 rounded-[20px] p-6 space-y-3">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-white">備註</h2>
+          <h2 className="text-lg font-semibold text-[#3d3155]">備註</h2>
           {!editingNotes && (
             <button
               onClick={() => setEditingNotes(true)}
@@ -166,15 +166,15 @@ export function ResponseDetailClient({ detail }: { detail: ResponseDetail }) {
               onChange={(e) => setNotes(e.target.value)}
               maxLength={500}
               rows={3}
-              className="w-full bg-slate-700 border border-slate-600 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:ring-1 focus:ring-cyan-500/50 resize-none"
+              className="w-full bg-white/60 border border-[#b8a9e8]/30 rounded-xl px-4 py-3 text-[#3d3155] text-sm focus:outline-none focus:ring-1 focus:ring-cyan-500/50 resize-none"
               placeholder="在這裡寫備註..."
               autoFocus
             />
             <div className="flex items-center gap-2 justify-end">
-              <span className="text-xs text-slate-500 mr-auto">{notes.length}/500</span>
+              <span className="text-xs text-[#3d3155]0 mr-auto">{notes.length}/500</span>
               <button
                 onClick={() => { setNotes(detail.notes ?? ''); setEditingNotes(false) }}
-                className="px-3 py-1 text-slate-400 hover:text-slate-200 text-sm cursor-pointer"
+                className="px-3 py-1 text-[#8a7ca8] hover:text-[#3d3155] text-sm cursor-pointer"
               >
                 取消
               </button>
@@ -191,23 +191,23 @@ export function ResponseDetailClient({ detail }: { detail: ResponseDetail }) {
             </div>
           </div>
         ) : (
-          <p className={`text-sm ${notes ? 'text-slate-300' : 'text-slate-500'}`}>
+          <p className={`text-sm ${notes ? 'text-slate-300' : 'text-[#3d3155]0'}`}>
             {notes || '尚無備註'}
           </p>
         )}
       </div>
 
       {/* CRM 標籤 */}
-      <div className="bg-slate-800/50 border border-slate-700/50 rounded-2xl p-6 space-y-3">
-        <h2 className="text-lg font-semibold text-white">CRM 標籤</h2>
+      <div className="bg-white/35 backdrop-blur-sm border border-[#b8a9e8]/20 rounded-[20px] p-6 space-y-3">
+        <h2 className="text-lg font-semibold text-[#3d3155]">CRM 標籤</h2>
         <div className="flex flex-wrap gap-2">
           {detail.tags.length === 0 && (
-            <p className="text-slate-500 text-sm">尚無標籤</p>
+            <p className="text-[#3d3155]0 text-sm">尚無標籤</p>
           )}
           {detail.tags.map((tag, i) => (
             <span
               key={`${tag.key}-${tag.value}-${i}`}
-              className="px-3 py-1 bg-slate-700/60 text-slate-200 rounded-lg text-sm"
+              className="px-3 py-1 bg-[#b8a9e8]/10/60 text-[#3d3155] rounded-lg text-sm"
             >
               {tag.key}: <span className="text-cyan-300">{tag.value}</span>
             </span>
@@ -217,8 +217,8 @@ export function ResponseDetailClient({ detail }: { detail: ResponseDetail }) {
 
       {/* 點擊事件 */}
       {detail.clickEvents.length > 0 && (
-        <div className="bg-slate-800/50 border border-slate-700/50 rounded-2xl p-6 space-y-3">
-          <h2 className="text-lg font-semibold text-white">點擊事件</h2>
+        <div className="bg-white/35 backdrop-blur-sm border border-[#b8a9e8]/20 rounded-[20px] p-6 space-y-3">
+          <h2 className="text-lg font-semibold text-[#3d3155]">點擊事件</h2>
           <div className="flex flex-wrap gap-2">
             {detail.clickEvents.map((e, i) => (
               <span
@@ -228,7 +228,7 @@ export function ResponseDetailClient({ detail }: { detail: ResponseDetail }) {
                     ? 'bg-green-500/20 text-green-400'
                     : e.eventType === 'instagram'
                       ? 'bg-purple-500/20 text-purple-400'
-                      : 'bg-slate-700/60 text-slate-300'
+                      : 'bg-[#b8a9e8]/10/60 text-slate-300'
                 }`}
               >
                 {e.eventType === 'line_friend' ? 'LINE 加好友' : e.eventType === 'instagram' ? 'IG 追蹤' : e.eventType}
@@ -239,17 +239,17 @@ export function ResponseDetailClient({ detail }: { detail: ResponseDetail }) {
       )}
 
       {/* 問答內容 */}
-      <div className="bg-slate-800/50 border border-slate-700/50 rounded-2xl p-6 space-y-4">
-        <h2 className="text-lg font-semibold text-white">問答內容</h2>
+      <div className="bg-white/35 backdrop-blur-sm border border-[#b8a9e8]/20 rounded-[20px] p-6 space-y-4">
+        <h2 className="text-lg font-semibold text-[#3d3155]">問答內容</h2>
         {detail.answers.map((answer, idx) => (
           <div
             key={`${answer.questionKey}-${idx}`}
-            className="border-b border-slate-700/30 pb-3 last:border-0"
+            className="border-b border-[#b8a9e8]/10 pb-3 last:border-0"
           >
-            <p className="text-sm text-slate-400 mb-1">
+            <p className="text-sm text-[#8a7ca8] mb-1">
               {answer.questionKey.toUpperCase()}. {answer.questionContent}
             </p>
-            <p className="text-white">
+            <p className="text-[#3d3155]">
               {Array.isArray(answer.value)
                 ? answer.value.join('、')
                 : answer.value || '-'}

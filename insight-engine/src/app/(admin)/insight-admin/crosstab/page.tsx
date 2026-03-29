@@ -54,18 +54,18 @@ export default function CrossTabPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-bold text-white">🔀 交叉分析</h1>
-        <p className="text-slate-400 mt-1">選擇兩題，查看答案組合分佈</p>
+        <h1 className="text-xl sm:text-2xl font-bold text-[#3d3155]">🔀 交叉分析</h1>
+        <p className="text-[#8a7ca8] mt-1">選擇兩題，查看答案組合分佈</p>
       </div>
 
       {/* 題目選擇器 */}
       <div className="flex flex-wrap gap-4 items-end">
         <div>
-          <label className="block text-sm text-slate-400 mb-1">題目 A（列）</label>
+          <label className="block text-sm text-[#8a7ca8] mb-1">題目 A（列）</label>
           <select
             value={keyA}
             onChange={(e) => setKeyA(e.target.value)}
-            className="bg-slate-800 border border-slate-700 text-white rounded-lg px-3 py-2 text-sm"
+            className="bg-white/60 border border-[#b8a9e8]/30 text-[#3d3155] rounded-lg px-3 py-2 text-sm"
           >
             {questions.map((q) => (
               <option key={q.key} value={q.key}>
@@ -75,11 +75,11 @@ export default function CrossTabPage() {
           </select>
         </div>
         <div>
-          <label className="block text-sm text-slate-400 mb-1">題目 B（欄）</label>
+          <label className="block text-sm text-[#8a7ca8] mb-1">題目 B（欄）</label>
           <select
             value={keyB}
             onChange={(e) => setKeyB(e.target.value)}
-            className="bg-slate-800 border border-slate-700 text-white rounded-lg px-3 py-2 text-sm"
+            className="bg-white/60 border border-[#b8a9e8]/30 text-[#3d3155] rounded-lg px-3 py-2 text-sm"
           >
             {questions.map((q) => (
               <option key={q.key} value={q.key}>
@@ -94,20 +94,20 @@ export default function CrossTabPage() {
         <p className="text-amber-400 text-sm">⚠️ 請選擇兩道不同的題目</p>
       )}
 
-      {loading && <p className="text-slate-400">分析中…</p>}
+      {loading && <p className="text-[#8a7ca8]">分析中…</p>}
 
       {/* 交叉表格 */}
       {result && !loading && (
-        <div className="bg-slate-900 rounded-xl border border-t-card-border p-6 overflow-x-auto">
-          <h2 className="text-lg font-semibold text-white mb-4">
+        <div className="bg-white/40 backdrop-blur-sm rounded-[20px] border border-[#b8a9e8]/25 p-6 overflow-x-auto">
+          <h2 className="text-lg font-semibold text-[#3d3155] mb-4">
             {questionLabel(result.questionA)} × {questionLabel(result.questionB)}
           </h2>
           <table className="text-sm min-w-full">
             <thead>
-              <tr className="border-b border-slate-700">
-                <th className="text-left py-2 px-3 text-slate-400">A ＼ B</th>
+              <tr className="border-b border-[#b8a9e8]/20">
+                <th className="text-left py-2 px-3 text-[#8a7ca8]">A ＼ B</th>
                 {result.colLabels.map((col) => (
-                  <th key={col} className="text-center py-2 px-3 text-slate-400 max-w-30 truncate">
+                  <th key={col} className="text-center py-2 px-3 text-[#8a7ca8] max-w-30 truncate">
                     {col}
                   </th>
                 ))}
@@ -115,8 +115,8 @@ export default function CrossTabPage() {
             </thead>
             <tbody className="text-slate-300">
               {result.matrix.map((row) => (
-                <tr key={row.rowLabel} className="border-b border-t-card-border hover:bg-slate-800/50">
-                  <td className="py-2 px-3 font-medium text-white max-w-40 truncate">
+                <tr key={row.rowLabel} className="border-b border-[#b8a9e8]/25 hover:bg-white/35 backdrop-blur-sm">
+                  <td className="py-2 px-3 font-medium text-[#3d3155] max-w-40 truncate">
                     {row.rowLabel}
                   </td>
                   {row.columns.map((cell) => {

@@ -126,7 +126,7 @@ export default function BlogManagePage() {
 
   if (editingId !== null) {
     return (
-      <div className="h-[calc(100vh-64px)] flex flex-col bg-slate-950">
+      <div className="h-[calc(100vh-64px)] flex flex-col bg-transparent">
         <BlogEditor
           articleId={editingId === 'new' ? undefined : editingId}
           onSaved={handleSaved}
@@ -137,7 +137,7 @@ export default function BlogManagePage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white p-6 max-w-4xl mx-auto">
+    <div className="min-h-screen bg-transparent text-[#3d3155] p-6 max-w-4xl mx-auto">
       {/* Header */}
       <div className="flex items-center gap-3 mb-6">
         <div>
@@ -169,7 +169,7 @@ export default function BlogManagePage() {
         {(['articles', 'settings'] as const).map(t => (
           <button key={t} onClick={() => setTab(t)}
             className={`px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors ${
-              tab === t ? 'text-amber-400 border-amber-400' : 'text-white/40 border-transparent hover:text-white/60'
+              tab === t ? 'text-amber-400 border-amber-400' : 'text-[#b5a8d0] border-transparent hover:text-[#8a7ca8]'
             }`}
           >
             {t === 'articles' ? `文章列表 (${articles.length})` : '部落格設定'}
@@ -178,13 +178,13 @@ export default function BlogManagePage() {
       </div>
 
       {loading ? (
-        <div className="flex justify-center py-16"><Loader2 className="w-6 h-6 text-white/30 animate-spin" /></div>
+        <div className="flex justify-center py-16"><Loader2 className="w-6 h-6 text-[#8a7ca8] animate-spin" /></div>
       ) : tab === 'articles' ? (
         articles.length === 0 ? (
-          <div className="text-center py-20 text-white/25">
+          <div className="text-center py-20 text-[#b5a8d0]">
             <div className="text-4xl mb-4">📝</div>
             <p className="text-sm font-medium mb-1">還沒有文章</p>
-            <p className="text-xs text-white/15 mb-6">點擊「新增文章」開始寫你的第一篇部落格</p>
+            <p className="text-xs text-[#b5a8d0] mb-6">點擊「新增文章」開始寫你的第一篇部落格</p>
             <button
               onClick={() => setEditingId('new')}
               className="px-6 py-2.5 bg-amber-500/20 text-amber-300 rounded-xl text-sm font-medium hover:bg-amber-500/30 transition-colors"
@@ -195,21 +195,21 @@ export default function BlogManagePage() {
         ) : (
           <div className="space-y-3">
             {articles.map(article => (
-              <div key={article.id} className="flex gap-4 p-4 bg-white/[0.03] hover:bg-white/[0.05] border border-white/8 rounded-2xl transition-all group">
+              <div key={article.id} className="flex gap-4 p-4 bg-white/[0.03] hover:bg-white/[0.05] border border-white/8 rounded-[20px] transition-all group">
                 {article.cover_image && (
                   <img src={article.cover_image} alt="" className="w-20 h-14 object-cover rounded-xl shrink-0" />
                 )}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-start gap-2 flex-wrap">
-                    <h3 className="text-sm font-semibold text-white/90 flex-1 truncate">{article.title}</h3>
+                    <h3 className="text-sm font-semibold text-[#3d3155]/90 flex-1 truncate">{article.title}</h3>
                     <span className={`shrink-0 text-[10px] px-2 py-0.5 rounded-full font-medium ${
-                      article.is_public ? 'bg-emerald-500/15 text-emerald-400' : 'bg-white/8 text-white/35'
+                      article.is_public ? 'bg-emerald-500/15 text-emerald-400' : 'bg-white/8 text-[#8a7ca8]'
                     }`}>
                       {article.is_public ? '公開' : '私人'}
                     </span>
                   </div>
-                  {article.summary && <p className="text-xs text-white/40 truncate mt-0.5">{article.summary}</p>}
-                  <div className="flex items-center gap-3 mt-2 text-[11px] text-white/25">
+                  {article.summary && <p className="text-xs text-[#b5a8d0] truncate mt-0.5">{article.summary}</p>}
+                  <div className="flex items-center gap-3 mt-2 text-[11px] text-[#b5a8d0]">
                     <span>/{article.slug}</span>
                     <span>👁 {article.view_count}</span>
                     <span>{new Date(article.published_at).toLocaleDateString('zh-TW')}</span>
@@ -219,7 +219,7 @@ export default function BlogManagePage() {
                   <button
                     onClick={() => togglePublic(article)}
                     title={article.is_public ? '設為私人' : '設為公開'}
-                    className="p-1.5 rounded-lg hover:bg-white/8 text-white/35 hover:text-white/70 transition-colors"
+                    className="p-1.5 rounded-lg hover:bg-white/8 text-[#8a7ca8] hover:text-[#3d3155] transition-colors"
                   >
                     {article.is_public ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
                   </button>
@@ -227,19 +227,19 @@ export default function BlogManagePage() {
                     href={`/blogs/${blogPublicSlug}/${article.slug}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="p-1.5 rounded-lg hover:bg-white/8 text-white/35 hover:text-white/70 transition-colors"
+                    className="p-1.5 rounded-lg hover:bg-white/8 text-[#8a7ca8] hover:text-[#3d3155] transition-colors"
                   >
                     <ExternalLink className="w-4 h-4" />
                   </a>
                   <button
                     onClick={() => setEditingId(article.id)}
-                    className="p-1.5 rounded-lg hover:bg-white/8 text-white/35 hover:text-white/70 transition-colors"
+                    className="p-1.5 rounded-lg hover:bg-white/8 text-[#8a7ca8] hover:text-[#3d3155] transition-colors"
                   >
                     <Pencil className="w-4 h-4" />
                   </button>
                   <button
                     onClick={() => deleteArticle(article.id)}
-                    className="p-1.5 rounded-lg hover:bg-rose-500/10 text-white/25 hover:text-rose-400 transition-colors"
+                    className="p-1.5 rounded-lg hover:bg-rose-500/10 text-[#b5a8d0] hover:text-rose-400 transition-colors"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
@@ -256,51 +256,51 @@ export default function BlogManagePage() {
           )}
 
           <div>
-            <label className="text-[11px] text-white/40 font-medium uppercase tracking-widest block mb-1.5">部落格 Slug（個人 URL）</label>
+            <label className="text-[11px] text-[#b5a8d0] font-medium uppercase tracking-widest block mb-1.5">部落格 Slug（個人 URL）</label>
             <div className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 focus-within:border-amber-400/30 transition-colors">
-              <span className="text-xs text-white/25 shrink-0">/blogs/</span>
+              <span className="text-xs text-[#b5a8d0] shrink-0">/blogs/</span>
               <input
                 value={settingsForm.blogSlug}
                 onChange={e => setSettingsForm(f => ({ ...f, blogSlug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '') }))}
                 placeholder={myUserId ?? 'your-slug'}
-                className="flex-1 bg-transparent text-sm text-white placeholder-white/20 outline-none"
+                className="flex-1 bg-transparent text-sm text-[#3d3155] placeholder-[#b5a8d0] outline-none"
               />
-              {slugCheckStatus === 'checking' && <Loader2 className="w-3.5 h-3.5 animate-spin text-white/40 shrink-0" />}
+              {slugCheckStatus === 'checking' && <Loader2 className="w-3.5 h-3.5 animate-spin text-[#b5a8d0] shrink-0" />}
               {slugCheckStatus === 'ok' && <Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" />}
               {slugCheckStatus === 'taken' && <X className="w-3.5 h-3.5 text-rose-400 shrink-0" />}
             </div>
-            <p className="text-[10px] text-white/25 mt-1">3-30 字元，只能含小寫英文、數字和連字號。未設定時使用你的用戶 ID。</p>
+            <p className="text-[10px] text-[#b5a8d0] mt-1">3-30 字元，只能含小寫英文、數字和連字號。未設定時使用你的用戶 ID。</p>
           </div>
 
           <div>
-            <label className="text-[11px] text-white/40 font-medium uppercase tracking-widest block mb-1.5">部落格標題</label>
+            <label className="text-[11px] text-[#b5a8d0] font-medium uppercase tracking-widest block mb-1.5">部落格標題</label>
             <input
               value={settingsForm.blogTitle}
               onChange={e => setSettingsForm(f => ({ ...f, blogTitle: e.target.value }))}
               placeholder="我的部落格"
-              className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white placeholder-white/25 outline-none focus:border-amber-400/30 transition-colors"
+              className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-[#3d3155] placeholder-[#b5a8d0] outline-none focus:border-amber-400/30 transition-colors"
             />
           </div>
 
           <div>
-            <label className="text-[11px] text-white/40 font-medium uppercase tracking-widest block mb-1.5">部落格簡介</label>
+            <label className="text-[11px] text-[#b5a8d0] font-medium uppercase tracking-widest block mb-1.5">部落格簡介</label>
             <textarea
               value={settingsForm.blogDesc}
               onChange={e => setSettingsForm(f => ({ ...f, blogDesc: e.target.value }))}
               placeholder="分享我的想法與故事..."
               rows={3}
-              className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white placeholder-white/25 outline-none focus:border-amber-400/30 resize-none transition-colors"
+              className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-[#3d3155] placeholder-[#b5a8d0] outline-none focus:border-amber-400/30 resize-none transition-colors"
             />
           </div>
 
-          <div className="flex items-center justify-between p-4 bg-white/3 border border-white/8 rounded-2xl">
+          <div className="flex items-center justify-between p-4 bg-white/3 border border-white/8 rounded-[20px]">
             <div>
-              <p className="text-sm font-medium text-white/80">啟用部落格</p>
-              <p className="text-xs text-white/35 mt-0.5">關閉後他人無法瀏覽你的部落格</p>
+              <p className="text-sm font-medium text-[#3d3155]">啟用部落格</p>
+              <p className="text-xs text-[#8a7ca8] mt-0.5">關閉後他人無法瀏覽你的部落格</p>
             </div>
             <button
               onClick={() => setSettingsForm(f => ({ ...f, isEnabled: !f.isEnabled }))}
-              className={`relative w-11 h-6 rounded-full transition-colors ${settingsForm.isEnabled ? 'bg-amber-500' : 'bg-white/15'}`}
+              className={`relative w-11 h-6 rounded-full transition-colors ${settingsForm.isEnabled ? 'bg-amber-500' : 'bg-[#b8a9e8]/15'}`}
             >
               <span className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-transform ${settingsForm.isEnabled ? 'translate-x-6' : 'translate-x-1'}`} />
             </button>

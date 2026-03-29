@@ -143,7 +143,9 @@ function SidebarGroup({
               href={href}
               title={item.label}
               className={`flex items-center justify-center w-10 h-10 mx-auto rounded-xl transition-colors ${
-                isActive ? `${accentBg} ${accent}` : 'text-slate-400 hover:text-white hover:bg-white/5'
+                isActive
+                  ? 'bg-[#b8a9e8]/20 text-[#6b5fa8]'
+                  : 'text-[#b5a8d0] hover:text-[#6b5fa8] hover:bg-[#b8a9e8]/12'
               }`}
             >
               <span className="text-lg leading-none">{item.icon}</span>
@@ -158,7 +160,7 @@ function SidebarGroup({
     <div>
       <button
         onClick={() => setOpen(o => !o)}
-        className="w-full flex items-center justify-between px-3 py-1.5 text-xs font-semibold text-slate-500 uppercase tracking-wider hover:text-slate-400 transition-colors"
+        className="w-full flex items-center justify-between px-3 py-1.5 text-xs font-semibold text-[#b5a8d0] uppercase tracking-wider hover:text-[#8a7ca8] transition-colors"
       >
         {label}
         <svg className={`w-3 h-3 transition-transform ${open ? '' : '-rotate-90'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -180,8 +182,8 @@ function SidebarGroup({
                 href={href}
                 className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors ${
                   isActive
-                    ? `${accentBg} ${accent} font-medium`
-                    : 'text-slate-400 hover:text-white hover:bg-white/5'
+                    ? 'bg-[#b8a9e8]/20 text-[#6b5fa8] font-medium'
+                    : 'text-[#8a7ca8] hover:text-[#3d3155] hover:bg-[#b8a9e8]/10'
                 }`}
               >
                 <span className="text-base leading-none">{item.icon}</span>
@@ -257,18 +259,18 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
   const SidebarContent = (
     <div className="flex flex-col h-full">
       {/* Logo + title + collapse toggle */}
-      <div className="px-4 py-4 border-b border-white/8 flex items-center justify-between">
+      <div className="px-4 py-4 border-b border-[#b8a9e8]/20 flex items-center justify-between">
         <Link href={adminPrefix} className="flex items-center gap-2 min-w-0">
-          <span className="text-lg shrink-0">✦</span>
+          <span className="text-lg shrink-0 text-[#b8a9e8]">✦</span>
           {!sidebarCollapsed && (
-            <span className="text-sm font-bold text-white/90 truncate">
+            <span className="text-sm font-bold text-[#3d3155] truncate" style={{ fontFamily: 'var(--font-zen-maru), var(--font-noto-tc), sans-serif' }}>
               {user?.adminTitle || 'Insight Engine'}
             </span>
           )}
         </Link>
         <button
           onClick={() => setSidebarCollapsed(c => !c)}
-          className="hidden lg:flex items-center justify-center w-7 h-7 rounded-lg bg-white/8 hover:bg-white/16 border border-white/15 hover:border-white/30 text-white/60 hover:text-white transition-all shrink-0"
+          className="hidden lg:flex items-center justify-center w-7 h-7 rounded-lg bg-[#b8a9e8]/12 hover:bg-[#b8a9e8]/22 border border-[#b8a9e8]/25 hover:border-[#b8a9e8]/40 text-[#8a7ca8] hover:text-[#6b5fa8] transition-all shrink-0"
           title={sidebarCollapsed ? '展開側邊欄' : '收合側邊欄'}
         >
           {sidebarCollapsed ? (
@@ -294,27 +296,27 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
 
       {/* 問卷選擇器 */}
       {!sidebarCollapsed && surveys.length > 0 && (
-        <div className="px-3 py-3 border-b border-white/8">
-          <p className="text-xs text-slate-500 mb-1.5">當前問卷</p>
+        <div className="px-3 py-3 border-b border-[#b8a9e8]/20">
+          <p className="text-xs text-[#b5a8d0] mb-1.5">當前問卷</p>
           <select
             value={selectedSurveyId ?? ''}
             onChange={e => setSelectedSurveyId(e.target.value || null)}
-            className={`glass-input w-full ${tc.accentBorder} ${tc.accent} rounded-lg px-2.5 py-1.5 text-xs truncate cursor-pointer`}
+            className="w-full rounded-lg px-2.5 py-1.5 text-xs truncate cursor-pointer bg-white/60 border border-[#b8a9e8]/30 text-[#3d3155] focus:outline-none focus:border-[#b8a9e8]/60 focus:ring-1 focus:ring-[#b8a9e8]/20 transition-colors"
           >
             {surveys.map(s => (
-              <option key={s.id} value={s.id} className="bg-slate-900">
+              <option key={s.id} value={s.id} className="bg-white text-[#3d3155]">
                 {s.title}{s.is_primary ? ' ⭐' : ''}
               </option>
             ))}
           </select>
           {selectedSurvey && (
-            <p className="text-[10px] text-slate-600 mt-1 font-mono truncate">{selectedSurvey.slug}</p>
+            <p className="text-[10px] text-[#b5a8d0] mt-1 font-mono truncate">{selectedSurvey.slug}</p>
           )}
         </div>
       )}
 
       {/* Nav groups */}
-      <div className="flex-1 overflow-y-auto px-2 py-3 space-y-4 scrollbar-thin">
+      <div className="flex-1 overflow-y-auto px-2 py-3 space-y-4 scrollbar-none">
         {NAV_GROUPS.map((group, i) => (
           <SidebarGroup
             key={group.label}
@@ -332,19 +334,19 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
 
       {/* 前台快速連結 */}
       {!sidebarCollapsed && (
-        <div className="border-t border-white/8 px-3 py-2 flex gap-1.5">
+        <div className="border-t border-[#b8a9e8]/20 px-3 py-2 flex gap-1.5">
           <a href="/articles" target="_blank" rel="noopener noreferrer"
-            className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs text-white/40 hover:text-white/70 hover:bg-white/5 transition-colors"
+            className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs text-[#b5a8d0] hover:text-[#6b5fa8] hover:bg-[#b8a9e8]/10 transition-colors"
           >
             <span>🌐</span> 社群頁
           </a>
           <a href="/" target="_blank" rel="noopener noreferrer"
-            className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs text-white/40 hover:text-white/70 hover:bg-white/5 transition-colors"
+            className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs text-[#b5a8d0] hover:text-[#6b5fa8] hover:bg-[#b8a9e8]/10 transition-colors"
           >
             <span>🏠</span> 首頁
           </a>
           <a href="/write" target="_blank" rel="noopener noreferrer"
-            className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs text-white/40 hover:text-white/70 hover:bg-white/5 transition-colors"
+            className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs text-[#b5a8d0] hover:text-[#6b5fa8] hover:bg-[#b8a9e8]/10 transition-colors"
           >
             <span>✍️</span> 發文
           </a>
@@ -353,25 +355,25 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
 
       {/* User info + logout */}
       {!sidebarCollapsed && (
-        <div className="border-t border-white/8 px-3 py-3 space-y-2">
+        <div className="border-t border-[#b8a9e8]/20 px-3 py-3 space-y-2">
           {user?.tenants && user.tenants.length > 1 && (
             <select
               value={user.tenantId}
               onChange={e => handleSwitchTenant(e.target.value)}
-              className="w-full bg-white/5 border border-white/10 text-slate-300 rounded-lg px-2.5 py-1.5 text-xs cursor-pointer focus:outline-none"
+              className="w-full bg-white/50 border border-[#b8a9e8]/25 text-[#3d3155] rounded-lg px-2.5 py-1.5 text-xs cursor-pointer focus:outline-none"
             >
               {user.tenants.map(t => (
-                <option key={t.slug} value={t.slug} className="bg-slate-900">{t.name}</option>
+                <option key={t.slug} value={t.slug} className="bg-white text-[#3d3155]">{t.name}</option>
               ))}
             </select>
           )}
           {user && (
             <div className="flex items-center justify-between">
               <div className="min-w-0">
-                <p className="text-xs text-slate-300 truncate">{user.userName}</p>
-                <p className="text-[10px] text-slate-500">{displayRole} · {user.tenantName ?? user.tenantId}</p>
+                <p className="text-xs text-[#3d3155] truncate font-medium">{user.userName}</p>
+                <p className="text-[10px] text-[#b5a8d0]">{displayRole} · {user.tenantName ?? user.tenantId}</p>
               </div>
-              <button onClick={handleLogout} className="text-xs text-slate-500 hover:text-red-400 transition-colors shrink-0 ml-2">
+              <button onClick={handleLogout} className="text-xs text-[#b5a8d0] hover:text-red-400 transition-colors shrink-0 ml-2">
                 登出
               </button>
             </div>
@@ -382,13 +384,17 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
   )
 
   return (
-    <div className={`min-h-screen ${tc.bodyBg} transition-colors duration-300`} style={cssVars} data-admin-theme={theme}>
+    <div
+      className="admin-root min-h-screen transition-colors duration-300"
+      style={{ ...cssVars as React.CSSProperties, background: 'linear-gradient(150deg, #f3eeff 0%, #ffeef5 35%, #eef5ff 65%, #fff5ee 100%)', backgroundAttachment: 'fixed' }}
+      data-admin-theme={theme}
+    >
       <AdminBackground3D />
 
       {/* Mobile overlay */}
       {sidebarOpen && (
         <div
-          className="fixed inset-0 bg-black/60 z-40 lg:hidden"
+          className="fixed inset-0 bg-[#b8a9e8]/20 backdrop-blur-sm z-40 lg:hidden"
           onClick={() => setSidebarOpen(false)}
         />
       )}
@@ -408,16 +414,16 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
       {/* Main content */}
       <div className={`min-h-screen flex flex-col transition-all duration-300 ${sidebarCollapsed ? 'lg:pl-14' : 'lg:pl-60'}`}>
         {/* Mobile top bar */}
-        <header className="lg:hidden sticky top-0 z-30 bg-slate-950/60 backdrop-blur-xl border-b border-white/8 px-4 py-3 flex items-center gap-3">
+        <header className="lg:hidden sticky top-0 z-30 backdrop-blur-xl border-b border-[#b8a9e8]/20 px-4 py-3 flex items-center gap-3" style={{ background: 'rgba(243,238,255,0.85)' }}>
           <button
             onClick={() => setSidebarOpen(true)}
-            className="flex items-center justify-center w-8 h-8 rounded-lg bg-white/8 hover:bg-white/16 border border-white/15 hover:border-white/30 text-white/70 hover:text-white transition-all"
+            className="flex items-center justify-center w-8 h-8 rounded-lg bg-[#b8a9e8]/15 hover:bg-[#b8a9e8]/25 border border-[#b8a9e8]/30 hover:border-[#b8a9e8]/50 text-[#8a7ca8] hover:text-[#6b5fa8] transition-all"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 6h16M4 12h16M4 18h16" />
             </svg>
           </button>
-          <span className="text-sm font-semibold text-white/80 truncate">
+          <span className="text-sm font-semibold text-[#3d3155] truncate" style={{ fontFamily: 'var(--font-zen-maru), var(--font-noto-tc), sans-serif' }}>
             {user?.adminTitle || 'Insight Engine'}
           </span>
         </header>

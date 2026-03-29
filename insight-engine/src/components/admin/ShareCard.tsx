@@ -76,13 +76,13 @@ function DataCard({
 
       {/* Title block */}
       <div className="bg-white/5 border border-white/10 rounded-xl p-4 mb-4 space-y-1">
-        <p className="text-base font-bold text-white leading-snug">{surveyTitle}</p>
+        <p className="text-base font-bold text-[#3d3155] leading-snug">{surveyTitle}</p>
         <p className={`text-sm font-medium ${accent}`}>AI 洞察報告</p>
       </div>
 
       {/* Summary */}
       {report.summary && (
-        <p className="text-sm text-white/80 leading-relaxed mb-4 line-clamp-3">
+        <p className="text-sm text-[#3d3155] leading-relaxed mb-4 line-clamp-3">
           {report.summary}
         </p>
       )}
@@ -90,7 +90,7 @@ function DataCard({
       {/* Highlights */}
       {highlights.length > 0 && (
         <div className="space-y-2 mb-4">
-          <p className="text-xs text-white/40 font-medium uppercase tracking-wide">關鍵發現</p>
+          <p className="text-xs text-[#b5a8d0] font-medium uppercase tracking-wide">關鍵發現</p>
           {highlights.map((h, i) => (
             <div key={i} className="flex items-start gap-2 text-sm">
               <span className="shrink-0 mt-0.5">
@@ -105,16 +105,16 @@ function DataCard({
       {/* Top recommendation */}
       {topRec && (
         <div className="bg-white/5 border border-white/10 rounded-xl p-3 mb-4">
-          <p className="text-xs text-white/40 mb-1">建議行動</p>
-          <p className="text-sm text-white/85">🎯 {topRec.action}</p>
+          <p className="text-xs text-[#b5a8d0] mb-1">建議行動</p>
+          <p className="text-sm text-[#3d3155]/85">🎯 {topRec.action}</p>
         </div>
       )}
 
       {/* Footer */}
       <div className="border-t border-white/10 pt-3 space-y-1">
-        <p className="text-xs text-white/30 font-medium">SnowRealm Insight Engine</p>
-        <p className="text-xs text-white/20 font-mono truncate">{shareUrl}</p>
-        <p className="text-xs text-white/20">
+        <p className="text-xs text-[#8a7ca8] font-medium">SnowRealm Insight Engine</p>
+        <p className="text-xs text-[#b5a8d0] font-mono truncate">{shareUrl}</p>
+        <p className="text-xs text-[#b5a8d0]">
           {new Date(createdAt).toLocaleDateString('zh-TW', { year: 'numeric', month: '2-digit', day: '2-digit' })}
         </p>
       </div>
@@ -151,14 +151,14 @@ function StoryCard({
 
       {/* Story Title block */}
       <div className="bg-white/5 border border-white/10 rounded-xl p-4 mb-4 space-y-1">
-        <p className="text-base font-bold text-white leading-snug">{report.storyTitle}</p>
-        <p className="text-xs text-white/40">{surveyTitle}</p>
+        <p className="text-base font-bold text-[#3d3155] leading-snug">{report.storyTitle}</p>
+        <p className="text-xs text-[#b5a8d0]">{surveyTitle}</p>
       </div>
 
       {/* Pull quote */}
       {topQuote && (
         <blockquote className="border-l-4 border-rose-400/50 bg-rose-500/5 rounded-r-xl pl-3 pr-3 py-2.5 mb-4">
-          <p className="text-sm text-white/75 italic leading-relaxed">「{topQuote}」</p>
+          <p className="text-sm text-[#3d3155]/75 italic leading-relaxed">「{topQuote}」</p>
         </blockquote>
       )}
 
@@ -168,7 +168,7 @@ function StoryCard({
           {topData.map((d, i) => (
             <div key={i} className="flex items-start gap-2 text-sm">
               <span className={`shrink-0 mt-0.5 text-xs ${accent}`}>▸</span>
-              <span className="text-white/70">{d}</span>
+              <span className="text-[#3d3155]">{d}</span>
             </div>
           ))}
         </div>
@@ -183,9 +183,9 @@ function StoryCard({
 
       {/* Footer */}
       <div className="border-t border-white/10 pt-3 space-y-1">
-        <p className="text-xs text-white/30 font-medium">SnowRealm Insight Engine</p>
-        <p className="text-xs text-white/20 font-mono truncate">{shareUrl}</p>
-        <p className="text-xs text-white/20">
+        <p className="text-xs text-[#8a7ca8] font-medium">SnowRealm Insight Engine</p>
+        <p className="text-xs text-[#b5a8d0] font-mono truncate">{shareUrl}</p>
+        <p className="text-xs text-[#b5a8d0]">
           {new Date(createdAt).toLocaleDateString('zh-TW', { year: 'numeric', month: '2-digit', day: '2-digit' })}
         </p>
       </div>
@@ -239,7 +239,7 @@ export function ShareCard({
       {/* Card */}
       <div
         ref={cardRef}
-        className={`w-[400px] max-w-full bg-linear-to-br ${gradient} border border-white/10 rounded-2xl p-6`}
+        className={`w-[400px] max-w-full bg-linear-to-br ${gradient} border border-white/10 rounded-[20px] p-6`}
         style={{ fontFamily: 'system-ui, sans-serif' }}
       >
         {reportType === 'story' ? (

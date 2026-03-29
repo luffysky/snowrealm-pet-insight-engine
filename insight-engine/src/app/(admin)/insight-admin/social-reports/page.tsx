@@ -27,7 +27,7 @@ const REASON_COLORS: Record<string, string> = {
   fraud: 'text-yellow-400 bg-yellow-500/10',
   privacy: 'text-purple-400 bg-purple-500/10',
   copyright: 'text-blue-400 bg-blue-500/10',
-  other: 'text-white/40 bg-white/5',
+  other: 'text-[#b5a8d0] bg-white/5',
 }
 
 export default function SocialReportsPage() {
@@ -66,13 +66,13 @@ export default function SocialReportsPage() {
   const pendingCount = reports.length
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-6 space-y-4 sm:space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold text-white flex items-center gap-2">
+          <h1 className="text-xl font-bold text-[#3d3155] flex items-center gap-2">
             <Flag className="w-5 h-5 text-red-400" /> 檢舉管理
           </h1>
-          <p className="text-sm text-white/40 mt-0.5">審核用戶舉報的貼文、留言或帳號</p>
+          <p className="text-sm text-[#b5a8d0] mt-0.5">審核用戶舉報的貼文、留言或帳號</p>
         </div>
         {statusTab === 'pending' && pendingCount > 0 && (
           <span className="bg-red-500/20 text-red-400 text-xs font-medium px-2.5 py-1 rounded-full border border-red-500/30">
@@ -88,7 +88,7 @@ export default function SocialReportsPage() {
             className={`px-4 py-2 rounded-xl text-sm font-medium transition-colors ${
               statusTab === tab
                 ? 'bg-amber-500/20 border border-amber-400/30 text-amber-300'
-                : 'bg-white/5 border border-white/10 text-white/50 hover:text-white/80'
+                : 'bg-white/5 border border-white/10 text-[#b5a8d0] hover:text-[#3d3155]'
             }`}
           >
             {tab === 'pending' ? '⏳ 待處理' : tab === 'resolved' ? '✅ 已處理' : '🗑️ 已忽略'}
@@ -101,7 +101,7 @@ export default function SocialReportsPage() {
         {loading ? (
           [1,2,3].map(i => <div key={i} className="h-24 bg-white/5 rounded-xl animate-pulse" />)
         ) : reports.length === 0 ? (
-          <div className="text-center py-16 text-white/30">
+          <div className="text-center py-16 text-[#8a7ca8]">
             <p className="text-3xl mb-3">✅</p>
             <p>{statusTab === 'pending' ? '目前沒有待處理的舉報' : '沒有紀錄'}</p>
           </div>
@@ -132,7 +132,7 @@ function ReportCard({ report, showActions, processing, onResolve, onDismiss }: R
   const timeStr = new Date(report.created_at).toLocaleDateString('zh-TW', {
     month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
   })
-  const reasonColor = REASON_COLORS[report.reason] ?? 'text-white/40 bg-white/5'
+  const reasonColor = REASON_COLORS[report.reason] ?? 'text-[#b5a8d0] bg-white/5'
   const targetLink = report.target_type === 'post' ? `/articles/${report.target_id}` : null
 
   return (
@@ -143,14 +143,14 @@ function ReportCard({ report, showActions, processing, onResolve, onDismiss }: R
           <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${reasonColor}`}>
             {report.reasonLabel}
           </span>
-          <span className="text-xs text-white/30 bg-white/5 px-2 py-0.5 rounded-full capitalize">
+          <span className="text-xs text-[#8a7ca8] bg-white/5 px-2 py-0.5 rounded-full capitalize">
             {report.target_type === 'post' ? '貼文' : report.target_type === 'comment' ? '留言' : report.target_type === 'user' ? '用戶' : '訊息'}
           </span>
-          <span className="text-xs text-white/25">{timeStr}</span>
+          <span className="text-xs text-[#b5a8d0]">{timeStr}</span>
         </div>
         {targetLink && (
           <a href={targetLink} target="_blank" rel="noopener noreferrer"
-            className="p-1.5 text-white/30 hover:text-white/70 hover:bg-white/5 rounded-lg transition-colors shrink-0"
+            className="p-1.5 text-[#8a7ca8] hover:text-[#3d3155] hover:bg-[#b8a9e8]/10 rounded-lg transition-colors shrink-0"
           >
             <ExternalLink className="w-3.5 h-3.5" />
           </a>
@@ -159,17 +159,17 @@ function ReportCard({ report, showActions, processing, onResolve, onDismiss }: R
 
       {/* Content */}
       <div className="space-y-1">
-        <div className="text-xs text-white/40">
-          <span className="text-white/60">{report.reporter_name}</span> 舉報了{' '}
-          {report.target_author_name && <span className="text-white/60">{report.target_author_name}</span>} 的內容
+        <div className="text-xs text-[#b5a8d0]">
+          <span className="text-[#8a7ca8]">{report.reporter_name}</span> 舉報了{' '}
+          {report.target_author_name && <span className="text-[#8a7ca8]">{report.target_author_name}</span>} 的內容
         </div>
         {report.target_content && (
-          <div className="bg-white/5 rounded-lg px-3 py-2 text-xs text-white/50 line-clamp-2 border-l-2 border-white/10">
+          <div className="bg-white/5 rounded-lg px-3 py-2 text-xs text-[#b5a8d0] line-clamp-2 border-l-2 border-white/10">
             {report.target_content}
           </div>
         )}
         {report.description && (
-          <p className="text-xs text-white/40 italic">「{report.description}」</p>
+          <p className="text-xs text-[#b5a8d0] italic">「{report.description}」</p>
         )}
       </div>
 
@@ -186,7 +186,7 @@ function ReportCard({ report, showActions, processing, onResolve, onDismiss }: R
           <button
             onClick={onDismiss}
             disabled={processing}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 border border-white/10 text-white/50 hover:text-white/70 hover:bg-white/10 rounded-lg text-xs font-medium transition-colors disabled:opacity-50"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 border border-white/10 text-[#b5a8d0] hover:text-[#3d3155] hover:bg-[#b8a9e8]/12 rounded-lg text-xs font-medium transition-colors disabled:opacity-50"
           >
             <XCircle className="w-3.5 h-3.5" /> 忽略
           </button>

@@ -90,7 +90,7 @@ export default function TeamPage() {
     window.open(`https://line.me/R/msg/text/?${encodeURIComponent(text)}`, '_blank')
   }
 
-  if (loading) return <p className="text-slate-400 animate-pulse">載入中…</p>
+  if (loading) return <p className="text-[#8a7ca8] animate-pulse">載入中…</p>
 
   const activeInvites = invites.filter(i => !i.used && new Date(i.expires_at) > new Date())
 
@@ -98,10 +98,10 @@ export default function TeamPage() {
   return (
     <div className="space-y-8">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-white">團隊管理</h1>
+        <h1 className="text-xl sm:text-2xl font-bold text-[#3d3155]">團隊管理</h1>
         <button
           onClick={() => { setShowInvite(!showInvite); setInviteResult(null); setInviteEmail(''); setError('') }}
-          className="px-4 py-2 bg-t-btn hover:bg-t-btn-hover text-white rounded-lg text-sm font-medium transition cursor-pointer"
+          className="px-4 py-2 bg-gradient-to-r from-[#b8a9e8] to-[#f5b8b5] hover:opacity-90 text-white rounded-lg text-sm font-medium transition cursor-pointer"
         >
           + 邀請管理員
         </button>
@@ -111,9 +111,9 @@ export default function TeamPage() {
 
       {/* 邀請表單 */}
       {showInvite && (
-        <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-6 space-y-4">
-          <h2 className="text-lg font-semibold text-white">邀請新成員</h2>
-          <p className="text-sm text-slate-400">
+        <div className="bg-white/35 backdrop-blur-sm border border-[#b8a9e8]/20 rounded-xl p-6 space-y-4">
+          <h2 className="text-lg font-semibold text-[#3d3155]">邀請新成員</h2>
+          <p className="text-sm text-[#8a7ca8]">
             輸入對方的 Email，系統會產生邀請連結。對方透過連結註冊後即自動加入你的團隊。
           </p>
 
@@ -124,37 +124,37 @@ export default function TeamPage() {
                 <input
                   readOnly
                   value={inviteResult.url}
-                  className="flex-1 bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-sm text-slate-300 font-mono"
+                  className="flex-1 bg-white/60 border border-[#b8a9e8]/30 rounded-lg px-3 py-2 text-sm text-slate-300 font-mono"
                 />
                 <button
                   onClick={() => copyToClipboard(inviteResult.url)}
-                  className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg text-sm transition cursor-pointer"
+                  className="px-4 py-2 bg-[#b8a9e8]/15 hover:bg-[#b8a9e8]/25 text-[#6b5fa8] border border-[#b8a9e8]/25 rounded-lg text-sm transition cursor-pointer"
                 >
                   {copied ? '已複製 ✓' : '複製'}
                 </button>
               </div>
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-[#3d3155]0">
                 請將此連結傳給對方，對方用此連結註冊後會自動成為你的團隊成員。
               </p>
             </div>
           ) : (
             <div className="flex flex-col sm:flex-row items-stretch sm:items-end gap-3">
               <div className="flex-1">
-                <label className="block text-sm text-slate-400 mb-1">Email</label>
+                <label className="block text-sm text-[#8a7ca8] mb-1">Email</label>
                 <input
                   type="email"
                   value={inviteEmail}
                   onChange={(e) => setInviteEmail(e.target.value)}
                   placeholder="colleague@example.com"
-                  className="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-white text-sm"
+                  className="w-full bg-white/60 border border-[#b8a9e8]/30 rounded-lg px-3 py-2 text-[#3d3155] text-sm"
                 />
               </div>
               <div>
-                <label className="block text-sm text-slate-400 mb-1">角色</label>
+                <label className="block text-sm text-[#8a7ca8] mb-1">角色</label>
                 <select
                   value={inviteRole}
                   onChange={(e) => setInviteRole(e.target.value)}
-                  className="bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-white text-sm"
+                  className="bg-white/60 border border-[#b8a9e8]/30 rounded-lg px-3 py-2 text-[#3d3155] text-sm"
                 >
                   <option value="admin">管理員</option>
                   <option value="editor">編輯者</option>
@@ -164,15 +164,15 @@ export default function TeamPage() {
                 <button
                   onClick={() => handleInvite(false)}
                   disabled={inviting || !inviteEmail.trim()}
-                  className="px-4 py-2 bg-t-btn hover:bg-t-btn-hover disabled:opacity-50 text-white rounded-lg text-sm font-medium transition cursor-pointer whitespace-nowrap"
+                  className="px-4 py-2 bg-gradient-to-r from-[#b8a9e8] to-[#f5b8b5] hover:opacity-90 disabled:opacity-50 text-white rounded-lg text-sm font-medium transition cursor-pointer whitespace-nowrap"
                 >
                   {inviting ? '產生中...' : '產生 Email 專屬邀請連結'}
                 </button>
-                <div className="text-center text-xs text-slate-500">或</div>
+                <div className="text-center text-xs text-[#3d3155]0">或</div>
                 <button
                   onClick={() => handleInvite(true)}
                   disabled={inviting}
-                  className="px-4 py-2 border border-slate-600 hover:bg-slate-700 disabled:opacity-50 text-white rounded-lg text-sm font-medium transition cursor-pointer whitespace-nowrap"
+                  className="px-4 py-2 border border-[#b8a9e8]/30 hover:bg-[#b8a9e8]/15 disabled:opacity-50 text-[#6b5fa8] rounded-lg text-sm font-medium transition cursor-pointer whitespace-nowrap"
                 >
                   {inviting ? '產生中...' : '產生通用邀請連結 (無需 Email)'}
                 </button>
@@ -184,35 +184,35 @@ export default function TeamPage() {
 
       {/* 成員列表 */}
       <div>
-        <h2 className="text-lg font-semibold text-white mb-4">
-          成員 <span className="text-slate-400 font-normal text-sm">({members.length})</span>
+        <h2 className="text-lg font-semibold text-[#3d3155] mb-4">
+          成員 <span className="text-[#8a7ca8] font-normal text-sm">({members.length})</span>
         </h2>
-        <div className="bg-slate-800/30 border border-slate-700/50 rounded-xl overflow-hidden">
+        <div className="bg-white/50/30 border border-[#b8a9e8]/20 rounded-xl overflow-hidden">
           <div className="overflow-x-auto">
           <table className="w-full text-sm min-w-125">
-            <thead className="bg-slate-800/60">
+            <thead className="bg-white/40 backdrop-blur-sm">
               <tr>
-                <th className="text-left px-4 py-3 text-slate-400 font-medium">名稱</th>
-                <th className="text-left px-4 py-3 text-slate-400 font-medium">Email</th>
-                <th className="text-left px-4 py-3 text-slate-400 font-medium">角色</th>
-                <th className="text-left px-4 py-3 text-slate-400 font-medium">加入時間</th>
+                <th className="text-left px-4 py-3 text-[#8a7ca8] font-medium">名稱</th>
+                <th className="text-left px-4 py-3 text-[#8a7ca8] font-medium">Email</th>
+                <th className="text-left px-4 py-3 text-[#8a7ca8] font-medium">角色</th>
+                <th className="text-left px-4 py-3 text-[#8a7ca8] font-medium">加入時間</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-700/50">
+            <tbody className="divide-y divide-[#b8a9e8]/15/50">
               {members.map((m) => (
-                <tr key={m.id} className="hover:bg-slate-800/30">
-                  <td className="px-4 py-3 text-white">{m.display_name || '—'}</td>
+                <tr key={m.id} className="hover:bg-white/50/30">
+                  <td className="px-4 py-3 text-[#3d3155]">{m.display_name || '—'}</td>
                   <td className="px-4 py-3 text-slate-300">{m.email || '—'}</td>
                   <td className="px-4 py-3">
                     <span className={`px-2 py-0.5 rounded-full text-xs ${
                       m.role === 'super_admin'
                         ? 'bg-purple-500/20 text-purple-400'
-                        : 'bg-t-accent-bg text-t-accent'
+                        : 'bg-[#b8a9e8]/20 text-t-accent'
                     }`}>
                       {m.role === 'super_admin' ? '超級管理員' : m.role === 'editor' ? '編輯者' : '管理員'}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-slate-400">
+                  <td className="px-4 py-3 text-[#8a7ca8]">
                     {new Date(m.created_at).toLocaleDateString('zh-TW')}
                   </td>
                 </tr>
@@ -226,20 +226,20 @@ export default function TeamPage() {
       {/* 待接受邀請 */}
       {activeInvites.length > 0 && (
         <div>
-          <h2 className="text-lg font-semibold text-white mb-4">
-            待接受邀請 <span className="text-slate-400 font-normal text-sm">({activeInvites.length})</span>
+          <h2 className="text-lg font-semibold text-[#3d3155] mb-4">
+            待接受邀請 <span className="text-[#8a7ca8] font-normal text-sm">({activeInvites.length})</span>
           </h2>
           <div className="space-y-2">
             {activeInvites.map((inv) => (
-              <div key={inv.id} className="flex items-center justify-between bg-slate-800/30 border border-slate-700/50 rounded-lg px-4 py-3">
+              <div key={inv.id} className="flex items-center justify-between bg-white/50/30 border border-[#b8a9e8]/20 rounded-lg px-4 py-3">
                 <div>
-                  <span className="text-white text-sm">{inv.email}</span>
+                  <span className="text-[#3d3155] text-sm">{inv.email}</span>
                   <span className="mx-2 text-slate-600">·</span>
-                  <span className="text-slate-400 text-xs">
+                  <span className="text-[#8a7ca8] text-xs">
                     {inv.role === 'editor' ? '編輯者' : '管理員'}
                   </span>
                   <span className="mx-2 text-slate-600">·</span>
-                  <span className="text-slate-500 text-xs">
+                  <span className="text-[#3d3155]0 text-xs">
                     到期：{new Date(inv.expires_at).toLocaleDateString('zh-TW')}
                   </span>
                 </div>

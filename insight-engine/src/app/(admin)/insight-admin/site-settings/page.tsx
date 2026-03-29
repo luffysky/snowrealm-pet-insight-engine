@@ -21,7 +21,7 @@ interface SiteSettings {
   bot_admin_passcode: string
 }
 
-const CARD = 'bg-slate-800/50 border border-slate-700/50'
+const CARD = 'bg-white/35 backdrop-blur-sm border border-[#b8a9e8]/20'
 
 export default function SiteSettingsPage() {
   const [settings, setSettings] = useState<SiteSettings>({
@@ -118,42 +118,42 @@ export default function SiteSettingsPage() {
   }
 
   if (loading) {
-    return <div className="p-8 text-slate-400">載入中...</div>
+    return <div className="p-8 text-[#8a7ca8]">載入中...</div>
   }
 
   return (
     <div className="max-w-3xl mx-auto space-y-8">
-      <h1 className="text-2xl font-bold text-white">網站基本設定與資源</h1>
-      <p className="text-sm text-slate-400">設定您的後台名稱、問卷的預設 Meta 標籤以及社群分享預覽資源。</p>
+      <h1 className="text-xl sm:text-2xl font-bold text-[#3d3155]">網站基本設定與資源</h1>
+      <p className="text-sm text-[#8a7ca8]">設定您的後台名稱、問卷的預設 Meta 標籤以及社群分享預覽資源。</p>
 
       {/* 後台自訂 */}
       <section className={`${CARD} rounded-xl p-6 space-y-4`}>
-        <h2 className="text-lg font-semibold text-white">後台介面設定</h2>
+        <h2 className="text-lg font-semibold text-[#3d3155]">後台介面設定</h2>
         <Field label="後台顯示名稱" value={settings.admin_title} onChange={v => update('admin_title', v)} placeholder="例：🐾 毛行天下後台" />
       </section>
 
       {/* 基本 Meta */}
       <section className={`${CARD} rounded-xl p-6 space-y-4`}>
-        <h2 className="text-lg font-semibold text-white">預設 Meta 標籤</h2>
-        <p className="text-xs text-slate-500 mb-2">當個別問卷未設定專屬 SEO 資料時，將會套用以下全站預設值。</p>
+        <h2 className="text-lg font-semibold text-[#3d3155]">預設 Meta 標籤</h2>
+        <p className="text-xs text-[#3d3155]0 mb-2">當個別問卷未設定專屬 SEO 資料時，將會套用以下全站預設值。</p>
         <Field label="預設標題 (title)" value={settings.site_title} onChange={v => update('site_title', v)} placeholder="我的問卷系統" />
         <Field label="預設描述 (description)" value={settings.site_description} onChange={v => update('site_description', v)} placeholder="描述你的服務..." textarea />
       </section>
 
       {/* Open Graph */}
       <section className={`${CARD} rounded-xl p-6 space-y-4`}>
-        <h2 className="text-lg font-semibold text-white">Open Graph (社群分享)</h2>
+        <h2 className="text-lg font-semibold text-[#3d3155]">Open Graph (社群分享)</h2>
         <Field label="OG 標題" value={settings.og_title} onChange={v => update('og_title', v)} placeholder="留空則使用網站標題" />
         <Field label="OG 描述" value={settings.og_description} onChange={v => update('og_description', v)} placeholder="留空則使用網站描述" textarea />
         <Field label="OG 網站名稱" value={settings.og_site_name} onChange={v => update('og_site_name', v)} placeholder="SnowRealm Insight Engine" />
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Field label="Locale" value={settings.og_locale} onChange={v => update('og_locale', v)} placeholder="zh_TW" />
           <div>
-            <label className="block text-sm text-slate-400 mb-1">Twitter Card</label>
+            <label className="block text-sm text-[#8a7ca8] mb-1">Twitter Card</label>
             <select
               value={settings.twitter_card}
               onChange={e => update('twitter_card', e.target.value)}
-              className="w-full bg-slate-900 border border-slate-700 text-white rounded-lg px-3 py-2 text-sm"
+              className="w-full bg-white/60 border border-[#b8a9e8]/30 text-[#3d3155] rounded-lg px-3 py-2 text-sm"
             >
               <option value="summary_large_image">summary_large_image</option>
               <option value="summary">summary</option>
@@ -163,9 +163,9 @@ export default function SiteSettingsPage() {
 
         {/* OG Image Upload */}
         <div>
-          <label className="block text-sm text-slate-400 mb-2">OG 預覽圖片 (建議 1200x630)</label>
+          <label className="block text-sm text-[#8a7ca8] mb-2">OG 預覽圖片 (建議 1200x630)</label>
           {settings.og_image_url && (
-            <div className="mb-3 rounded-lg overflow-hidden border border-slate-700 max-w-md">
+            <div className="mb-3 rounded-lg overflow-hidden border border-[#b8a9e8]/20 max-w-md">
               <img src={settings.og_image_url} alt="OG Preview" className="w-full h-auto" />
             </div>
           )}
@@ -180,7 +180,7 @@ export default function SiteSettingsPage() {
             <button
               onClick={() => fileInputRef.current?.click()}
               disabled={uploading}
-              className="px-4 py-2 bg-t-btn hover:bg-t-btn-hover disabled:bg-cyan-800 text-white rounded-lg text-sm transition-colors cursor-pointer"
+              className="px-4 py-2 bg-gradient-to-r from-[#b8a9e8] to-[#f5b8b5] hover:opacity-90 disabled:bg-cyan-800 text-white rounded-lg text-sm transition-colors cursor-pointer"
             >
               {uploading ? '上傳中...' : '上傳 OG 圖片'}
             </button>
@@ -198,7 +198,7 @@ export default function SiteSettingsPage() {
               type="text"
               value={settings.og_image_url}
               onChange={e => update('og_image_url', e.target.value)}
-              className="mt-2 w-full bg-slate-900 border border-slate-700 text-slate-400 rounded-lg px-3 py-1.5 text-xs"
+              className="mt-2 w-full bg-white/60 border border-[#b8a9e8]/20 text-[#8a7ca8] rounded-lg px-3 py-1.5 text-xs"
               placeholder="或直接貼上圖片 URL"
             />
           )}
@@ -207,7 +207,7 @@ export default function SiteSettingsPage() {
               type="text"
               value=""
               onChange={e => update('og_image_url', e.target.value)}
-              className="mt-2 w-full bg-slate-900 border border-slate-700 text-slate-400 rounded-lg px-3 py-1.5 text-xs"
+              className="mt-2 w-full bg-white/60 border border-[#b8a9e8]/20 text-[#8a7ca8] rounded-lg px-3 py-1.5 text-xs"
               placeholder="或直接貼上圖片 URL"
             />
           )}
@@ -216,7 +216,7 @@ export default function SiteSettingsPage() {
 
       {/* Favicon */}
       <section className={`${CARD} rounded-xl p-6 space-y-4`}>
-        <h2 className="text-lg font-semibold text-white">Favicon</h2>
+        <h2 className="text-lg font-semibold text-[#3d3155]">Favicon</h2>
         <div className="flex items-center gap-4">
           {settings.favicon_url && (
             <img src={settings.favicon_url} alt="Favicon" className="w-8 h-8 rounded" />
@@ -231,7 +231,7 @@ export default function SiteSettingsPage() {
           <button
             onClick={() => faviconInputRef.current?.click()}
             disabled={uploading}
-            className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg text-sm transition-colors cursor-pointer"
+            className="px-4 py-2 bg-[#b8a9e8]/15 hover:bg-[#b8a9e8]/25 text-[#6b5fa8] border border-[#b8a9e8]/25 rounded-lg text-sm transition-colors cursor-pointer"
           >
             上傳 Favicon
           </button>
@@ -241,12 +241,12 @@ export default function SiteSettingsPage() {
 
       {/* OG Preview Card */}
       <section className={`${CARD} rounded-xl p-6 space-y-4`}>
-        <h2 className="text-lg font-semibold text-white">社群分享預覽</h2>
+        <h2 className="text-lg font-semibold text-[#3d3155]">社群分享預覽</h2>
         <div className="bg-white rounded-lg overflow-hidden max-w-md border">
           {settings.og_image_url ? (
             <img src={settings.og_image_url} alt="OG" className="w-full h-[180px] object-cover" />
           ) : (
-            <div className="w-full h-[180px] bg-slate-200 flex items-center justify-center text-slate-400 text-sm">
+            <div className="w-full h-[180px] bg-slate-200 flex items-center justify-center text-[#8a7ca8] text-sm">
               尚未設定 OG 圖片
             </div>
           )}
@@ -264,8 +264,8 @@ export default function SiteSettingsPage() {
 
       {/* LINE Bot 文案設定 */}
       <section className={`${CARD} rounded-xl p-6 space-y-4`}>
-        <h2 className="text-lg font-semibold text-white">LINE Bot 文案設定</h2>
-        <p className="text-xs text-slate-500">設定 LINE 官方帳號 Bot 的回覆文案，留空則使用系統預設文案。</p>
+        <h2 className="text-lg font-semibold text-[#3d3155]">LINE Bot 文案設定</h2>
+        <p className="text-xs text-[#3d3155]0">設定 LINE 官方帳號 Bot 的回覆文案，留空則使用系統預設文案。</p>
         <Field
           label="歡迎加入訊息"
           value={settings.bot_welcome}
@@ -300,15 +300,15 @@ export default function SiteSettingsPage() {
           textarea
         />
         <div>
-          <label className="block text-sm text-slate-400 mb-1">管理員註冊口令（Insight Bot 使用）</label>
+          <label className="block text-sm text-[#8a7ca8] mb-1">管理員註冊口令（Insight Bot 使用）</label>
           <input
             type="text"
             value={settings.bot_admin_passcode}
             onChange={e => update('bot_admin_passcode', e.target.value)}
             placeholder="留空則使用系統預設口令"
-            className="w-full bg-slate-900 border border-slate-700 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-t-accent/50 focus:border-t-accent placeholder:text-slate-600"
+            className="w-full bg-white/60 border border-[#b8a9e8]/30 text-[#3d3155] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#b8a9e8]/30 focus:border-[#b8a9e8]/50 placeholder:text-[#b5a8d0]"
           />
-          <p className="mt-1 text-xs text-slate-500">用戶在 Insight Bot 輸入此口令後，可取得一次性管理員註冊連結。</p>
+          <p className="mt-1 text-xs text-[#3d3155]0">用戶在 Insight Bot 輸入此口令後，可取得一次性管理員註冊連結。</p>
         </div>
       </section>
 
@@ -317,7 +317,7 @@ export default function SiteSettingsPage() {
         <button
           onClick={handleSave}
           disabled={saving}
-          className="px-6 py-2.5 bg-t-btn hover:bg-t-btn-hover disabled:bg-cyan-800 text-white font-medium rounded-lg transition-colors cursor-pointer"
+          className="px-6 py-2.5 bg-gradient-to-r from-[#b8a9e8] to-[#f5b8b5] hover:opacity-90 disabled:bg-cyan-800 text-[#3d3155] font-medium rounded-lg transition-colors cursor-pointer"
         >
           {saving ? '儲存中...' : '儲存設定'}
         </button>
@@ -334,10 +334,10 @@ export default function SiteSettingsPage() {
 function Field({ label, value, onChange, placeholder, textarea }: {
   label: string; value: string; onChange: (v: string) => void; placeholder?: string; textarea?: boolean
 }) {
-  const cls = 'w-full bg-slate-900 border border-slate-700 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-t-accent/50 focus:border-t-accent placeholder:text-slate-600'
+  const cls = 'w-full bg-white/60 border border-[#b8a9e8]/30 text-[#3d3155] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#b8a9e8]/30 focus:border-[#b8a9e8]/50 placeholder:text-[#b5a8d0]'
   return (
     <div>
-      <label className="block text-sm text-slate-400 mb-1">{label}</label>
+      <label className="block text-sm text-[#8a7ca8] mb-1">{label}</label>
       {textarea ? (
         <textarea value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} rows={3} className={cls} />
       ) : (

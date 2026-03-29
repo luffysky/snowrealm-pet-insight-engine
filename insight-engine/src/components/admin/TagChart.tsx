@@ -21,9 +21,9 @@ export function TagChart({ distributions, filterKey, title }: TagChartProps) {
 
   if (data.length === 0) {
     return (
-      <div className="bg-slate-800/50 border border-slate-700/50 rounded-2xl p-6">
-        <h3 className="text-sm text-slate-400 mb-4">{title}</h3>
-        <p className="text-slate-500 text-center py-8">尚無資料</p>
+      <div className="bg-white/35 backdrop-blur-sm border border-[#b8a9e8]/20 rounded-[20px] p-6">
+        <h3 className="text-sm text-[#8a7ca8] mb-4">{title}</h3>
+        <p className="text-[#3d3155]0 text-center py-8">尚無資料</p>
       </div>
     )
   }

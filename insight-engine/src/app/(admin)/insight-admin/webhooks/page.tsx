@@ -72,31 +72,31 @@ export default function WebhooksPage() {
     load()
   }
 
-  if (loading) return <p className="text-slate-400">載入中…</p>
+  if (loading) return <p className="text-[#8a7ca8]">載入中…</p>
 
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-bold text-white">🔔 Webhook 通知</h1>
-        <p className="text-slate-400 mt-1">
+        <h1 className="text-xl sm:text-2xl font-bold text-[#3d3155]">🔔 Webhook 通知</h1>
+        <p className="text-[#8a7ca8] mt-1">
           問卷送出或加入封測名單時，自動推播到 LINE 及自訂 Webhook URL
         </p>
       </div>
 
       {/* LINE Messaging API */}
-      <div className="bg-t-card-bg rounded-xl border border-t-card-border p-6 space-y-4">
-        <h2 className="text-lg font-semibold text-white">📱 LINE 推播通知</h2>
-        <p className="text-slate-400 text-sm">
+      <div className="bg-white/40 backdrop-blur-sm rounded-xl border border-[#b8a9e8]/25 p-6 space-y-4">
+        <h2 className="text-lg font-semibold text-[#3d3155]">📱 LINE 推播通知</h2>
+        <p className="text-[#8a7ca8] text-sm">
           問卷送出、加入封測名單時，自動推播訊息到管理員 LINE。已透過 Messaging API 串接。
         </p>
 
         {/* Webhook URL 設定 */}
         <div className="space-y-3">
-          <p className="text-xs text-slate-500 font-medium">
+          <p className="text-xs text-[#3d3155]0 font-medium">
             LINE Developers Console → Messaging API → Webhook settings
           </p>
-          <div className="bg-slate-800 rounded-lg p-3">
-            <p className="text-xs text-slate-500 mb-1">官方帳號 @474iwlht（用戶互動）</p>
+          <div className="bg-white/50 rounded-lg p-3">
+            <p className="text-xs text-[#3d3155]0 mb-1">官方帳號 @474iwlht（用戶互動）</p>
             <code className="text-sm text-green-300 break-all select-all">
               {process.env.NEXT_PUBLIC_BASE_URL}/api/line/webhook/official
             </code>
@@ -104,8 +104,8 @@ export default function WebhooksPage() {
               Rich Menu 的「封測／最新消息／聯絡我們」是文字訊息，必須指向此網址；若誤設成 <code className="text-amber-100">/api/line/webhook</code>（足跡帳號）會驗簽失敗，聊天室不會出現自動回覆。
             </p>
           </div>
-          <div className="bg-slate-800 rounded-lg p-3">
-            <p className="text-xs text-slate-500 mb-1">INSIGHT @762wxvfb（管理員通知）</p>
+          <div className="bg-white/50 rounded-lg p-3">
+            <p className="text-xs text-[#3d3155]0 mb-1">INSIGHT @762wxvfb（管理員通知）</p>
             <code className="text-sm text-green-300 break-all select-all">
               {process.env.NEXT_PUBLIC_BASE_URL}/api/line/webhook
             </code>
@@ -135,15 +135,15 @@ export default function WebhooksPage() {
       </div>
 
       {/* 新增表單 */}
-      <div className="bg-t-card-bg rounded-xl border border-t-card-border p-6 space-y-4">
-        <h2 className="text-lg font-semibold text-white">新增 Webhook</h2>
+      <div className="bg-white/40 backdrop-blur-sm rounded-xl border border-[#b8a9e8]/25 p-6 space-y-4">
+        <h2 className="text-lg font-semibold text-[#3d3155]">新增 Webhook</h2>
         <div className="flex flex-wrap gap-3 items-end">
           <div>
-            <label className="block text-sm text-slate-400 mb-1">事件類型</label>
+            <label className="block text-sm text-[#8a7ca8] mb-1">事件類型</label>
             <select
               value={newEventType}
               onChange={(e) => setNewEventType(e.target.value)}
-              className="bg-slate-800 border border-slate-700 text-white rounded-lg px-3 py-2 text-sm"
+              className="bg-white/60 border border-[#b8a9e8]/30 text-[#3d3155] rounded-lg px-3 py-2 text-sm"
             >
               {EVENT_TYPES.map((t) => (
                 <option key={t.value} value={t.value}>{t.label}</option>
@@ -151,19 +151,19 @@ export default function WebhooksPage() {
             </select>
           </div>
           <div className="min-w-0 w-full sm:min-w-[300px]">
-            <label className="block text-sm text-slate-400 mb-1">Webhook URL（HTTPS only）</label>
+            <label className="block text-sm text-[#8a7ca8] mb-1">Webhook URL（HTTPS only）</label>
             <input
               type="url"
               value={newUrl}
               onChange={(e) => setNewUrl(e.target.value)}
               placeholder="https://..."
-              className="w-full bg-slate-800 border border-slate-700 text-white rounded-lg px-3 py-2 text-sm"
+              className="w-full bg-white/60 border border-[#b8a9e8]/30 text-[#3d3155] rounded-lg px-3 py-2 text-sm"
             />
           </div>
           <button
             onClick={handleAdd}
             disabled={saving || !newUrl}
-            className="bg-t-btn hover:bg-t-btn-hover disabled:opacity-50 text-white text-sm px-4 py-2 rounded-lg transition-colors"
+            className="bg-gradient-to-r from-[#b8a9e8] to-[#f5b8b5] hover:opacity-90 disabled:opacity-50 text-white text-sm px-4 py-2 rounded-lg transition-colors"
           >
             {saving ? '新增中…' : '+ 新增'}
           </button>
@@ -172,15 +172,15 @@ export default function WebhooksPage() {
       </div>
 
       {/* 列表 */}
-      <div className="bg-t-card-bg rounded-xl border border-t-card-border p-6">
-        <h2 className="text-lg font-semibold text-white mb-4">已設定的 Webhooks</h2>
+      <div className="bg-white/40 backdrop-blur-sm rounded-xl border border-[#b8a9e8]/25 p-6">
+        <h2 className="text-lg font-semibold text-[#3d3155] mb-4">已設定的 Webhooks</h2>
         {configs.length === 0 ? (
-          <p className="text-slate-400">尚未設定任何 webhook</p>
+          <p className="text-[#8a7ca8]">尚未設定任何 webhook</p>
         ) : (
           <div className="overflow-x-auto">
           <table className="w-full text-sm min-w-[500px]">
             <thead>
-              <tr className="border-b border-slate-700 text-slate-400">
+              <tr className="border-b border-[#b8a9e8]/20 text-[#8a7ca8]">
                 <th className="text-left py-2 px-3">事件</th>
                 <th className="text-left py-2 px-3">URL</th>
                 <th className="text-center py-2 px-3">狀態</th>
@@ -189,7 +189,7 @@ export default function WebhooksPage() {
             </thead>
             <tbody className="text-slate-300">
               {configs.map((c) => (
-                <tr key={c.id} className="border-b border-slate-800">
+                <tr key={c.id} className="border-b border-[#b8a9e8]/20">
                   <td className="py-2 px-3">
                     <span className="bg-indigo-500/20 text-indigo-400 text-xs px-2 py-0.5 rounded">
                       {EVENT_TYPES.find((t) => t.value === c.event_type)?.label ?? c.event_type}
@@ -202,7 +202,7 @@ export default function WebhooksPage() {
                       className={`text-xs px-2 py-0.5 rounded cursor-pointer ${
                         c.active
                           ? 'bg-emerald-500/20 text-emerald-400'
-                          : 'bg-slate-600/20 text-slate-500'
+                          : 'bg-[#b8a9e8]/15/20 text-[#3d3155]0'
                       }`}
                     >
                       {c.active ? '啟用中' : '已停用'}

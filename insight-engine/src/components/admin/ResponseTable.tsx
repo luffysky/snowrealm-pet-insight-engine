@@ -22,13 +22,11 @@ export function ResponseTable({
 }: ResponseTableProps) {
   const router = useRouter()
   const pathname = usePathname()
-  // Extract /insight-admin/{slug} prefix from current pathname
   const slugMatch = pathname.match(/^\/insight-admin\/([^/]+)/)
   const basePath = slugMatch ? `/insight-admin/${slugMatch[1]}` : '/insight-admin'
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [confirmId, setConfirmId] = useState<string | null>(null)
 
-  // 批次選取
   const [batchMode, setBatchMode] = useState(false)
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [batchDeleting, setBatchDeleting] = useState(false)
@@ -81,7 +79,7 @@ export function ResponseTable({
 
   if (responses.length === 0) {
     return (
-      <div className="bg-t-card-bg border border-t-card-border rounded-2xl p-8 text-center text-slate-500">
+      <div className="rounded-[20px] border border-[#b8a9e8]/25 bg-white/40 backdrop-blur-sm p-8 text-center text-[#b5a8d0]">
         尚無填答資料
       </div>
     )
@@ -107,31 +105,31 @@ export function ResponseTable({
   }
 
   return (
-    <div className="bg-t-card-bg border border-t-card-border rounded-2xl overflow-hidden">
+    <div className="rounded-[20px] border border-[#b8a9e8]/25 bg-white/40 backdrop-blur-sm overflow-hidden shadow-[0_4px_20px_rgba(184,169,232,0.10)]">
       {/* 批次操作列 */}
       {selectedCount > 0 && (
-        <div className="flex items-center gap-3 px-4 sm:px-6 py-2.5 bg-slate-700/40 border-b border-slate-700/50">
+        <div className="flex items-center gap-3 px-4 sm:px-6 py-2.5 bg-[#b8a9e8]/10 border-b border-[#b8a9e8]/20">
           <button
             onClick={() => { setSelected(new Set()); setConfirmBatch(false); setBatchMode(false) }}
-            className="text-slate-500 hover:text-slate-300 text-xs cursor-pointer"
+            className="text-[#b5a8d0] hover:text-[#6b5fa8] text-xs cursor-pointer"
           >
             取消選取
           </button>
-          <span className="ml-auto text-sm text-slate-300">
-            已選取 <span className="text-t-accent font-medium">{selectedCount}</span> 筆
+          <span className="ml-auto text-sm text-[#3d3155]">
+            已選取 <span className="text-[#6b5fa8] font-medium">{selectedCount}</span> 筆
           </span>
           {confirmBatch ? (
             <span className="flex items-center gap-2">
               <button
                 onClick={handleBatchDelete}
                 disabled={batchDeleting}
-                className="px-3 py-1 bg-red-600 hover:bg-red-500 text-white text-xs rounded-lg transition-colors disabled:opacity-50 cursor-pointer"
+                className="px-3 py-1 bg-red-500 hover:bg-red-400 text-white text-xs rounded-lg transition-colors disabled:opacity-50 cursor-pointer"
               >
                 {batchDeleting ? '刪除中...' : `確認刪除 ${selectedCount} 筆`}
               </button>
               <button
                 onClick={() => setConfirmBatch(false)}
-                className="text-slate-400 hover:text-slate-200 text-xs cursor-pointer"
+                className="text-[#b5a8d0] hover:text-[#8a7ca8] text-xs cursor-pointer"
               >
                 取消
               </button>
@@ -139,7 +137,7 @@ export function ResponseTable({
           ) : (
             <button
               onClick={() => setConfirmBatch(true)}
-              className="px-3 py-1 bg-red-500/20 hover:bg-red-500/30 text-red-400 text-xs rounded-lg transition-colors cursor-pointer"
+              className="px-3 py-1 bg-red-100 hover:bg-red-200 text-red-500 text-xs rounded-lg transition-colors cursor-pointer"
             >
               刪除選取
             </button>
@@ -148,13 +146,13 @@ export function ResponseTable({
       )}
 
       {/* 手機卡片視圖 */}
-      <div className="sm:hidden divide-y divide-slate-700/30">
+      <div className="sm:hidden divide-y divide-[#b8a9e8]/15">
         {responses.map((response) => (
-          <div key={response.id} className={`px-4 py-3 space-y-2 ${selected.has(response.id) ? 'bg-t-accent-bg' : ''}`}>
+          <div key={response.id} className={`px-4 py-3 space-y-2 ${selected.has(response.id) ? 'bg-[#b8a9e8]/10' : ''}`}>
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2 min-w-0">
                 <StatusBadge status={response.status} />
-                <span className="text-xs text-slate-400 shrink-0">{formatDateTime(response.submittedAt ?? response.createdAt)}</span>
+                <span className="text-xs text-[#b5a8d0] shrink-0">{formatDateTime(response.submittedAt ?? response.createdAt)}</span>
               </div>
               <div className="flex items-center gap-3 shrink-0">
                 {batchMode && (
@@ -162,33 +160,33 @@ export function ResponseTable({
                     type="checkbox"
                     checked={selected.has(response.id)}
                     onChange={() => toggleOne(response.id)}
-                    className="w-4 h-4 rounded border-slate-600 bg-slate-700 accent-t-accent"
+                    className="w-4 h-4 rounded border-[#b8a9e8]/50 accent-[#b8a9e8]"
                   />
                 )}
-                <Link href={`${basePath}/responses/${response.id}`} className="text-t-accent text-sm py-1">查看</Link>
+                <Link href={`${basePath}/responses/${response.id}`} className="text-[#6b5fa8] text-sm py-1">查看</Link>
                 {confirmId === response.id ? (
                   <span className="flex gap-2">
                     <button onClick={() => handleDelete(response.id)} disabled={deletingId === response.id} className="text-red-400 text-xs py-1 cursor-pointer">
                       {deletingId === response.id ? '中...' : '確認'}
                     </button>
-                    <button onClick={() => setConfirmId(null)} className="text-slate-500 text-xs py-1 cursor-pointer">取消</button>
+                    <button onClick={() => setConfirmId(null)} className="text-[#b5a8d0] text-xs py-1 cursor-pointer">取消</button>
                   </span>
                 ) : (
-                  <button onClick={() => { setBatchMode(true); setSelected(new Set([response.id])) }} className="text-red-500/60 text-xs py-1 cursor-pointer">刪除</button>
+                  <button onClick={() => { setBatchMode(true); setSelected(new Set([response.id])) }} className="text-red-400/60 text-xs py-1 cursor-pointer">刪除</button>
                 )}
               </div>
             </div>
             {(response.utmSource ?? response.source) && (
-              <p className="text-xs text-slate-500">來源：{response.utmSource ?? response.source}</p>
+              <p className="text-xs text-[#b5a8d0]">來源：{response.utmSource ?? response.source}</p>
             )}
             {response.tags.length > 0 && (
               <div className="flex flex-wrap gap-1">
                 {response.tags.slice(0, 4).map((tag, i) => (
-                  <span key={`${tag.key}-${tag.value}-${i}`} className="px-2 py-0.5 bg-slate-700/50 text-slate-300 rounded text-xs">
+                  <span key={`${tag.key}-${tag.value}-${i}`} className="px-2 py-0.5 bg-[#b8a9e8]/15 text-[#6b5fa8] rounded text-xs">
                     {tag.key}: {tag.value}
                   </span>
                 ))}
-                {response.tags.length > 4 && <span className="text-xs text-slate-500">+{response.tags.length - 4}</span>}
+                {response.tags.length > 4 && <span className="text-xs text-[#b5a8d0]">+{response.tags.length - 4}</span>}
               </div>
             )}
           </div>
@@ -199,38 +197,22 @@ export function ResponseTable({
       <div className="hidden sm:block overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-slate-700/50">
-              <th className="text-left px-4 sm:px-6 py-3 text-slate-400 font-medium whitespace-nowrap">
-                時間
-              </th>
-              <th className="text-left px-4 sm:px-6 py-3 text-slate-400 font-medium whitespace-nowrap">
-                狀態
-              </th>
-              <th className="text-left px-4 sm:px-6 py-3 text-slate-400 font-medium whitespace-nowrap">
-                來源
-              </th>
-              <th className="text-left px-4 sm:px-6 py-3 text-slate-400 font-medium whitespace-nowrap">
-                標籤
-              </th>
-              <th className="text-center px-4 sm:px-6 py-3 text-slate-400 font-medium whitespace-nowrap">
-                LINE
-              </th>
-              <th className="text-center px-4 sm:px-6 py-3 text-slate-400 font-medium whitespace-nowrap">
-                IG
-              </th>
-              <th className="text-left px-4 sm:px-6 py-3 text-slate-400 font-medium whitespace-nowrap">
-                備註
-              </th>
-              <th className="text-right px-4 sm:px-6 py-3 text-slate-400 font-medium whitespace-nowrap">
-                操作
-              </th>
+            <tr className="border-b border-[#b8a9e8]/20">
+              <th className="text-left px-4 sm:px-6 py-3 text-[#8a7ca8] font-medium whitespace-nowrap">時間</th>
+              <th className="text-left px-4 sm:px-6 py-3 text-[#8a7ca8] font-medium whitespace-nowrap">狀態</th>
+              <th className="text-left px-4 sm:px-6 py-3 text-[#8a7ca8] font-medium whitespace-nowrap">來源</th>
+              <th className="text-left px-4 sm:px-6 py-3 text-[#8a7ca8] font-medium whitespace-nowrap">標籤</th>
+              <th className="text-center px-4 sm:px-6 py-3 text-[#8a7ca8] font-medium whitespace-nowrap">LINE</th>
+              <th className="text-center px-4 sm:px-6 py-3 text-[#8a7ca8] font-medium whitespace-nowrap">IG</th>
+              <th className="text-left px-4 sm:px-6 py-3 text-[#8a7ca8] font-medium whitespace-nowrap">備註</th>
+              <th className="text-right px-4 sm:px-6 py-3 text-[#8a7ca8] font-medium whitespace-nowrap">操作</th>
               {batchMode && (
                 <th className="w-10 px-3 sm:px-4 py-3 text-center">
                   <input
                     type="checkbox"
                     checked={isAllSelected}
                     onChange={toggleAll}
-                    className="w-4 h-4 rounded border-slate-600 bg-slate-700 text-t-accent cursor-pointer accent-t-accent"
+                    className="w-4 h-4 rounded border-[#b8a9e8]/50 accent-[#b8a9e8] cursor-pointer"
                     title="全選本頁"
                   />
                 </th>
@@ -241,17 +223,17 @@ export function ResponseTable({
             {responses.map((response) => (
               <tr
                 key={response.id}
-                className={`border-b border-slate-700/30 hover:bg-slate-700/20 ${
-                  selected.has(response.id) ? 'bg-t-accent-bg' : ''
+                className={`border-b border-[#b8a9e8]/10 hover:bg-[#b8a9e8]/8 transition-colors ${
+                  selected.has(response.id) ? 'bg-[#b8a9e8]/10' : ''
                 }`}
               >
-                <td className="px-4 sm:px-6 py-3 text-slate-300 whitespace-nowrap">
+                <td className="px-4 sm:px-6 py-3 text-[#3d3155] whitespace-nowrap">
                   {formatDateTime(response.submittedAt ?? response.createdAt)}
                 </td>
                 <td className="px-4 sm:px-6 py-3">
                   <StatusBadge status={response.status} />
                 </td>
-                <td className="px-4 sm:px-6 py-3 text-slate-400">
+                <td className="px-4 sm:px-6 py-3 text-[#8a7ca8]">
                   {response.utmSource ?? response.source ?? '-'}
                 </td>
                 <td className="px-4 sm:px-6 py-3">
@@ -259,27 +241,25 @@ export function ResponseTable({
                     {response.tags.slice(0, 3).map((tag, i) => (
                       <span
                         key={`${tag.key}-${tag.value}-${i}`}
-                        className="px-2 py-0.5 bg-slate-700/50 text-slate-300 rounded text-xs"
+                        className="px-2 py-0.5 bg-[#b8a9e8]/15 text-[#6b5fa8] rounded text-xs"
                       >
                         {tag.key}: {tag.value}
                       </span>
                     ))}
                     {response.tags.length > 3 && (
-                      <span className="text-xs text-slate-500">
-                        +{response.tags.length - 3}
-                      </span>
+                      <span className="text-xs text-[#b5a8d0]">+{response.tags.length - 3}</span>
                     )}
                   </div>
                 </td>
                 <td className="px-4 sm:px-6 py-3 text-center">
                   {response.clickEvents?.some((e) => e.eventType === 'line_friend')
-                    ? <span className="text-green-400">✓</span>
-                    : <span className="text-slate-600">-</span>}
+                    ? <span className="text-emerald-500">✓</span>
+                    : <span className="text-[#b5a8d0]">-</span>}
                 </td>
                 <td className="px-4 sm:px-6 py-3 text-center">
                   {response.clickEvents?.some((e) => e.eventType === 'instagram')
-                    ? <span className="text-purple-400">✓</span>
-                    : <span className="text-slate-600">-</span>}
+                    ? <span className="text-[#b8a9e8]">✓</span>
+                    : <span className="text-[#b5a8d0]">-</span>}
                 </td>
                 <td className="px-4 sm:px-6 py-3">
                   <NotesCell responseId={response.id} initialNotes={response.notes} />
@@ -288,7 +268,7 @@ export function ResponseTable({
                   <div className="flex items-center justify-end gap-4 sm:gap-2">
                     <Link
                       href={`${basePath}/responses/${response.id}`}
-                      className="text-t-accent hover:opacity-80 text-sm px-2 py-1 -mx-2 -my-1"
+                      className="text-[#6b5fa8] hover:text-[#3d3155] text-sm px-2 py-1 -mx-2 -my-1 transition-colors"
                     >
                       查看
                     </Link>
@@ -297,13 +277,13 @@ export function ResponseTable({
                         <button
                           onClick={() => handleDelete(response.id)}
                           disabled={deletingId === response.id}
-                          className="text-red-400 hover:text-red-300 text-sm font-medium disabled:opacity-50 cursor-pointer px-2 py-1 -mx-2 -my-1"
+                          className="text-red-400 hover:text-red-500 text-sm font-medium disabled:opacity-50 cursor-pointer px-2 py-1 -mx-2 -my-1"
                         >
                           {deletingId === response.id ? '刪除中...' : '確認'}
                         </button>
                         <button
                           onClick={() => setConfirmId(null)}
-                          className="text-slate-500 hover:text-slate-300 text-sm cursor-pointer px-2 py-1 -mx-2 -my-1"
+                          className="text-[#b5a8d0] hover:text-[#8a7ca8] text-sm cursor-pointer px-2 py-1 -mx-2 -my-1"
                         >
                           取消
                         </button>
@@ -314,7 +294,7 @@ export function ResponseTable({
                           setBatchMode(true)
                           setSelected(new Set([response.id]))
                         }}
-                        className="text-red-500/60 hover:text-red-400 text-sm cursor-pointer px-2 py-1 -mx-2 -my-1"
+                        className="text-red-400/60 hover:text-red-400 text-sm cursor-pointer px-2 py-1 -mx-2 -my-1"
                       >
                         刪除
                       </button>
@@ -327,7 +307,7 @@ export function ResponseTable({
                       type="checkbox"
                       checked={selected.has(response.id)}
                       onChange={() => toggleOne(response.id)}
-                      className="w-4 h-4 rounded border-slate-600 bg-slate-700 text-t-accent cursor-pointer accent-t-accent"
+                      className="w-4 h-4 rounded border-[#b8a9e8]/50 accent-[#b8a9e8] cursor-pointer"
                     />
                   </td>
                 )}
@@ -338,22 +318,22 @@ export function ResponseTable({
       </div>
 
       {showPagination && totalPages > 1 && (
-        <div className="flex justify-center items-center gap-4 p-4 border-t border-slate-700/50">
+        <div className="flex justify-center items-center gap-4 p-4 border-t border-[#b8a9e8]/20">
           {currentPage > 1 && (
             <Link
               href={`${paginationBase}page=${currentPage - 1}`}
-              className="text-sm text-t-accent hover:opacity-80"
+              className="text-sm text-[#6b5fa8] hover:text-[#3d3155] transition-colors"
             >
               ← 上一頁
             </Link>
           )}
-          <span className="text-sm text-slate-400">
+          <span className="text-sm text-[#8a7ca8]">
             {currentPage} / {totalPages}
           </span>
           {currentPage < totalPages && (
             <Link
               href={`${paginationBase}page=${currentPage + 1}`}
-              className="text-sm text-t-accent hover:opacity-80"
+              className="text-sm text-[#6b5fa8] hover:text-[#3d3155] transition-colors"
             >
               下一頁 →
             </Link>
@@ -368,10 +348,10 @@ function StatusBadge({ status }: { status: string }) {
   const isCompleted = status === 'completed'
   return (
     <span
-      className={`px-2 py-0.5 rounded text-xs ${
+      className={`px-2 py-0.5 rounded text-xs font-medium ${
         isCompleted
-          ? 'bg-emerald-500/20 text-emerald-400'
-          : 'bg-amber-500/20 text-amber-400'
+          ? 'bg-emerald-100 text-emerald-600'
+          : 'bg-amber-100 text-amber-600'
       }`}
     >
       {isCompleted ? '已完成' : '進行中'}
@@ -381,7 +361,6 @@ function StatusBadge({ status }: { status: string }) {
 
 function formatDateTime(isoString: string): string {
   const d = new Date(isoString)
-  // Manually format to avoid locale-dependent hydration mismatch
   const m = String(d.getMonth() + 1).padStart(2, '0')
   const day = String(d.getDate()).padStart(2, '0')
   const h = String(d.getHours()).padStart(2, '0')
@@ -422,13 +401,13 @@ function NotesCell({ responseId, initialNotes }: { responseId: string; initialNo
           value={value}
           onChange={(e) => setValue(e.target.value)}
           maxLength={500}
-          className="flex-1 px-2 py-1 bg-slate-700 border border-slate-600 rounded text-xs text-white focus:outline-none focus:ring-1 focus:ring-t-accent-border"
+          className="flex-1 px-2 py-1 bg-white/70 border border-[#b8a9e8]/40 rounded text-xs text-[#3d3155] focus:outline-none focus:ring-1 focus:ring-[#b8a9e8]/40"
           onKeyDown={(e) => { if (e.key === 'Enter') save(); if (e.key === 'Escape') setEditing(false) }}
           autoFocus
           disabled={saving}
         />
-        <button onClick={save} disabled={saving} className="text-t-accent hover:opacity-80 text-xs cursor-pointer">✓</button>
-        <button onClick={() => { setValue(initialNotes ?? ''); setEditing(false) }} className="text-slate-500 hover:text-slate-300 text-xs cursor-pointer">✕</button>
+        <button onClick={save} disabled={saving} className="text-[#6b5fa8] hover:text-[#3d3155] text-xs cursor-pointer">✓</button>
+        <button onClick={() => { setValue(initialNotes ?? ''); setEditing(false) }} className="text-[#b5a8d0] hover:text-[#8a7ca8] text-xs cursor-pointer">✕</button>
       </div>
     )
   }
@@ -436,10 +415,10 @@ function NotesCell({ responseId, initialNotes }: { responseId: string; initialNo
   return (
     <span
       onClick={() => setEditing(true)}
-      className="text-slate-400 text-xs cursor-pointer hover:text-slate-200 max-w-[160px] truncate inline-block"
+      className="text-[#8a7ca8] text-xs cursor-pointer hover:text-[#3d3155] max-w-[160px] truncate inline-block transition-colors"
       title={value || '點擊新增備註'}
     >
-      {value || <span className="text-slate-600">—</span>}
+      {value || <span className="text-[#b5a8d0]">—</span>}
     </span>
   )
 }

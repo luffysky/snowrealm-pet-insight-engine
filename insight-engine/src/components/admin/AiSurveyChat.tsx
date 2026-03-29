@@ -247,12 +247,12 @@ export function AiSurveyChat({ onDone, onCancel }: AiSurveyChatProps) {
     <div className="fixed inset-0 z-[80] flex flex-col bg-black/60 backdrop-blur-sm">
       {/* Panel — bottom sheet on mobile, centered card on desktop */}
       <div
-        className="flex flex-col bg-slate-900 w-full mt-auto sm:m-auto sm:rounded-2xl sm:max-w-2xl sm:max-h-[90dvh] overflow-hidden"
+        className="flex flex-col bg-white/50 w-full mt-auto sm:m-auto sm:rounded-[20px] sm:max-w-2xl sm:max-h-[90dvh] overflow-hidden"
         style={{ maxHeight: '100dvh' }}
       >
         {/* ── Header (fixed, never moves) ── */}
-        <div className="shrink-0 flex items-center justify-between px-4 py-3 border-b border-slate-700 bg-slate-900">
-          <h3 className="text-base font-semibold text-white flex items-center gap-2">
+        <div className="shrink-0 flex items-center justify-between px-4 py-3 border-b border-[#b8a9e8]/20 bg-white/50">
+          <h3 className="text-base font-semibold text-[#3d3155] flex items-center gap-2">
             ✨ AI 對話建立問卷
           </h3>
           <div className="flex items-center gap-2">
@@ -260,14 +260,14 @@ export function AiSurveyChat({ onDone, onCancel }: AiSurveyChatProps) {
               <button
                 onClick={exportChat}
                 title="匯出對話紀錄"
-                className="flex items-center gap-1.5 px-2.5 py-1.5 bg-slate-700/60 hover:bg-slate-600/80 border border-slate-600/50 text-slate-300 rounded-lg text-xs transition-colors"
+                className="flex items-center gap-1.5 px-2.5 py-1.5 bg-[#b8a9e8]/10/60 hover:bg-[#b8a9e8]/15/80 border border-[#b8a9e8]/30/50 text-slate-300 rounded-lg text-xs transition-colors"
               >
                 <Download className="w-3.5 h-3.5" />匯出
               </button>
             )}
             <button
               onClick={onCancel}
-              className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg transition-colors"
+              className="p-1.5 text-[#8a7ca8] hover:text-[#3d3155] hover:bg-[#b8a9e8]/10 rounded-lg transition-colors"
             >
               <X className="w-4 h-4" />
             </button>
@@ -289,7 +289,7 @@ export function AiSurveyChat({ onDone, onCancel }: AiSurveyChatProps) {
                   <div className="w-8 h-8 rounded-full bg-cyan-600/30 border border-cyan-500/40 flex items-center justify-center text-sm shrink-0 mt-0.5">
                     🤖
                   </div>
-                  <div className="bg-slate-700/60 rounded-xl px-4 py-3 text-sm text-cyan-400/80">
+                  <div className="bg-[#b8a9e8]/10/60 rounded-xl px-4 py-3 text-sm text-cyan-400/80">
                     ✅ AI 已完成問卷設計，請查看下方預覽
                   </div>
                 </div>
@@ -310,15 +310,15 @@ export function AiSurveyChat({ onDone, onCancel }: AiSurveyChatProps) {
                   <div
                     className={`rounded-xl px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap ${
                       msg.role === 'user'
-                        ? 'bg-t-btn text-white'
-                        : 'bg-slate-700/60 text-white/85'
+                        ? 'bg-gradient-to-r from-[#b8a9e8] to-[#f5b8b5] text-white'
+                        : 'bg-[#b8a9e8]/10/60 text-[#3d3155]'
                     }`}
                   >
                     {displayContent}
                   </div>
                   <button
                     onClick={() => copyMessage(displayContent, i)}
-                    className={`absolute -top-2 ${msg.role === 'user' ? '-left-8' : '-right-8'} w-6 h-6 bg-slate-700 hover:bg-slate-600 border border-slate-600/50 rounded-md flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity`}
+                    className={`absolute -top-2 ${msg.role === 'user' ? '-left-8' : '-right-8'} w-6 h-6 bg-[#b8a9e8]/10 hover:bg-[#b8a9e8]/15 border border-[#b8a9e8]/30/50 rounded-md flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity`}
                     title="複製訊息"
                   >
                     {copiedMsgIndex === i
@@ -327,7 +327,7 @@ export function AiSurveyChat({ onDone, onCancel }: AiSurveyChatProps) {
                   </button>
                 </div>
                 {msg.role === 'user' && (
-                  <div className="w-8 h-8 rounded-full bg-slate-600 flex items-center justify-center text-sm shrink-0 mt-0.5">
+                  <div className="w-8 h-8 rounded-full bg-[#b8a9e8]/15 flex items-center justify-center text-sm shrink-0 mt-0.5">
                     👤
                   </div>
                 )}
@@ -340,7 +340,7 @@ export function AiSurveyChat({ onDone, onCancel }: AiSurveyChatProps) {
               <div className="w-8 h-8 rounded-full bg-cyan-600/30 border border-cyan-500/40 flex items-center justify-center text-sm shrink-0">
                 🤖
               </div>
-              <div className="bg-slate-700/60 rounded-xl px-4 py-3 text-sm text-white/50">
+              <div className="bg-[#b8a9e8]/10/60 rounded-xl px-4 py-3 text-sm text-[#3d3155]/50">
                 思考中...
               </div>
             </div>
@@ -355,14 +355,14 @@ export function AiSurveyChat({ onDone, onCancel }: AiSurveyChatProps) {
 
         {/* ── Survey preview (scrollable questions list) ── */}
         {detectedSurvey && (
-          <div className="shrink-0 mx-4 mb-3 bg-slate-800 border border-cyan-500/30 rounded-xl overflow-hidden max-h-[40dvh] flex flex-col">
+          <div className="shrink-0 mx-4 mb-3 bg-white/50 border border-cyan-500/30 rounded-xl overflow-hidden max-h-[40dvh] flex flex-col">
             {/* Summary row */}
-            <div className="px-4 py-3 border-b border-slate-700/50">
+            <div className="px-4 py-3 border-b border-[#b8a9e8]/20">
               <div className="flex items-center justify-between">
                 <span className="text-cyan-400 font-medium text-sm">✅ 問卷設計完成</span>
                 <button
                   onClick={() => setShowQuestions(p => !p)}
-                  className="flex items-center gap-1 text-xs text-slate-400 hover:text-white transition-colors"
+                  className="flex items-center gap-1 text-xs text-[#8a7ca8] hover:text-[#3d3155] transition-colors"
                 >
                   {showQuestions ? '收起題目' : `查看 ${detectedSurvey.questions.length} 題`}
                   {showQuestions ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
@@ -370,24 +370,24 @@ export function AiSurveyChat({ onDone, onCancel }: AiSurveyChatProps) {
               </div>
               <div className="grid grid-cols-2 gap-x-4 gap-y-1 mt-2 text-sm">
                 <div>
-                  <span className="text-slate-400">標題：</span>
-                  <span className="text-white">{detectedSurvey.survey.title}</span>
+                  <span className="text-[#8a7ca8]">標題：</span>
+                  <span className="text-[#3d3155]">{detectedSurvey.survey.title}</span>
                 </div>
                 <div>
-                  <span className="text-slate-400">Slug：</span>
-                  <span className="text-white/70 font-mono text-xs">{detectedSurvey.survey.slug}</span>
+                  <span className="text-[#8a7ca8]">Slug：</span>
+                  <span className="text-[#3d3155] font-mono text-xs">{detectedSurvey.survey.slug}</span>
                 </div>
                 <div>
-                  <span className="text-slate-400">題數：</span>
-                  <span className="text-white">{detectedSurvey.questions.length} 題</span>
+                  <span className="text-[#8a7ca8]">題數：</span>
+                  <span className="text-[#3d3155]">{detectedSurvey.questions.length} 題</span>
                 </div>
                 <div>
-                  <span className="text-slate-400">主題：</span>
-                  <span className="text-white">{detectedSurvey.survey.theme}</span>
+                  <span className="text-[#8a7ca8]">主題：</span>
+                  <span className="text-[#3d3155]">{detectedSurvey.survey.theme}</span>
                 </div>
                 {detectedSurvey.branching?.enabled && (
                   <div className="col-span-2">
-                    <span className="text-slate-400">分流：</span>
+                    <span className="text-[#8a7ca8]">分流：</span>
                     <span className="text-cyan-400">已設定（依 {detectedSurvey.branching.branchKey} 分流）</span>
                   </div>
                 )}
@@ -398,18 +398,18 @@ export function AiSurveyChat({ onDone, onCancel }: AiSurveyChatProps) {
             {showQuestions && (
               <div className="flex-1 overflow-y-auto px-4 py-2 space-y-2">
                 {detectedSurvey.questions.map((q, idx) => (
-                  <div key={q.key} className="border border-slate-700/50 rounded-lg px-3 py-2">
-                    <p className="text-xs text-slate-400 mb-0.5">
+                  <div key={q.key} className="border border-[#b8a9e8]/20 rounded-lg px-3 py-2">
+                    <p className="text-xs text-[#8a7ca8] mb-0.5">
                       Q{idx + 1} · {q.type === 'single' ? '單選' : q.type === 'multiple' ? '多選' : '填答'}
                       {q.route && q.route !== 'all' && (
                         <span className="ml-1 text-amber-400/70">({q.route})</span>
                       )}
                     </p>
-                    <p className="text-sm text-white/85 leading-snug">{q.content}</p>
+                    <p className="text-sm text-[#3d3155]/85 leading-snug">{q.content}</p>
                     {q.options && q.options.length > 0 && (
                       <div className="mt-1.5 flex flex-wrap gap-1">
                         {q.options.map((opt, oi) => (
-                          <span key={oi} className="text-[11px] bg-slate-700/60 text-slate-300 px-2 py-0.5 rounded-full">
+                          <span key={oi} className="text-[11px] bg-[#b8a9e8]/10/60 text-slate-300 px-2 py-0.5 rounded-full">
                             {opt.emoji && <span className="mr-0.5">{opt.emoji}</span>}{opt.label}
                           </span>
                         ))}
@@ -421,7 +421,7 @@ export function AiSurveyChat({ onDone, onCancel }: AiSurveyChatProps) {
             )}
 
             {/* Action buttons */}
-            <div className="shrink-0 px-4 py-3 border-t border-slate-700/50 flex items-center gap-3">
+            <div className="shrink-0 px-4 py-3 border-t border-[#b8a9e8]/20 flex items-center gap-3">
               {createError && <p className="text-xs text-red-400 flex-1">{createError}</p>}
               <button
                 onClick={handleCreate}
@@ -433,7 +433,7 @@ export function AiSurveyChat({ onDone, onCancel }: AiSurveyChatProps) {
               <button
                 onClick={handleRedesign}
                 disabled={sending || creating}
-                className="px-4 py-2 bg-slate-700 hover:bg-slate-600 disabled:opacity-50 text-slate-300 rounded-lg text-sm"
+                className="px-4 py-2 bg-[#b8a9e8]/10 hover:bg-[#b8a9e8]/15 disabled:opacity-50 text-slate-300 rounded-lg text-sm"
               >
                 重新設計
               </button>
@@ -444,14 +444,14 @@ export function AiSurveyChat({ onDone, onCancel }: AiSurveyChatProps) {
         {/* ── Prompt inspirations (initial state only) ── */}
         {messages.length <= 1 && (
           <div className="shrink-0 px-4 pb-2">
-            <p className="text-xs text-slate-400 mb-2">💡 不知道怎麼開始？試試這些：</p>
+            <p className="text-xs text-[#8a7ca8] mb-2">💡 不知道怎麼開始？試試這些：</p>
             <div className="flex flex-wrap gap-2">
               {PROMPT_INSPIRATIONS.slice(0, showAllInspirations ? undefined : 8).map((p) => (
                 <button
                   key={p.label}
                   type="button"
                   onClick={() => setInput(p.prompt)}
-                  className="px-3 py-1.5 text-xs bg-slate-700/60 hover:bg-slate-600/80 text-slate-300 rounded-full transition-colors"
+                  className="px-3 py-1.5 text-xs bg-[#b8a9e8]/10/60 hover:bg-[#b8a9e8]/15/80 text-slate-300 rounded-full transition-colors"
                 >
                   {p.icon} {p.label}
                 </button>
@@ -460,7 +460,7 @@ export function AiSurveyChat({ onDone, onCancel }: AiSurveyChatProps) {
                 <button
                   type="button"
                   onClick={() => setShowAllInspirations(true)}
-                  className="px-3 py-1.5 text-xs text-slate-500 hover:text-slate-300 transition-colors"
+                  className="px-3 py-1.5 text-xs text-[#3d3155]0 hover:text-slate-300 transition-colors"
                 >
                   查看更多 ▼
                 </button>
@@ -471,7 +471,7 @@ export function AiSurveyChat({ onDone, onCancel }: AiSurveyChatProps) {
 
         {/* ── Input (fixed at bottom, never moves) ── */}
         <div
-          className="shrink-0 px-4 pt-2 pb-4 border-t border-slate-700 bg-slate-900 flex gap-3"
+          className="shrink-0 px-4 pt-2 pb-4 border-t border-[#b8a9e8]/20 bg-white/50 flex gap-3"
           style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom, 1rem))' }}
         >
           <div className="flex-1 relative">
@@ -487,13 +487,13 @@ export function AiSurveyChat({ onDone, onCancel }: AiSurveyChatProps) {
               placeholder="描述你的問卷需求... （Enter 送出，Shift+Enter 換行）"
               rows={2}
               disabled={sending || creating}
-              className="w-full px-3 py-2 bg-slate-800 border border-slate-600 rounded-lg text-white text-sm focus:outline-none focus:ring-1 focus:ring-cyan-500/50 resize-none"
+              className="w-full px-3 py-2 bg-white/50 border border-[#b8a9e8]/30 rounded-lg text-white text-sm focus:outline-none focus:ring-1 focus:ring-cyan-500/50 resize-none"
             />
             {input.trim() && (
               <button
                 type="button"
                 onClick={() => { navigator.clipboard.writeText(input).catch(() => {}) }}
-                className="absolute right-2 bottom-2 p-1 text-slate-500 hover:text-slate-300 transition-colors"
+                className="absolute right-2 bottom-2 p-1 text-[#3d3155]0 hover:text-slate-300 transition-colors"
                 title="複製 Prompt"
               >
                 <Copy className="w-3.5 h-3.5" />
@@ -503,7 +503,7 @@ export function AiSurveyChat({ onDone, onCancel }: AiSurveyChatProps) {
           <button
             onClick={handleSend}
             disabled={!input.trim() || sending || creating}
-            className="px-4 py-2 bg-t-btn hover:bg-t-btn-hover disabled:opacity-40 text-white rounded-lg text-sm transition-colors self-end"
+            className="px-4 py-2 bg-gradient-to-r from-[#b8a9e8] to-[#f5b8b5] hover:opacity-90 disabled:opacity-40 text-white rounded-lg text-sm transition-colors self-end"
           >
             送出
           </button>

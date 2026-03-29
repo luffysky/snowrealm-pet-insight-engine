@@ -230,16 +230,16 @@ export default function NotificationRulesPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-        <h1 className="text-2xl font-bold text-white">通知設定</h1>
+        <h1 className="text-xl sm:text-2xl font-bold text-[#3d3155]">通知設定</h1>
         <div className="flex gap-2">
           {(['prefs', 'rules', 'logs'] as const).map((t) => (
             <button
               key={t}
               onClick={() => setTab(t)}
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer ${
-                tab === t ? 'bg-t-btn text-white' : 'bg-slate-800 text-slate-400 hover:text-white'
+                tab === t ? 'bg-gradient-to-r from-[#b8a9e8] to-[#f5b8b5] text-white' : 'bg-white/50 text-[#8a7ca8] hover:text-[#3d3155]'
               }`}
             >
               {t === 'prefs' ? '通知偏好' : t === 'rules' ? '規則管理' : '發送記錄'}
@@ -251,22 +251,22 @@ export default function NotificationRulesPage() {
       {tab === 'prefs' && (
         <section className="space-y-3">
           {prefsLoading ? (
-            <p className="text-slate-400 animate-pulse">載入中…</p>
+            <p className="text-[#8a7ca8] animate-pulse">載入中…</p>
           ) : (
             NOTIFY_EVENTS.map((ev) => (
               <div
                 key={ev.key}
-                className="bg-t-card-bg border border-t-card-border rounded-xl p-4 flex items-center justify-between"
+                className="bg-white/40 backdrop-blur-sm border border-[#b8a9e8]/25 rounded-xl p-4 flex items-center justify-between"
               >
                 <div>
-                  <p className="text-white font-medium text-sm">{ev.label}</p>
-                  <p className="text-xs text-slate-500">{ev.desc}</p>
+                  <p className="text-[#3d3155] font-medium text-sm">{ev.label}</p>
+                  <p className="text-xs text-[#3d3155]0">{ev.desc}</p>
                 </div>
                 <button
                   onClick={() => togglePref(ev.key)}
                   disabled={prefsSaving}
                   className={`relative w-11 h-6 rounded-full transition-colors cursor-pointer ${
-                    prefs[ev.key] ? 'bg-emerald-500' : 'bg-slate-600'
+                    prefs[ev.key] ? 'bg-emerald-500' : 'bg-[#b8a9e8]/15'
                   }`}
                 >
                   <span
@@ -286,26 +286,26 @@ export default function NotificationRulesPage() {
           {/* 新增按鈕 */}
           <button
             onClick={() => setShowAddForm(!showAddForm)}
-            className="px-4 py-2 bg-t-btn text-white rounded hover:bg-t-btn-hover text-sm"
+            className="px-4 py-2 bg-gradient-to-r from-[#b8a9e8] to-[#f5b8b5] hover:opacity-90 text-white rounded text-sm"
           >
             {showAddForm ? '取消新增' : '+ 新增規則'}
           </button>
 
           {/* 新增表單 */}
           {showAddForm && (
-            <div className="bg-slate-800/80 rounded-lg p-4 space-y-3 border border-slate-700">
-              <h3 className="text-white font-medium">新增通知規則</h3>
+            <div className="bg-white/60 backdrop-blur-sm rounded-lg p-4 space-y-3 border border-[#b8a9e8]/20">
+              <h3 className="text-[#3d3155] font-medium">新增通知規則</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <input
                   placeholder="規則名稱"
                   value={newRule.name}
                   onChange={(e) => setNewRule({ ...newRule, name: e.target.value })}
-                  className="bg-slate-900 text-white px-3 py-2 rounded border border-slate-600 text-sm"
+                  className="bg-white/60 text-[#3d3155] px-3 py-2 rounded border border-[#b8a9e8]/30 text-sm"
                 />
                 <select
                   value={newRule.condition_type}
                   onChange={(e) => setNewRule({ ...newRule, condition_type: e.target.value })}
-                  className="bg-slate-900 text-white px-3 py-2 rounded border border-slate-600 text-sm"
+                  className="bg-white/60 text-[#3d3155] px-3 py-2 rounded border border-[#b8a9e8]/30 text-sm"
                 >
                   {CONDITION_TYPES.map((t) => (
                     <option key={t.value} value={t.value}>{t.label}</option>
@@ -322,7 +322,7 @@ export default function NotificationRulesPage() {
                           condition_config: { ...newRule.condition_config, tag_key: e.target.value },
                         })
                       }
-                      className="bg-slate-900 text-white px-3 py-2 rounded border border-slate-600 text-sm"
+                      className="bg-white/60 text-[#3d3155] px-3 py-2 rounded border border-[#b8a9e8]/30 text-sm"
                     />
                     <input
                       placeholder="tag_value（如 high）"
@@ -333,7 +333,7 @@ export default function NotificationRulesPage() {
                           condition_config: { ...newRule.condition_config, tag_value: e.target.value },
                         })
                       }
-                      className="bg-slate-900 text-white px-3 py-2 rounded border border-slate-600 text-sm"
+                      className="bg-white/60 text-[#3d3155] px-3 py-2 rounded border border-[#b8a9e8]/30 text-sm"
                     />
                     <select
                       value={newRule.condition_config.operator}
@@ -343,7 +343,7 @@ export default function NotificationRulesPage() {
                           condition_config: { ...newRule.condition_config, operator: e.target.value },
                         })
                       }
-                      className="bg-slate-900 text-white px-3 py-2 rounded border border-slate-600 text-sm"
+                      className="bg-white/60 text-[#3d3155] px-3 py-2 rounded border border-[#b8a9e8]/30 text-sm"
                     >
                       {OPERATORS.map((o) => (
                         <option key={o.value} value={o.value}>{o.label}</option>
@@ -354,7 +354,7 @@ export default function NotificationRulesPage() {
                 <select
                   value={newRule.action_type}
                   onChange={(e) => setNewRule({ ...newRule, action_type: e.target.value })}
-                  className="bg-slate-900 text-white px-3 py-2 rounded border border-slate-600 text-sm"
+                  className="bg-white/60 text-[#3d3155] px-3 py-2 rounded border border-[#b8a9e8]/30 text-sm"
                 >
                   {ACTION_TYPES.map((a) => (
                     <option key={a.value} value={a.value}>{a.label}</option>
@@ -365,7 +365,7 @@ export default function NotificationRulesPage() {
                 placeholder="訊息模板：支援 {{response_id}}, {{survey_slug}}, {{tag_value}}"
                 value={newRule.message_template}
                 onChange={(e) => setNewRule({ ...newRule, message_template: e.target.value })}
-                className="w-full bg-slate-900 text-white px-3 py-2 rounded border border-slate-600 text-sm h-20"
+                className="w-full bg-white/60 text-[#3d3155] px-3 py-2 rounded border border-[#b8a9e8]/30 text-sm h-20"
               />
               <button
                 onClick={handleAddRule}
@@ -379,16 +379,16 @@ export default function NotificationRulesPage() {
 
           {/* 規則列表 */}
           {loading ? (
-            <p className="text-slate-400">載入中…</p>
+            <p className="text-[#8a7ca8]">載入中…</p>
           ) : rules.length === 0 ? (
-            <p className="text-slate-400">尚無通知規則</p>
+            <p className="text-[#8a7ca8]">尚無通知規則</p>
           ) : (
             <div className="space-y-3">
               {rules.map((rule) => (
                 <div
                   key={rule.id}
-                  className={`bg-slate-800/80 rounded-lg p-4 border ${
-                    rule.is_active ? 'border-slate-700' : 'border-slate-700/50 opacity-60'
+                  className={`bg-white/60 backdrop-blur-sm rounded-lg p-4 border ${
+                    rule.is_active ? 'border-[#b8a9e8]/20' : 'border-[#b8a9e8]/20 opacity-60'
                   }`}
                 >
                   {editingId === rule.id ? (
@@ -397,13 +397,13 @@ export default function NotificationRulesPage() {
                       <input
                         value={editForm.name ?? ''}
                         onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-                        className="bg-slate-900 text-white px-3 py-2 rounded border border-slate-600 text-sm w-full"
+                        className="bg-white/60 text-[#3d3155] px-3 py-2 rounded border border-[#b8a9e8]/30 text-sm w-full"
                       />
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                         <select
                           value={editForm.condition_type ?? rule.condition_type}
                           onChange={(e) => setEditForm({ ...editForm, condition_type: e.target.value as NotificationRule['condition_type'] })}
-                          className="bg-slate-900 text-white px-3 py-2 rounded border border-slate-600 text-sm"
+                          className="bg-white/60 text-[#3d3155] px-3 py-2 rounded border border-[#b8a9e8]/30 text-sm"
                         >
                           {CONDITION_TYPES.map((t) => (
                             <option key={t.value} value={t.value}>{t.label}</option>
@@ -420,7 +420,7 @@ export default function NotificationRulesPage() {
                                   condition_config: { ...editForm.condition_config, tag_key: e.target.value },
                                 })
                               }
-                              className="bg-slate-900 text-white px-3 py-2 rounded border border-slate-600 text-sm"
+                              className="bg-white/60 text-[#3d3155] px-3 py-2 rounded border border-[#b8a9e8]/30 text-sm"
                             />
                             <input
                               placeholder="tag_value"
@@ -431,14 +431,14 @@ export default function NotificationRulesPage() {
                                   condition_config: { ...editForm.condition_config, tag_value: e.target.value },
                                 })
                               }
-                              className="bg-slate-900 text-white px-3 py-2 rounded border border-slate-600 text-sm"
+                              className="bg-white/60 text-[#3d3155] px-3 py-2 rounded border border-[#b8a9e8]/30 text-sm"
                             />
                           </>
                         )}
                         <select
                           value={editForm.action_type ?? rule.action_type}
                           onChange={(e) => setEditForm({ ...editForm, action_type: e.target.value as NotificationRule['action_type'] })}
-                          className="bg-slate-900 text-white px-3 py-2 rounded border border-slate-600 text-sm"
+                          className="bg-white/60 text-[#3d3155] px-3 py-2 rounded border border-[#b8a9e8]/30 text-sm"
                         >
                           {ACTION_TYPES.map((a) => (
                             <option key={a.value} value={a.value}>{a.label}</option>
@@ -448,11 +448,11 @@ export default function NotificationRulesPage() {
                       <textarea
                         value={editForm.message_template ?? ''}
                         onChange={(e) => setEditForm({ ...editForm, message_template: e.target.value })}
-                        className="w-full bg-slate-900 text-white px-3 py-2 rounded border border-slate-600 text-sm h-20"
+                        className="w-full bg-white/60 text-[#3d3155] px-3 py-2 rounded border border-[#b8a9e8]/30 text-sm h-20"
                       />
                       <div className="flex gap-2">
                         <button onClick={() => handleSaveEdit(rule)} className="px-3 py-1.5 bg-green-600 text-white rounded text-sm hover:bg-green-700">儲存</button>
-                        <button onClick={() => setEditingId(null)} className="px-3 py-1.5 bg-slate-600 text-white rounded text-sm hover:bg-slate-500">取消</button>
+                        <button onClick={() => setEditingId(null)} className="px-3 py-1.5 bg-[#b8a9e8]/15 text-[#6b5fa8] rounded text-sm hover:bg-[#b8a9e8]/25">取消</button>
                       </div>
                     </div>
                   ) : (
@@ -460,24 +460,24 @@ export default function NotificationRulesPage() {
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
-                          <span className={`inline-block w-2 h-2 rounded-full ${rule.is_active ? 'bg-green-400' : 'bg-slate-500'}`} />
-                          <h3 className="text-white font-medium">{rule.name}</h3>
+                          <span className={`inline-block w-2 h-2 rounded-full ${rule.is_active ? 'bg-green-400' : 'bg-[#b5a8d0]'}`} />
+                          <h3 className="text-[#3d3155] font-medium">{rule.name}</h3>
                         </div>
-                        <div className="flex flex-wrap gap-2 text-xs text-slate-400 mb-2">
-                          <span className="bg-slate-700 px-2 py-0.5 rounded">
+                        <div className="flex flex-wrap gap-2 text-xs text-[#8a7ca8] mb-2">
+                          <span className="bg-[#b8a9e8]/10 px-2 py-0.5 rounded">
                             {CONDITION_TYPES.find((t) => t.value === rule.condition_type)?.label}
                           </span>
                           {rule.condition_type === 'tag_match' && rule.condition_config.tag_key && (
-                            <span className="bg-slate-700 px-2 py-0.5 rounded">
+                            <span className="bg-[#b8a9e8]/10 px-2 py-0.5 rounded">
                               {rule.condition_config.tag_key} = {rule.condition_config.tag_value}
                             </span>
                           )}
-                          <span className="bg-slate-700 px-2 py-0.5 rounded">
+                          <span className="bg-[#b8a9e8]/10 px-2 py-0.5 rounded">
                             {ACTION_TYPES.find((a) => a.value === rule.action_type)?.label}
                           </span>
                         </div>
                         {rule.message_template && (
-                          <p className="text-slate-400 text-xs truncate">{rule.message_template}</p>
+                          <p className="text-[#8a7ca8] text-xs truncate">{rule.message_template}</p>
                         )}
                       </div>
                       <div className="flex gap-1.5 shrink-0">
@@ -493,7 +493,7 @@ export default function NotificationRulesPage() {
                         </button>
                         <button
                           onClick={() => startEdit(rule)}
-                          className="px-3 py-1.5 bg-slate-700 text-slate-300 rounded text-xs hover:bg-slate-600"
+                          className="px-3 py-1.5 bg-[#b8a9e8]/10 text-slate-300 rounded text-xs hover:bg-[#b8a9e8]/15"
                         >
                           編輯
                         </button>
@@ -516,11 +516,11 @@ export default function NotificationRulesPage() {
       {tab === 'logs' && (
         <div className="space-y-2">
           {logs.length === 0 ? (
-            <p className="text-slate-400">尚無發送記錄</p>
+            <p className="text-[#8a7ca8]">尚無發送記錄</p>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm text-left">
-                <thead className="text-xs text-slate-400 border-b border-slate-700">
+                <thead className="text-xs text-[#8a7ca8] border-b border-[#b8a9e8]/20">
                   <tr>
                     <th className="py-2 px-3">時間</th>
                     <th className="py-2 px-3">觸發類型</th>
@@ -532,12 +532,12 @@ export default function NotificationRulesPage() {
                 </thead>
                 <tbody>
                   {logs.map((log) => (
-                    <tr key={log.id} className="border-b border-t-card-border text-slate-300">
+                    <tr key={log.id} className="border-b border-[#b8a9e8]/25 text-slate-300">
                       <td className="py-2 px-3 whitespace-nowrap text-xs">
                         {new Date(log.created_at).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' })}
                       </td>
                       <td className="py-2 px-3">
-                        <span className="bg-slate-700 px-2 py-0.5 rounded text-xs">
+                        <span className="bg-[#b8a9e8]/10 px-2 py-0.5 rounded text-xs">
                           {log.trigger_type === 'rule' ? '問卷觸發' : 
                            log.trigger_type === 'weekly_report' ? '系統週報' : 
                            log.trigger_type === 'manual' ? '手動推播' : 
@@ -547,8 +547,8 @@ export default function NotificationRulesPage() {
                       </td>
                       <td className="py-2 px-3 text-xs">{log.rule_name ?? '-'}</td>
                       <td className="py-2 px-3 text-xs">
-                        <span className="text-slate-400">{log.recipient_type === 'admin' ? '管理員' : '使用者'}</span>
-                        <span className="ml-1 text-slate-500">{log.recipient_id.slice(0, 10)}…</span>
+                        <span className="text-[#8a7ca8]">{log.recipient_type === 'admin' ? '管理員' : '使用者'}</span>
+                        <span className="ml-1 text-[#3d3155]0">{log.recipient_id.slice(0, 10)}…</span>
                       </td>
                       <td className="py-2 px-3">
                         <span className={`text-xs font-medium ${log.status === 'sent' ? 'text-green-400' : 'text-red-400'}`}>
@@ -570,19 +570,19 @@ export default function NotificationRulesPage() {
       {/* 二次確認 Modal */}
       {confirmAction && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
-          <div className="bg-slate-800 rounded-lg p-6 max-w-sm w-full mx-4 border border-slate-700">
-            <h3 className="text-white font-bold text-lg mb-2">{confirmAction.title}</h3>
+          <div className="bg-white/50 rounded-lg p-6 max-w-sm w-full mx-4 border border-[#b8a9e8]/20">
+            <h3 className="text-[#3d3155] font-bold text-lg mb-2">{confirmAction.title}</h3>
             <p className="text-slate-300 text-sm mb-4">{confirmAction.message}</p>
             <div className="flex justify-end gap-2">
               <button
                 onClick={() => setConfirmAction(null)}
-                className="px-4 py-2 bg-slate-600 text-white rounded text-sm hover:bg-slate-500"
+                className="px-4 py-2 bg-[#b8a9e8]/15 text-[#6b5fa8] rounded text-sm hover:bg-[#b8a9e8]/25"
               >
                 取消
               </button>
               <button
                 onClick={confirmAction.onConfirm}
-                className="px-4 py-2 bg-t-btn text-white rounded text-sm hover:bg-t-btn-hover"
+                className="px-4 py-2 bg-gradient-to-r from-[#b8a9e8] to-[#f5b8b5] hover:opacity-90 text-white rounded text-sm"
               >
                 確認
               </button>

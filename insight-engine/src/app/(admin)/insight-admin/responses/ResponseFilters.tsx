@@ -33,7 +33,7 @@ export function ResponseFilters({
       <select
         value={currentStatus ?? ''}
         onChange={(e) => applyFilters(e.target.value || undefined, currentSource)}
-        className="bg-slate-800 border border-slate-700 text-slate-300 text-sm rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+        className="bg-white/50 border border-[#b8a9e8]/20 text-slate-300 text-sm rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-cyan-500"
       >
         <option value="">所有狀態</option>
         <option value="completed">已完成</option>
@@ -50,13 +50,13 @@ export function ResponseFilters({
             applyFilters(currentStatus, val || undefined)
           }
         }}
-        className="bg-slate-800 border border-slate-700 text-slate-300 text-sm rounded-lg px-3 py-2 w-52 focus:outline-none focus:ring-1 focus:ring-cyan-500 placeholder:text-slate-500"
+        className="bg-white/50 border border-[#b8a9e8]/20 text-slate-300 text-sm rounded-lg px-3 py-2 w-52 focus:outline-none focus:ring-1 focus:ring-cyan-500 placeholder:text-[#b5a8d0]"
       />
 
       {(currentStatus || currentSource) && (
         <button
           onClick={() => applyFilters()}
-          className="text-sm text-slate-400 hover:text-white transition-colors"
+          className="text-sm text-[#8a7ca8] hover:text-[#3d3155] transition-colors"
         >
           清除篩選
         </button>

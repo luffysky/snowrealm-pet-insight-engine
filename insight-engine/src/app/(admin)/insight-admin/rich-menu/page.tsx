@@ -39,8 +39,8 @@ node scripts/setup-rich-menu.mjs
 node scripts/setup-insight-rich-menu.mjs`
 
 const FORM_INPUT_SM =
-  'w-full px-2 py-1.5 bg-slate-900 border border-slate-600 rounded text-white text-xs focus:border-t-accent-border focus:outline-none'
-const FORM_LABEL_SM = 'block text-[10px] text-slate-500 mb-0.5'
+  'w-full px-2 py-1.5 bg-white/60 border border-[#b8a9e8]/30 rounded text-[#3d3155] text-xs focus:border-[#b8a9e8]/30 focus:outline-none'
+const FORM_LABEL_SM = 'block text-[10px] text-[#3d3155]0 mb-0.5'
 
 /** 官方／後台模板常用色 + 中性色，一鍵套用 */
 const RICH_MENU_COLOR_SWATCHES = [
@@ -136,14 +136,14 @@ function RichMenuColorPicker({
   }, [onChange])
 
   return (
-    <div className="rounded-lg border border-slate-600/80 bg-slate-950/40 p-2 space-y-2">
+    <div className="rounded-lg border border-[#b8a9e8]/25 bg-transparent/40 p-2 space-y-2">
       <div className="flex items-center gap-2">
         <div
           className="h-10 w-10 shrink-0 rounded-lg border border-white/10 shadow-[inset_0_2px_8px_rgba(0,0,0,0.35)] ring-1 ring-white/5"
           style={{ backgroundColor: valid ?? 'transparent' }}
           title={valid ? `預覽 ${valid}` : '無效色碼'}
         />
-        <label className="relative h-9 w-11 shrink-0 cursor-pointer overflow-hidden rounded-lg border border-slate-500/60 bg-slate-800 shadow-inner hover:border-cyan-500/40 transition-colors">
+        <label className="relative h-9 w-11 shrink-0 cursor-pointer overflow-hidden rounded-lg border border-[#b8a9e8]/35/60 bg-white/50 shadow-inner hover:border-cyan-500/40 transition-colors">
           <span className="sr-only">系統色盤</span>
           <input
             type="color"
@@ -164,33 +164,33 @@ function RichMenuColorPicker({
             autoComplete="off"
           />
           {valid ? (
-            <p className="text-[10px] text-slate-500 font-mono truncate">{valid}</p>
+            <p className="text-[10px] text-[#3d3155]0 font-mono truncate">{valid}</p>
           ) : value.trim() ? (
             <p className="text-[10px] text-amber-400/90">格式需為 #RGB 或 #RRGGBB</p>
           ) : null}
         </div>
       </div>
 
-      <div className="border-t border-slate-700/50 pt-2">
+      <div className="border-t border-[#b8a9e8]/20 pt-2">
         <button
           type="button"
           onClick={() => setAdvancedOpen((o) => !o)}
-          className="flex w-full items-center justify-between gap-2 rounded-md px-1 py-0.5 text-left text-[10px] font-medium text-slate-400 transition-colors hover:bg-slate-800/60 hover:text-slate-200"
+          className="flex w-full items-center justify-between gap-2 rounded-md px-1 py-0.5 text-left text-[10px] font-medium text-[#8a7ca8] transition-colors hover:bg-white/40 backdrop-blur-sm hover:text-[#3d3155]"
         >
           <span>進階取色（飽和度／色相）</span>
-          <span className="shrink-0 text-slate-500 tabular-nums" aria-hidden>
+          <span className="shrink-0 text-[#3d3155]0 tabular-nums" aria-hidden>
             {advancedOpen ? '▼' : '▶'}
           </span>
         </button>
         {advancedOpen ? (
-          <div className="rm-colorful-wrap mt-2 space-y-2 rounded-md border border-slate-700/40 bg-slate-900/50 p-2">
+          <div className="rm-colorful-wrap mt-2 space-y-2 rounded-md border border-[#b8a9e8]/20/40 bg-white/40 backdrop-blur-sm p-2">
             <HexColorPicker
               color={pickerValue}
               onChange={(c) => onChange(c.toLowerCase())}
               className="!w-full max-w-none"
             />
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <p className="text-[10px] font-mono text-slate-400 tabular-nums">
+              <p className="text-[10px] font-mono text-[#8a7ca8] tabular-nums">
                 {rgb ? (
                   <>
                     RGB <span className="text-slate-300">{rgb.r}</span>
@@ -208,7 +208,7 @@ function RichMenuColorPicker({
                   type="button"
                   onClick={copyHex}
                   disabled={!valid}
-                  className="rounded-md border border-slate-600 bg-slate-800/80 px-2 py-1 text-[10px] text-slate-200 transition-colors hover:border-cyan-500/40 hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-40"
+                  className="rounded-md border border-[#b8a9e8]/30 bg-white/60 backdrop-blur-sm px-2 py-1 text-[10px] text-[#3d3155] transition-colors hover:border-cyan-500/40 hover:bg-white/50 disabled:cursor-not-allowed disabled:opacity-40"
                 >
                   {copiedHex ? '已複製' : '複製 Hex'}
                 </button>
@@ -216,7 +216,7 @@ function RichMenuColorPicker({
                   <button
                     type="button"
                     onClick={pickFromScreen}
-                    className="rounded-md border border-slate-600 bg-slate-800/80 px-2 py-1 text-[10px] text-slate-200 transition-colors hover:border-violet-400/40 hover:bg-slate-800"
+                    className="rounded-md border border-[#b8a9e8]/30 bg-white/60 backdrop-blur-sm px-2 py-1 text-[10px] text-[#3d3155] transition-colors hover:border-violet-400/40 hover:bg-white/50"
                     title="從螢幕取色（Chrome／Edge 等）"
                   >
                     滴管取色
@@ -232,7 +232,7 @@ function RichMenuColorPicker({
       </div>
 
       <div>
-        <p className="text-[9px] uppercase tracking-wider text-slate-500 mb-1.5">快捷色</p>
+        <p className="text-[9px] uppercase tracking-wider text-[#3d3155]0 mb-1.5">快捷色</p>
         <div className="flex flex-wrap gap-1.5">
           {RICH_MENU_COLOR_SWATCHES.map((c) => (
             <button
@@ -415,8 +415,8 @@ export default function RichMenuPage() {
   const labelCls = FORM_LABEL_SM
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-white">Rich Menu 管理</h1>
+    <div className="space-y-4 sm:space-y-6">
+      <h1 className="text-xl sm:text-2xl font-bold text-[#3d3155]">Rich Menu 管理</h1>
       {createMsg && (
         <div
           className={`rounded-lg px-4 py-2 text-sm border ${
@@ -430,34 +430,34 @@ export default function RichMenuPage() {
       )}
 
       {/* 從模板建立 */}
-      <section className="bg-t-card-bg border border-t-card-border rounded-xl p-6 space-y-4">
-        <h2 className="text-lg font-semibold text-white/90">從模板建立</h2>
-        <p className="text-sm text-slate-400">
+      <section className="bg-white/40 backdrop-blur-sm border border-[#b8a9e8]/25 rounded-xl p-6 space-y-4">
+        <h2 className="text-lg font-semibold text-[#3d3155]/90">從模板建立</h2>
+        <p className="text-sm text-[#8a7ca8]">
           選擇模板一鍵建立 Rich Menu，自動產生圖片並設為預設。URL 根據環境變數與佔位符替換。
         </p>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {TEMPLATES.map((t) => (
-            <div key={t.id} className="bg-slate-800 border border-slate-700 rounded-lg p-4 space-y-2">
+            <div key={t.id} className="bg-white/50 border border-[#b8a9e8]/20 rounded-lg p-4 space-y-2">
               <div className="flex items-center justify-between">
-                <h3 className="text-white font-medium">{t.label}</h3>
-                <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-700 text-slate-400">
+                <h3 className="text-[#3d3155] font-medium">{t.label}</h3>
+                <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#b8a9e8]/10 text-[#8a7ca8]">
                   {t.channel === 'official' ? 'Official Bot' : 'Insight Bot'}
                 </span>
               </div>
-              <p className="text-xs text-slate-500">{t.desc}</p>
+              <p className="text-xs text-[#3d3155]0">{t.desc}</p>
               <div className="flex flex-col gap-2">
                 <button
                   type="button"
                   onClick={() => handleCreateFromTemplate(t.id, t.channel)}
                   disabled={creating}
-                  className="w-full px-3 py-2 bg-t-btn hover:bg-t-btn-hover disabled:bg-slate-700 disabled:text-slate-500 text-white rounded-lg text-sm font-medium transition-colors cursor-pointer"
+                  className="w-full px-3 py-2 bg-gradient-to-r from-[#b8a9e8] to-[#f5b8b5] hover:opacity-90 disabled:bg-[#b8a9e8]/10 disabled:text-[#b5a8d0] text-white rounded-lg text-sm font-medium transition-colors cursor-pointer"
                 >
                   {creating ? '建立中...' : '建立並設為預設'}
                 </button>
                 <button
                   type="button"
                   onClick={() => applyPresetToEditor(t.id as 'official' | 'admin', t.channel)}
-                  className="w-full px-3 py-1.5 bg-slate-700/80 text-slate-300 rounded-lg text-xs hover:bg-slate-600 cursor-pointer"
+                  className="w-full px-3 py-1.5 bg-[#b8a9e8]/10/80 text-slate-300 rounded-lg text-xs hover:bg-[#b8a9e8]/15 cursor-pointer"
                 >
                   載入到下方編輯器
                 </button>
@@ -468,13 +468,13 @@ export default function RichMenuPage() {
       </section>
 
       {/* 進階編輯 */}
-      <section className="bg-t-card-bg border border-t-card-border rounded-xl p-6 space-y-4">
-        <h2 className="text-lg font-semibold text-white/90">進階：自訂按鈕後建立</h2>
-        <p className="text-sm text-slate-400">
+      <section className="bg-white/40 backdrop-blur-sm border border-[#b8a9e8]/25 rounded-xl p-6 space-y-4">
+        <h2 className="text-lg font-semibold text-[#3d3155]/90">進階：自訂按鈕後建立</h2>
+        <p className="text-sm text-[#8a7ca8]">
           可修改標籤、網址或訊息文字、底色。URI 可使用佔位符（儲存前由伺服器依租戶替換）。
         </p>
         {placeholders.length > 0 && (
-          <p className="text-xs text-slate-500 font-mono break-all">
+          <p className="text-xs text-[#3d3155]0 font-mono break-all">
             佔位符：{placeholders.join(' · ')}
           </p>
         )}
@@ -532,7 +532,7 @@ export default function RichMenuPage() {
           {editorButtons.map((btn, i) => (
             <div
               key={i}
-              className="grid grid-cols-1 md:grid-cols-12 gap-2 p-3 rounded-lg bg-slate-800/60 border border-slate-700/80"
+              className="grid grid-cols-1 md:grid-cols-12 gap-2 p-3 rounded-lg bg-white/40 backdrop-blur-sm border border-[#b8a9e8]/20/80"
             >
               <div className="md:col-span-1">
                 <label className={labelCls}>圖示</label>
@@ -587,7 +587,7 @@ export default function RichMenuPage() {
             type="button"
             onClick={() => applyPresetToEditor(editorBase, editorChannel)}
             disabled={!presets}
-            className="px-3 py-2 bg-slate-700 text-white rounded-lg text-sm hover:bg-slate-600 disabled:opacity-50 cursor-pointer"
+            className="px-3 py-2 bg-[#b8a9e8]/15 text-[#6b5fa8] border border-[#b8a9e8]/25 rounded-lg text-sm hover:bg-[#b8a9e8]/15 disabled:opacity-50 cursor-pointer"
           >
             還原為目前基底模板
           </button>
@@ -595,7 +595,7 @@ export default function RichMenuPage() {
             type="button"
             onClick={handleCreateFromEditor}
             disabled={creating || editorButtons.length !== 6}
-            className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-700 disabled:text-slate-500 text-white rounded-lg text-sm font-medium cursor-pointer"
+            className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 disabled:bg-[#b8a9e8]/10 disabled:text-[#b5a8d0] text-white rounded-lg text-sm font-medium cursor-pointer"
           >
             {creating ? '建立中…' : '依編輯內容建立並設為預設'}
           </button>
@@ -603,8 +603,8 @@ export default function RichMenuPage() {
       </section>
 
       {/* 本機指令（終端機樣式，僅複製 — 不從瀏覽器執行任意 shell） */}
-      <section className="bg-t-card-bg border border-t-card-border rounded-xl p-6 space-y-3">
-        <h2 className="text-lg font-semibold text-white/90">本機指令控制台</h2>
+      <section className="bg-white/40 backdrop-blur-sm border border-[#b8a9e8]/25 rounded-xl p-6 space-y-3">
+        <h2 className="text-lg font-semibold text-[#3d3155]/90">本機指令控制台</h2>
         <p className="text-xs text-amber-200/80 bg-amber-500/10 border border-amber-500/25 rounded-lg px-3 py-2">
           <strong>安全說明：</strong>
           無法在網頁內直接替你執行終端機指令（會造成任意指令執行風險）。以下為
@@ -613,7 +613,7 @@ export default function RichMenuPage() {
         </p>
         <div className="relative rounded-lg border border-emerald-500/30 bg-[#0d1117] overflow-hidden">
           <div className="flex items-center justify-between px-3 py-2 border-b border-white/10 bg-black/40">
-            <span className="text-[10px] text-slate-500 font-mono">bash — insight-engine</span>
+            <span className="text-[10px] text-[#3d3155]0 font-mono">bash — insight-engine</span>
             <button
               type="button"
               onClick={copyCli}
@@ -632,13 +632,13 @@ export default function RichMenuPage() {
       <section className="space-y-3">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex flex-wrap items-center gap-2">
-            <h2 className="text-lg font-semibold text-white/90">現有選單</h2>
-            <div className="flex rounded-lg border border-slate-600 overflow-hidden text-xs">
+            <h2 className="text-lg font-semibold text-[#3d3155]/90">現有選單</h2>
+            <div className="flex rounded-lg border border-[#b8a9e8]/30 overflow-hidden text-xs">
               <button
                 type="button"
                 onClick={() => setListChannel('official')}
                 className={`px-3 py-1.5 transition-colors cursor-pointer ${
-                  listChannel === 'official' ? 'bg-cyan-900/40 text-cyan-300' : 'bg-slate-800 text-slate-400 hover:text-white'
+                  listChannel === 'official' ? 'bg-cyan-900/40 text-cyan-300' : 'bg-white/50 text-[#8a7ca8] hover:text-[#3d3155]'
                 }`}
               >
                 Official 官方帳號
@@ -646,8 +646,8 @@ export default function RichMenuPage() {
               <button
                 type="button"
                 onClick={() => setListChannel('insight')}
-                className={`px-3 py-1.5 transition-colors cursor-pointer border-l border-slate-600 ${
-                  listChannel === 'insight' ? 'bg-violet-900/40 text-violet-300' : 'bg-slate-800 text-slate-400 hover:text-white'
+                className={`px-3 py-1.5 transition-colors cursor-pointer border-l border-[#b8a9e8]/30 ${
+                  listChannel === 'insight' ? 'bg-violet-900/40 text-violet-300' : 'bg-white/50 text-[#8a7ca8] hover:text-[#3d3155]'
                 }`}
               >
                 Insight 問卷／通知
@@ -672,10 +672,10 @@ export default function RichMenuPage() {
           )}
         </div>
 
-        <div className="rounded-lg border border-slate-700/80 bg-slate-900/35 px-3 py-2.5 text-xs text-slate-400 leading-relaxed">
+        <div className="rounded-lg border border-[#b8a9e8]/20/80 bg-white/50/35 px-3 py-2.5 text-xs text-[#8a7ca8] leading-relaxed">
           <p className="font-medium text-slate-300 mb-1.5">能編輯嗎？CRUD 與 LINE 限制</p>
-          <p className="text-slate-500 mb-2 pl-4 border-l-2 border-slate-600">
-            <strong className="text-slate-400">預設選單</strong>：LINE 規則是「<strong>每一個</strong> Messaging API Channel（Bot）同一時間只能有{' '}
+          <p className="text-[#3d3155]0 mb-2 pl-4 border-l-2 border-[#b8a9e8]/30">
+            <strong className="text-[#8a7ca8]">預設選單</strong>：LINE 規則是「<strong>每一個</strong> Messaging API Channel（Bot）同一時間只能有{' '}
             <strong>一個</strong>套用到<strong>全部好友</strong>的預設 Rich Menu」。若你同時有 <strong>Official</strong> 與{' '}
             <strong>Insight</strong> 兩個 Channel，可<strong>各自</strong>建立一個預設選單——請用上方分頁切換查看／管理。
           </p>
@@ -685,7 +685,7 @@ export default function RichMenuPage() {
             </li>
             <li>
               <strong className="text-slate-300">建立（C）</strong>：用上方「模板」或「進階」上傳圖並建立，會產生新的{' '}
-              <span className="font-mono text-slate-500">richMenuId</span>。
+              <span className="font-mono text-[#3d3155]0">richMenuId</span>。
             </li>
             <li>
               <strong className="text-slate-300">更新（U）</strong>：LINE Messaging API{' '}
@@ -698,10 +698,10 @@ export default function RichMenuPage() {
         </div>
 
         {loading ? (
-          <p className="text-slate-400 animate-pulse">載入中…</p>
+          <p className="text-[#8a7ca8] animate-pulse">載入中…</p>
         ) : menus.length === 0 ? (
-          <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-8 text-center">
-            <p className="text-slate-500 text-sm">尚無 Rich Menu</p>
+          <div className="bg-white/35 backdrop-blur-sm border border-[#b8a9e8]/20 rounded-xl p-8 text-center">
+            <p className="text-[#3d3155]0 text-sm">尚無 Rich Menu</p>
             <p className="text-xs text-slate-600 mt-1">使用上方模板或進階編輯建立</p>
           </div>
         ) : (
@@ -710,28 +710,28 @@ export default function RichMenuPage() {
             return (
               <div
                 key={menu.richMenuId}
-                className={`bg-slate-800/80 rounded-xl p-4 border ${isDefault ? 'border-t-accent' : 'border-slate-700'}`}
+                className={`bg-white/60 backdrop-blur-sm rounded-xl p-4 border ${isDefault ? 'border-t-accent' : 'border-[#b8a9e8]/20'}`}
               >
                 <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
                       {isDefault && (
-                        <span className="bg-t-btn text-white text-xs px-2 py-0.5 rounded font-medium">預設</span>
+                        <span className="bg-[#b8a9e8]/20 text-[#6b5fa8] text-xs px-2 py-0.5 rounded font-medium">預設</span>
                       )}
-                      <h3 className="text-white font-medium">{menu.name}</h3>
+                      <h3 className="text-[#3d3155] font-medium">{menu.name}</h3>
                     </div>
-                    <div className="flex flex-wrap gap-2 text-xs text-slate-400 mb-2">
-                      <span className="bg-slate-700 px-2 py-0.5 rounded">{menu.areas.length} 個按鈕</span>
-                      <span className="bg-slate-700 px-2 py-0.5 rounded">「{menu.chatBarText}」</span>
+                    <div className="flex flex-wrap gap-2 text-xs text-[#8a7ca8] mb-2">
+                      <span className="bg-[#b8a9e8]/10 px-2 py-0.5 rounded">{menu.areas.length} 個按鈕</span>
+                      <span className="bg-[#b8a9e8]/10 px-2 py-0.5 rounded">「{menu.chatBarText}」</span>
                     </div>
                     <p className="text-slate-600 text-[10px] font-mono">{menu.richMenuId}</p>
 
                     <div className="mt-3 space-y-1">
                       {menu.areas.map((area, i) => (
-                        <div key={i} className="text-xs text-slate-400 flex gap-2 flex-wrap">
-                          <span className="text-slate-500">#{i + 1}</span>
+                        <div key={i} className="text-xs text-[#8a7ca8] flex gap-2 flex-wrap">
+                          <span className="text-[#3d3155]0">#{i + 1}</span>
                           <span className="text-slate-300">{area.action.label || area.action.text || '—'}</span>
-                          <span className="text-slate-500">({area.action.type})</span>
+                          <span className="text-[#3d3155]0">({area.action.type})</span>
                           {area.action.uri && (
                             <span className="text-t-accent truncate max-w-[300px]">{area.action.uri}</span>
                           )}
@@ -754,7 +754,7 @@ export default function RichMenuPage() {
                           })
                         }
                         disabled={actionLoading}
-                        className="px-3 py-1.5 bg-t-accent-bg text-t-accent rounded-lg text-xs hover:opacity-80 disabled:opacity-50 cursor-pointer"
+                        className="px-3 py-1.5 bg-[#b8a9e8]/20 text-t-accent rounded-lg text-xs hover:opacity-80 disabled:opacity-50 cursor-pointer"
                       >
                         設為預設
                       </button>
@@ -783,14 +783,14 @@ export default function RichMenuPage() {
 
       {confirmAction && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
-          <div className="bg-slate-800 rounded-xl p-6 max-w-sm w-full mx-4 border border-slate-700">
-            <h3 className="text-white font-bold text-lg mb-2">{confirmAction.title}</h3>
+          <div className="bg-white/50 rounded-xl p-6 max-w-sm w-full mx-4 border border-[#b8a9e8]/20">
+            <h3 className="text-[#3d3155] font-bold text-lg mb-2">{confirmAction.title}</h3>
             <p className="text-slate-300 text-sm mb-4">{confirmAction.message}</p>
             <div className="flex justify-end gap-2">
               <button
                 type="button"
                 onClick={() => setConfirmAction(null)}
-                className="px-4 py-2 bg-slate-600 text-white rounded-lg text-sm hover:bg-slate-500 cursor-pointer"
+                className="px-4 py-2 bg-[#b8a9e8]/15 text-[#6b5fa8] rounded-lg text-sm hover:bg-[#b8a9e8]/25 cursor-pointer"
               >
                 取消
               </button>
@@ -798,7 +798,7 @@ export default function RichMenuPage() {
                 type="button"
                 onClick={confirmAction.onConfirm}
                 disabled={actionLoading}
-                className="px-4 py-2 bg-t-btn text-white rounded-lg text-sm hover:bg-t-btn-hover disabled:opacity-50 cursor-pointer"
+                className="px-4 py-2 bg-gradient-to-r from-[#b8a9e8] to-[#f5b8b5] hover:opacity-90 text-white rounded-lg text-sm disabled:opacity-50 cursor-pointer"
               >
                 確認
               </button>

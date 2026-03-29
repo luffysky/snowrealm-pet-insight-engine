@@ -11,7 +11,7 @@ const PAGE_SIZE = 20
 
 export default function AdminResponsesPage() {
   return (
-    <Suspense fallback={<p className="text-slate-400 animate-pulse">載入中…</p>}>
+    <Suspense fallback={<p className="text-[#8a7ca8] animate-pulse">載入中…</p>}>
       <ResponsesInner />
     </Suspense>
   )
@@ -68,19 +68,19 @@ function ResponsesInner() {
     ? `/api/admin/export?surveyId=${selectedSurveyId}`
     : '/api/admin/export'
 
-  if (loading) return <p className="text-slate-400 animate-pulse">載入中…</p>
+  if (loading) return <p className="text-[#8a7ca8] animate-pulse">載入中…</p>
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between flex-wrap gap-4">
-        <h1 className="text-2xl font-bold text-white">填答列表</h1>
+    <div className="space-y-4 sm:space-y-6">
+      <div className="flex items-center justify-between flex-wrap gap-2 sm:gap-4">
+        <h1 className="text-xl sm:text-2xl font-bold text-[#3d3155]">填答列表</h1>
         <div className="flex items-center gap-3 flex-wrap">
-          <p className="text-sm text-slate-400">共 {total} 筆</p>
+          <p className="text-sm text-[#8a7ca8]">共 {total} 筆</p>
           <span className="text-sm text-green-400">LINE {lineClicks}</span>
           <span className="text-sm text-purple-400">IG {igClicks}</span>
           <a
             href={exportUrl}
-            className="px-3 py-1.5 bg-t-btn hover:bg-t-btn-hover text-white text-sm rounded-lg transition-colors"
+            className="px-3 py-1.5 bg-gradient-to-r from-[#b8a9e8] to-[#f5b8b5] hover:opacity-90 text-white text-sm rounded-lg transition-colors"
           >
             匯出 CSV
           </a>

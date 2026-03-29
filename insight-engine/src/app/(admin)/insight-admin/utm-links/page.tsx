@@ -101,12 +101,12 @@ export default function UtmLinksPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-white">UTM 連結管理</h1>
+        <h1 className="text-xl sm:text-2xl font-bold text-[#3d3155]">UTM 連結管理</h1>
         <button
           onClick={() => setShowForm(!showForm)}
-          className="px-4 py-2 bg-t-btn text-white rounded hover:bg-t-btn-hover text-sm"
+          className="px-4 py-2 bg-gradient-to-r from-[#b8a9e8] to-[#f5b8b5] hover:opacity-90 text-white rounded text-sm"
         >
           {showForm ? '取消' : '+ 建立連結'}
         </button>
@@ -114,34 +114,34 @@ export default function UtmLinksPage() {
 
       {/* 建立表單 */}
       {showForm && (
-        <div className="bg-slate-800/80 rounded-lg p-4 space-y-3 border border-slate-700">
-          <h3 className="text-white font-medium">建立追蹤連結</h3>
+        <div className="bg-white/60 backdrop-blur-sm rounded-lg p-4 space-y-3 border border-[#b8a9e8]/20">
+          <h3 className="text-[#3d3155] font-medium">建立追蹤連結</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <input
               placeholder="連結名稱（如「LINE 推播 - 3月活動」）"
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
-              className="bg-slate-900 text-white px-3 py-2 rounded border border-slate-600 text-sm md:col-span-2"
+              className="bg-white/60 text-[#3d3155] px-3 py-2 rounded border border-[#b8a9e8]/30 text-sm md:col-span-2"
             />
             <input
               placeholder="基礎 URL（如 https://insight.snowrealm.pet/survey）"
               value={form.base_url}
               onChange={(e) => setForm({ ...form, base_url: e.target.value })}
-              className="bg-slate-900 text-white px-3 py-2 rounded border border-slate-600 text-sm md:col-span-2"
+              className="bg-white/60 text-[#3d3155] px-3 py-2 rounded border border-[#b8a9e8]/30 text-sm md:col-span-2"
             />
             <div>
-              <label className="block text-xs text-slate-400 mb-1">utm_source</label>
+              <label className="block text-xs text-[#8a7ca8] mb-1">utm_source</label>
               <div className="flex gap-2">
                 <input
                   placeholder="例：line"
                   value={form.utm_source}
                   onChange={(e) => setForm({ ...form, utm_source: e.target.value })}
-                  className="flex-1 bg-slate-900 text-white px-3 py-2 rounded border border-slate-600 text-sm"
+                  className="flex-1 bg-white/60 text-[#3d3155] px-3 py-2 rounded border border-[#b8a9e8]/30 text-sm"
                 />
                 <select
                   value=""
                   onChange={(e) => { if (e.target.value) setForm({ ...form, utm_source: e.target.value }) }}
-                  className="bg-slate-900 text-slate-400 px-2 py-2 rounded border border-slate-600 text-xs"
+                  className="bg-white/50 text-[#8a7ca8] px-2 py-2 rounded border border-[#b8a9e8]/30 text-xs"
                 >
                   <option value="">快選</option>
                   {COMMON_SOURCES.map((s) => <option key={s} value={s}>{s}</option>)}
@@ -149,18 +149,18 @@ export default function UtmLinksPage() {
               </div>
             </div>
             <div>
-              <label className="block text-xs text-slate-400 mb-1">utm_medium</label>
+              <label className="block text-xs text-[#8a7ca8] mb-1">utm_medium</label>
               <div className="flex gap-2">
                 <input
                   placeholder="例：chat"
                   value={form.utm_medium}
                   onChange={(e) => setForm({ ...form, utm_medium: e.target.value })}
-                  className="flex-1 bg-slate-900 text-white px-3 py-2 rounded border border-slate-600 text-sm"
+                  className="flex-1 bg-white/60 text-[#3d3155] px-3 py-2 rounded border border-[#b8a9e8]/30 text-sm"
                 />
                 <select
                   value=""
                   onChange={(e) => { if (e.target.value) setForm({ ...form, utm_medium: e.target.value }) }}
-                  className="bg-slate-900 text-slate-400 px-2 py-2 rounded border border-slate-600 text-xs"
+                  className="bg-white/50 text-[#8a7ca8] px-2 py-2 rounded border border-[#b8a9e8]/30 text-xs"
                 >
                   <option value="">快選</option>
                   {COMMON_MEDIUMS.map((m) => <option key={m} value={m}>{m}</option>)}
@@ -168,20 +168,20 @@ export default function UtmLinksPage() {
               </div>
             </div>
             <div className="md:col-span-2">
-              <label className="block text-xs text-slate-400 mb-1">utm_campaign</label>
+              <label className="block text-xs text-[#8a7ca8] mb-1">utm_campaign</label>
               <input
                 placeholder="例：march-survey-2026"
                 value={form.utm_campaign}
                 onChange={(e) => setForm({ ...form, utm_campaign: e.target.value })}
-                className="w-full bg-slate-900 text-white px-3 py-2 rounded border border-slate-600 text-sm"
+                className="w-full bg-white/60 text-[#3d3155] px-3 py-2 rounded border border-[#b8a9e8]/30 text-sm"
               />
             </div>
           </div>
 
           {/* 即時預覽 */}
           {form.base_url && (
-            <div className="bg-slate-900 rounded p-3">
-              <p className="text-xs text-slate-400 mb-1">預覽連結</p>
+            <div className="bg-white/50 rounded p-3">
+              <p className="text-xs text-[#8a7ca8] mb-1">預覽連結</p>
               <p className="text-t-accent text-sm break-all">{previewUrl}</p>
             </div>
           )}
@@ -198,19 +198,19 @@ export default function UtmLinksPage() {
 
       {/* 連結列表 */}
       {loading ? (
-        <p className="text-slate-400">載入中…</p>
+        <p className="text-[#8a7ca8]">載入中…</p>
       ) : links.length === 0 ? (
-        <p className="text-slate-400">尚無追蹤連結，按「建立連結」開始</p>
+        <p className="text-[#8a7ca8]">尚無追蹤連結，按「建立連結」開始</p>
       ) : (
         <div className="space-y-3">
           {links.map((link) => (
-            <div key={link.id} className="bg-slate-800/80 rounded-lg p-4 border border-slate-700">
+            <div key={link.id} className="bg-white/60 backdrop-blur-sm rounded-lg p-4 border border-[#b8a9e8]/20">
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1 min-w-0">
-                  <h3 className="text-white font-medium mb-1">{link.name}</h3>
-                  <div className="flex flex-wrap gap-2 text-xs text-slate-400 mb-2">
+                  <h3 className="text-[#3d3155] font-medium mb-1">{link.name}</h3>
+                  <div className="flex flex-wrap gap-2 text-xs text-[#8a7ca8] mb-2">
                     {link.utm_source && (
-                      <span className="bg-t-accent-bg text-t-accent px-2 py-0.5 rounded">source: {link.utm_source}</span>
+                      <span className="bg-[#b8a9e8]/20 text-t-accent px-2 py-0.5 rounded">source: {link.utm_source}</span>
                     )}
                     {link.utm_medium && (
                       <span className="bg-purple-900/40 text-purple-300 px-2 py-0.5 rounded">medium: {link.utm_medium}</span>
@@ -220,7 +220,7 @@ export default function UtmLinksPage() {
                     )}
                   </div>
                   <p className="text-t-accent text-xs break-all mb-1">{link.full_url}</p>
-                  <p className="text-slate-500 text-xs">
+                  <p className="text-[#3d3155]0 text-xs">
                     建立於 {new Date(link.created_at).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' })}
                   </p>
                 </div>
@@ -230,7 +230,7 @@ export default function UtmLinksPage() {
                     className={`px-3 py-1.5 rounded text-xs font-medium transition-colors ${
                       copied === link.id
                         ? 'bg-green-600 text-white'
-                        : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                        : 'bg-[#b8a9e8]/10 text-slate-300 hover:bg-[#b8a9e8]/15'
                     }`}
                   >
                     {copied === link.id ? '已複製!' : '複製'}
@@ -251,12 +251,12 @@ export default function UtmLinksPage() {
       {/* 二次確認 Modal */}
       {confirmAction && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
-          <div className="bg-slate-800 rounded-lg p-6 max-w-sm w-full mx-4 border border-slate-700">
-            <h3 className="text-white font-bold text-lg mb-2">{confirmAction.title}</h3>
+          <div className="bg-white/50 rounded-lg p-6 max-w-sm w-full mx-4 border border-[#b8a9e8]/20">
+            <h3 className="text-[#3d3155] font-bold text-lg mb-2">{confirmAction.title}</h3>
             <p className="text-slate-300 text-sm mb-4">{confirmAction.message}</p>
             <div className="flex justify-end gap-2">
-              <button onClick={() => setConfirmAction(null)} className="px-4 py-2 bg-slate-600 text-white rounded text-sm hover:bg-slate-500">取消</button>
-              <button onClick={confirmAction.onConfirm} className="px-4 py-2 bg-t-btn text-white rounded text-sm hover:bg-t-btn-hover">確認</button>
+              <button onClick={() => setConfirmAction(null)} className="px-4 py-2 bg-[#b8a9e8]/15 text-[#6b5fa8] rounded text-sm hover:bg-[#b8a9e8]/25">取消</button>
+              <button onClick={confirmAction.onConfirm} className="px-4 py-2 bg-gradient-to-r from-[#b8a9e8] to-[#f5b8b5] hover:opacity-90 text-white rounded text-sm">確認</button>
             </div>
           </div>
         </div>

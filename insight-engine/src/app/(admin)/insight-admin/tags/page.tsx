@@ -31,11 +31,11 @@ export default function AdminTagsPage() {
       .finally(() => setLoading(false))
   }, [selectedSurveyId])
 
-  if (loading) return <p className="text-slate-400 animate-pulse">載入中…</p>
+  if (loading) return <p className="text-[#8a7ca8] animate-pulse">載入中…</p>
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-white">CRM 標籤統計</h1>
+    <div className="space-y-4 sm:space-y-6">
+      <h1 className="text-xl sm:text-2xl font-bold text-[#3d3155]">CRM 標籤統計</h1>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {TAG_GROUPS.map(({ key, title }) => (

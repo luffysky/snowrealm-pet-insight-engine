@@ -86,23 +86,23 @@ export default function NotificationStylesPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-1">
-        <h1 className="text-2xl font-bold text-white">LINE 通知樣式</h1>
-        <p className="text-sm text-slate-400">管理各類 LINE Flex Message 的顏色、文字與按鈕</p>
+        <h1 className="text-xl sm:text-2xl font-bold text-[#3d3155]">LINE 通知樣式</h1>
+        <p className="text-sm text-[#8a7ca8]">管理各類 LINE Flex Message 的顏色、文字與按鈕</p>
       </div>
 
       {/* Toast */}
       {toast && (
-        <div className="fixed top-4 right-4 z-50 bg-slate-800 text-white px-4 py-2 rounded-lg shadow-lg border border-slate-600 text-sm animate-pulse">
+        <div className="fixed top-4 right-4 z-50 bg-white/90 text-[#3d3155] px-4 py-2 rounded-lg shadow-lg border border-[#b8a9e8]/30 text-sm animate-pulse">
           {toast}
         </div>
       )}
 
       {loading ? (
-        <p className="text-slate-400 animate-pulse">載入中…</p>
+        <p className="text-[#8a7ca8] animate-pulse">載入中…</p>
       ) : styles.length === 0 ? (
-        <p className="text-slate-400">尚無通知樣式設定</p>
+        <p className="text-[#8a7ca8]">尚無通知樣式設定</p>
       ) : (
         <div className="grid gap-4">
           {styles.map((style) => {
@@ -110,8 +110,8 @@ export default function NotificationStylesPage() {
             return (
               <div
                 key={style.id}
-                className={`bg-slate-800/80 rounded-xl border transition-all ${
-                  style.is_active ? 'border-slate-700' : 'border-slate-700/40 opacity-60'
+                className={`bg-white/60 backdrop-blur-sm rounded-xl border transition-all ${
+                  style.is_active ? 'border-[#b8a9e8]/20' : 'border-[#b8a9e8]/20/40 opacity-60'
                 }`}
               >
                 {/* Header with preview color band */}
@@ -126,8 +126,8 @@ export default function NotificationStylesPage() {
                     <div className="flex items-center gap-2">
                       <span className="text-xl">{style.header_emoji}</span>
                       <div>
-                        <h3 className="text-white font-medium">{style.label}</h3>
-                        <p className="text-xs text-slate-500 font-mono">{style.id}</p>
+                        <h3 className="text-[#3d3155] font-medium">{style.label}</h3>
+                        <p className="text-xs text-[#3d3155]0 font-mono">{style.id}</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
@@ -136,7 +136,7 @@ export default function NotificationStylesPage() {
                         className={`px-2.5 py-1 rounded text-xs font-medium transition-colors cursor-pointer ${
                           style.is_active
                             ? 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30'
-                            : 'bg-slate-700 text-slate-400 hover:bg-slate-600'
+                            : 'bg-[#b8a9e8]/10 text-[#8a7ca8] hover:bg-[#b8a9e8]/15'
                         }`}
                       >
                         {style.is_active ? '啟用中' : '已停用'}
@@ -144,7 +144,7 @@ export default function NotificationStylesPage() {
                       {!isEditing ? (
                         <button
                           onClick={() => startEdit(style)}
-                          className="px-3 py-1 rounded text-xs bg-t-accent-bg text-t-accent hover:bg-t-accent-bg transition-colors cursor-pointer"
+                          className="px-3 py-1 rounded text-xs bg-[#b8a9e8]/20 text-t-accent hover:bg-[#b8a9e8]/20 transition-colors cursor-pointer"
                         >
                           編輯
                         </button>
@@ -159,7 +159,7 @@ export default function NotificationStylesPage() {
                           </button>
                           <button
                             onClick={() => setEditingId(null)}
-                            className="px-3 py-1 rounded text-xs bg-slate-700 text-slate-300 hover:bg-slate-600 transition-colors cursor-pointer"
+                            className="px-3 py-1 rounded text-xs bg-[#b8a9e8]/10 text-slate-300 hover:bg-[#b8a9e8]/15 transition-colors cursor-pointer"
                           >
                             取消
                           </button>
@@ -170,19 +170,19 @@ export default function NotificationStylesPage() {
 
                   {/* Display or Edit mode */}
                   {isEditing ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 pt-2 border-t border-slate-700/50">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 pt-2 border-t border-[#b8a9e8]/20">
                       <Field label="Header 顏色">
                         <div className="flex items-center gap-2">
                           <input
                             type="color"
                             value={editForm.header_color ?? ''}
                             onChange={e => setEditForm({ ...editForm, header_color: e.target.value })}
-                            className="w-8 h-8 rounded border border-slate-600 cursor-pointer bg-transparent"
+                            className="w-8 h-8 rounded border border-[#b8a9e8]/30 cursor-pointer bg-transparent"
                           />
                           <input
                             value={editForm.header_color ?? ''}
                             onChange={e => setEditForm({ ...editForm, header_color: e.target.value })}
-                            className="flex-1 bg-slate-900 text-white px-3 py-1.5 rounded border border-slate-600 text-sm font-mono"
+                            className="flex-1 bg-white/60 text-[#3d3155] px-3 py-1.5 rounded border border-[#b8a9e8]/30 text-sm font-mono"
                             placeholder="#0e7990"
                           />
                         </div>
@@ -191,7 +191,7 @@ export default function NotificationStylesPage() {
                         <input
                           value={editForm.header_emoji ?? ''}
                           onChange={e => setEditForm({ ...editForm, header_emoji: e.target.value })}
-                          className="w-full bg-slate-900 text-white px-3 py-1.5 rounded border border-slate-600 text-sm"
+                          className="w-full bg-white/60 text-[#3d3155] px-3 py-1.5 rounded border border-[#b8a9e8]/30 text-sm"
                           placeholder="📋"
                         />
                       </Field>
@@ -199,7 +199,7 @@ export default function NotificationStylesPage() {
                         <input
                           value={editForm.header_text ?? ''}
                           onChange={e => setEditForm({ ...editForm, header_text: e.target.value })}
-                          className="w-full bg-slate-900 text-white px-3 py-1.5 rounded border border-slate-600 text-sm"
+                          className="w-full bg-white/60 text-[#3d3155] px-3 py-1.5 rounded border border-[#b8a9e8]/30 text-sm"
                           placeholder="新問卷回覆"
                         />
                       </Field>
@@ -207,7 +207,7 @@ export default function NotificationStylesPage() {
                         <input
                           value={editForm.footer_label ?? ''}
                           onChange={e => setEditForm({ ...editForm, footer_label: e.target.value })}
-                          className="w-full bg-slate-900 text-white px-3 py-1.5 rounded border border-slate-600 text-sm"
+                          className="w-full bg-white/60 text-[#3d3155] px-3 py-1.5 rounded border border-[#b8a9e8]/30 text-sm"
                           placeholder="查看詳情"
                         />
                       </Field>
@@ -215,7 +215,7 @@ export default function NotificationStylesPage() {
                         <input
                           value={editForm.footer_url ?? ''}
                           onChange={e => setEditForm({ ...editForm, footer_url: e.target.value })}
-                          className="w-full bg-slate-900 text-white px-3 py-1.5 rounded border border-slate-600 text-sm"
+                          className="w-full bg-white/60 text-[#3d3155] px-3 py-1.5 rounded border border-[#b8a9e8]/30 text-sm"
                           placeholder="/insight-admin/responses"
                         />
                       </Field>
@@ -225,19 +225,19 @@ export default function NotificationStylesPage() {
                             type="color"
                             value={editForm.footer_color ?? ''}
                             onChange={e => setEditForm({ ...editForm, footer_color: e.target.value })}
-                            className="w-8 h-8 rounded border border-slate-600 cursor-pointer bg-transparent"
+                            className="w-8 h-8 rounded border border-[#b8a9e8]/30 cursor-pointer bg-transparent"
                           />
                           <input
                             value={editForm.footer_color ?? ''}
                             onChange={e => setEditForm({ ...editForm, footer_color: e.target.value })}
-                            className="flex-1 bg-slate-900 text-white px-3 py-1.5 rounded border border-slate-600 text-sm font-mono"
+                            className="flex-1 bg-white/60 text-[#3d3155] px-3 py-1.5 rounded border border-[#b8a9e8]/30 text-sm font-mono"
                             placeholder="#0e7990"
                           />
                         </div>
                       </Field>
                     </div>
                   ) : (
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2 pt-2 border-t border-slate-700/50 text-xs">
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2 pt-2 border-t border-[#b8a9e8]/20 text-xs">
                       <InfoCell label="Header" value={style.header_text} />
                       <InfoCell label="顏色" value={style.header_color} color={style.header_color} />
                       <InfoCell label="Emoji" value={style.header_emoji} />
@@ -264,7 +264,7 @@ export default function NotificationStylesPage() {
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <label className="text-xs text-slate-400 mb-1 block">{label}</label>
+      <label className="text-xs text-[#8a7ca8] mb-1 block">{label}</label>
       {children}
     </div>
   )
@@ -273,11 +273,11 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 function InfoCell({ label, value, color }: { label: string; value: string; color?: string }) {
   return (
     <div className="space-y-0.5">
-      <p className="text-slate-500">{label}</p>
+      <p className="text-[#3d3155]0">{label}</p>
       <div className="flex items-center gap-1.5">
         {color && (
           <span
-            className="inline-block w-3 h-3 rounded-sm border border-slate-600 shrink-0"
+            className="inline-block w-3 h-3 rounded-sm border border-[#b8a9e8]/30 shrink-0"
             style={{ backgroundColor: color }}
           />
         )}
@@ -290,14 +290,14 @@ function InfoCell({ label, value, color }: { label: string; value: string; color
 function FlexPreview({ style }: { style: NotificationStyle }) {
   return (
     <div className="mt-2">
-      <p className="text-xs text-slate-500 mb-1">預覽</p>
-      <div className="max-w-xs rounded-lg overflow-hidden border border-slate-700/50 shadow-lg">
+      <p className="text-xs text-[#3d3155]0 mb-1">預覽</p>
+      <div className="max-w-xs rounded-lg overflow-hidden border border-[#b8a9e8]/20 shadow-lg">
         {/* Header */}
         <div
           className="px-3 py-2"
           style={{ backgroundColor: style.header_color }}
         >
-          <p className="text-white font-bold text-sm">
+          <p className="text-[#3d3155] font-bold text-sm">
             {style.header_emoji} {style.header_text}
           </p>
         </div>

@@ -20,11 +20,11 @@ export default function AdminUtmPage() {
       .finally(() => setLoading(false))
   }, [selectedSurveyId])
 
-  if (loading || !analytics) return <p className="text-slate-400 animate-pulse">載入中…</p>
+  if (loading || !analytics) return <p className="text-[#8a7ca8] animate-pulse">載入中…</p>
 
   return (
     <div className="space-y-8">
-      <h1 className="text-2xl font-bold text-white">來源分析</h1>
+      <h1 className="text-xl sm:text-2xl font-bold text-[#3d3155]">來源分析</h1>
 
       <UtmSection title="流量來源（utm_source）" data={analytics.bySources} />
       <UtmSection title="媒介（utm_medium）" data={analytics.byMedium} />
@@ -42,9 +42,9 @@ function UtmSection({
 }) {
   if (data.length === 0) {
     return (
-      <div className="bg-slate-800/50 border border-slate-700/50 rounded-2xl p-6">
-        <h2 className="text-lg font-semibold text-white mb-2">{title}</h2>
-        <p className="text-slate-500 text-sm">尚無資料</p>
+      <div className="bg-white/35 backdrop-blur-sm border border-[#b8a9e8]/20 rounded-[20px] p-6">
+        <h2 className="text-lg font-semibold text-[#3d3155] mb-2">{title}</h2>
+        <p className="text-[#3d3155]0 text-sm">尚無資料</p>
       </div>
     )
   }
@@ -56,21 +56,21 @@ function UtmSection({
         data={data.map((d) => ({ label: d.source, count: d.total }))}
       />
 
-      <div className="bg-slate-800/50 border border-slate-700/50 rounded-2xl overflow-hidden">
+      <div className="bg-white/35 backdrop-blur-sm border border-[#b8a9e8]/20 rounded-[20px] overflow-hidden">
         <div className="overflow-x-auto">
         <table className="w-full text-sm min-w-[500px]">
           <thead>
-            <tr className="border-b border-slate-700/50">
-              <th className="text-left px-6 py-3 text-slate-400 font-medium">
+            <tr className="border-b border-[#b8a9e8]/20">
+              <th className="text-left px-6 py-3 text-[#8a7ca8] font-medium">
                 來源
               </th>
-              <th className="text-right px-6 py-3 text-slate-400 font-medium">
+              <th className="text-right px-6 py-3 text-[#8a7ca8] font-medium">
                 總填寫
               </th>
-              <th className="text-right px-6 py-3 text-slate-400 font-medium">
+              <th className="text-right px-6 py-3 text-[#8a7ca8] font-medium">
                 已完成
               </th>
-              <th className="text-right px-6 py-3 text-slate-400 font-medium">
+              <th className="text-right px-6 py-3 text-[#8a7ca8] font-medium">
                 完成率
               </th>
             </tr>
@@ -79,7 +79,7 @@ function UtmSection({
             {data.map((row) => (
               <tr
                 key={row.source}
-                className="border-b border-slate-700/30 hover:bg-slate-700/20"
+                className="border-b border-[#b8a9e8]/10 hover:bg-[#b8a9e8]/8"
               >
                 <td className="px-6 py-3 text-slate-300">{row.source}</td>
                 <td className="px-6 py-3 text-right text-slate-300">

@@ -124,25 +124,25 @@ export default function SurveysAdminPage() {
     if (selectedSurvey) loadQuestions(selectedSurvey.id)
   }, [selectedSurvey, loadQuestions])
 
-  if (loading) return <p className="text-white/50">載入中...</p>
+  if (loading) return <p className="text-[#b5a8d0]">載入中...</p>
   if (error) return <p className="text-red-400">{error}</p>
 
   return (
     <div className="space-y-8">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <h1 className="text-2xl font-bold text-white/90">問卷管理</h1>
+      <div className="flex flex-wrap items-center justify-between gap-2 sm:gap-4">
+        <h1 className="text-xl sm:text-2xl font-bold text-[#3d3155]/90">問卷管理</h1>
         <div className="flex gap-2">
           <button
             type="button"
             onClick={() => { setShowAiChat((v) => !v); setShowCreate(false) }}
-            className="px-4 py-2 bg-linear-to-r from-cyan-700 to-blue-700 hover:from-cyan-600 hover:to-blue-600 text-white rounded-lg text-sm transition-all cursor-pointer"
+            className="px-4 py-2 bg-gradient-to-r from-cyan-700 to-blue-700 hover:from-cyan-600 hover:to-blue-600 text-white rounded-lg text-sm transition-all cursor-pointer"
           >
             ✨ AI 對話建立
           </button>
           <button
             type="button"
             onClick={() => { setShowCreate(true); setShowAiChat(false); setCreateError('') }}
-            className="px-4 py-2 bg-t-btn hover:bg-t-btn-hover text-white rounded-lg text-sm transition-colors cursor-pointer"
+            className="px-4 py-2 bg-gradient-to-r from-[#b8a9e8] to-[#f5b8b5] hover:opacity-90 text-white rounded-lg text-sm transition-colors cursor-pointer"
           >
             ＋ 新增問卷
           </button>
@@ -151,32 +151,32 @@ export default function SurveysAdminPage() {
 
       {/* Create survey form */}
       {showCreate && (
-        <div className="bg-slate-800 border border-slate-700 rounded-xl p-6 space-y-4">
-          <h2 className="text-lg font-semibold text-white/90">建立新問卷</h2>
-          <p className="text-xs text-slate-400 leading-relaxed">
+        <div className="bg-white/50 border border-[#b8a9e8]/20 rounded-xl p-6 space-y-4">
+          <h2 className="text-lg font-semibold text-[#3d3155]/90">建立新問卷</h2>
+          <p className="text-xs text-[#8a7ca8] leading-relaxed">
             建立後狀態為 <span className="text-emerald-400/90">published</span>，公開連結{' '}
             <code className="text-slate-300">/{'{租戶}'}/{'{slug}'}</code> 即可填寫。若暫不要上線，請在問卷設定改為{' '}
             <span className="text-amber-400/90">draft</span>。
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm text-slate-400 mb-1">問卷標題</label>
+              <label className="block text-sm text-[#8a7ca8] mb-1">問卷標題</label>
               <input
                 type="text"
                 value={newTitle}
                 onChange={(e) => setNewTitle(e.target.value)}
                 placeholder="例：2025 寵物生活調查"
-                className="w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded-lg text-white text-sm"
+                className="w-full px-3 py-2 bg-white/60 border border-[#b8a9e8]/30 rounded-lg text-[#3d3155] text-sm"
               />
             </div>
             <div>
-              <label className="block text-sm text-slate-400 mb-1">Slug（網址路徑）</label>
+              <label className="block text-sm text-[#8a7ca8] mb-1">Slug（網址路徑）</label>
               <input
                 type="text"
                 value={newSlug}
                 onChange={(e) => setNewSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
                 placeholder="例：pet-life-2025"
-                className="w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded-lg text-white text-sm"
+                className="w-full px-3 py-2 bg-white/60 border border-[#b8a9e8]/30 rounded-lg text-[#3d3155] text-sm"
               />
             </div>
           </div>
@@ -216,14 +216,14 @@ export default function SurveysAdminPage() {
                   setCreating(false)
                 }
               }}
-              className="px-4 py-2 bg-t-btn hover:bg-t-btn-hover disabled:opacity-50 text-white rounded-lg text-sm transition-colors cursor-pointer"
+              className="px-4 py-2 bg-gradient-to-r from-[#b8a9e8] to-[#f5b8b5] hover:opacity-90 disabled:opacity-50 text-white rounded-lg text-sm transition-colors cursor-pointer"
             >
               {creating ? '建立中...' : '建立'}
             </button>
             <button
               type="button"
               onClick={() => { setShowCreate(false); setCreateError('') }}
-              className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded-lg text-sm transition-colors cursor-pointer"
+              className="px-4 py-2 bg-[#b8a9e8]/10 hover:bg-[#b8a9e8]/15 text-slate-300 rounded-lg text-sm transition-colors cursor-pointer"
             >
               取消
             </button>
@@ -277,11 +277,11 @@ export default function SurveysAdminPage() {
                   : ''
               } ${
                 selectedSurvey?.id === s.id
-                  ? 'bg-t-accent-bg text-t-accent border border-t-card-border'
-                  : 'bg-slate-800 text-slate-400 border border-slate-700 hover:text-white'
+                  ? 'bg-[#b8a9e8]/20 text-t-accent border border-[#b8a9e8]/25'
+                  : 'bg-white/50 text-[#8a7ca8] border border-[#b8a9e8]/20 hover:text-[#3d3155]'
               } ${dragIdx === i ? 'opacity-40' : ''}`}
             >
-              <span className="text-white/20 mr-1 text-xs select-none">⠿</span>
+              <span className="text-[#b5a8d0] mr-1 text-xs select-none">⠿</span>
               {s.cover_image_url && (
                 <img src={s.cover_image_url} alt="" className="w-5 h-5 rounded object-cover shrink-0 opacity-80" />
               )}
@@ -290,7 +290,7 @@ export default function SurveysAdminPage() {
             </button>
           ))}
           {surveys.length > 1 && (
-            <span className="text-xs text-white/20 select-none">拖曳排序</span>
+            <span className="text-xs text-[#b5a8d0] select-none">拖曳排序</span>
           )}
         </div>
       )}
@@ -495,9 +495,9 @@ function SurveyEditor({
   ]
 
   return (
-    <div className="bg-t-card-bg border border-t-card-border rounded-2xl p-6 space-y-4">
+    <div className="bg-white/40 backdrop-blur-sm border border-[#b8a9e8]/25 rounded-[20px] p-6 space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-white/80">問卷設定</h2>
+        <h2 className="text-lg font-semibold text-[#3d3155]">問卷設定</h2>
         <div className="flex items-center gap-3">
           <span
             className={`text-xs px-2 py-1 rounded-full ${
@@ -505,7 +505,7 @@ function SurveyEditor({
                 ? 'bg-emerald-500/20 text-emerald-400'
                 : survey.status === 'draft'
                   ? 'bg-yellow-500/20 text-yellow-400'
-                  : 'bg-slate-500/20 text-slate-400'
+                  : 'bg-[#b5a8d0]/20 text-[#8a7ca8]'
             }`}
             title={`資料庫狀態：${survey.status}`}
           >
@@ -518,7 +518,7 @@ function SurveyEditor({
           {activeTab !== 'branching' && editing && (
             <div className="flex gap-2">
               <button type="button" onClick={() => { setEditing(false); setForm(survey) }}
-                className="text-sm text-slate-400 hover:text-white cursor-pointer">取消</button>
+                className="text-sm text-[#8a7ca8] hover:text-[#3d3155] cursor-pointer">取消</button>
               <button type="button" onClick={handleSave} disabled={saving}
                 className="text-sm text-t-accent hover:text-t-accent disabled:opacity-40 cursor-pointer">
                 {saving ? '儲存中...' : '儲存'}
@@ -529,30 +529,30 @@ function SurveyEditor({
       </div>
 
       {/* Top-level tabs */}
-      <div className="flex gap-2 border-b border-t-card-border pb-3">
+      <div className="flex gap-2 border-b border-[#b8a9e8]/25 pb-3">
         <button type="button" onClick={() => setActiveTab('basic')}
           className={`px-3 py-1.5 rounded-lg text-sm transition-colors cursor-pointer ${
             activeTab === 'basic'
-              ? 'bg-t-accent-bg text-t-accent border border-t-card-border'
-              : 'bg-slate-800 text-slate-400 border border-slate-700 hover:text-white'
+              ? 'bg-[#b8a9e8]/20 text-t-accent border border-[#b8a9e8]/25'
+              : 'bg-white/50 text-[#8a7ca8] border border-[#b8a9e8]/20 hover:text-[#3d3155]'
           }`}>設定</button>
         <button type="button" onClick={() => setActiveTab('og')}
           className={`px-3 py-1.5 rounded-lg text-sm transition-colors cursor-pointer ${
             activeTab === 'og'
-              ? 'bg-t-accent-bg text-t-accent border border-t-card-border'
-              : 'bg-slate-800 text-slate-400 border border-slate-700 hover:text-white'
+              ? 'bg-[#b8a9e8]/20 text-t-accent border border-[#b8a9e8]/25'
+              : 'bg-white/50 text-[#8a7ca8] border border-[#b8a9e8]/20 hover:text-[#3d3155]'
           }`}>OG / SEO</button>
         <button type="button" onClick={() => setActiveTab('branching')}
           className={`px-3 py-1.5 rounded-lg text-sm transition-colors cursor-pointer ${
             activeTab === 'branching'
-              ? 'bg-t-accent-bg text-t-accent border border-t-card-border'
-              : 'bg-slate-800 text-slate-400 border border-slate-700 hover:text-white'
+              ? 'bg-[#b8a9e8]/20 text-t-accent border border-[#b8a9e8]/25'
+              : 'bg-white/50 text-[#8a7ca8] border border-[#b8a9e8]/20 hover:text-[#3d3155]'
           }`}>分流邏輯</button>
         <button type="button" onClick={() => setActiveTab('result')}
           className={`px-3 py-1.5 rounded-lg text-sm transition-colors cursor-pointer ${
             activeTab === 'result'
-              ? 'bg-t-accent-bg text-t-accent border border-t-card-border'
-              : 'bg-slate-800 text-slate-400 border border-slate-700 hover:text-white'
+              ? 'bg-[#b8a9e8]/20 text-t-accent border border-[#b8a9e8]/25'
+              : 'bg-white/50 text-[#8a7ca8] border border-[#b8a9e8]/20 hover:text-[#3d3155]'
           }`}>結果設定</button>
       </div>
 
@@ -584,11 +584,11 @@ function SurveyEditor({
               }} 
             />
           )}
-          <div className="rounded-xl border border-slate-600/80 bg-slate-900/40 p-4 space-y-3">
+          <div className="rounded-xl border border-[#b8a9e8]/25 bg-white/35 backdrop-blur-sm p-4 space-y-3">
             <div>
-              <p className="text-sm font-semibold text-white/90">對外可見性</p>
-              <p className="text-xs text-slate-500 mt-1">
-                每份問卷獨立設定。選「不公開」時，公開網址（格式 <span className="font-mono text-slate-400">/租戶代碼/slug</span>
+              <p className="text-sm font-semibold text-[#3d3155]/90">對外可見性</p>
+              <p className="text-xs text-[#3d3155]0 mt-1">
+                每份問卷獨立設定。選「不公開」時，公開網址（格式 <span className="font-mono text-[#8a7ca8]">/租戶代碼/slug</span>
                 ）會回傳 404。
               </p>
             </div>
@@ -605,7 +605,7 @@ function SurveyEditor({
                   className={`flex gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
                     form.status === opt.value
                       ? 'border-cyan-500/50 bg-cyan-950/25'
-                      : 'border-slate-700 hover:border-slate-600 bg-slate-900/20'
+                      : 'border-[#b8a9e8]/20 hover:border-[#b8a9e8]/30 bg-white/20'
                   }`}
                 >
                   <input
@@ -616,92 +616,92 @@ function SurveyEditor({
                     onChange={() => setForm({ ...form, status: opt.value })}
                   />
                   <div>
-                    <span className="text-sm text-white/90 font-medium">{opt.title}</span>
-                    <p className="text-xs text-slate-500 mt-0.5">{opt.desc}</p>
+                    <span className="text-sm text-[#3d3155]/90 font-medium">{opt.title}</span>
+                    <p className="text-xs text-[#3d3155]0 mt-0.5">{opt.desc}</p>
                   </div>
                 </label>
               ))}
             </div>
           </div>
           <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
-            <label className="text-sm text-white/50 sm:w-20">Slug</label>
+            <label className="text-sm text-[#3d3155]/50 sm:w-20">Slug</label>
             <input type="text" value={form.slug}
               onChange={(e) => setForm({ ...form, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '') })}
-              className="flex-1 bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-sm text-white/80 font-mono" />
+              className="flex-1 bg-white/50 border border-[#b8a9e8]/20 rounded-lg px-3 py-1.5 text-sm text-[#3d3155] font-mono" />
           </div>
           {fields.map((f) => (
             <div key={f.key} className="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-3">
-              <label className="text-sm text-white/50 sm:w-20 sm:pt-1.5 shrink-0">{f.label}</label>
+              <label className="text-sm text-[#3d3155]/50 sm:w-20 sm:pt-1.5 shrink-0">{f.label}</label>
               {f.multiline ? (
                 <textarea value={form[f.key] as string} onChange={(e) => setForm({ ...form, [f.key]: e.target.value })}
-                  rows={3} className="flex-1 bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-sm text-white/80 resize-none" />
+                  rows={3} className="flex-1 bg-white/50 border border-[#b8a9e8]/20 rounded-lg px-3 py-1.5 text-sm text-[#3d3155] resize-none" />
               ) : (
                 <input type="text" value={form[f.key] as string} onChange={(e) => setForm({ ...form, [f.key]: e.target.value })}
-                  className="flex-1 bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-sm text-white/80" />
+                  className="flex-1 bg-white/50 border border-[#b8a9e8]/20 rounded-lg px-3 py-1.5 text-sm text-[#3d3155]" />
               )}
             </div>
           ))}
           {/* 封面圖片上傳 */}
           <div className="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-3">
-            <label className="text-sm text-white/50 sm:w-20 sm:pt-1.5 shrink-0">封面圖片</label>
+            <label className="text-sm text-[#3d3155]/50 sm:w-20 sm:pt-1.5 shrink-0">封面圖片</label>
             <div className="flex-1 space-y-2">
               {form.cover_image_url && (
                 <div className="relative w-full max-w-xs">
                   <img
                     src={form.cover_image_url}
                     alt="封面圖片預覽"
-                    className="w-full max-h-40 object-cover rounded-lg border border-slate-700"
+                    className="w-full max-h-40 object-cover rounded-lg border border-[#b8a9e8]/20"
                   />
                   <button
                     type="button"
                     onClick={() => setForm((prev) => ({ ...prev, cover_image_url: null } as typeof prev))}
-                    className="absolute top-1 right-1 bg-slate-900/80 text-white/70 hover:text-white rounded-full w-6 h-6 flex items-center justify-center text-xs cursor-pointer"
+                    className="absolute top-1 right-1 bg-white/55 backdrop-blur-sm text-[#3d3155] hover:text-[#3d3155] rounded-full w-6 h-6 flex items-center justify-center text-xs cursor-pointer"
                   >✕</button>
                 </div>
               )}
               <label className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border text-sm cursor-pointer transition-colors ${
-                coverUploading ? 'opacity-50 cursor-not-allowed' : 'border-slate-600 text-white/60 hover:text-white hover:border-slate-500'
+                coverUploading ? 'opacity-50 cursor-not-allowed' : 'border-[#b8a9e8]/30 text-[#8a7ca8] hover:text-[#3d3155] hover:border-[#b8a9e8]/35'
               }`}>
                 <input type="file" accept="image/*" className="hidden" disabled={coverUploading} onChange={handleCoverImageUpload} />
                 {coverUploading ? '上傳中...' : '📷 上傳封面圖片'}
               </label>
-              <p className="text-xs text-slate-500">建議尺寸 1200×630，支援 JPG / PNG / WebP</p>
+              <p className="text-xs text-[#3d3155]0">建議尺寸 1200×630，支援 JPG / PNG / WebP</p>
             </div>
           </div>
           {/* 存取密碼 */}
           <div className="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-3">
-            <label className="text-sm text-white/50 sm:w-20 sm:pt-1.5 shrink-0">存取密碼</label>
+            <label className="text-sm text-[#3d3155]/50 sm:w-20 sm:pt-1.5 shrink-0">存取密碼</label>
             <div className="flex-1 space-y-1">
               <input
                 type="text"
                 value={form.access_password ?? ''}
                 onChange={(e) => setForm({ ...form, access_password: e.target.value })}
                 placeholder="留空表示公開，填入則需輸入密碼才能開啟問卷"
-                className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-sm text-white/80"
+                className="w-full bg-white/50 border border-[#b8a9e8]/20 rounded-lg px-3 py-1.5 text-sm text-[#3d3155]"
               />
-              <p className="text-xs text-slate-500">設定後，填答者開啟問卷時需輸入此密碼</p>
+              <p className="text-xs text-[#3d3155]0">設定後，填答者開啟問卷時需輸入此密碼</p>
             </div>
           </div>
           <div className="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-3">
-            <label className="text-sm text-white/50 sm:w-20 sm:pt-1.5 shrink-0">A/B 群組</label>
+            <label className="text-sm text-[#3d3155]/50 sm:w-20 sm:pt-1.5 shrink-0">A/B 群組</label>
             <input type="text" value={form.variant_group ?? ''} onChange={(e) => setForm({ ...form, variant_group: e.target.value })}
-              placeholder="留空表示不參與 A/B" className="flex-1 bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-sm text-white/80" />
+              placeholder="留空表示不參與 A/B" className="flex-1 bg-white/50 border border-[#b8a9e8]/20 rounded-lg px-3 py-1.5 text-sm text-[#3d3155]" />
           </div>
           <div className="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-3">
-            <label className="text-sm text-white/50 sm:w-20 sm:pt-1.5 shrink-0">排程開始</label>
+            <label className="text-sm text-[#3d3155]/50 sm:w-20 sm:pt-1.5 shrink-0">排程開始</label>
             <input type="datetime-local" value={form.scheduled_start?.slice(0, 16) ?? ''}
               onChange={(e) => setForm({ ...form, scheduled_start: e.target.value ? new Date(e.target.value).toISOString() : null })}
-              className="flex-1 bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-sm text-white/80" />
+              className="flex-1 bg-white/50 border border-[#b8a9e8]/20 rounded-lg px-3 py-1.5 text-sm text-[#3d3155]" />
           </div>
           <div className="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-3">
-            <label className="text-sm text-white/50 sm:w-20 sm:pt-1.5 shrink-0">排程結束</label>
+            <label className="text-sm text-[#3d3155]/50 sm:w-20 sm:pt-1.5 shrink-0">排程結束</label>
             <input type="datetime-local" value={form.scheduled_end?.slice(0, 16) ?? ''}
               onChange={(e) => setForm({ ...form, scheduled_end: e.target.value ? new Date(e.target.value).toISOString() : null })}
-              className="flex-1 bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-sm text-white/80" />
+              className="flex-1 bg-white/50 border border-[#b8a9e8]/20 rounded-lg px-3 py-1.5 text-sm text-[#3d3155]" />
           </div>
           {/* 完成頁設定 */}
-          <div className="pt-4 mt-2 border-t border-slate-700 space-y-3">
-            <p className="text-sm font-medium text-white/70">完成頁設定</p>
+          <div className="pt-4 mt-2 border-t border-[#b8a9e8]/20 space-y-3">
+            <p className="text-sm font-medium text-[#3d3155]/70">完成頁設定</p>
             {(() => {
               const dc = (form.done_config ?? {}) as Record<string, unknown>
               const wf = (dc.waitlistFields as Record<string, boolean> | undefined) ?? {}
@@ -713,7 +713,7 @@ function SurveyEditor({
                     <input type="checkbox" className="w-4 h-4 accent-cyan-500"
                       checked={!!dc.showWaitlist}
                       onChange={(e) => update({ showWaitlist: e.target.checked })} />
-                    <span className="text-sm text-white/70">顯示封測/報名表單</span>
+                    <span className="text-sm text-[#3d3155]/70">顯示封測/報名表單</span>
                   </label>
                   {!!dc.showWaitlist && (
                     <div className="pl-6 space-y-1.5">
@@ -722,18 +722,18 @@ function SurveyEditor({
                           <input type="checkbox" className="w-3.5 h-3.5 accent-cyan-500"
                             checked={!!wf[field]}
                             onChange={(e) => update({ waitlistFields: { ...wf, [field]: e.target.checked } })} />
-                          <span className="text-xs text-white/60">
+                          <span className="text-xs text-[#8a7ca8]">
                             {field === 'nickname' ? '暱稱欄位' : field === 'email' ? 'Email 欄位' : 'LINE ID / IG 欄位'}
                           </span>
                         </label>
                       ))}
                       <div className="flex items-center gap-2">
-                        <span className="text-xs text-white/40 w-20 shrink-0">按鈕文字</span>
+                        <span className="text-xs text-[#b5a8d0] w-20 shrink-0">按鈕文字</span>
                         <input type="text"
                           value={(dc.waitlistButtonText as string) ?? ''}
                           onChange={(e) => update({ waitlistButtonText: e.target.value })}
                           placeholder="預設：立即加入候補"
-                          className="flex-1 bg-slate-800 border border-slate-700 rounded px-2 py-1 text-xs text-white/70" />
+                          className="flex-1 bg-white/50 border border-[#b8a9e8]/20 rounded px-2 py-1 text-xs text-[#3d3155]" />
                       </div>
                     </div>
                   )}
@@ -741,29 +741,29 @@ function SurveyEditor({
                     <input type="checkbox" className="w-4 h-4 accent-cyan-500"
                       checked={!!dc.showStoryCard}
                       onChange={(e) => update({ showStoryCard: e.target.checked })} />
-                    <span className="text-sm text-white/70">顯示故事卡片</span>
+                    <span className="text-sm text-[#3d3155]/70">顯示故事卡片</span>
                   </label>
                   <label className="flex items-center gap-2 cursor-pointer">
                     <input type="checkbox" className="w-4 h-4 accent-cyan-500"
                       checked={!!dc.showDownloadAnswers}
                       onChange={(e) => update({ showDownloadAnswers: e.target.checked })} />
-                    <span className="text-sm text-white/70">顯示下載回答按鈕</span>
+                    <span className="text-sm text-[#3d3155]/70">顯示下載回答按鈕</span>
                   </label>
                   <div className="flex items-center gap-2">
-                    <span className="text-xs text-white/40 w-20 shrink-0">自訂 CTA 文字</span>
+                    <span className="text-xs text-[#b5a8d0] w-20 shrink-0">自訂 CTA 文字</span>
                     <input type="text"
                       value={(dc.customCtaText as string) ?? ''}
                       onChange={(e) => update({ customCtaText: e.target.value })}
                       placeholder="選填"
-                      className="flex-1 bg-slate-800 border border-slate-700 rounded px-2 py-1 text-xs text-white/70" />
+                      className="flex-1 bg-white/50 border border-[#b8a9e8]/20 rounded px-2 py-1 text-xs text-[#3d3155]" />
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-xs text-white/40 w-20 shrink-0">自訂 CTA 連結</span>
+                    <span className="text-xs text-[#b5a8d0] w-20 shrink-0">自訂 CTA 連結</span>
                     <input type="text"
                       value={(dc.customCtaUrl as string) ?? ''}
                       onChange={(e) => update({ customCtaUrl: e.target.value })}
                       placeholder="選填"
-                      className="flex-1 bg-slate-800 border border-slate-700 rounded px-2 py-1 text-xs text-white/70" />
+                      className="flex-1 bg-white/50 border border-[#b8a9e8]/20 rounded px-2 py-1 text-xs text-[#3d3155]" />
                   </div>
                 </div>
               )
@@ -771,16 +771,16 @@ function SurveyEditor({
           </div>
 
           {/* 探索頁公開設定 */}
-          <div className="pt-3 mt-1 border-t border-slate-700">
+          <div className="pt-3 mt-1 border-t border-[#b8a9e8]/20">
             <label className="flex items-center gap-2 cursor-pointer">
               <input type="checkbox" className="w-4 h-4 accent-cyan-500"
                 checked={!!form.is_public_explore}
                 onChange={(e) => setForm({ ...form, is_public_explore: e.target.checked })} />
-              <span className="text-sm text-white/70">☐ 公開到探索頁（讓所有人瀏覽此問卷）</span>
+              <span className="text-sm text-[#3d3155]/70">☐ 公開到探索頁（讓所有人瀏覽此問卷）</span>
             </label>
           </div>
 
-          <div className="pt-4 mt-4 border-t border-slate-700 flex justify-end">
+          <div className="pt-4 mt-4 border-t border-[#b8a9e8]/20 flex justify-end">
              <button type="button" onClick={handleDelete} className="px-4 py-2 bg-red-900/30 text-red-400 hover:bg-red-900/50 hover:text-red-300 rounded-lg text-sm border border-red-500/20 transition-colors cursor-pointer">
                🗑️ 刪除這份問卷
              </button>
@@ -792,32 +792,32 @@ function SurveyEditor({
       {activeTab === 'basic' && !editing && (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
           <div className="col-span-1 sm:col-span-2 flex flex-wrap items-baseline gap-2">
-            <span className="text-white/40">對外可見性：</span>
+            <span className="text-[#b5a8d0]">對外可見性：</span>
             <span
               className={
                 survey.status === 'published'
                   ? 'text-emerald-400 font-medium'
                   : survey.status === 'draft'
                     ? 'text-amber-400 font-medium'
-                    : 'text-slate-400 font-medium'
+                    : 'text-[#8a7ca8] font-medium'
               }
             >
               {surveyVisibilityLabel(survey.status)}
             </span>
             <span className="text-[10px] text-slate-600 font-mono">({survey.status})</span>
           </div>
-          <div><span className="text-white/40">Slug：</span><span className="text-white/70 font-mono">{survey.slug}</span></div>
+          <div><span className="text-[#b5a8d0]">Slug：</span><span className="text-[#3d3155] font-mono">{survey.slug}</span></div>
           {fields.map((f) => (
             <div key={f.key}>
-              <span className="text-white/40">{f.label}：</span>
-              <span className="text-white/70">{String(survey[f.key] ?? '').slice(0, 60)}{String(survey[f.key] ?? '').length > 60 ? '...' : ''}</span>
+              <span className="text-[#b5a8d0]">{f.label}：</span>
+              <span className="text-[#3d3155]">{String(survey[f.key] ?? '').slice(0, 60)}{String(survey[f.key] ?? '').length > 60 ? '...' : ''}</span>
             </div>
           ))}
-          <div><span className="text-white/40">A/B 群組：</span><span className="text-white/70">{survey.variant_group ?? '—'}</span></div>
-          <div><span className="text-white/40">排程開始：</span><span className="text-white/70">{survey.scheduled_start ? new Date(survey.scheduled_start).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' }) : '—'}</span></div>
-          <div><span className="text-white/40">排程結束：</span><span className="text-white/70">{survey.scheduled_end ? new Date(survey.scheduled_end).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' }) : '—'}</span></div>
+          <div><span className="text-[#b5a8d0]">A/B 群組：</span><span className="text-[#3d3155]">{survey.variant_group ?? '—'}</span></div>
+          <div><span className="text-[#b5a8d0]">排程開始：</span><span className="text-[#3d3155]">{survey.scheduled_start ? new Date(survey.scheduled_start).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' }) : '—'}</span></div>
+          <div><span className="text-[#b5a8d0]">排程結束：</span><span className="text-[#3d3155]">{survey.scheduled_end ? new Date(survey.scheduled_end).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' }) : '—'}</span></div>
           <div className="col-span-1 sm:col-span-2 mt-2">
-            <span className="text-white/40 block mb-1">問卷專屬連結：</span>
+            <span className="text-[#b5a8d0] block mb-1">問卷專屬連結：</span>
             {survey.status !== 'published' && (
               <p className="text-xs text-amber-400/90 mb-2 rounded-lg border border-amber-500/25 bg-amber-500/10 px-3 py-2">
                 目前為 <strong className="font-semibold">{surveyVisibilityLabel(survey.status)}</strong>（{survey.status}），公開網址會顯示
@@ -830,7 +830,7 @@ function SurveyEditor({
                 target="_blank"
                 rel="noopener noreferrer"
                 className={`break-all font-mono hover:underline ${
-                  survey.status === 'published' ? 'text-t-accent' : 'text-slate-500 pointer-events-none'
+                  survey.status === 'published' ? 'text-t-accent' : 'text-[#3d3155]0 pointer-events-none'
                 }`}
                 aria-disabled={survey.status !== 'published'}
                 onClick={(e) => {
@@ -845,7 +845,7 @@ function SurveyEditor({
                   navigator.clipboard.writeText(url);
                   alert(survey.status === 'published' ? '🔗 已複製連結' : '已複製網址（若為草稿，對外仍為 404，請先發布）');
                 }}
-                className="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded text-xs shrink-0 cursor-pointer"
+                className="px-2 py-1 bg-white/50 hover:bg-[#b8a9e8]/10 text-slate-300 rounded text-xs shrink-0 cursor-pointer"
               >
                 複製
               </button>
@@ -861,8 +861,8 @@ function SurveyEditor({
             ⚠️ 若留空，則會自動採用網站預設的 Meta 標籤。公開問卷頁會輸出 Open Graph / Twitter Card（伺服端
             <code className="mx-0.5 text-slate-300">generateMetadata</code>）。
           </p>
-          <p className="text-[11px] text-slate-500 leading-relaxed">
-            正式環境請確認 <code className="text-slate-400">NEXT_PUBLIC_BASE_URL</code> 與實際網域一致，分享預覽與 canonical
+          <p className="text-[11px] text-[#3d3155]0 leading-relaxed">
+            正式環境請確認 <code className="text-[#8a7ca8]">NEXT_PUBLIC_BASE_URL</code> 與實際網域一致，分享預覽與 canonical
             網址才會正確。圖片建議可公開存取的 HTTPS 網址（上傳至 R2 後會自動符合）。
           </p>
           {publicSurveyUrl && survey.status === 'published' && (
@@ -876,27 +876,27 @@ function SurveyEditor({
             </a>
           )}
           <div className="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-3">
-            <label className="text-sm text-white/50 sm:w-24 sm:pt-1.5 shrink-0">OG 標題</label>
+            <label className="text-sm text-[#3d3155]/50 sm:w-24 sm:pt-1.5 shrink-0">OG 標題</label>
             <input type="text" value={form.og_title ?? ''} onChange={(e) => setForm({ ...form, og_title: e.target.value })}
-              placeholder="分享時的標題..." className="flex-1 bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-sm text-white/80" />
+              placeholder="分享時的標題..." className="flex-1 bg-white/50 border border-[#b8a9e8]/20 rounded-lg px-3 py-1.5 text-sm text-[#3d3155]" />
           </div>
           <div className="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-3">
-            <label className="text-sm text-white/50 sm:w-24 sm:pt-1.5 shrink-0">OG 描述</label>
+            <label className="text-sm text-[#3d3155]/50 sm:w-24 sm:pt-1.5 shrink-0">OG 描述</label>
             <textarea value={form.og_description ?? ''} onChange={(e) => setForm({ ...form, og_description: e.target.value })}
-              rows={3} placeholder="分享時的描述文字..." className="flex-1 bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-sm text-white/80 resize-none" />
+              rows={3} placeholder="分享時的描述文字..." className="flex-1 bg-white/50 border border-[#b8a9e8]/20 rounded-lg px-3 py-1.5 text-sm text-[#3d3155] resize-none" />
           </div>
           <div className="flex flex-col gap-2 sm:gap-3">
-            <label className="text-sm text-white/50 sm:w-24 shrink-0">OG 圖片</label>
+            <label className="text-sm text-[#3d3155]/50 sm:w-24 shrink-0">OG 圖片</label>
             <div className="flex flex-col gap-2 flex-1 min-w-0">
               <div className="flex flex-wrap items-center gap-2">
-                <label className="px-3 py-1.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs cursor-pointer border border-slate-600">
+                <label className="px-3 py-1.5 rounded-lg bg-[#b8a9e8]/10 hover:bg-[#b8a9e8]/15 text-[#3d3155] text-xs cursor-pointer border border-[#b8a9e8]/30">
                   <input type="file" accept="image/jpeg,image/png,image/webp,image/gif,image/svg+xml" className="hidden" onChange={handleOgImageUpload} disabled={ogUploading} />
                   {ogUploading ? '上傳中…' : '📤 上傳圖片'}
                 </label>
-                <span className="text-[10px] text-slate-500">走 /api/admin/upload（R2），資料夾 survey-og</span>
+                <span className="text-[10px] text-[#3d3155]0">走 /api/admin/upload（R2），資料夾 survey-og</span>
               </div>
               <input type="text" value={form.og_image_url ?? ''} onChange={(e) => setForm({ ...form, og_image_url: e.target.value })}
-                placeholder="或貼上圖片 HTTPS 網址…" className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-sm text-white/80" />
+                placeholder="或貼上圖片 HTTPS 網址…" className="w-full bg-white/50 border border-[#b8a9e8]/20 rounded-lg px-3 py-1.5 text-sm text-[#3d3155]" />
             </div>
           </div>
         </div>
@@ -918,24 +918,24 @@ function SurveyEditor({
             </div>
           )}
           <div className="col-span-1 sm:col-span-2">
-            <span className="text-white/40 block mb-1">OG 標題：</span>
-            <span className="text-white/70">{survey.og_title || <span className="text-white/30 italic">未設定（將使用網站預設）</span>}</span>
+            <span className="text-[#b5a8d0] block mb-1">OG 標題：</span>
+            <span className="text-[#3d3155]">{survey.og_title || <span className="text-[#8a7ca8] italic">未設定（將使用網站預設）</span>}</span>
           </div>
           <div className="col-span-1 sm:col-span-2">
-            <span className="text-white/40 block mb-1">OG 描述：</span>
-            <span className="text-white/70">{survey.og_description || <span className="text-white/30 italic">未設定（將使用網站預設）</span>}</span>
+            <span className="text-[#b5a8d0] block mb-1">OG 描述：</span>
+            <span className="text-[#3d3155]">{survey.og_description || <span className="text-[#8a7ca8] italic">未設定（將使用網站預設）</span>}</span>
           </div>
           <div className="col-span-1 sm:col-span-2">
-            <span className="text-white/40 block mb-1">OG 圖片 URL：</span>
+            <span className="text-[#b5a8d0] block mb-1">OG 圖片 URL：</span>
             {survey.og_image_url ? (
                <a href={survey.og_image_url} target="_blank" rel="noreferrer" className="text-t-accent hover:underline break-all">
                  {survey.og_image_url}
                </a>
             ) : (
-               <span className="text-white/30 italic">未設定（將使用網站預設）</span>
+               <span className="text-[#8a7ca8] italic">未設定（將使用網站預設）</span>
             )}
             {survey.og_image_url && (
-              <div className="mt-2 rounded overflow-hidden max-w-sm border border-slate-700">
+              <div className="mt-2 rounded overflow-hidden max-w-sm border border-[#b8a9e8]/20">
                 <img src={survey.og_image_url} alt="OG Preview" className="w-full h-auto" />
               </div>
             )}
@@ -963,7 +963,7 @@ function SurveyEditor({
 // ===== Branching Panel (sub-tabs: 主題目 / 分流B / 分流C / ...) =====
 
 const ROUTE_COLORS: Record<string, { bg: string; text: string; border: string }> = {
-  main: { bg: 'bg-t-accent-bg', text: 'text-t-accent', border: 'border-t-card-border' },
+  main: { bg: 'bg-[#b8a9e8]/20', text: 'text-t-accent', border: 'border-[#b8a9e8]/25' },
   B: { bg: 'bg-yellow-500/20', text: 'text-yellow-400', border: 'border-yellow-500/30' },
   C: { bg: 'bg-orange-500/20', text: 'text-orange-400', border: 'border-orange-500/30' },
   D: { bg: 'bg-pink-500/20', text: 'text-pink-400', border: 'border-pink-500/30' },
@@ -1126,7 +1126,7 @@ function BranchingPanel({
           className={`px-3 py-1.5 rounded-lg text-sm transition-colors cursor-pointer ${
             activeSubTab === 'main'
               ? `${ROUTE_COLORS.main.bg} ${ROUTE_COLORS.main.text} border ${ROUTE_COLORS.main.border}`
-              : 'bg-slate-800 text-slate-400 border border-slate-700 hover:text-white'
+              : 'bg-white/50 text-[#8a7ca8] border border-[#b8a9e8]/20 hover:text-[#3d3155]'
           }`}>
           主題目（{mainQuestions.length} 題）
         </button>
@@ -1142,12 +1142,12 @@ function BranchingPanel({
                   onChange={(e) => setBranchNames((prev) => ({ ...prev, [route]: e.target.value }))}
                   onBlur={() => setEditingName(null)}
                   onKeyDown={(e) => { if (e.key === 'Enter') setEditingName(null) }}
-                  className="bg-slate-800 border border-slate-600 rounded-lg px-2 py-1 text-sm text-white/80 w-28" />
+                  className="bg-white/50 border border-[#b8a9e8]/30 rounded-lg px-2 py-1 text-sm text-[#3d3155] w-28" />
               ) : (
                 <button type="button" onClick={() => setActiveSubTab(route)}
                   onDoubleClick={() => setEditingName(route)}
                   className={`px-3 py-1.5 rounded-lg text-sm transition-colors cursor-pointer ${
-                    isActive ? `${color.bg} ${color.text} border ${color.border}` : 'bg-slate-800 text-slate-400 border border-slate-700 hover:text-white'
+                    isActive ? `${color.bg} ${color.text} border ${color.border}` : 'bg-white/50 text-[#8a7ca8] border border-[#b8a9e8]/20 hover:text-[#3d3155]'
                   }`}
                   title="雙擊可改名">
                   {branchNames[route] ?? `分流 ${route}`}（{count} 題）
@@ -1162,17 +1162,17 @@ function BranchingPanel({
       {activeSubTab === 'main' && (
         <div className="space-y-4">
           {/* 多規則卡片 */}
-          <div className="bg-slate-800/40 border border-slate-700 rounded-xl p-4 space-y-4">
+          <div className="bg-white/30 backdrop-blur-sm border border-[#b8a9e8]/20 rounded-xl p-4 space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-medium text-white/70">分流規則設定</h3>
+              <h3 className="text-sm font-medium text-[#3d3155]/70">分流規則設定</h3>
               <button type="button" onClick={handleAddRule}
-                className="px-3 py-1.5 bg-t-accent-bg text-t-accent border border-t-card-border rounded-lg text-xs transition-colors cursor-pointer hover:opacity-80">
+                className="px-3 py-1.5 bg-[#b8a9e8]/20 text-t-accent border border-[#b8a9e8]/25 rounded-lg text-xs transition-colors cursor-pointer hover:opacity-80">
                 ＋ 新增規則
               </button>
             </div>
 
             {rules.length === 0 && (
-              <p className="text-xs text-white/30 text-center py-4">
+              <p className="text-xs text-[#8a7ca8] text-center py-4">
                 尚無分流規則。按下「＋ 新增規則」來設定跳題邏輯。
               </p>
             )}
@@ -1180,18 +1180,18 @@ function BranchingPanel({
             {rules.map((rule, idx) => {
               const ruleQuestion = branchableQuestions.find(q => q.key === rule.branchKey) ?? null
               return (
-                <div key={rule.id} className="bg-slate-900/40 border border-slate-700 rounded-xl p-4 space-y-3">
+                <div key={rule.id} className="bg-white/35 backdrop-blur-sm border border-[#b8a9e8]/20 rounded-xl p-4 space-y-3">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs text-white/40 font-mono">規則 #{idx + 1}</span>
+                    <span className="text-xs text-[#b5a8d0] font-mono">規則 #{idx + 1}</span>
                     <button type="button" onClick={() => handleRemoveRule(rule.id)}
                       className="text-xs text-red-400/60 hover:text-red-300 cursor-pointer">移除</button>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-[80px_1fr] gap-2 sm:items-center">
-                    <label className="text-xs text-white/50">分流題</label>
+                    <label className="text-xs text-[#b5a8d0]">分流題</label>
                     <select value={rule.branchKey}
                       onChange={(e) => handleRuleBranchKeyChange(rule.id, e.target.value)}
-                      className="bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white/80">
+                      className="bg-white/50 border border-[#b8a9e8]/20 rounded-lg px-3 py-2 text-sm text-[#3d3155]">
                       <option value="">—— 請選擇 ——</option>
                       {branchableQuestions.map((q) => (
                         <option key={q.id} value={q.key}>{q.key} — {q.content.slice(0, 50)}</option>
@@ -1201,14 +1201,14 @@ function BranchingPanel({
 
                   {ruleQuestion && (
                     <div className="space-y-2">
-                      <p className="text-xs text-white/50">各答案對應分流：</p>
+                      <p className="text-xs text-[#b5a8d0]">各答案對應分流：</p>
                       {ruleQuestion.options.map((option) => (
                         <div key={option.value}
-                          className="grid grid-cols-1 sm:grid-cols-[1fr_160px] gap-2 sm:items-center bg-slate-800/40 border border-slate-700 rounded-lg p-2.5">
-                          <span className="text-sm text-white/80">{option.label}</span>
+                          className="grid grid-cols-1 sm:grid-cols-[1fr_160px] gap-2 sm:items-center bg-white/30 backdrop-blur-sm border border-[#b8a9e8]/20 rounded-lg p-2.5">
+                          <span className="text-sm text-[#3d3155]">{option.label}</span>
                           <select value={getOptionRoute(rule, option.value)}
                             onChange={(e) => handleRuleAnswerRoute(rule.id, option.value, e.target.value)}
-                            className="bg-slate-800 border border-slate-600 rounded px-2 py-1.5 text-sm text-white/80">
+                            className="bg-white/50 border border-[#b8a9e8]/30 rounded px-2 py-1.5 text-sm text-[#3d3155]">
                             <option value="A">原始問卷</option>
                             {allRoutes.map((r) => (
                               <option key={r} value={r}>{branchNames[r] ?? `分流 ${r}`}</option>
@@ -1228,17 +1228,17 @@ function BranchingPanel({
             <div className="flex items-center gap-3">
               <button type="button" onClick={handleSaveBranchConfig}
                 disabled={branchSaving || !branchDirty}
-                className="px-4 py-2 bg-t-btn hover:bg-t-btn-hover disabled:opacity-50 text-white rounded-lg text-sm transition-colors cursor-pointer">
+                className="px-4 py-2 bg-gradient-to-r from-[#b8a9e8] to-[#f5b8b5] hover:opacity-90 disabled:opacity-50 text-white rounded-lg text-sm transition-colors cursor-pointer">
                 {branchSaving ? '儲存中...' : '儲存分流規則'}
               </button>
               {branchDirty ? <span className="text-xs text-yellow-400">有未儲存的變更</span>
-                : <span className="text-xs text-white/30">尚未修改</span>}
+                : <span className="text-xs text-[#8a7ca8]">尚未修改</span>}
             </div>
           </div>
 
           {/* Main questions list */}
           <div className="space-y-2">
-            <h3 className="text-sm font-medium text-white/60">主題目 + 共用題（route: all / A）</h3>
+            <h3 className="text-sm font-medium text-[#8a7ca8]">主題目 + 共用題（route: all / A）</h3>
             {mainQuestions.map((q) => (
               <BranchQuestionCard key={q.id} question={q} allRoutes={allRoutes} branchNames={branchNames}
                 pendingRoute={routeChanges[q.id]} onRouteChange={handleQuestionRouteChange} onAddRoute={handleAddRoute} />
@@ -1254,11 +1254,11 @@ function BranchingPanel({
             <span className={getColor(activeSubTab).text}>
               {branchNames[activeSubTab] ?? `分流 ${activeSubTab}`}
             </span>
-            <span className="text-white/40 ml-2">（{branchQuestions(activeSubTab).length} 題）</span>
+            <span className="text-[#b5a8d0] ml-2">（{branchQuestions(activeSubTab).length} 題）</span>
           </h3>
-          <p className="text-xs text-white/40">這些題目只會出現在此分流。可透過下拉將題目移到其他分流或主題目。</p>
+          <p className="text-xs text-[#b5a8d0]">這些題目只會出現在此分流。可透過下拉將題目移到其他分流或主題目。</p>
           {branchQuestions(activeSubTab).length === 0 ? (
-            <p className="text-sm text-white/30 py-4 text-center">此分流尚無題目</p>
+            <p className="text-sm text-[#3d3155]/30 py-4 text-center">此分流尚無題目</p>
           ) : (
             branchQuestions(activeSubTab).map((q) => (
               <BranchQuestionCard key={q.id} question={q} allRoutes={allRoutes} branchNames={branchNames}
@@ -1300,10 +1300,10 @@ function BranchQuestionCard({
   }
 
   return (
-    <div className="bg-t-card-bg border border-t-card-border rounded-xl p-3 flex items-start justify-between gap-3">
+    <div className="bg-white/40 backdrop-blur-sm border border-[#b8a9e8]/25 rounded-xl p-3 flex items-start justify-between gap-3">
       <div className="flex-1 space-y-0.5">
         <div className="flex items-center gap-2">
-          <span className="text-xs text-white/30 font-mono">{question.key}</span>
+          <span className="text-xs text-[#8a7ca8] font-mono">{question.key}</span>
           <span className={`text-xs px-1.5 py-0.5 rounded ${
             question.type === 'single' ? 'bg-blue-500/20 text-blue-400'
             : question.type === 'multiple' ? 'bg-purple-500/20 text-purple-400'
@@ -1315,9 +1315,9 @@ function BranchQuestionCard({
           }`}>{question.type}</span>
           {question.is_required && <span className="text-xs text-red-400/60">必填</span>}
         </div>
-        <p className="text-sm text-white/80">{question.content}</p>
+        <p className="text-sm text-[#3d3155]">{question.content}</p>
         {question.options.length > 0 && (
-          <p className="text-xs text-white/40">選項：{question.options.map((o) => o.label).join('、')}</p>
+          <p className="text-xs text-[#b5a8d0]">選項：{question.options.map((o) => o.label).join('、')}</p>
         )}
       </div>
       <div className="flex flex-col items-end gap-1 shrink-0">
@@ -1326,7 +1326,7 @@ function BranchQuestionCard({
             if (e.target.value === '__add_new__') { setShowNewInput(true) }
             else { onRouteChange(question.id, e.target.value) }
           }}
-          className="bg-slate-800 border border-slate-600 rounded px-2 py-1 text-xs text-white/70 w-28">
+          className="bg-white/50 border border-[#b8a9e8]/30 rounded px-2 py-1 text-xs text-[#3d3155] w-28">
           <option value="all">共用</option>
           <option value="A">原始 (A)</option>
           {allRoutes.map((r) => (
@@ -1343,14 +1343,14 @@ function BranchQuestionCard({
               placeholder="如 D"
               maxLength={10}
               autoFocus
-              className="bg-slate-800 border border-slate-600 rounded px-2 py-1 text-xs text-white/80 w-16"
+              className="bg-white/50 border border-[#b8a9e8]/30 rounded px-2 py-1 text-xs text-[#3d3155] w-16"
               onKeyDown={(e) => {
                 if (e.key === 'Enter') confirmNewRoute()
                 if (e.key === 'Escape') { setShowNewInput(false); setNewRouteName('') }
               }}
             />
             <button type="button" onClick={confirmNewRoute} className="text-xs text-t-accent cursor-pointer">✓</button>
-            <button type="button" onClick={() => { setShowNewInput(false); setNewRouteName('') }} className="text-xs text-slate-500 cursor-pointer">✕</button>
+            <button type="button" onClick={() => { setShowNewInput(false); setNewRouteName('') }} className="text-xs text-[#3d3155]0 cursor-pointer">✕</button>
           </div>
         )}
       </div>
@@ -1455,8 +1455,8 @@ function ResultConfigPanel({
     <div className="space-y-5">
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-sm font-medium text-white/80">結果類型設定</p>
-          <p className="text-xs text-white/40 mt-0.5">設定人格測驗的結果類型與計分規則</p>
+          <p className="text-sm font-medium text-[#3d3155]">結果類型設定</p>
+          <p className="text-xs text-[#b5a8d0] mt-0.5">設定人格測驗的結果類型與計分規則</p>
         </div>
         <button
           onClick={save}
@@ -1469,26 +1469,26 @@ function ResultConfigPanel({
 
       {/* Result types */}
       <div className="space-y-3">
-        <p className="text-xs text-white/50 uppercase tracking-wide">結果類型</p>
+        <p className="text-xs text-[#b5a8d0] uppercase tracking-wide">結果類型</p>
         {resultTypes.map((rt, idx) => (
-          <div key={idx} className="bg-slate-800/60 border border-slate-700/60 rounded-xl p-3 space-y-2">
+          <div key={idx} className="bg-white/40 backdrop-blur-sm border border-[#b8a9e8]/20/60 rounded-xl p-3 space-y-2">
             <div className="flex items-center gap-2">
               <input
                 value={rt.emoji}
                 onChange={e => updateType(idx, { emoji: e.target.value })}
-                className="w-12 bg-slate-900 border border-slate-600 rounded-lg px-2 py-1.5 text-center text-sm text-white"
+                className="w-12 bg-white/60 border border-[#b8a9e8]/30 rounded-lg px-2 py-1.5 text-center text-sm text-[#3d3155]"
                 placeholder="🎯"
               />
               <input
                 value={rt.key}
                 onChange={e => updateType(idx, { key: e.target.value })}
-                className="w-32 bg-slate-900 border border-slate-600 rounded-lg px-2 py-1.5 text-sm text-white font-mono"
+                className="w-32 bg-white/60 border border-[#b8a9e8]/30 rounded-lg px-2 py-1.5 text-sm text-[#3d3155] font-mono"
                 placeholder="key (英文)"
               />
               <input
                 value={rt.name}
                 onChange={e => updateType(idx, { name: e.target.value })}
-                className="flex-1 bg-slate-900 border border-slate-600 rounded-lg px-2 py-1.5 text-sm text-white"
+                className="flex-1 bg-white/60 border border-[#b8a9e8]/30 rounded-lg px-2 py-1.5 text-sm text-[#3d3155]"
                 placeholder="結果名稱"
               />
               <button onClick={() => removeType(idx)} className="text-red-400/60 hover:text-red-400 text-xs cursor-pointer px-1">✕</button>
@@ -1497,20 +1497,20 @@ function ResultConfigPanel({
               value={rt.description}
               onChange={e => updateType(idx, { description: e.target.value })}
               rows={2}
-              className="w-full bg-slate-900 border border-slate-600 rounded-lg px-2 py-1.5 text-sm text-white/80 resize-none"
+              className="w-full bg-white/60 border border-[#b8a9e8]/30 rounded-lg px-2 py-1.5 text-sm text-[#3d3155] resize-none"
               placeholder="結果描述文案..."
             />
             <input
               value={rt.traits?.join(', ') ?? ''}
               onChange={e => updateType(idx, { traits: e.target.value.split(',').map(t => t.trim()).filter(Boolean) })}
-              className="w-full bg-slate-900 border border-slate-600 rounded-lg px-2 py-1.5 text-xs text-white/70"
+              className="w-full bg-white/60 border border-[#b8a9e8]/30 rounded-lg px-2 py-1.5 text-xs text-[#3d3155]"
               placeholder="特質標籤（逗號分隔，如：好奇心強, 行動派, 創意人）"
             />
           </div>
         ))}
         <button
           onClick={addType}
-          className="w-full py-2 border border-dashed border-slate-600 hover:border-cyan-500/50 rounded-xl text-sm text-slate-400 hover:text-cyan-400 transition-colors cursor-pointer"
+          className="w-full py-2 border border-dashed border-[#b8a9e8]/30 hover:border-cyan-500/50 rounded-xl text-sm text-[#8a7ca8] hover:text-cyan-400 transition-colors cursor-pointer"
         >
           + 新增結果類型
         </button>
@@ -1520,20 +1520,20 @@ function ResultConfigPanel({
       {resultTypes.some(t => t.key) && singleQuestions.length > 0 && (
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <p className="text-xs text-white/50 uppercase tracking-wide">計分規則</p>
-            <p className="text-[10px] text-white/30">每個選項對應的結果類型</p>
+            <p className="text-xs text-[#b5a8d0] uppercase tracking-wide">計分規則</p>
+            <p className="text-[10px] text-[#8a7ca8]">每個選項對應的結果類型</p>
           </div>
           {singleQuestions.map(q => (
-            <div key={q.key} className="bg-slate-800/40 border border-slate-700/40 rounded-xl p-3 space-y-2">
-              <p className="text-xs font-medium text-white/70">{q.key}: {q.content.slice(0, 40)}</p>
+            <div key={q.key} className="bg-white/30 backdrop-blur-sm border border-[#b8a9e8]/20/40 rounded-xl p-3 space-y-2">
+              <p className="text-xs font-medium text-[#3d3155]">{q.key}: {q.content.slice(0, 40)}</p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
                 {q.options.map(opt => (
                   <div key={opt.value} className="flex items-center gap-2">
-                    <span className="text-xs text-white/50 truncate w-24 shrink-0">{opt.label}</span>
+                    <span className="text-xs text-[#b5a8d0] truncate w-24 shrink-0">{opt.label}</span>
                     <select
                       value={scoringRules[q.key]?.[opt.value] ?? ''}
                       onChange={e => setRule(q.key, opt.value, e.target.value)}
-                      className="flex-1 bg-slate-900 border border-slate-600 rounded-lg px-2 py-1 text-xs text-white"
+                      className="flex-1 bg-white/60 border border-[#b8a9e8]/30 rounded-lg px-2 py-1 text-xs text-[#3d3155]"
                     >
                       <option value="">-- 未設定 --</option>
                       {resultTypes.filter(t => t.key).map(t => (
@@ -1551,11 +1551,11 @@ function ResultConfigPanel({
       {/* Tie breaker */}
       {resultTypes.some(t => t.key) && (
         <div className="flex items-center gap-3">
-          <label className="text-xs text-white/50 shrink-0">平手時預設</label>
+          <label className="text-xs text-[#b5a8d0] shrink-0">平手時預設</label>
           <select
             value={tieBreaker}
             onChange={e => setTieBreaker(e.target.value)}
-            className="flex-1 bg-slate-900 border border-slate-600 rounded-lg px-2 py-1.5 text-sm text-white"
+            className="flex-1 bg-white/60 border border-[#b8a9e8]/30 rounded-lg px-2 py-1.5 text-sm text-[#3d3155]"
           >
             <option value="">-- 取第一個 --</option>
             {resultTypes.filter(t => t.key).map(t => (
@@ -1705,20 +1705,20 @@ function QuestionList({
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-white/80">
+        <h2 className="text-lg font-semibold text-[#3d3155]">
           題目列表（{questions.length} 題）
         </h2>
         <button
           type="button"
           onClick={() => setAdding(true)}
-          className="px-4 py-2 bg-t-accent-bg border border-t-card-border text-t-accent text-sm rounded-lg hover:bg-t-accent-bg transition-colors cursor-pointer"
+          className="px-4 py-2 bg-[#b8a9e8]/20 border border-[#b8a9e8]/25 text-t-accent text-sm rounded-lg hover:bg-[#b8a9e8]/20 transition-colors cursor-pointer"
         >
           + 新增題目
         </button>
         <button
           type="button"
           onClick={() => setAiMode(true)}
-          className="px-4 py-2 bg-linear-to-r from-cyan-500/20 to-blue-500/20 border border-blue-400/30 text-blue-300 text-sm rounded-lg hover:from-cyan-500/30 hover:to-blue-500/30 transition-colors cursor-pointer"
+          className="px-4 py-2 bg-gradient-to-r from-cyan-500/20 to-blue-500/20 border border-blue-400/30 text-blue-300 text-sm rounded-lg hover:from-cyan-500/30 hover:to-blue-500/30 transition-colors cursor-pointer"
         >
           🤖 AI 出題
         </button>
@@ -1755,7 +1755,7 @@ function QuestionList({
             onDragLeave={() => setQDragOverIdx(null)}
             onDrop={() => handleDrop(i)}
             onDragEnd={() => { setQDragIdx(null); setQDragOverIdx(null) }}
-            className={`bg-t-card-bg border border-t-card-border rounded-xl p-4 cursor-grab active:cursor-grabbing transition-all ${
+            className={`bg-white/40 backdrop-blur-sm border border-[#b8a9e8]/25 rounded-xl p-4 cursor-grab active:cursor-grabbing transition-all ${
               qDragIdx === i ? 'opacity-40' : ''
             } ${qDragOverIdx === i && qDragIdx !== i ? 'ring-2 ring-t-accent/60 border-t-accent/40' : ''}`}
           >
@@ -1772,7 +1772,7 @@ function QuestionList({
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1 space-y-1">
                   <div className="flex items-center gap-2">
-                    <span className="text-xs text-white/30 font-mono">{q.key}</span>
+                    <span className="text-xs text-[#8a7ca8] font-mono">{q.key}</span>
                     <span
                       className={`text-xs px-1.5 py-0.5 rounded ${
                         q.type === 'single'
@@ -1796,7 +1796,7 @@ function QuestionList({
                       <span className="text-xs text-red-400/60">必填</span>
                     )}
                     {q.max_selections && (
-                      <span className="text-xs text-white/30">
+                      <span className="text-xs text-[#8a7ca8]">
                         最多 {q.max_selections} 個
                       </span>
                     )}
@@ -1804,15 +1804,15 @@ function QuestionList({
                       <span className={`text-xs px-1.5 py-0.5 rounded font-mono ${
                         q.route === 'B' ? 'bg-yellow-500/20 text-yellow-400'
                         : q.route === 'C' ? 'bg-orange-500/20 text-orange-400'
-                        : 'bg-slate-500/20 text-slate-400'
+                        : 'bg-[#b5a8d0]/20 text-[#8a7ca8]'
                       }`}>
                         分流 {q.route}
                       </span>
                     )}
                   </div>
-                  <p className="text-sm text-white/80">{q.content}</p>
+                  <p className="text-sm text-[#3d3155]">{q.content}</p>
                   {q.options.length > 0 && (
-                    <p className="text-xs text-white/40">
+                    <p className="text-xs text-[#b5a8d0]">
                       選項：{q.options.map((o) => o.label).join('、')}
                     </p>
                   )}
@@ -1823,7 +1823,7 @@ function QuestionList({
                     type="button"
                     onClick={() => handleMoveUp(i)}
                     disabled={i === 0}
-                    className="text-white/30 hover:text-white disabled:opacity-20 text-sm cursor-pointer p-1"
+                    className="text-[#8a7ca8] hover:text-[#3d3155] disabled:opacity-20 text-sm cursor-pointer p-1"
                     title="上移"
                   >
                     ↑
@@ -1832,7 +1832,7 @@ function QuestionList({
                     type="button"
                     onClick={() => handleMoveDown(i)}
                     disabled={i === questions.length - 1}
-                    className="text-white/30 hover:text-white disabled:opacity-20 text-sm cursor-pointer p-1"
+                    className="text-[#8a7ca8] hover:text-[#3d3155] disabled:opacity-20 text-sm cursor-pointer p-1"
                     title="下移"
                   >
                     ↓
@@ -1928,7 +1928,7 @@ function QuestionForm({
   }
 
   return (
-    <div className="bg-slate-800/60 border border-t-card-border rounded-xl p-4 space-y-3">
+    <div className="bg-white/40 backdrop-blur-sm border border-[#b8a9e8]/25 rounded-xl p-4 space-y-3">
       <h3 className="text-sm font-medium text-t-accent">新增題目</h3>
       <QuestionFormFields form={form} onChange={setForm} existingRoutes={existingRoutes} onAddRoute={onAddRoute} onRenameRoute={onRenameRoute} />
       <div className="flex gap-2 pt-2">
@@ -1936,14 +1936,14 @@ function QuestionForm({
           type="button"
           onClick={handleSave}
           disabled={saving || !form.content.trim()}
-          className="px-4 py-1.5 bg-t-accent-bg text-t-accent border border-t-card-border rounded-lg text-sm disabled:opacity-40 cursor-pointer"
+          className="px-4 py-1.5 bg-[#b8a9e8]/20 text-t-accent border border-[#b8a9e8]/25 rounded-lg text-sm disabled:opacity-40 cursor-pointer"
         >
           {saving ? '儲存中...' : '新增'}
         </button>
         <button
           type="button"
           onClick={onCancel}
-          className="px-4 py-1.5 text-slate-400 text-sm cursor-pointer"
+          className="px-4 py-1.5 text-[#8a7ca8] text-sm cursor-pointer"
         >
           取消
         </button>
@@ -2019,14 +2019,14 @@ function QuestionEditForm({
           type="button"
           onClick={handleSave}
           disabled={saving}
-          className="px-4 py-1.5 bg-t-accent-bg text-t-accent border border-t-card-border rounded-lg text-sm disabled:opacity-40 cursor-pointer"
+          className="px-4 py-1.5 bg-[#b8a9e8]/20 text-t-accent border border-[#b8a9e8]/25 rounded-lg text-sm disabled:opacity-40 cursor-pointer"
         >
           {saving ? '儲存中...' : '儲存'}
         </button>
         <button
           type="button"
           onClick={onCancel}
-          className="px-4 py-1.5 text-slate-400 text-sm cursor-pointer"
+          className="px-4 py-1.5 text-[#8a7ca8] text-sm cursor-pointer"
         >
           取消
         </button>
@@ -2063,22 +2063,22 @@ function RouteChip({
           onChange={(e) => setName(e.target.value.toUpperCase())}
           onKeyDown={(e) => { if (e.key === 'Enter') confirm(); if (e.key === 'Escape') { setName(route); setEditing(false) } }}
           autoFocus
-          className="bg-slate-700 border border-slate-500 rounded px-2 py-0.5 text-xs text-white/80 w-16"
+          className="bg-[#b8a9e8]/10 border border-[#b8a9e8]/35 rounded px-2 py-0.5 text-xs text-[#3d3155] w-16"
         />
         <button type="button" onClick={confirm} className="text-xs text-t-accent cursor-pointer">確認</button>
-        <button type="button" onClick={() => { setName(route); setEditing(false) }} className="text-xs text-white/40 cursor-pointer">✕</button>
+        <button type="button" onClick={() => { setName(route); setEditing(false) }} className="text-xs text-[#b5a8d0] cursor-pointer">✕</button>
       </div>
     )
   }
 
   return (
-    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-slate-700 border border-slate-600 text-xs text-white/60">
+    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-[#b8a9e8]/10 border border-[#b8a9e8]/30 text-xs text-[#8a7ca8]">
       {route} 路線
       <button
         type="button"
         onClick={() => setEditing(true)}
         title={`重新命名 ${route} 路線`}
-        className="text-white/30 hover:text-white/70 cursor-pointer"
+        className="text-[#8a7ca8] hover:text-[#3d3155] cursor-pointer"
       >
         ✏️
       </button>
@@ -2149,19 +2149,19 @@ function QuestionFormFields({
   return (
     <div className="space-y-3">
       <div className="grid grid-cols-1 sm:grid-cols-[80px_1fr] gap-2 sm:items-center">
-        <label className="text-xs text-white/40">Key</label>
+        <label className="text-xs text-[#b5a8d0]">Key</label>
         <input
           type="text"
           value={form.key}
           onChange={(e) => onChange({ ...form, key: e.target.value })}
-          className="bg-slate-800 border border-slate-700 rounded px-2 py-1 text-sm text-white/80 w-32"
+          className="bg-white/50 border border-[#b8a9e8]/20 rounded px-2 py-1 text-sm text-[#3d3155] w-32"
         />
 
-        <label className="text-xs text-white/40">類型</label>
+        <label className="text-xs text-[#b5a8d0]">類型</label>
         <select
           value={form.type}
           onChange={(e) => onChange({ ...form, type: e.target.value })}
-          className="bg-slate-800 border border-slate-700 rounded px-2 py-1 text-sm text-white/80 w-32"
+          className="bg-white/50 border border-[#b8a9e8]/20 rounded px-2 py-1 text-sm text-[#3d3155] w-32"
         >
           <option value="single">single</option>
           <option value="multiple">multiple</option>
@@ -2172,7 +2172,7 @@ function QuestionFormFields({
           <option value="file_upload">file_upload</option>
         </select>
 
-        <label className="text-xs text-white/40">題目</label>
+        <label className="text-xs text-[#b5a8d0]">題目</label>
         <div className="flex items-center gap-2">
           <EmojiPicker
             value={form.emoji || undefined}
@@ -2183,20 +2183,20 @@ function QuestionFormFields({
             type="text"
             value={form.content}
             onChange={(e) => onChange({ ...form, content: e.target.value })}
-            className="flex-1 bg-slate-800 border border-slate-700 rounded px-2 py-1 text-sm text-white/80"
+            className="flex-1 bg-white/50 border border-[#b8a9e8]/20 rounded px-2 py-1 text-sm text-[#3d3155]"
           />
         </div>
 
-        <label className="text-xs text-white/40">旁白</label>
+        <label className="text-xs text-[#b5a8d0]">旁白</label>
         <input
           type="text"
           value={form.narrative}
           onChange={(e) => onChange({ ...form, narrative: e.target.value })}
           placeholder="選填：題目旁白文字"
-          className="bg-slate-800 border border-slate-700 rounded px-2 py-1 text-sm text-white/80"
+          className="bg-white/50 border border-[#b8a9e8]/20 rounded px-2 py-1 text-sm text-[#3d3155]"
         />
 
-        <label className="text-xs text-white/40">必填</label>
+        <label className="text-xs text-[#b5a8d0]">必填</label>
         <input
           type="checkbox"
           checked={form.is_required}
@@ -2206,7 +2206,7 @@ function QuestionFormFields({
 
         {(form.type === 'single' || form.type === 'multiple') && (
           <>
-            <label className="text-xs text-white/40">其他文字</label>
+            <label className="text-xs text-[#b5a8d0]">其他文字</label>
             <label className="flex items-center gap-2 cursor-pointer">
               <input
                 type="checkbox"
@@ -2214,12 +2214,12 @@ function QuestionFormFields({
                 onChange={(e) => onChange({ ...form, allow_other_text: e.target.checked })}
                 className="w-4 h-4"
               />
-              <span className="text-xs text-white/60">允許「其他」選項填寫文字</span>
+              <span className="text-xs text-[#8a7ca8]">允許「其他」選項填寫文字</span>
             </label>
           </>
         )}
 
-        <label className="text-xs text-white/40">路線</label>
+        <label className="text-xs text-[#b5a8d0]">路線</label>
         <div className="flex items-center gap-2">
           <select
             value={form.route}
@@ -2230,7 +2230,7 @@ function QuestionFormFields({
                 onChange({ ...form, route: e.target.value })
               }
             }}
-            className="bg-slate-800 border border-slate-700 rounded px-2 py-1 text-sm text-white/80 w-36"
+            className="bg-white/50 border border-[#b8a9e8]/20 rounded px-2 py-1 text-sm text-[#3d3155] w-36"
           >
             <option value="all">所有人 (all)</option>
             {existingRoutes.map((r) => (
@@ -2247,10 +2247,10 @@ function QuestionFormFields({
                 onKeyDown={(e) => { if (e.key === 'Enter') confirmNewRoute(); if (e.key === 'Escape') { setShowNewRouteInput(false); setNewRouteName('') } }}
                 placeholder="如 D"
                 autoFocus
-                className="bg-slate-700 border border-slate-600 rounded px-2 py-1 text-sm text-white/80 w-16"
+                className="bg-[#b8a9e8]/10 border border-[#b8a9e8]/30 rounded px-2 py-1 text-sm text-[#3d3155] w-16"
               />
               <button type="button" onClick={confirmNewRoute} className="text-xs text-t-accent cursor-pointer">確認</button>
-              <button type="button" onClick={() => { setShowNewRouteInput(false); setNewRouteName('') }} className="text-xs text-white/40 cursor-pointer">✕</button>
+              <button type="button" onClick={() => { setShowNewRouteInput(false); setNewRouteName('') }} className="text-xs text-[#b5a8d0] cursor-pointer">✕</button>
             </div>
           )}
         </div>
@@ -2275,7 +2275,7 @@ function QuestionFormFields({
 
         {form.type === 'multiple' && (
           <>
-            <label className="text-xs text-white/40">最多選</label>
+            <label className="text-xs text-[#b5a8d0]">最多選</label>
             <input
               type="number"
               value={form.max_selections ?? ''}
@@ -2286,7 +2286,7 @@ function QuestionFormFields({
                 })
               }
               placeholder="不限"
-              className="bg-slate-800 border border-slate-700 rounded px-2 py-1 text-sm text-white/80 w-20"
+              className="bg-white/50 border border-[#b8a9e8]/20 rounded px-2 py-1 text-sm text-[#3d3155] w-20"
               min={1}
             />
           </>
@@ -2295,7 +2295,7 @@ function QuestionFormFields({
 
       {form.type !== 'text' && (
         <div className="space-y-2">
-          <label className="text-xs text-white/40">選項</label>
+          <label className="text-xs text-[#b5a8d0]">選項</label>
           {form.options.map((opt, i) => (
             <div key={i} className="flex items-center gap-2">
               <EmojiPicker
@@ -2308,7 +2308,7 @@ function QuestionFormFields({
                 value={opt.label}
                 onChange={(e) => updateOption(i, e.target.value)}
                 placeholder={`選項 ${i + 1}`}
-                className="flex-1 bg-slate-800 border border-slate-700 rounded px-2 py-1 text-sm text-white/80"
+                className="flex-1 bg-white/50 border border-[#b8a9e8]/20 rounded px-2 py-1 text-sm text-[#3d3155]"
               />
               <button
                 type="button"

@@ -63,7 +63,7 @@ const STATUS_DOT_COLORS: Record<TicketStatus, string> = {
   open: 'bg-red-500',
   in_progress: 'bg-yellow-500',
   resolved: 'bg-emerald-500',
-  closed: 'bg-slate-500',
+  closed: 'bg-[#b5a8d0]',
 }
 
 const PRIORITY_LABELS: Record<TicketPriority, string> = {
@@ -74,7 +74,7 @@ const PRIORITY_LABELS: Record<TicketPriority, string> = {
 }
 
 const PRIORITY_BADGE_COLORS: Record<TicketPriority, string> = {
-  low: 'bg-slate-600 text-slate-300',
+  low: 'bg-[#b8a9e8]/15 text-slate-300',
   normal: 'bg-blue-900/50 text-blue-300',
   high: 'bg-orange-900/50 text-orange-300',
   urgent: 'bg-red-900/50 text-red-300',
@@ -272,14 +272,14 @@ export default function SupportCenterPage() {
     <div className="h-[calc(100vh-5rem)] flex flex-col">
       {/* Mobile Header */}
       {mobileShowDetail && selectedTicket && (
-        <div className="lg:hidden flex items-center gap-2 p-3 bg-t-card-bg border-b border-t-card-border">
+        <div className="lg:hidden flex items-center gap-2 p-3 bg-white/40 backdrop-blur-sm border-b border-[#b8a9e8]/25">
           <button
             onClick={() => setMobileShowDetail(false)}
-            className="text-slate-400 hover:text-white cursor-pointer px-2 py-1"
+            className="text-[#8a7ca8] hover:text-[#3d3155] cursor-pointer px-2 py-1"
           >
             ← 返回
           </button>
-          <span className="text-white text-sm font-medium truncate">
+          <span className="text-[#3d3155] text-sm font-medium truncate">
             {selectedTicket.subject ?? '（無主旨）'}
           </span>
         </div>
@@ -288,7 +288,7 @@ export default function SupportCenterPage() {
       <div className="flex flex-1 min-h-0">
         {/* ─── Left Panel: Ticket List ─── */}
         <div
-          className={`w-full md:w-[300px] md:min-w-[300px] lg:w-[350px] lg:min-w-[350px] flex-shrink-0 border-r border-t-card-border bg-t-card-bg flex flex-col ${
+          className={`w-full md:w-[300px] md:min-w-[300px] lg:w-[350px] lg:min-w-[350px] flex-shrink-0 border-r border-[#b8a9e8]/25 bg-white/40 backdrop-blur-sm flex flex-col ${
             mobileShowDetail ? 'hidden lg:flex' : 'flex'
           }`}
         >
@@ -304,9 +304,9 @@ export default function SupportCenterPage() {
 
           <div className="flex-1 overflow-y-auto">
             {loading ? (
-              <p className="text-slate-400 text-sm text-center py-8 animate-pulse">載入中…</p>
+              <p className="text-[#8a7ca8] text-sm text-center py-8 animate-pulse">載入中…</p>
             ) : tickets.length === 0 ? (
-              <p className="text-slate-500 text-sm text-center py-8">沒有工單</p>
+              <p className="text-[#3d3155]0 text-sm text-center py-8">沒有工單</p>
             ) : (
               tickets.map(ticket => (
                 <TicketCard
@@ -320,7 +320,7 @@ export default function SupportCenterPage() {
           </div>
 
           {total > PAGE_SIZE && (
-            <div className="flex items-center justify-between px-4 py-2 border-t border-t-card-border text-xs text-slate-400">
+            <div className="flex items-center justify-between px-4 py-2 border-t border-[#b8a9e8]/25 text-xs text-[#8a7ca8]">
               <button
                 onClick={() => setPage(p => Math.max(1, p - 1))}
                 disabled={page <= 1}
@@ -347,7 +347,7 @@ export default function SupportCenterPage() {
           }`}
         >
           {!selectedTicket ? (
-            <div className="flex-1 flex items-center justify-center text-slate-500">
+            <div className="flex-1 flex items-center justify-center text-[#3d3155]0">
               <div className="text-center space-y-2">
                 <p className="text-4xl">📬</p>
                 <p>選擇一個工單查看對話</p>
@@ -355,7 +355,7 @@ export default function SupportCenterPage() {
             </div>
           ) : messagesLoading ? (
             <div className="flex-1 flex items-center justify-center">
-              <p className="text-slate-400 animate-pulse">載入中…</p>
+              <p className="text-[#8a7ca8] animate-pulse">載入中…</p>
             </div>
           ) : (
             <>
@@ -408,11 +408,11 @@ export default function SupportCenterPage() {
 
 function TicketListHeader({ onNewTicket }: { onNewTicket: () => void }) {
   return (
-    <div className="flex items-center justify-between px-4 py-3 border-b border-t-card-border">
-      <h1 className="text-lg font-bold text-white">📬 客服中心</h1>
+    <div className="flex items-center justify-between px-4 py-3 border-b border-[#b8a9e8]/25">
+      <h1 className="text-lg font-bold text-[#3d3155]">📬 客服中心</h1>
       <button
         onClick={onNewTicket}
-        className="bg-t-btn hover:brightness-110 text-white text-sm px-3 py-1.5 rounded-lg cursor-pointer transition"
+        className="bg-gradient-to-r from-[#b8a9e8] to-[#f5b8b5] hover:brightness-110 text-white text-sm px-3 py-1.5 rounded-lg cursor-pointer transition"
       >
         + 新增工單
       </button>
@@ -430,15 +430,15 @@ function FilterTabs({
   onChange: (key: StatusFilter) => void
 }) {
   return (
-    <div className="flex gap-1 px-3 py-2 border-b border-t-card-border overflow-x-auto">
+    <div className="flex gap-1 px-3 py-2 border-b border-[#b8a9e8]/25 overflow-x-auto">
       {tabs.map(tab => (
         <button
           key={tab.key}
           onClick={() => onChange(tab.key)}
           className={`px-3 py-1 rounded-full text-xs whitespace-nowrap cursor-pointer transition ${
             activeKey === tab.key
-              ? 'bg-t-accent text-white'
-              : 'text-slate-400 hover:text-white hover:bg-white/5'
+              ? 'bg-[#b8a9e8]/25 text-[#6b5fa8]'
+              : 'text-[#8a7ca8] hover:text-[#3d3155] hover:bg-[#b8a9e8]/10'
           }`}
         >
           {tab.label}
@@ -450,7 +450,7 @@ function FilterTabs({
 
 function StatsBar({ stats }: { stats: { open: number; inProgress: number; resolved: number } }) {
   return (
-    <div className="flex gap-3 px-4 py-2 border-b border-t-card-border text-xs text-slate-400">
+    <div className="flex gap-3 px-4 py-2 border-b border-[#b8a9e8]/25 text-xs text-[#8a7ca8]">
       <span>開放 <strong className="text-red-400">{stats.open}</strong></span>
       <span>進行中 <strong className="text-yellow-400">{stats.inProgress}</strong></span>
       <span>已解決 <strong className="text-emerald-400">{stats.resolved}</strong></span>
@@ -472,15 +472,15 @@ function TicketCard({
   return (
     <div
       onClick={onClick}
-      className={`px-4 py-3 border-b border-t-card-border cursor-pointer transition hover:bg-white/5 ${
-        isSelected ? 'bg-white/10 border-l-2 border-l-t-accent' : ''
+      className={`px-4 py-3 border-b border-[#b8a9e8]/25 cursor-pointer transition hover:bg-[#b8a9e8]/10 ${
+        isSelected ? 'bg-[#b8a9e8]/12 border-l-2 border-l-t-accent' : ''
       }`}
     >
       <div className="flex items-start gap-2">
         <span className={`w-2.5 h-2.5 rounded-full mt-1.5 flex-shrink-0 ${STATUS_DOT_COLORS[ticket.status]}`} />
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-white truncate">
+            <span className="text-sm font-medium text-[#3d3155] truncate">
               {truncate(ticket.subject, 20) || '（無主旨）'}
             </span>
             {showPriority && (
@@ -489,10 +489,10 @@ function TicketCard({
               </span>
             )}
           </div>
-          <p className="text-xs text-slate-400 mt-0.5 truncate">
+          <p className="text-xs text-[#8a7ca8] mt-0.5 truncate">
             {truncate(ticket.lastMessage, 30) || '尚無訊息'}
           </p>
-          <div className="flex items-center gap-2 mt-1 text-[10px] text-slate-500">
+          <div className="flex items-center gap-2 mt-1 text-[10px] text-[#3d3155]0">
             <span>{CHANNEL_ICONS[ticket.channel] ?? '📩'}</span>
             <span>{ticket.lineDisplayName ?? ticket.email ?? '匿名'}</span>
             <span className="ml-auto">{relativeTime(ticket.lastMessageAt ?? ticket.createdAt)}</span>
@@ -515,8 +515,8 @@ function ConversationHeader({
   onUpdateCategory: (v: string) => void
 }) {
   return (
-    <div className="px-4 py-3 border-b border-t-card-border bg-t-card-bg">
-      <h2 className="text-base font-semibold text-white mb-2 truncate">
+    <div className="px-4 py-3 border-b border-[#b8a9e8]/25 bg-white/40 backdrop-blur-sm">
+      <h2 className="text-base font-semibold text-[#3d3155] mb-2 truncate">
         {ticket.subject ?? '（無主旨）'}
       </h2>
       <div className="flex flex-wrap gap-2">
@@ -555,12 +555,12 @@ function HeaderDropdown({
   onChange: (v: string) => void
 }) {
   return (
-    <label className="flex items-center gap-1 text-xs text-slate-400">
+    <label className="flex items-center gap-1 text-xs text-[#8a7ca8]">
       {label}
       <select
         value={value}
         onChange={e => onChange(e.target.value)}
-        className="bg-white/5 border border-t-card-border text-white text-xs rounded px-2 py-1 cursor-pointer outline-none focus:border-t-accent"
+        className="bg-white/5 border border-[#b8a9e8]/25 text-[#3d3155] text-xs rounded px-2 py-1 cursor-pointer outline-none focus:border-[#b8a9e8]/50"
       >
         {options.map(opt => (
           <option key={opt.value} value={opt.value} className="bg-[#1a1d2e]">
@@ -574,10 +574,10 @@ function HeaderDropdown({
 
 function CustomerInfoBar({ ticket }: { ticket: Ticket }) {
   return (
-    <div className="flex items-center gap-3 px-4 py-2 border-b border-t-card-border text-xs text-slate-400 bg-white/[0.02]">
+    <div className="flex items-center gap-3 px-4 py-2 border-b border-[#b8a9e8]/25 text-xs text-[#8a7ca8] bg-white/[0.02]">
       <span>{CHANNEL_ICONS[ticket.channel] ?? '📩'}</span>
-      <span className="text-white/80">{ticket.lineDisplayName ?? ticket.email ?? '匿名用戶'}</span>
-      {ticket.email && <span className="text-slate-500">{ticket.email}</span>}
+      <span className="text-[#3d3155]">{ticket.lineDisplayName ?? ticket.email ?? '匿名用戶'}</span>
+      {ticket.email && <span className="text-[#3d3155]0">{ticket.email}</span>}
       <span className="ml-auto text-[10px]">
         {ticket.messageCount} 則訊息 · 建立於 {relativeTime(ticket.createdAt)}
       </span>
@@ -589,7 +589,7 @@ function MessageBubble({ message }: { message: Message }) {
   if (message.senderType === 'system') {
     return (
       <div className="text-center">
-        <span className="text-[11px] text-slate-500 bg-white/5 px-3 py-1 rounded-full">
+        <span className="text-[11px] text-[#3d3155]0 bg-white/5 px-3 py-1 rounded-full">
           {message.content}
         </span>
       </div>
@@ -602,7 +602,7 @@ function MessageBubble({ message }: { message: Message }) {
     <div className={`flex ${isAdmin ? 'justify-end' : 'justify-start'}`}>
       <div className={`max-w-[75%] ${isAdmin ? 'order-1' : ''}`}>
         <div className={`flex items-center gap-2 mb-0.5 ${isAdmin ? 'justify-end' : ''}`}>
-          <span className="text-[11px] text-slate-500">
+          <span className="text-[11px] text-[#3d3155]0">
             {message.senderName ?? (isAdmin ? '客服' : '顧客')}
           </span>
           <span className="text-[10px] text-slate-600">{relativeTime(message.createdAt)}</span>
@@ -610,8 +610,8 @@ function MessageBubble({ message }: { message: Message }) {
         <div
           className={`px-3 py-2 rounded-xl text-sm whitespace-pre-wrap break-words ${
             isAdmin
-              ? 'bg-t-accent/20 text-white rounded-br-sm'
-              : 'bg-white/10 text-white/90 rounded-bl-sm'
+              ? 'bg-[#b8a9e8]/15 text-[#6b5fa8] rounded-br-sm'
+              : 'bg-[#b8a9e8]/12 text-[#3d3155] rounded-bl-sm'
           }`}
         >
           {message.content}
@@ -649,17 +649,17 @@ function ReplyArea({
   const isClosed = ticketStatus === 'closed'
 
   return (
-    <div className="border-t border-t-card-border bg-t-card-bg p-3 space-y-2 relative">
+    <div className="border-t border-[#b8a9e8]/25 bg-white/40 backdrop-blur-sm p-3 space-y-2 relative">
       {showTemplates && templates.length > 0 && (
-        <div className="absolute bottom-full left-0 right-0 bg-[#1a1d2e] border border-t-card-border rounded-t-lg max-h-48 overflow-y-auto shadow-xl">
+        <div className="absolute bottom-full left-0 right-0 bg-[#1a1d2e] border border-[#b8a9e8]/25 rounded-t-lg max-h-48 overflow-y-auto shadow-xl">
           {templates.map(t => (
             <button
               key={t.id}
               onClick={() => onApplyTemplate(t)}
-              className="w-full text-left px-4 py-2 text-sm hover:bg-white/5 cursor-pointer transition"
+              className="w-full text-left px-4 py-2 text-sm hover:bg-[#b8a9e8]/10 cursor-pointer transition"
             >
-              <span className="text-white">{t.title}</span>
-              <span className="text-xs text-slate-500 ml-2">{truncate(t.content, 30)}</span>
+              <span className="text-[#3d3155]">{t.title}</span>
+              <span className="text-xs text-[#3d3155]0 ml-2">{truncate(t.content, 30)}</span>
             </button>
           ))}
         </div>
@@ -668,7 +668,7 @@ function ReplyArea({
       <div className="flex gap-2">
         <button
           onClick={onToggleTemplates}
-          className="text-xs text-slate-400 hover:text-white px-2 py-1 rounded bg-white/5 cursor-pointer transition"
+          className="text-xs text-[#8a7ca8] hover:text-[#3d3155] px-2 py-1 rounded bg-white/5 cursor-pointer transition"
           title="快速回覆模板"
         >
           📋 模板
@@ -684,7 +684,7 @@ function ReplyArea({
         {ticketStatus !== 'closed' && (
           <button
             onClick={onClose}
-            className="text-xs text-slate-400 hover:text-white px-2 py-1 rounded bg-white/5 cursor-pointer transition"
+            className="text-xs text-[#8a7ca8] hover:text-[#3d3155] px-2 py-1 rounded bg-white/5 cursor-pointer transition"
           >
             關閉工單
           </button>
@@ -699,12 +699,12 @@ function ReplyArea({
           placeholder={isClosed ? '工單已關閉' : '輸入回覆… (Ctrl+Enter 送出)'}
           disabled={isClosed}
           rows={2}
-          className="flex-1 bg-white/5 border border-t-card-border rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 resize-none outline-none focus:border-t-accent disabled:opacity-40"
+          className="flex-1 bg-white/5 border border-[#b8a9e8]/25 rounded-lg px-3 py-2 text-sm text-[#3d3155] placeholder:text-[#b5a8d0] resize-none outline-none focus:border-[#b8a9e8]/50 disabled:opacity-40"
         />
         <button
           onClick={onSend}
           disabled={!replyText.trim() || sending || isClosed}
-          className="self-end bg-t-btn hover:brightness-110 text-white text-sm px-4 py-2 rounded-lg cursor-pointer transition disabled:opacity-40 disabled:cursor-not-allowed"
+          className="self-end bg-gradient-to-r from-[#b8a9e8] to-[#f5b8b5] hover:brightness-110 text-white text-sm px-4 py-2 rounded-lg cursor-pointer transition disabled:opacity-40 disabled:cursor-not-allowed"
         >
           {sending ? '…' : '送出'}
         </button>
@@ -769,15 +769,15 @@ function NewTicketModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
       <div
         onClick={e => e.stopPropagation()}
-        className="bg-[#1a1d2e] border border-t-card-border rounded-2xl w-full max-w-lg mx-4 p-6 space-y-4 shadow-2xl"
+        className="bg-[#1a1d2e] border border-[#b8a9e8]/25 rounded-[20px] w-full max-w-lg mx-4 p-6 space-y-4 shadow-2xl"
       >
-        <h2 className="text-lg font-bold text-white">新增工單</h2>
+        <h2 className="text-lg font-bold text-[#3d3155]">新增工單</h2>
 
         <ModalField label="主旨">
           <input
             value={subject}
             onChange={e => setSubject(e.target.value)}
-            className="w-full bg-white/5 border border-t-card-border rounded-lg px-3 py-2 text-sm text-white outline-none focus:border-t-accent"
+            className="w-full bg-white/5 border border-[#b8a9e8]/25 rounded-lg px-3 py-2 text-sm text-[#3d3155] outline-none focus:border-[#b8a9e8]/50"
             placeholder="簡述問題"
           />
         </ModalField>
@@ -787,7 +787,7 @@ function NewTicketModal({
             <select
               value={category}
               onChange={e => setCategory(e.target.value)}
-              className="w-full bg-white/5 border border-t-card-border rounded-lg px-3 py-2 text-sm text-white cursor-pointer outline-none focus:border-t-accent"
+              className="w-full bg-white/5 border border-[#b8a9e8]/25 rounded-lg px-3 py-2 text-sm text-[#3d3155] cursor-pointer outline-none focus:border-[#b8a9e8]/50"
             >
               {CATEGORY_OPTIONS.map(opt => (
                 <option key={opt.value} value={opt.value} className="bg-[#1a1d2e]">{opt.label}</option>
@@ -799,7 +799,7 @@ function NewTicketModal({
             <select
               value={priority}
               onChange={e => setPriority(e.target.value as TicketPriority)}
-              className="w-full bg-white/5 border border-t-card-border rounded-lg px-3 py-2 text-sm text-white cursor-pointer outline-none focus:border-t-accent"
+              className="w-full bg-white/5 border border-[#b8a9e8]/25 rounded-lg px-3 py-2 text-sm text-[#3d3155] cursor-pointer outline-none focus:border-[#b8a9e8]/50"
             >
               {Object.entries(PRIORITY_LABELS).map(([v, l]) => (
                 <option key={v} value={v} className="bg-[#1a1d2e]">{l}</option>
@@ -813,7 +813,7 @@ function NewTicketModal({
             <select
               value={channel}
               onChange={e => setChannel(e.target.value)}
-              className="w-full bg-white/5 border border-t-card-border rounded-lg px-3 py-2 text-sm text-white cursor-pointer outline-none focus:border-t-accent"
+              className="w-full bg-white/5 border border-[#b8a9e8]/25 rounded-lg px-3 py-2 text-sm text-[#3d3155] cursor-pointer outline-none focus:border-[#b8a9e8]/50"
             >
               <option value="web" className="bg-[#1a1d2e]">🌐 網頁</option>
               <option value="line" className="bg-[#1a1d2e]">💬 LINE</option>
@@ -825,7 +825,7 @@ function NewTicketModal({
             <input
               value={contactName}
               onChange={e => setContactName(e.target.value)}
-              className="w-full bg-white/5 border border-t-card-border rounded-lg px-3 py-2 text-sm text-white outline-none focus:border-t-accent"
+              className="w-full bg-white/5 border border-[#b8a9e8]/25 rounded-lg px-3 py-2 text-sm text-[#3d3155] outline-none focus:border-[#b8a9e8]/50"
               placeholder="選填"
             />
           </ModalField>
@@ -836,7 +836,7 @@ function NewTicketModal({
             value={contactEmail}
             onChange={e => setContactEmail(e.target.value)}
             type="email"
-            className="w-full bg-white/5 border border-t-card-border rounded-lg px-3 py-2 text-sm text-white outline-none focus:border-t-accent"
+            className="w-full bg-white/5 border border-[#b8a9e8]/25 rounded-lg px-3 py-2 text-sm text-[#3d3155] outline-none focus:border-[#b8a9e8]/50"
             placeholder="選填"
           />
         </ModalField>
@@ -846,7 +846,7 @@ function NewTicketModal({
             value={initialMessage}
             onChange={e => setInitialMessage(e.target.value)}
             rows={3}
-            className="w-full bg-white/5 border border-t-card-border rounded-lg px-3 py-2 text-sm text-white resize-none outline-none focus:border-t-accent"
+            className="w-full bg-white/5 border border-[#b8a9e8]/25 rounded-lg px-3 py-2 text-sm text-[#3d3155] resize-none outline-none focus:border-[#b8a9e8]/50"
             placeholder="描述問題或需求…"
           />
         </ModalField>
@@ -856,14 +856,14 @@ function NewTicketModal({
         <div className="flex justify-end gap-2 pt-2">
           <button
             onClick={onClose}
-            className="text-sm text-slate-400 hover:text-white px-4 py-2 cursor-pointer transition"
+            className="text-sm text-[#8a7ca8] hover:text-[#3d3155] px-4 py-2 cursor-pointer transition"
           >
             取消
           </button>
           <button
             onClick={handleSubmit}
             disabled={submitting}
-            className="bg-t-btn hover:brightness-110 text-white text-sm px-4 py-2 rounded-lg cursor-pointer transition disabled:opacity-50"
+            className="bg-gradient-to-r from-[#b8a9e8] to-[#f5b8b5] hover:brightness-110 text-white text-sm px-4 py-2 rounded-lg cursor-pointer transition disabled:opacity-50"
           >
             {submitting ? '建立中…' : '建立工單'}
           </button>
@@ -876,7 +876,7 @@ function NewTicketModal({
 function ModalField({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <label className="block text-xs text-slate-400 mb-1">{label}</label>
+      <label className="block text-xs text-[#8a7ca8] mb-1">{label}</label>
       {children}
     </div>
   )

@@ -84,14 +84,14 @@ function TemplateCard({
   using: boolean
 }) {
   return (
-    <div className="bg-slate-800/60 border border-slate-700 rounded-xl p-5 flex flex-col gap-3 hover:border-slate-500 transition-colors">
+    <div className="bg-white/40 backdrop-blur-sm border border-[#b8a9e8]/20 rounded-xl p-5 flex flex-col gap-3 hover:border-[#b8a9e8]/35 transition-colors">
       <div className="flex items-start justify-between gap-2">
         <div className="flex items-center gap-3">
           <span className="text-3xl leading-none">{template.icon}</span>
           <div>
-            <h3 className="font-semibold text-white text-sm leading-tight">{template.name}</h3>
+            <h3 className="font-semibold text-[#3d3155] text-sm leading-tight">{template.name}</h3>
             {template.industry && (
-              <span className="text-xs text-slate-500 mt-0.5 block">{industryLabel(template.industry)}</span>
+              <span className="text-xs text-[#3d3155]0 mt-0.5 block">{industryLabel(template.industry)}</span>
             )}
           </div>
         </div>
@@ -103,13 +103,13 @@ function TemplateCard({
       </div>
 
       {template.description && (
-        <p className="text-xs text-slate-400 leading-relaxed line-clamp-3">{template.description}</p>
+        <p className="text-xs text-[#8a7ca8] leading-relaxed line-clamp-3">{template.description}</p>
       )}
 
       {template.tags && template.tags.length > 0 && (
         <div className="flex flex-wrap gap-1">
           {template.tags.slice(0, 4).map((tag) => (
-            <span key={tag} className="text-[10px] bg-slate-700/60 text-slate-400 px-2 py-0.5 rounded">
+            <span key={tag} className="text-[10px] bg-[#b8a9e8]/10/60 text-[#8a7ca8] px-2 py-0.5 rounded">
               {tag}
             </span>
           ))}
@@ -117,7 +117,7 @@ function TemplateCard({
       )}
 
       <div className="flex items-center justify-between pt-1 mt-auto">
-        <div className="flex items-center gap-3 text-xs text-slate-500">
+        <div className="flex items-center gap-3 text-xs text-[#3d3155]0">
           <span>使用 {template.use_count} 次</span>
           {template.rating_count > 0 && (
             <span>⭐ {averageRating(template.rating_sum, template.rating_count)}</span>
@@ -171,7 +171,7 @@ function BgCard({
   const canAfford = balance >= def.price
 
   return (
-    <div className="bg-slate-800/60 border border-slate-700 rounded-xl overflow-hidden hover:border-slate-500 transition-colors flex flex-col">
+    <div className="bg-white/40 backdrop-blur-sm border border-[#b8a9e8]/20 rounded-xl overflow-hidden hover:border-[#b8a9e8]/35 transition-colors flex flex-col">
       {/* Preview */}
       <div className="h-24 relative" style={previewStyle}>
         {def.isThree && (
@@ -189,7 +189,7 @@ function BgCard({
       {/* Info */}
       <div className="p-3 flex items-center justify-between gap-2 flex-1">
         <div>
-          <p className="text-sm font-semibold text-white">{def.emoji} {def.name}</p>
+          <p className="text-sm font-semibold text-[#3d3155]">{def.emoji} {def.name}</p>
           {!isFree && (
             <p className="text-xs text-amber-400 mt-0.5">💰 {def.price} Z幣</p>
           )}
@@ -198,7 +198,7 @@ function BgCard({
         {isFree ? (
           <span className="text-xs text-emerald-400 font-medium">免費</span>
         ) : owned ? (
-          <span className="text-xs text-slate-400">✓ 已購</span>
+          <span className="text-xs text-[#8a7ca8]">✓ 已購</span>
         ) : (
           <button
             onClick={() => onPurchase(def)}
@@ -221,16 +221,16 @@ function StickerPackCard({ pack }: { pack: StickerPack }) {
   const preview = pack.stickers.slice(0, 6)
 
   return (
-    <div className="bg-slate-800/60 border border-slate-700 rounded-xl p-4 flex flex-col gap-3 hover:border-slate-500 transition-colors">
+    <div className="bg-white/40 backdrop-blur-sm border border-[#b8a9e8]/20 rounded-xl p-4 flex flex-col gap-3 hover:border-[#b8a9e8]/35 transition-colors">
       <div className="flex items-center justify-between">
-        <h3 className="font-semibold text-white text-sm">{pack.name}</h3>
+        <h3 className="font-semibold text-[#3d3155] text-sm">{pack.name}</h3>
         <span className="text-xs text-emerald-400">✓ 已解鎖</span>
       </div>
 
       {/* Preview grid */}
       <div className="grid grid-cols-3 gap-2">
         {preview.map((s) => (
-          <div key={s.id} className="aspect-square bg-slate-700/50 rounded-lg overflow-hidden flex items-center justify-center">
+          <div key={s.id} className="aspect-square bg-[#b8a9e8]/10 rounded-lg overflow-hidden flex items-center justify-center">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={s.url} alt="sticker" className="w-full h-full object-contain p-1" loading="lazy" />
           </div>
@@ -240,7 +240,7 @@ function StickerPackCard({ pack }: { pack: StickerPack }) {
       {pack.stickers.length > 6 && (
         <button
           onClick={() => setExpanded(!expanded)}
-          className="text-xs text-slate-400 hover:text-white transition-colors text-left cursor-pointer"
+          className="text-xs text-[#8a7ca8] hover:text-[#3d3155] transition-colors text-left cursor-pointer"
         >
           {expanded ? '收起' : `還有 ${pack.stickers.length - 6} 張 →`}
         </button>
@@ -249,7 +249,7 @@ function StickerPackCard({ pack }: { pack: StickerPack }) {
       {expanded && (
         <div className="grid grid-cols-4 gap-2 mt-1">
           {pack.stickers.slice(6).map((s) => (
-            <div key={s.id} className="aspect-square bg-slate-700/50 rounded-lg overflow-hidden flex items-center justify-center">
+            <div key={s.id} className="aspect-square bg-[#b8a9e8]/10 rounded-lg overflow-hidden flex items-center justify-center">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={s.url} alt="sticker" className="w-full h-full object-contain p-1" loading="lazy" />
             </div>
@@ -257,7 +257,7 @@ function StickerPackCard({ pack }: { pack: StickerPack }) {
         </div>
       )}
 
-      <p className="text-xs text-slate-500">{pack.stickers.length} 張貼圖</p>
+      <p className="text-xs text-[#3d3155]0">{pack.stickers.length} 張貼圖</p>
     </div>
   )
 }
@@ -401,23 +401,23 @@ export default function SurveyTemplatesPage() {
   const paidBgs = CHAT_BACKGROUNDS.filter(b => b.price > 0)
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-white">🏪 內容市集</h1>
+        <h1 className="text-xl sm:text-2xl font-bold text-[#3d3155]">🏪 內容市集</h1>
         <div className="text-xs text-amber-400">💰 Z幣餘額：{zcoinBalance}</div>
       </div>
 
       {/* Category switcher */}
-      <div className="flex gap-1 bg-slate-800/50 p-1 rounded-xl w-fit">
+      <div className="flex gap-1 bg-white/35 backdrop-blur-sm p-1 rounded-xl w-fit">
         {CATEGORIES.map((cat) => (
           <button
             key={cat.key}
             onClick={() => setCategory(cat.key)}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer ${
               category === cat.key
-                ? 'bg-slate-600 text-white'
-                : 'text-slate-400 hover:text-white'
+                ? 'bg-[#b8a9e8]/25 text-[#6b5fa8]'
+                : 'text-[#8a7ca8] hover:text-[#3d3155]'
             }`}
           >
             {cat.label}
@@ -429,13 +429,13 @@ export default function SurveyTemplatesPage() {
       {category === 'templates' && (
         <div className="space-y-5">
           {/* Template tabs */}
-          <div className="flex gap-1 bg-slate-800/30 p-1 rounded-lg w-fit">
+          <div className="flex gap-1 bg-white/50/30 p-1 rounded-lg w-fit">
             {TABS.map((tab) => (
               <button
                 key={tab.key}
                 onClick={() => handleTabChange(tab.key)}
                 className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors cursor-pointer ${
-                  activeTab === tab.key ? 'bg-slate-600 text-white' : 'text-slate-400 hover:text-white'
+                  activeTab === tab.key ? 'bg-[#b8a9e8]/25 text-[#6b5fa8]' : 'text-[#8a7ca8] hover:text-[#3d3155]'
                 }`}
               >
                 {tab.label}
@@ -453,7 +453,7 @@ export default function SurveyTemplatesPage() {
                   className={`px-3 py-1.5 rounded-lg text-sm transition-colors cursor-pointer ${
                     industry === ind.key
                       ? 'bg-emerald-700/60 text-emerald-300 border border-emerald-600/50'
-                      : 'bg-slate-800/60 text-slate-400 border border-slate-700 hover:text-white hover:border-slate-500'
+                      : 'bg-white/40 backdrop-blur-sm text-[#8a7ca8] border border-[#b8a9e8]/20 hover:text-[#3d3155] hover:border-[#b8a9e8]/35'
                   }`}
                 >
                   {ind.icon} {ind.label}
@@ -467,13 +467,13 @@ export default function SurveyTemplatesPage() {
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
                 placeholder="搜尋模板名稱或說明…"
-                className="flex-1 bg-slate-800 border border-slate-700 text-white placeholder-slate-500 rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-slate-500"
+                className="flex-1 bg-white/60 border border-[#b8a9e8]/30 text-[#3d3155] placeholder:text-[#b5a8d0] rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-[#b8a9e8]/35"
               />
-              <button type="submit" className="bg-slate-700 hover:bg-slate-600 text-white px-4 py-2 rounded-lg text-sm transition-colors cursor-pointer">
+              <button type="submit" className="bg-[#b8a9e8]/15 hover:bg-[#b8a9e8]/25 text-[#6b5fa8] px-4 py-2 rounded-lg text-sm transition-colors cursor-pointer">
                 搜尋
               </button>
               {search && (
-                <button type="button" onClick={() => { setSearch(''); setSearchInput('') }} className="text-slate-400 hover:text-white px-3 py-2 rounded-lg text-sm transition-colors cursor-pointer">
+                <button type="button" onClick={() => { setSearch(''); setSearchInput('') }} className="text-[#8a7ca8] hover:text-[#3d3155] px-3 py-2 rounded-lg text-sm transition-colors cursor-pointer">
                   清除
                 </button>
               )}
@@ -481,9 +481,9 @@ export default function SurveyTemplatesPage() {
           </div>
 
           {loadingTemplates ? (
-            <div className="text-slate-400 animate-pulse py-8 text-center">載入中…</div>
+            <div className="text-[#8a7ca8] animate-pulse py-8 text-center">載入中…</div>
           ) : templates.length === 0 ? (
-            <div className="text-center py-16 text-slate-500">
+            <div className="text-center py-16 text-[#3d3155]0">
               <div className="text-5xl mb-4">📋</div>
               <p className="text-lg">
                 {activeTab === 'tenant' ? '你還沒有建立任何模板'
@@ -506,8 +506,8 @@ export default function SurveyTemplatesPage() {
 
       {/* ── BACKGROUNDS ── */}
       {category === 'backgrounds' && (
-        <div className="space-y-6">
-          <p className="text-sm text-slate-400">在私訊聊天室中使用的動態背景。付費背景購買後永久解鎖，可隨時切換。</p>
+        <div className="space-y-4 sm:space-y-6">
+          <p className="text-sm text-[#8a7ca8]">在私訊聊天室中使用的動態背景。付費背景購買後永久解鎖，可隨時切換。</p>
 
           {/* Free */}
           <div>
@@ -553,12 +553,12 @@ export default function SurveyTemplatesPage() {
       {/* ── STICKERS ── */}
       {category === 'stickers' && (
         <div className="space-y-5">
-          <p className="text-sm text-slate-400">在私訊聊天室中使用的貼圖包。由平台提供，登入後即可使用。</p>
+          <p className="text-sm text-[#8a7ca8]">在私訊聊天室中使用的貼圖包。由平台提供，登入後即可使用。</p>
 
           {loadingStickers ? (
-            <div className="text-slate-400 animate-pulse py-8 text-center">載入中…</div>
+            <div className="text-[#8a7ca8] animate-pulse py-8 text-center">載入中…</div>
           ) : stickerPacks.length === 0 ? (
-            <div className="text-center py-16 text-slate-500">
+            <div className="text-center py-16 text-[#3d3155]0">
               <div className="text-5xl mb-4">😄</div>
               <p>目前沒有可用的貼圖包</p>
               <p className="text-sm mt-2 text-slate-600">Super Admin 可在控制台新增貼圖包</p>
@@ -575,7 +575,7 @@ export default function SurveyTemplatesPage() {
 
       {/* Toast */}
       {toast && (
-        <div className="fixed bottom-6 right-6 z-50 bg-slate-800 border border-slate-600 text-white px-5 py-3 rounded-xl shadow-xl text-sm animate-in fade-in slide-in-from-bottom-2">
+        <div className="fixed bottom-6 right-6 z-50 bg-white/60 border border-[#b8a9e8]/30 text-[#3d3155] px-5 py-3 rounded-xl shadow-xl text-sm animate-in fade-in slide-in-from-bottom-2">
           {toast}
         </div>
       )}
