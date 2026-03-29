@@ -73,7 +73,7 @@ export default function YukirinWidget() {
   // ── 拖曳移動 ─────────────────────────────────────────────────────────────
   const [widgetPos, setWidgetPos] = useState<{ x: number; y: number } | null>(null)
   const [isGrabbing, setIsGrabbing] = useState(false)
-  const dragStartRef = useRef<{ px: number; py: number; wx: number; wy: number } | null>(null)
+  const dragStartRef = useRef<{ px: number; py: number; wx: number; wy: number; pointerId: number; el: HTMLElement } | null>(null)
   const isDraggingRef = useRef(false)
 
   const onDragStart = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
@@ -83,9 +83,11 @@ export default function YukirinWidget() {
       py: e.clientY,
       wx: rect.left,
       wy: rect.top,
+      pointerId: e.pointerId,
+      el: e.currentTarget as HTMLElement,
     }
     isDraggingRef.current = false
-    ;(e.currentTarget as HTMLElement).setPointerCapture(e.pointerId)
+    // 不在這裡 setPointerCapture，避免攔截按鈕的 click 事件
   }, [])
 
   const onDragMove = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
@@ -96,10 +98,12 @@ export default function YukirinWidget() {
     if (!isDraggingRef.current && (Math.abs(dx) > 5 || Math.abs(dy) > 5)) {
       isDraggingRef.current = true
       setIsGrabbing(true)
+      // 確認是拖動後才捕獲 pointer，這樣按鈕的 click 不受影響
+      dragStartRef.current.el.setPointerCapture(dragStartRef.current.pointerId)
     }
     if (!isDraggingRef.current) return
 
-    const el = e.currentTarget as HTMLElement
+    const el = dragStartRef.current.el
     const w = el.offsetWidth
     const h = el.offsetHeight
     const newX = Math.max(0, Math.min(window.innerWidth - w, dragStartRef.current.wx + dx))
