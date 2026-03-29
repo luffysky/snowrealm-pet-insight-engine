@@ -265,7 +265,7 @@ export default function TemplatesPage() {
                       onClick={() => handleToggle(tpl)}
                       className={`px-3 py-1.5 rounded text-xs font-medium ${
                         tpl.is_active
-                          ? 'bg-yellow-600/20 text-yellow-400 hover:bg-yellow-600/30'
+                          ? 'bg-yellow-600/20 text-amber-700 hover:bg-yellow-600/30'
                           : 'bg-green-600/20 text-green-400 hover:bg-green-600/30'
                       }`}
                     >

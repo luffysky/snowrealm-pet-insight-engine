@@ -147,7 +147,7 @@ export default function BlogManagePage() {
               href={`/blogs/${blogPublicSlug}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-xs text-amber-400/70 hover:text-amber-400 flex items-center gap-1 mt-0.5 transition-colors"
+              className="text-xs text-amber-700 hover:text-amber-400 flex items-center gap-1 mt-0.5 transition-colors"
             >
               <Globe className="w-3 h-3" />
               /blogs/{blogPublicSlug}
@@ -169,7 +169,7 @@ export default function BlogManagePage() {
         {(['articles', 'settings'] as const).map(t => (
           <button key={t} onClick={() => setTab(t)}
             className={`px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors ${
-              tab === t ? 'text-amber-400 border-amber-400' : 'text-[#b5a8d0] border-transparent hover:text-[#8a7ca8]'
+              tab === t ? 'text-amber-400 border-amber-400' : 'text-[#6b5fa8] border-transparent hover:text-[#8a7ca8]'
             }`}
           >
             {t === 'articles' ? `文章列表 (${articles.length})` : '部落格設定'}
@@ -181,10 +181,10 @@ export default function BlogManagePage() {
         <div className="flex justify-center py-16"><Loader2 className="w-6 h-6 text-[#8a7ca8] animate-spin" /></div>
       ) : tab === 'articles' ? (
         articles.length === 0 ? (
-          <div className="text-center py-20 text-[#b5a8d0]">
+          <div className="text-center py-20 text-[#6b5fa8]">
             <div className="text-4xl mb-4">📝</div>
             <p className="text-sm font-medium mb-1">還沒有文章</p>
-            <p className="text-xs text-[#b5a8d0] mb-6">點擊「新增文章」開始寫你的第一篇部落格</p>
+            <p className="text-xs text-[#6b5fa8] mb-6">點擊「新增文章」開始寫你的第一篇部落格</p>
             <button
               onClick={() => setEditingId('new')}
               className="px-6 py-2.5 bg-amber-500/20 text-amber-300 rounded-xl text-sm font-medium hover:bg-amber-500/30 transition-colors"
@@ -208,8 +208,8 @@ export default function BlogManagePage() {
                       {article.is_public ? '公開' : '私人'}
                     </span>
                   </div>
-                  {article.summary && <p className="text-xs text-[#b5a8d0] truncate mt-0.5">{article.summary}</p>}
-                  <div className="flex items-center gap-3 mt-2 text-[11px] text-[#b5a8d0]">
+                  {article.summary && <p className="text-xs text-[#6b5fa8] truncate mt-0.5">{article.summary}</p>}
+                  <div className="flex items-center gap-3 mt-2 text-[11px] text-[#6b5fa8]">
                     <span>/{article.slug}</span>
                     <span>👁 {article.view_count}</span>
                     <span>{new Date(article.published_at).toLocaleDateString('zh-TW')}</span>
@@ -239,7 +239,7 @@ export default function BlogManagePage() {
                   </button>
                   <button
                     onClick={() => deleteArticle(article.id)}
-                    className="p-1.5 rounded-lg hover:bg-rose-500/10 text-[#b5a8d0] hover:text-rose-400 transition-colors"
+                    className="p-1.5 rounded-lg hover:bg-rose-500/10 text-[#6b5fa8] hover:text-rose-400 transition-colors"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
@@ -256,24 +256,24 @@ export default function BlogManagePage() {
           )}
 
           <div>
-            <label className="text-[11px] text-[#b5a8d0] font-medium uppercase tracking-widest block mb-1.5">部落格 Slug（個人 URL）</label>
+            <label className="text-[11px] text-[#6b5fa8] font-medium uppercase tracking-widest block mb-1.5">部落格 Slug（個人 URL）</label>
             <div className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 focus-within:border-amber-400/30 transition-colors">
-              <span className="text-xs text-[#b5a8d0] shrink-0">/blogs/</span>
+              <span className="text-xs text-[#6b5fa8] shrink-0">/blogs/</span>
               <input
                 value={settingsForm.blogSlug}
                 onChange={e => setSettingsForm(f => ({ ...f, blogSlug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '') }))}
                 placeholder={myUserId ?? 'your-slug'}
                 className="flex-1 bg-transparent text-sm text-[#3d3155] placeholder-[#b5a8d0] outline-none"
               />
-              {slugCheckStatus === 'checking' && <Loader2 className="w-3.5 h-3.5 animate-spin text-[#b5a8d0] shrink-0" />}
+              {slugCheckStatus === 'checking' && <Loader2 className="w-3.5 h-3.5 animate-spin text-[#6b5fa8] shrink-0" />}
               {slugCheckStatus === 'ok' && <Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" />}
               {slugCheckStatus === 'taken' && <X className="w-3.5 h-3.5 text-rose-400 shrink-0" />}
             </div>
-            <p className="text-[10px] text-[#b5a8d0] mt-1">3-30 字元，只能含小寫英文、數字和連字號。未設定時使用你的用戶 ID。</p>
+            <p className="text-[10px] text-[#6b5fa8] mt-1">3-30 字元，只能含小寫英文、數字和連字號。未設定時使用你的用戶 ID。</p>
           </div>
 
           <div>
-            <label className="text-[11px] text-[#b5a8d0] font-medium uppercase tracking-widest block mb-1.5">部落格標題</label>
+            <label className="text-[11px] text-[#6b5fa8] font-medium uppercase tracking-widest block mb-1.5">部落格標題</label>
             <input
               value={settingsForm.blogTitle}
               onChange={e => setSettingsForm(f => ({ ...f, blogTitle: e.target.value }))}
@@ -283,7 +283,7 @@ export default function BlogManagePage() {
           </div>
 
           <div>
-            <label className="text-[11px] text-[#b5a8d0] font-medium uppercase tracking-widest block mb-1.5">部落格簡介</label>
+            <label className="text-[11px] text-[#6b5fa8] font-medium uppercase tracking-widest block mb-1.5">部落格簡介</label>
             <textarea
               value={settingsForm.blogDesc}
               onChange={e => setSettingsForm(f => ({ ...f, blogDesc: e.target.value }))}

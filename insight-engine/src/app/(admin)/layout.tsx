@@ -145,7 +145,7 @@ function SidebarGroup({
               className={`flex items-center justify-center w-10 h-10 mx-auto rounded-xl transition-colors ${
                 isActive
                   ? 'bg-[#b8a9e8]/20 text-[#6b5fa8]'
-                  : 'text-[#b5a8d0] hover:text-[#6b5fa8] hover:bg-[#b8a9e8]/12'
+                  : 'text-[#6b5fa8] hover:text-[#6b5fa8] hover:bg-[#b8a9e8]/12'
               }`}
             >
               <span className="text-lg leading-none">{item.icon}</span>
@@ -160,7 +160,7 @@ function SidebarGroup({
     <div>
       <button
         onClick={() => setOpen(o => !o)}
-        className="w-full flex items-center justify-between px-3 py-1.5 text-xs font-semibold text-[#b5a8d0] uppercase tracking-wider hover:text-[#8a7ca8] transition-colors"
+        className="w-full flex items-center justify-between px-3 py-1.5 text-xs font-semibold text-[#6b5fa8] uppercase tracking-wider hover:text-[#8a7ca8] transition-colors"
       >
         {label}
         <svg className={`w-3 h-3 transition-transform ${open ? '' : '-rotate-90'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -297,7 +297,7 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
       {/* 問卷選擇器 */}
       {!sidebarCollapsed && surveys.length > 0 && (
         <div className="px-3 py-3 border-b border-[#b8a9e8]/20">
-          <p className="text-xs text-[#b5a8d0] mb-1.5">當前問卷</p>
+          <p className="text-xs text-[#6b5fa8] mb-1.5">當前問卷</p>
           <select
             value={selectedSurveyId ?? ''}
             onChange={e => setSelectedSurveyId(e.target.value || null)}
@@ -310,7 +310,7 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
             ))}
           </select>
           {selectedSurvey && (
-            <p className="text-[10px] text-[#b5a8d0] mt-1 font-mono truncate">{selectedSurvey.slug}</p>
+            <p className="text-[10px] text-[#6b5fa8] mt-1 font-mono truncate">{selectedSurvey.slug}</p>
           )}
         </div>
       )}
@@ -336,17 +336,17 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
       {!sidebarCollapsed && (
         <div className="border-t border-[#b8a9e8]/20 px-3 py-2 flex gap-1.5">
           <a href="/articles" target="_blank" rel="noopener noreferrer"
-            className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs text-[#b5a8d0] hover:text-[#6b5fa8] hover:bg-[#b8a9e8]/10 transition-colors"
+            className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs text-[#6b5fa8] hover:text-[#6b5fa8] hover:bg-[#b8a9e8]/10 transition-colors"
           >
             <span>🌐</span> 社群頁
           </a>
           <a href="/" target="_blank" rel="noopener noreferrer"
-            className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs text-[#b5a8d0] hover:text-[#6b5fa8] hover:bg-[#b8a9e8]/10 transition-colors"
+            className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs text-[#6b5fa8] hover:text-[#6b5fa8] hover:bg-[#b8a9e8]/10 transition-colors"
           >
             <span>🏠</span> 首頁
           </a>
           <a href="/write" target="_blank" rel="noopener noreferrer"
-            className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs text-[#b5a8d0] hover:text-[#6b5fa8] hover:bg-[#b8a9e8]/10 transition-colors"
+            className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs text-[#6b5fa8] hover:text-[#6b5fa8] hover:bg-[#b8a9e8]/10 transition-colors"
           >
             <span>✍️</span> 發文
           </a>
@@ -371,9 +371,9 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
             <div className="flex items-center justify-between">
               <div className="min-w-0">
                 <p className="text-xs text-[#3d3155] truncate font-medium">{user.userName}</p>
-                <p className="text-[10px] text-[#b5a8d0]">{displayRole} · {user.tenantName ?? user.tenantId}</p>
+                <p className="text-[10px] text-[#6b5fa8]">{displayRole} · {user.tenantName ?? user.tenantId}</p>
               </div>
-              <button onClick={handleLogout} className="text-xs text-[#b5a8d0] hover:text-red-400 transition-colors shrink-0 ml-2">
+              <button onClick={handleLogout} className="text-xs text-[#6b5fa8] hover:text-red-400 transition-colors shrink-0 ml-2">
                 登出
               </button>
             </div>

@@ -70,7 +70,7 @@ function ChartTypeSwitcher({
           className={`px-2 py-1 rounded text-xs transition-colors ${
             active === t
               ? 'bg-[#b8a9e8]/30 text-[#6b5fa8]'
-              : 'bg-[#b8a9e8]/10 text-[#b5a8d0] hover:text-[#6b5fa8]'
+              : 'bg-[#b8a9e8]/10 text-[#6b5fa8] hover:text-[#6b5fa8]'
           }`}
           title={t}
         >

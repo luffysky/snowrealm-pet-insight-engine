@@ -183,7 +183,7 @@ export function EmojiPicker({ value, onSelect, onClear }: EmojiPickerProps) {
                 className={`px-2 py-1 rounded-lg text-xs whitespace-nowrap transition-colors cursor-pointer ${
                   category === cat.id
                     ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30'
-                    : 'text-[#b5a8d0] hover:text-[#8a7ca8] hover:bg-white/50 border border-transparent'
+                    : 'text-[#6b5fa8] hover:text-[#8a7ca8] hover:bg-white/50 border border-transparent'
                 }`}
               >
                 <span className="mr-1">{cat.icon}</span>

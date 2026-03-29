@@ -243,7 +243,7 @@ export function AiGeneratePanel({ surveyId, existingCount, onDone, onCancel }: A
                     </div>
                     <p className="text-sm text-[#3d3155]">{q.content}</p>
                     {q.options.length > 0 && (
-                      <p className="text-xs text-[#b5a8d0]">
+                      <p className="text-xs text-[#6b5fa8]">
                         選項：{q.options.map((o) => o.label).join('、')}
                       </p>
                     )}

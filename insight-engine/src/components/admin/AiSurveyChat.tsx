@@ -402,7 +402,7 @@ export function AiSurveyChat({ onDone, onCancel }: AiSurveyChatProps) {
                     <p className="text-xs text-[#8a7ca8] mb-0.5">
                       Q{idx + 1} · {q.type === 'single' ? '單選' : q.type === 'multiple' ? '多選' : '填答'}
                       {q.route && q.route !== 'all' && (
-                        <span className="ml-1 text-amber-400/70">({q.route})</span>
+                        <span className="ml-1 text-amber-700">({q.route})</span>
                       )}
                     </p>
                     <p className="text-sm text-[#3d3155]/85 leading-snug">{q.content}</p>
@@ -487,7 +487,7 @@ export function AiSurveyChat({ onDone, onCancel }: AiSurveyChatProps) {
               placeholder="描述你的問卷需求... （Enter 送出，Shift+Enter 換行）"
               rows={2}
               disabled={sending || creating}
-              className="w-full px-3 py-2 bg-white/50 border border-[#b8a9e8]/30 rounded-lg text-white text-sm focus:outline-none focus:ring-1 focus:ring-cyan-500/50 resize-none"
+              className="w-full px-3 py-2 bg-white/60 border border-[#b8a9e8]/30 rounded-lg text-[#3d3155] placeholder:text-[#b5a8d0] text-sm focus:outline-none focus:ring-1 focus:ring-[#b8a9e8]/50 resize-none"
             />
             {input.trim() && (
               <button

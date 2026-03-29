@@ -100,7 +100,7 @@ export default function WebhooksPage() {
             <code className="text-sm text-green-300 break-all select-all">
               {process.env.NEXT_PUBLIC_BASE_URL}/api/line/webhook/official
             </code>
-            <p className="text-xs text-amber-200/90 mt-2">
+            <p className="text-xs text-amber-700/80 mt-2">
               Rich Menu 的「封測／最新消息／聯絡我們」是文字訊息，必須指向此網址；若誤設成 <code className="text-amber-100">/api/line/webhook</code>（足跡帳號）會驗簽失敗，聊天室不會出現自動回覆。
             </p>
           </div>

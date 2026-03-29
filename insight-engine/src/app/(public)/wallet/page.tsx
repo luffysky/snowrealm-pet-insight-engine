@@ -46,8 +46,8 @@ export default function WalletPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
-        <div className="text-white/50 text-sm animate-pulse">載入中...</div>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-[#8a7ca8] text-sm animate-pulse">載入中...</div>
       </div>
     )
   }
@@ -55,12 +55,12 @@ export default function WalletPage() {
   const { balance, history } = data
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white" style={{ paddingBottom: 'var(--bnav-h, 76px)' }}>
+    <div className="min-h-screen text-[#3d3155]" style={{ paddingBottom: 'var(--bnav-h, 76px)' }}>
       {/* Top nav */}
-      <nav className="sticky top-0 z-10 bg-slate-950/80 backdrop-blur-sm border-b border-white/10">
+      <nav className="sticky top-0 z-10 backdrop-blur-xl border-b border-[#b8a9e8]/20 bg-[rgba(243,238,255,0.85)]">
         <div className="max-w-md mx-auto px-4 py-3 flex items-center justify-between gap-2">
-          <Link href="/" className="text-sm text-white/60 hover:text-white transition-colors">← 首頁</Link>
-          <Link href="/explore" className="text-sm text-white/50 hover:text-white transition-colors">🔍 探索問卷</Link>
+          <Link href="/" className="text-sm text-[#8a7ca8] hover:text-[#3d3155] transition-colors">← 首頁</Link>
+          <Link href="/explore" className="text-sm text-[#8a7ca8] hover:text-[#3d3155] transition-colors">🔍 探索問卷</Link>
         </div>
       </nav>
       <div className="px-4 py-8 max-w-md mx-auto">
@@ -79,7 +79,7 @@ export default function WalletPage() {
 
       {/* 如何賺取 */}
       <div className="bg-white/5 border border-white/10 rounded-xl p-4 mb-6">
-        <p className="text-sm font-medium text-white/70 mb-3">如何賺取 Z幣</p>
+        <p className="text-sm font-medium text-[#3d3155] mb-3">如何賺取 Z幣</p>
         <div className="space-y-2 text-sm">
           {[
             ['✅', '完成問卷', '+1'],
@@ -88,7 +88,7 @@ export default function WalletPage() {
             ['📅', '每日登入', '+2'],
             ['🎉', '里程碑獎勵', '+50'],
           ].map(([emoji, label, amt]) => (
-            <div key={label} className="flex items-center justify-between text-white/60">
+            <div key={label} className="flex items-center justify-between text-[#8a7ca8]">
               <span>{emoji} {label}</span>
               <span className="text-amber-300 font-medium">{amt}</span>
             </div>
@@ -98,9 +98,9 @@ export default function WalletPage() {
 
       {/* 交易記錄 */}
       <div>
-        <p className="text-sm font-medium text-white/70 mb-3">交易記錄</p>
+        <p className="text-sm font-medium text-[#3d3155] mb-3">交易記錄</p>
         {history.length === 0 ? (
-          <p className="text-white/30 text-sm text-center py-8">尚無交易記錄</p>
+          <p className="text-[#b5a8d0] text-sm text-center py-8">尚無交易記錄</p>
         ) : (
           <div className="space-y-2">
             {history.map((tx) => (
@@ -109,8 +109,8 @@ export default function WalletPage() {
                 className="flex items-center justify-between bg-white/5 border border-white/10 rounded-xl px-4 py-3"
               >
                 <div>
-                  <p className="text-sm text-white/80">{REASON_LABEL[tx.reason] ?? tx.reason}</p>
-                  <p className="text-xs text-white/30">{formatDate(tx.createdAt)}</p>
+                  <p className="text-sm text-[#3d3155]">{REASON_LABEL[tx.reason] ?? tx.reason}</p>
+                  <p className="text-xs text-[#b5a8d0]">{formatDate(tx.createdAt)}</p>
                 </div>
                 <span className={`text-base font-semibold ${tx.type === 'earn' ? 'text-emerald-400' : 'text-rose-400'}`}>
                   {tx.type === 'earn' ? '+' : '-'}{Math.abs(tx.amount)}

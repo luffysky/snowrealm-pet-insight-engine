@@ -62,11 +62,11 @@ export default function ThemeSettingsPage() {
   }, [slug])
 
   if (!slug) {
-    return <div className="text-[#b5a8d0] py-12 text-center">請先在上方選擇一份問卷</div>
+    return <div className="text-[#6b5fa8] py-12 text-center">請先在上方選擇一份問卷</div>
   }
 
   if (!settings) {
-    return <div className="text-[#b5a8d0] py-12 text-center">載入中...</div>
+    return <div className="text-[#6b5fa8] py-12 text-center">載入中...</div>
   }
 
   const toggleTheme = (key: SurveyTheme) => {
@@ -123,7 +123,7 @@ export default function ThemeSettingsPage() {
           />
           <div>
             <p className="text-[#3d3155] font-medium">允許使用者自選主題</p>
-            <p className="text-sm text-[#b5a8d0]">開啟後，問卷封面會顯示風格選擇器</p>
+            <p className="text-sm text-[#6b5fa8]">開啟後，問卷封面會顯示風格選擇器</p>
           </div>
         </label>
       </div>
@@ -156,7 +156,7 @@ export default function ThemeSettingsPage() {
                         </span>
                       )}
                     </div>
-                    <p className="text-sm text-[#b5a8d0]">{t.desc}</p>
+                    <p className="text-sm text-[#6b5fa8]">{t.desc}</p>
                   </div>
                 </div>
 
@@ -165,7 +165,7 @@ export default function ThemeSettingsPage() {
                   {isAvailable && !isDefault && (
                     <button
                       onClick={() => setSettings({ ...settings, defaultTheme: t.key })}
-                      className="text-xs px-3 py-1.5 border border-white/10 rounded-lg text-[#b5a8d0] hover:text-t-accent hover:border-[#b8a9e8]/25 transition-colors cursor-pointer"
+                      className="text-xs px-3 py-1.5 border border-white/10 rounded-lg text-[#6b5fa8] hover:text-t-accent hover:border-[#b8a9e8]/25 transition-colors cursor-pointer"
                     >
                       設為預設
                     </button>
@@ -176,7 +176,7 @@ export default function ThemeSettingsPage() {
                     className={`text-xs px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${
                       isAvailable
                         ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-400/30'
-                        : 'bg-white/5 text-[#b5a8d0] border border-white/10'
+                        : 'bg-white/5 text-[#6b5fa8] border border-white/10'
                     }`}
                   >
                     {isAvailable ? '已啟用' : '已停用'}
@@ -199,7 +199,7 @@ export default function ThemeSettingsPage() {
                           className={`flex-1 px-4 py-3 rounded-xl border text-center transition-all cursor-pointer ${
                             isActive
                               ? 'bg-[#b8a9e8]/20 border-[#b8a9e8]/25 text-t-accent'
-                              : 'bg-white/3 border-white/8 text-[#b5a8d0] hover:border-white/15'
+                              : 'bg-white/3 border-white/8 text-[#6b5fa8] hover:border-white/15'
                           }`}
                         >
                           <div className="text-sm font-medium">
@@ -237,7 +237,7 @@ export default function ThemeSettingsPage() {
       {/* 預覽說明 */}
       <div className="bg-white/3 border border-white/5 rounded-[20px] p-6">
         <h3 className="text-sm font-medium text-[#8a7ca8] mb-3">裝飾強度說明</h3>
-        <div className="space-y-3 text-sm text-[#b5a8d0]">
+        <div className="space-y-3 text-sm text-[#6b5fa8]">
           <div>
             <span className="text-[#3d3155] font-medium">🎮 遊戲冒險</span>
             <ul className="mt-1 ml-4 space-y-0.5 list-disc">

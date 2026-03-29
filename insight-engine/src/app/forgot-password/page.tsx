@@ -91,12 +91,12 @@ export default function ForgotPasswordPage() {
     }
   }
 
-  const inputCls = 'w-full bg-slate-900 border border-slate-700 text-white rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500 placeholder:text-slate-600'
+  const inputCls = 'w-full bg-white/30 border border-[#b8a9e8]/25 text-[#3d3155] rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500 placeholder:text-slate-600'
 
   return (
-    <div className="min-h-screen bg-slate-950 flex items-center justify-center px-4">
+    <div className="min-h-screen bg-transparent flex items-center justify-center px-4">
       <div className="w-full max-w-sm">
-        <div className="bg-slate-800/50 border border-slate-700/50 rounded-2xl p-8 space-y-6">
+        <div className="bg-slate-800/50 border border-[#b8a9e8]/25 rounded-2xl p-8 space-y-6">
           <div className="text-center">
             <h1 className="text-2xl font-bold text-white">🔑 忘記密碼</h1>
             <p className="text-sm text-slate-400 mt-2">
@@ -129,7 +129,7 @@ export default function ForgotPasswordPage() {
                   <label className="block text-sm text-slate-400 mb-1">手機號碼</label>
                   <div className="flex gap-1">
                     <select value={countryCode} onChange={(e) => setCountryCode(e.target.value)}
-                      className="bg-slate-900 border border-slate-700 text-white rounded-lg px-2 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500/50 w-[100px]">
+                      className="bg-white/30 border border-[#b8a9e8]/25 text-[#3d3155] rounded-lg px-2 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500/50 w-[100px]">
                       <option value="+886">🇹🇼 +886</option>
                       <option value="+86">🇨🇳 +86</option>
                       <option value="+81">🇯🇵 +81</option>

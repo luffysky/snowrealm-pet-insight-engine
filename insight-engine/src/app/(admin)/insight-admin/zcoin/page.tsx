@@ -39,13 +39,13 @@ export default function ZcoinAdminPage() {
 
   if (loading) {
     return (
-      <div className="p-6 text-[#b5a8d0] text-sm animate-pulse">載入中...</div>
+      <div className="p-6 text-[#6b5fa8] text-sm animate-pulse">載入中...</div>
     )
   }
 
   if (!stats) {
     return (
-      <div className="p-6 text-[#b5a8d0] text-sm">無法載入 Z幣資料</div>
+      <div className="p-6 text-[#6b5fa8] text-sm">無法載入 Z幣資料</div>
     )
   }
 
@@ -63,7 +63,7 @@ export default function ZcoinAdminPage() {
         ].map(({ label, value, color }) => (
           <div key={label} className="bg-white/5 border border-white/10 rounded-xl p-4 text-center">
             <p className={`text-2xl font-bold ${color}`}>{value.toLocaleString()}</p>
-            <p className="text-xs text-[#b5a8d0] mt-1">{label}</p>
+            <p className="text-xs text-[#6b5fa8] mt-1">{label}</p>
           </div>
         ))}
       </div>
@@ -84,7 +84,7 @@ export default function ZcoinAdminPage() {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="text-[#b5a8d0] text-left border-b border-white/10">
+                <tr className="text-[#6b5fa8] text-left border-b border-white/10">
                   <th className="pb-2 pr-4 font-normal">用戶</th>
                   <th className="pb-2 pr-4 font-normal text-right">餘額</th>
                   <th className="pb-2 pr-4 font-normal text-right">總賺</th>
@@ -102,7 +102,7 @@ export default function ZcoinAdminPage() {
                     <td className="py-2.5 pr-4 text-right text-amber-300 font-medium">{w.balance}</td>
                     <td className="py-2.5 pr-4 text-right text-emerald-400">{w.total_earned}</td>
                     <td className="py-2.5 pr-4 text-right text-rose-400">{w.total_spent}</td>
-                    <td className="py-2.5 text-[#b5a8d0] text-xs">{formatDate(w.created_at)}</td>
+                    <td className="py-2.5 text-[#6b5fa8] text-xs">{formatDate(w.created_at)}</td>
                   </tr>
                 ))}
               </tbody>

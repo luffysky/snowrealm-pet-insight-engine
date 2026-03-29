@@ -27,7 +27,7 @@ function BlocksRenderer({ blocks, onImageClick }: { blocks: ArticleBlock[]; onIm
             <div className="space-y-1">
               <img src={block.imageUrl} alt={block.imageCaption ?? ''} className="w-full rounded-xl object-cover max-h-96 cursor-zoom-in"
                 onClick={() => onImageClick?.(block.imageUrl!)} />
-              {block.imageCaption && <p className="text-xs text-white/35 text-center">{block.imageCaption}</p>}
+              {block.imageCaption && <p className="text-xs text-[#8a7ca8]/80 text-center">{block.imageCaption}</p>}
             </div>
           )}
           {(block.type === 'image-text' || block.type === 'text-image') && (
@@ -85,13 +85,13 @@ export default function ArticleDetailPage() {
   }
 
   if (loading) return (
-    <div className="min-h-screen bg-slate-950 flex items-center justify-center">
+    <div className="min-h-screen bg-transparent flex items-center justify-center">
       <Loader2 className="w-8 h-8 text-amber-400 animate-spin" />
     </div>
   )
 
   if (!post) return (
-    <div className="min-h-screen bg-slate-950 flex items-center justify-center text-white/40">
+    <div className="min-h-screen bg-transparent flex items-center justify-center text-[#8a7ca8]">
       <div className="text-center space-y-3">
         <p className="text-4xl">😕</p>
         <p>文章不存在或已刪除</p>
@@ -104,14 +104,14 @@ export default function ArticleDetailPage() {
   const timeStr = new Date(post.createdAt).toLocaleDateString('zh-TW', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' })
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white" style={{ paddingBottom: 'var(--bnav-h, 76px)' }}>
+    <div className="min-h-screen bg-transparent text-white" style={{ paddingBottom: 'var(--bnav-h, 76px)' }}>
       {/* Image lightbox */}
       {lightboxUrl && (
         <div className="fixed inset-0 z-[300] bg-black/95 flex items-center justify-center" onClick={() => setLightboxUrl(null)}>
-          <button className="absolute top-4 right-4 p-2 text-white/60 hover:text-white bg-white/10 rounded-full" onClick={() => setLightboxUrl(null)}>
+          <button className="absolute top-4 right-4 p-2 text-[#6b5fa8] hover:text-[#3d3155] bg-white/10 rounded-full" onClick={() => setLightboxUrl(null)}>
             <X className="w-5 h-5" />
           </button>
-          <a href={lightboxUrl} download className="absolute top-4 right-16 p-2 text-white/60 hover:text-white bg-white/10 rounded-full" title="下載圖片" onClick={e => e.stopPropagation()}>
+          <a href={lightboxUrl} download className="absolute top-4 right-16 p-2 text-[#6b5fa8] hover:text-[#3d3155] bg-white/10 rounded-full" title="下載圖片" onClick={e => e.stopPropagation()}>
             <Download className="w-5 h-5" />
           </a>
           <img src={lightboxUrl} alt="" className="max-w-full max-h-full object-contain rounded-lg" onClick={e => e.stopPropagation()} />
@@ -121,9 +121,9 @@ export default function ArticleDetailPage() {
       {showShareCard && <PostShareCard post={post} onClose={() => setShowShareCard(false)} />}
 
       {/* Back nav */}
-      <nav className="sticky top-0 z-10 bg-slate-950/90 backdrop-blur-md border-b border-white/8">
+      <nav className="sticky top-0 z-10 bg-transparent/90 backdrop-blur-md border-b border-white/8">
         <div className="max-w-2xl mx-auto px-4 py-3 flex items-center justify-between">
-          <Link href="/articles" className="flex items-center gap-2 text-sm text-white/50 hover:text-white transition-colors">
+          <Link href="/articles" className="flex items-center gap-2 text-sm text-[#6b5fa8] hover:text-white transition-colors">
             <ArrowLeft className="w-4 h-4" /> 社群文章
           </Link>
           <div className="flex items-center gap-2">
@@ -133,7 +133,7 @@ export default function ArticleDetailPage() {
               📤 分享
             </button>
             <button onClick={copyLink}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 border border-white/10 rounded-xl text-xs text-white/50 hover:text-white hover:bg-white/10 transition-colors"
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 border border-white/10 rounded-xl text-xs text-[#6b5fa8] hover:text-[#3d3155] hover:bg-white/10 transition-colors"
             >
               {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <ExternalLink className="w-3.5 h-3.5" />}
               {copied ? '已複製' : '連結'}
@@ -175,8 +175,8 @@ export default function ArticleDetailPage() {
               {post.authorAvatar ? <img src={post.authorAvatar} alt="" className="w-full h-full object-cover" /> : initials}
             </div>
             <div className="flex-1">
-              <p className="text-sm font-semibold text-white/80">{post.authorName ?? '用戶'}</p>
-              <div className="flex items-center gap-2 text-xs text-white/30">
+              <p className="text-sm font-semibold text-[#3d3155]">{post.authorName ?? '用戶'}</p>
+              <div className="flex items-center gap-2 text-xs text-[#8a7ca8]/75">
                 <span className="flex items-center gap-0.5"><Clock className="w-3 h-3" /> {timeStr}</span>
                 <span className="flex items-center gap-0.5"><Eye className="w-3 h-3" /> {post.viewsCount} 閱讀</span>
               </div>
@@ -211,7 +211,7 @@ export default function ArticleDetailPage() {
             <BlocksRenderer blocks={blocks} onImageClick={setLightboxUrl} />
           ) : (
             <div
-              className="prose prose-invert prose-sm max-w-none prose-p:text-white/75 prose-img:rounded-xl prose-img:w-full prose-img:max-h-80 prose-img:object-cover prose-img:cursor-zoom-in"
+              className="prose prose-invert prose-sm max-w-none prose-p:text-[#3d3155]/85 prose-img:rounded-xl prose-img:w-full prose-img:max-h-80 prose-img:object-cover prose-img:cursor-zoom-in"
               dangerouslySetInnerHTML={{ __html: post.content }}
               onClick={e => {
                 const target = e.target as HTMLElement
@@ -239,7 +239,7 @@ export default function ArticleDetailPage() {
         {/* Comments */}
         {commentsOpen && (
           <div className="border-t border-white/8 pt-4">
-            <h3 className="text-sm font-semibold text-white/60 mb-4 flex items-center gap-2">
+            <h3 className="text-sm font-semibold text-[#6b5fa8] mb-4 flex items-center gap-2">
               <MessageSquare className="w-4 h-4" /> 留言 ({commentsCount})
             </h3>
             <CommentSection postId={post.id} onCommentAdded={() => setCommentsCount(c => c + 1)} />
@@ -248,7 +248,7 @@ export default function ArticleDetailPage() {
 
         {/* CTA */}
         <div className="bg-gradient-to-r from-amber-600/10 to-purple-600/10 border border-amber-400/15 rounded-2xl p-6 text-center space-y-3">
-          <p className="text-white/60 text-sm">喜歡這篇文章？試試用 AI 問卷發現更多洞察</p>
+          <p className="text-[#6b5fa8] text-sm">喜歡這篇文章？試試用 AI 問卷發現更多洞察</p>
           <Link href="/" className="inline-flex items-center gap-2 px-5 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-900 font-semibold rounded-xl text-sm transition-colors">
             ✨ 免費開始使用
           </Link>

@@ -98,19 +98,19 @@ export default function ExplorePage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white">
+    <div className="min-h-screen text-[#3d3155]" style={{ background: 'linear-gradient(150deg, #f3eeff 0%, #ffeef5 35%, #eef5ff 65%, #fff5ee 100%)', fontFamily: 'var(--font-zen-maru), var(--font-noto-tc), sans-serif' }}>
       {/* Sticky header */}
-      <nav className="sticky top-0 z-20 bg-slate-950/95 backdrop-blur-md border-b border-white/8">
+      <nav className="sticky top-0 z-20 border-b border-[#b8a9e8]/20 backdrop-blur-xl" style={{ background: 'rgba(243,238,255,0.88)' }}>
         <div className="max-w-2xl mx-auto px-4 py-3 flex items-center justify-between">
-          <span className="text-sm font-semibold text-white/80">探索</span>
-          <div className="flex items-center gap-3 text-sm text-white/50">
-            <Link href="/wallet" className="hover:text-white/80 transition-colors">🪙</Link>
+          <span className="text-sm font-semibold text-[#3d3155]">探索</span>
+          <div className="flex items-center gap-3 text-sm text-[#8a7ca8]">
+            <Link href="/wallet" className="hover:text-[#3d3155] transition-colors">🪙</Link>
             {meId === undefined ? null : meId ? (
-              <Link href={`/u/${meId}`} className="px-3 py-1 rounded-full bg-white/8 border border-white/15 text-white/70 hover:bg-white/12 transition-colors text-xs">
+              <Link href={`/u/${meId}`} className="px-3 py-1 rounded-full bg-[#b8a9e8]/15 border border-[#b8a9e8]/30 text-[#6b5fa8] hover:bg-[#b8a9e8]/25 transition-colors text-xs">
                 我的主頁
               </Link>
             ) : (
-              <Link href="/register" className="px-3 py-1 rounded-full bg-indigo-500/20 border border-indigo-400/30 text-indigo-200 hover:bg-indigo-500/30 transition-colors text-xs">
+              <Link href="/register" className="px-3 py-1 rounded-full bg-gradient-to-r from-[#b8a9e8] to-[#f5b8b5] text-white text-xs shadow-sm">
                 免費註冊
               </Link>
             )}
@@ -118,15 +118,15 @@ export default function ExplorePage() {
         </div>
 
         {/* Tabs */}
-        <div className="flex border-b border-white/6 max-w-2xl mx-auto px-4">
+        <div className="flex max-w-2xl mx-auto px-4">
           {TABS.map(t => (
             <button
               key={t.key}
               onClick={() => switchTab(t.key)}
               className={`flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium transition-colors border-b-2 -mb-px
                 ${tab === t.key
-                  ? 'text-amber-400 border-amber-400'
-                  : 'text-white/40 border-transparent hover:text-white/70'}`}
+                  ? 'text-[#6b5fa8] border-[#b8a9e8]'
+                  : 'text-[#b5a8d0] border-transparent hover:text-[#8a7ca8]'}`}
             >
               {t.icon} {t.label}
             </button>
@@ -142,15 +142,15 @@ export default function ExplorePage() {
           <div className="flex gap-2">
             <form onSubmit={handleSearch} className="flex-1 flex gap-2">
               <div className="flex-1 relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/25" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#b8a9e8]" />
                 <input
                   value={searchInput}
                   onChange={e => setSearchInput(e.target.value)}
                   placeholder={tab === 'surveys' ? '搜尋問卷...' : '搜尋貼文...'}
-                  className="w-full bg-white/5 border border-white/10 rounded-xl pl-9 pr-3 py-2 text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-white/20"
+                  className="w-full bg-white/50 border border-[#b8a9e8]/25 rounded-[14px] pl-9 pr-3 py-2 text-sm text-[#3d3155] placeholder:text-[#b5a8d0] focus:outline-none focus:border-[#b8a9e8] focus:ring-1 focus:ring-[#b8a9e8]/30 backdrop-blur-sm"
                 />
               </div>
-              <button type="submit" className="px-3 py-2 rounded-xl bg-white/8 border border-white/12 text-white/60 text-sm hover:bg-white/12 transition-colors">
+              <button type="submit" className="px-3 py-2 rounded-[14px] bg-[#b8a9e8]/15 border border-[#b8a9e8]/25 text-[#6b5fa8] text-sm hover:bg-[#b8a9e8]/25 transition-colors">
                 搜
               </button>
             </form>
@@ -159,7 +159,7 @@ export default function ExplorePage() {
                 {(['popular', 'new'] as const).map(s => (
                   <button key={s} onClick={() => { setSort(s); setPage(1) }}
                     className={`px-3 py-2 rounded-xl text-xs transition-colors border
-                      ${sort === s ? 'bg-white/10 border-white/20 text-white' : 'bg-transparent border-white/8 text-white/40 hover:text-white/60'}`}
+                      ${sort === s ? 'bg-[#b8a9e8]/20 border-[#b8a9e8]/40 text-[#6b5fa8]' : 'bg-transparent border-[#b8a9e8]/15 text-[#b5a8d0] hover:text-[#8a7ca8]'}`}
                   >
                     {s === 'popular' ? '🔥' : '✨'}
                   </button>
@@ -172,7 +172,7 @@ export default function ExplorePage() {
         {/* Content */}
         {loading ? (
           <div className="flex justify-center py-16">
-            <div className="w-6 h-6 rounded-full border-2 border-amber-400/30 border-t-amber-400 animate-spin" />
+            <div className="w-6 h-6 rounded-full border-2 border-[#b8a9e8]/30 border-t-[#b8a9e8] animate-spin" />
           </div>
         ) : (
           <>
@@ -189,12 +189,12 @@ export default function ExplorePage() {
               <div className="flex justify-center gap-3 pt-2">
                 {page > 1 && (
                   <button onClick={() => setPage(p => p - 1)}
-                    className="px-4 py-2 rounded-xl border border-white/10 text-white/50 text-sm hover:text-white/70">
+                    className="px-4 py-2 rounded-xl border border-[#b8a9e8]/25 text-[#8a7ca8] text-sm hover:text-[#6b5fa8] hover:border-[#b8a9e8]/40 bg-white/40 transition-colors">
                     ← 上一頁
                   </button>
                 )}
                 <button onClick={() => setPage(p => p + 1)}
-                  className="px-4 py-2 rounded-xl border border-white/10 text-white/50 text-sm hover:text-white/70">
+                  className="px-4 py-2 rounded-xl border border-[#b8a9e8]/25 text-[#8a7ca8] text-sm hover:text-[#6b5fa8] hover:border-[#b8a9e8]/40 bg-white/40 transition-colors">
                   下一頁 →
                 </button>
               </div>
@@ -213,17 +213,17 @@ function SurveysGrid({ surveys }: { surveys: Survey[] }) {
     <div className="grid gap-3 sm:grid-cols-2">
       {surveys.map(s => (
         <Link key={s.id} href={`/${s.tenantId}/${s.slug}`}
-          className="group block rounded-2xl border border-white/8 bg-white/[0.03] hover:bg-white/[0.06] p-4 space-y-2 transition-all hover:border-white/15">
+          className="group block rounded-[20px] border border-[#b8a9e8]/20 bg-white/35 hover:bg-white/55 hover:border-[#b8a9e8]/35 p-4 space-y-2 transition-all backdrop-blur-sm shadow-[0_4px_16px_rgba(184,169,232,0.08)]">
           <div className="flex items-start justify-between gap-2">
-            <h3 className="text-sm font-semibold text-white/85 leading-snug line-clamp-2 group-hover:text-white transition-colors">
+            <h3 className="text-sm font-semibold text-[#3d3155] leading-snug line-clamp-2 group-hover:text-[#2a1f42] transition-colors">
               {s.title}
             </h3>
-            <span className="shrink-0 text-[10px] text-white/25 mt-0.5">{timeAgo(s.createdAt)}</span>
+            <span className="shrink-0 text-[10px] text-[#b5a8d0] mt-0.5">{timeAgo(s.createdAt)}</span>
           </div>
-          {s.subtitle && <p className="text-xs text-white/40 line-clamp-2 leading-relaxed">{s.subtitle}</p>}
-          <div className="flex items-center justify-between text-xs text-white/30">
+          {s.subtitle && <p className="text-xs text-[#8a7ca8] line-clamp-2 leading-relaxed">{s.subtitle}</p>}
+          <div className="flex items-center justify-between text-xs text-[#b5a8d0]">
             <span>👥 {s.responseCount.toLocaleString()} 人填過</span>
-            {s.tenantName && <span className="bg-white/5 px-2 py-0.5 rounded-full">{s.tenantName}</span>}
+            {s.tenantName && <span className="bg-[#b8a9e8]/10 px-2 py-0.5 rounded-full text-[#6b5fa8]">{s.tenantName}</span>}
           </div>
         </Link>
       ))}
@@ -237,30 +237,28 @@ function PostsFeed({ posts, meId }: { posts: Post[]; meId: string | null }) {
   return (
     <div className="space-y-3">
       {posts.map(p => (
-        <div key={p.id} className="bg-white/[0.03] border border-white/8 rounded-2xl hover:bg-white/[0.06] hover:border-white/14 transition-all">
-          {/* Author row — not wrapped in Link so FollowButton works */}
+        <div key={p.id} className="bg-white/35 border border-[#b8a9e8]/20 rounded-[20px] hover:bg-white/50 hover:border-[#b8a9e8]/30 transition-all backdrop-blur-sm shadow-[0_4px_16px_rgba(184,169,232,0.07)]">
           <div className="flex items-center gap-2.5 px-4 pt-4 pb-0">
             <Link href={`/u/${p.userId}`} className="shrink-0">
               <Avatar name={p.displayName} url={p.avatarUrl} size={8} />
             </Link>
             <div className="flex-1 min-w-0">
               <Link href={`/u/${p.userId}`}>
-                <p className="text-sm font-medium text-white/80 truncate hover:text-white transition-colors">{p.displayName ?? '用戶'}</p>
+                <p className="text-sm font-medium text-[#3d3155] truncate hover:text-[#2a1f42] transition-colors">{p.displayName ?? '用戶'}</p>
               </Link>
-              <p className="text-[10px] text-white/30">{timeAgo(p.createdAt)}</p>
+              <p className="text-[10px] text-[#b5a8d0]">{timeAgo(p.createdAt)}</p>
             </div>
             {meId && meId !== p.userId && (
               <FollowButton targetUserId={p.userId} initialFollowing={false} compact />
             )}
           </div>
-          {/* Post content */}
           <Link href={`/articles/${p.id}`} className="block px-4 pt-3 pb-4 space-y-2">
-            {p.title && <p className="font-semibold text-white/90 text-sm line-clamp-1">{p.title}</p>}
-            <p className="text-sm text-white/55 leading-relaxed line-clamp-3">{p.content.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()}</p>
+            {p.title && <p className="font-semibold text-[#3d3155] text-sm line-clamp-1">{p.title}</p>}
+            <p className="text-sm text-[#8a7ca8] leading-relaxed line-clamp-3">{p.content.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()}</p>
             {p.images?.[0] && (
               <img src={p.images[0].url} alt="" className="w-full h-40 object-cover rounded-xl" />
             )}
-            <div className="flex items-center gap-4 text-xs text-white/25">
+            <div className="flex items-center gap-4 text-xs text-[#b5a8d0]">
               <span className="flex items-center gap-1"><Heart className="w-3.5 h-3.5" />{p.likesCount}</span>
               <span className="flex items-center gap-1"><MessageSquare className="w-3.5 h-3.5" />{p.commentsCount}</span>
             </div>
@@ -278,10 +276,10 @@ function StoriesGrid({ stories }: { stories: Story[] }) {
     <div className="grid gap-3 sm:grid-cols-2">
       {stories.map(s => (
         <Link key={s.responseId} href={`/story/${s.responseId}`}
-          className="group block rounded-2xl border border-purple-500/15 bg-purple-500/5 hover:bg-purple-500/10 p-4 space-y-2.5 transition-all hover:border-purple-400/25">
-          <div className="text-xs text-purple-300/60 font-medium">{s.tenantName ?? s.surveyTitle}</div>
-          <p className="text-sm text-white/80 leading-relaxed italic line-clamp-3">「{s.oneLiner}」</p>
-          <p className="text-[10px] text-white/25">{timeAgo(s.createdAt)}</p>
+          className="group block rounded-[20px] border border-[#b8a9e8]/25 bg-gradient-to-br from-[#eee8ff]/50 to-[#ffeef5]/50 hover:from-[#eee8ff]/70 hover:to-[#ffeef5]/70 p-4 space-y-2.5 transition-all backdrop-blur-sm shadow-[0_4px_16px_rgba(184,169,232,0.1)]">
+          <div className="text-xs text-[#b8a9e8] font-medium">{s.tenantName ?? s.surveyTitle}</div>
+          <p className="text-sm text-[#3d3155] leading-relaxed italic line-clamp-3">「{s.oneLiner}」</p>
+          <p className="text-[10px] text-[#b5a8d0]">{timeAgo(s.createdAt)}</p>
         </Link>
       ))}
     </div>
@@ -294,12 +292,12 @@ function CreatorsList({ creators, meId }: { creators: Creator[]; meId: string | 
   return (
     <div className="space-y-2">
       {creators.map(c => (
-        <div key={c.id} className="flex items-center gap-3 p-3 bg-white/[0.03] border border-white/8 rounded-2xl hover:bg-white/[0.06] transition-all">
+        <div key={c.id} className="flex items-center gap-3 p-3 bg-white/40 border border-[#b8a9e8]/20 rounded-[20px] hover:bg-white/55 transition-all backdrop-blur-sm">
           <Link href={`/u/${c.id}`} className="flex items-center gap-3 flex-1 min-w-0">
             <Avatar name={c.displayName} url={c.avatarUrl} size={10} />
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-white/85 truncate">{c.displayName ?? '用戶'}</p>
-              <div className="flex items-center gap-3 mt-0.5 text-[11px] text-white/35">
+              <p className="text-sm font-semibold text-[#3d3155] truncate">{c.displayName ?? '用戶'}</p>
+              <div className="flex items-center gap-3 mt-0.5 text-[11px] text-[#b5a8d0]">
                 <span>👥 {c.followerCount} 粉絲</span>
                 <span>✍️ {c.postCount} 貼文</span>
               </div>
@@ -318,7 +316,7 @@ function Empty({ icon, text }: { icon: string; text: string }) {
   return (
     <div className="text-center py-16 space-y-2">
       <p className="text-3xl">{icon}</p>
-      <p className="text-white/30 text-sm">{text}</p>
+      <p className="text-[#b5a8d0] text-sm">{text}</p>
     </div>
   )
 }

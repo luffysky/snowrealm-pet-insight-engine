@@ -193,7 +193,7 @@ export default function AdminSocialPostsPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-bold text-[#3d3155]">社群貼文管理</h1>
-          <p className="text-sm text-[#b5a8d0] mt-0.5">管理社群貼文與部落格文章</p>
+          <p className="text-sm text-[#6b5fa8] mt-0.5">管理社群貼文與部落格文章</p>
         </div>
       </div>
 
@@ -208,7 +208,7 @@ export default function AdminSocialPostsPage() {
           <div key={s.label} className="bg-white/[0.04] border border-white/8 rounded-xl p-3 text-center">
             <p className="text-lg">{s.icon}</p>
             <p className="text-xl font-bold text-[#3d3155]">{s.value}</p>
-            <p className="text-xs text-[#b5a8d0]">{s.label}</p>
+            <p className="text-xs text-[#6b5fa8]">{s.label}</p>
           </div>
         ))}
       </div>
@@ -235,7 +235,7 @@ export default function AdminSocialPostsPage() {
               className={`px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${
                 typeFilter === k
                   ? 'bg-amber-500/20 border border-amber-400/30 text-amber-300'
-                  : 'bg-white/5 border border-white/10 text-[#b5a8d0] hover:text-[#3d3155]'
+                  : 'bg-white/5 border border-white/10 text-[#6b5fa8] hover:text-[#3d3155]'
               }`}
             >{l}</button>
           ))}
@@ -349,17 +349,17 @@ function ItemRow({ item, onDelete, onTogglePublic, deleting, toggling }: ItemRow
         {item.title && (
           <p className="text-sm font-semibold text-[#3d3155]/90 mb-0.5 truncate">{item.title}</p>
         )}
-        <p className="text-xs text-[#b5a8d0] leading-relaxed line-clamp-2">{item.contentPreview}</p>
+        <p className="text-xs text-[#6b5fa8] leading-relaxed line-clamp-2">{item.contentPreview}</p>
 
         {item.tags.length > 0 && (
           <div className="flex flex-wrap gap-1 mt-1.5">
             {item.tags.slice(0, 4).map(t => (
-              <span key={t} className="text-[10px] text-amber-400/50">#{t}</span>
+              <span key={t} className="text-[10px] text-amber-700">#{t}</span>
             ))}
           </div>
         )}
 
-        <div className="flex items-center gap-3 mt-1.5 text-xs text-[#b5a8d0]">
+        <div className="flex items-center gap-3 mt-1.5 text-xs text-[#6b5fa8]">
           {item.source === 'social' ? (
             <>
               <span>❤️ {item.likesCount}</span>
@@ -394,7 +394,7 @@ function ItemRow({ item, onDelete, onTogglePublic, deleting, toggling }: ItemRow
           className={`p-1.5 rounded-lg transition-colors ${
             item.isPublic
               ? 'text-[#8a7ca8] hover:text-amber-400 hover:bg-amber-500/10'
-              : 'text-amber-400 hover:text-[#b5a8d0] hover:bg-[#b8a9e8]/10'
+              : 'text-amber-400 hover:text-[#6b5fa8] hover:bg-[#b8a9e8]/10'
           }`}
           title={item.isPublic ? '隱藏' : '公開'}
         >

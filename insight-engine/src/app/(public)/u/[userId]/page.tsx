@@ -29,10 +29,10 @@ function ProfileSidebar({ onClose, tenantSlug, isSuperAdmin }: { onClose: () => 
   return (
     <>
       <div className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm" onClick={onClose} />
-      <div className="fixed right-0 top-0 bottom-0 z-50 w-72 bg-slate-900/98 border-l border-white/8 flex flex-col shadow-2xl">
+      <div className="fixed right-0 top-0 bottom-0 z-50 w-72 border-l border-[#b8a9e8]/25 flex flex-col shadow-2xl backdrop-blur-2xl bg-white/80">
         <div className="flex items-center justify-between px-5 py-4 border-b border-white/8 shrink-0">
-          <p className="text-sm font-semibold text-white/80">個人管理</p>
-          <button onClick={onClose} className="text-white/30 hover:text-white/60 transition-colors">
+          <p className="text-sm font-semibold text-[#3d3155]">個人管理</p>
+          <button onClick={onClose} className="text-[#8a7ca8]/75 hover:text-[#6b5fa8] transition-colors">
             <X className="w-4 h-4" />
           </button>
         </div>
@@ -80,8 +80,8 @@ function ProfileSidebar({ onClose, tenantSlug, isSuperAdmin }: { onClose: () => 
                   <MessageCircle className="w-4 h-4" />
                 </span>
                 <div>
-                  <p className="text-sm text-white/80">懸浮訊息球</p>
-                  <p className="text-[11px] text-white/35">可拖曳的快速訊息入口</p>
+                  <p className="text-sm text-[#3d3155]">懸浮訊息球</p>
+                  <p className="text-[11px] text-[#8a7ca8]/80">可拖曳的快速訊息入口</p>
                 </div>
               </div>
               <button
@@ -95,7 +95,7 @@ function ProfileSidebar({ onClose, tenantSlug, isSuperAdmin }: { onClose: () => 
 
         </div>
         <div className="px-4 py-3 border-t border-white/8 shrink-0">
-          <p className="text-[11px] text-white/25 text-center">長按訊息可產生可拖曳懸浮球</p>
+          <p className="text-[11px] text-[#8a7ca8]/60 text-center">長按訊息可產生可拖曳懸浮球</p>
         </div>
       </div>
     </>
@@ -105,7 +105,7 @@ function ProfileSidebar({ onClose, tenantSlug, isSuperAdmin }: { onClose: () => 
 function SidebarSection({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div className="mb-1">
-      <p className="px-4 py-2 text-[10px] font-semibold text-white/25 uppercase tracking-widest">{label}</p>
+      <p className="px-4 py-2 text-[10px] font-semibold text-[#8a7ca8]/60 uppercase tracking-widest">{label}</p>
       {children}
     </div>
   )
@@ -118,11 +118,11 @@ function SidebarLink({ href, icon, label, onClick }: { href: string; icon: React
       onClick={onClick}
       className="flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors group"
     >
-      <span className="w-8 h-8 rounded-xl bg-white/5 group-hover:bg-white/10 flex items-center justify-center text-white/40 group-hover:text-white/70 transition-colors">
+      <span className="w-8 h-8 rounded-xl bg-white/5 group-hover:bg-white/10 flex items-center justify-center text-[#8a7ca8] group-hover:text-[#3d3155]/80 transition-colors">
         {icon}
       </span>
-      <span className="flex-1 text-sm text-white/70 group-hover:text-white/90 transition-colors">{label}</span>
-      <ChevronRight className="w-3.5 h-3.5 text-white/20 group-hover:text-white/40 transition-colors" />
+      <span className="flex-1 text-sm text-[#3d3155]/80 group-hover:text-white/90 transition-colors">{label}</span>
+      <ChevronRight className="w-3.5 h-3.5 text-[#b5a8d0] group-hover:text-[#8a7ca8] transition-colors" />
     </Link>
   )
 }
@@ -239,16 +239,16 @@ function FollowListModal({ type, userId, onClose }: { type: 'followers' | 'follo
       style={{ paddingBottom: 'calc(var(--bnav-h, 76px) + 0.5rem)' }}
       onClick={onClose}
     >
-      <div className="w-full max-w-sm bg-slate-900 border border-white/10 rounded-2xl overflow-hidden shadow-2xl sm:mb-0" onClick={e => e.stopPropagation()}>
+      <div className="w-full max-w-sm bg-white/90 border border-[#b8a9e8]/25 rounded-[20px] overflow-hidden shadow-2xl sm:mb-0" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between px-4 py-3 border-b border-white/8">
-          <h3 className="text-sm font-semibold text-white/80">{type === 'followers' ? `粉絲 · ${users.length}` : `追蹤中 · ${users.length}`}</h3>
-          <button onClick={onClose} className="text-white/30 hover:text-white/60 transition-colors"><X className="w-4 h-4" /></button>
+          <h3 className="text-sm font-semibold text-[#3d3155]">{type === 'followers' ? `粉絲 · ${users.length}` : `追蹤中 · ${users.length}`}</h3>
+          <button onClick={onClose} className="text-[#8a7ca8]/75 hover:text-[#6b5fa8] transition-colors"><X className="w-4 h-4" /></button>
         </div>
         <div className="max-h-80 overflow-y-auto">
           {loading ? (
-            <div className="flex justify-center py-8"><Loader2 className="w-5 h-5 text-white/30 animate-spin" /></div>
+            <div className="flex justify-center py-8"><Loader2 className="w-5 h-5 text-[#8a7ca8]/75 animate-spin" /></div>
           ) : users.length === 0 ? (
-            <p className="text-center text-white/25 text-sm py-8">還沒有{type === 'followers' ? '粉絲' : '追蹤的人'}</p>
+            <p className="text-center text-[#8a7ca8]/60 text-sm py-8">還沒有{type === 'followers' ? '粉絲' : '追蹤的人'}</p>
           ) : (
             users.map(u => (
               <div key={u.id} className="flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors">
@@ -257,7 +257,7 @@ function FollowListModal({ type, userId, onClose }: { type: 'followers' | 'follo
                     {u.avatar_url ? <img src={u.avatar_url} alt="" className="w-full h-full object-cover" /> : (u.display_name ?? '?').charAt(0).toUpperCase()}
                   </div>
                   <div className="min-w-0">
-                    <p className="text-sm text-white/75 truncate">{u.display_name ?? '用戶'}</p>
+                    <p className="text-sm text-[#3d3155]/85 truncate">{u.display_name ?? '用戶'}</p>
                     {u.is_following_back && type === 'followers' && (
                       <p className="text-[10px] text-emerald-400/70">互相追蹤</p>
                     )}
@@ -286,7 +286,7 @@ function FollowListModal({ type, userId, onClose }: { type: 'followers' | 'follo
 function AvatarLightbox({ src, onClose }: { src: string; onClose: () => void }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm" onClick={onClose}>
-      <button className="absolute top-4 right-4 text-white/60 hover:text-white" onClick={onClose}>
+      <button className="absolute top-4 right-4 text-[#6b5fa8] hover:text-white" onClick={onClose}>
         <X className="w-6 h-6" />
       </button>
       <img src={src} alt="" className="max-w-sm w-full max-h-[80vh] object-contain rounded-2xl shadow-2xl" onClick={e => e.stopPropagation()} />
@@ -412,13 +412,13 @@ export default function UserProfilePage() {
   }
 
   if (loading) return (
-    <div className="min-h-screen bg-slate-950 flex items-center justify-center">
+    <div className="min-h-screen flex items-center justify-center">
       <Loader2 className="w-8 h-8 text-amber-400 animate-spin" />
     </div>
   )
 
   if (!profile) return (
-    <div className="min-h-screen bg-slate-950 flex items-center justify-center text-white/40">
+    <div className="min-h-screen flex items-center justify-center text-[#b5a8d0]">
       <div className="text-center space-y-3">
         <p className="text-4xl">😕</p>
         <p>用戶不存在</p>
@@ -432,22 +432,22 @@ export default function UserProfilePage() {
   const bannerStyle = getBannerStyle(profile.profileTheme, profile.bannerUrl)
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white">
+    <div className="min-h-screen text-[#3d3155]" style={{ background: "linear-gradient(150deg, #f3eeff 0%, #ffeef5 35%, #eef5ff 65%, #fff5ee 100%)", fontFamily: "var(--font-zen-maru), var(--font-noto-tc), sans-serif" }}>
       <LoginPrompt open={loginPrompt} onClose={() => setLoginPrompt(false)} action="追蹤或私訊" />
       {followModal && <FollowListModal type={followModal} userId={userId} onClose={() => setFollowModal(null)} />}
       {sidebarOpen && isMe && <ProfileSidebar onClose={() => setSidebarOpen(false)} tenantSlug={meTenantSlug} isSuperAdmin={meIsSuperAdmin} />}
       {avatarLightbox && profile.avatar && <AvatarLightbox src={profile.avatar} onClose={() => setAvatarLightbox(false)} />}
 
       {/* Nav */}
-      <nav className="sticky top-0 z-10 bg-slate-950/90 backdrop-blur-md border-b border-white/8">
+      <nav className="sticky top-0 z-10 backdrop-blur-xl border-b border-[#b8a9e8]/20 bg-[rgba(243,238,255,0.88)]">
         <div className="max-w-2xl mx-auto px-4 py-3 flex items-center gap-3">
-          <Link href="/articles" className="flex items-center gap-2 text-sm text-white/50 hover:text-white transition-colors">
+          <Link href="/articles" className="flex items-center gap-2 text-sm text-[#6b5fa8] hover:text-white transition-colors">
             <ArrowLeft className="w-4 h-4" /> 社群
           </Link>
           {isMe && (
             <button
               onClick={() => setSidebarOpen(true)}
-              className="ml-auto p-1.5 text-white/30 hover:text-white/70 hover:bg-white/8 rounded-lg transition-colors"
+              className="ml-auto p-1.5 text-[#8a7ca8]/75 hover:text-[#3d3155]/80 hover:bg-white/8 rounded-lg transition-colors"
             >
               <Settings className="w-4 h-4" />
             </button>
@@ -487,7 +487,7 @@ export default function UserProfilePage() {
               {/* Edit / follow buttons */}
               {isMe ? (
                 <Link href="/insight-admin/profile"
-                  className="px-4 py-1.5 bg-white/8 border border-white/12 text-white/60 rounded-xl text-sm hover:bg-white/12 transition-colors"
+                  className="px-4 py-1.5 bg-white/8 border border-white/12 text-[#6b5fa8] rounded-xl text-sm hover:bg-white/12 transition-colors"
                 >
                   編輯個人資料
                 </Link>
@@ -501,7 +501,7 @@ export default function UserProfilePage() {
                   ) : (
                     <>
                       <button onClick={() => setLoginPrompt(true)} className="px-4 py-1.5 bg-amber-500/20 border border-amber-400/30 text-amber-300 rounded-xl text-sm font-medium hover:bg-amber-500/30 transition-colors">追蹤</button>
-                      <button onClick={() => setLoginPrompt(true)} className="px-4 py-1.5 bg-white/8 border border-white/12 text-white/60 rounded-xl text-sm hover:bg-white/12 transition-colors">私訊</button>
+                      <button onClick={() => setLoginPrompt(true)} className="px-4 py-1.5 bg-white/8 border border-white/12 text-[#6b5fa8] rounded-xl text-sm hover:bg-white/12 transition-colors">私訊</button>
                     </>
                   )}
                 </div>
@@ -512,7 +512,7 @@ export default function UserProfilePage() {
             {nickname && !isMe ? (
               <div>
                 <h1 className="text-xl font-bold text-white">{nickname}</h1>
-                <p className="text-sm text-white/35">{profile.name}</p>
+                <p className="text-sm text-[#8a7ca8]/80">{profile.name}</p>
               </div>
             ) : (
               <h1 className="text-xl font-bold text-white">{profile.name}</h1>
@@ -529,15 +529,15 @@ export default function UserProfilePage() {
                       onChange={e => setNicknameDraft(e.target.value)}
                       onKeyDown={e => { if (e.key === 'Enter') saveNickname(); if (e.key === 'Escape') setNicknameEditing(false) }}
                       placeholder="輸入備註名字…"
-                      className="text-xs bg-white/8 border border-white/12 rounded-lg px-2.5 py-1 text-white placeholder-white/25 outline-none focus:border-amber-400/50 w-36"
+                      className="text-xs bg-white/8 border border-white/12 rounded-lg px-2.5 py-1 text-[#3d3155] placeholder-white/25 outline-none focus:border-amber-400/50 w-36"
                     />
                     <button onClick={saveNickname} className="text-xs text-amber-400 hover:text-amber-300 transition-colors">儲存</button>
-                    <button onClick={() => setNicknameEditing(false)} className="text-xs text-white/30 hover:text-white/60 transition-colors">取消</button>
+                    <button onClick={() => setNicknameEditing(false)} className="text-xs text-[#8a7ca8]/75 hover:text-[#6b5fa8] transition-colors">取消</button>
                   </div>
                 ) : (
                   <button
                     onClick={() => { setNicknameDraft(nickname); setNicknameEditing(true) }}
-                    className="flex items-center gap-1 text-xs text-white/30 hover:text-white/60 transition-colors group"
+                    className="flex items-center gap-1 text-xs text-[#8a7ca8]/75 hover:text-[#6b5fa8] transition-colors group"
                   >
                     <Pencil className="w-3 h-3" />
                     <span>{nickname ? `備註：${nickname}` : '新增備註名字'}</span>
@@ -546,22 +546,22 @@ export default function UserProfilePage() {
               </div>
             )}
 
-            {profile.bio && <p className="text-sm text-white/50 mt-1 leading-relaxed">{profile.bio}</p>}
+            {profile.bio && <p className="text-sm text-[#6b5fa8] mt-1 leading-relaxed">{profile.bio}</p>}
 
             {/* Social links */}
             <div className="flex items-center gap-3 mt-2 flex-wrap">
               {profile.websiteUrl && (
-                <a href={profile.websiteUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-xs text-white/40 hover:text-amber-300 transition-colors">
+                <a href={profile.websiteUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-xs text-[#8a7ca8] hover:text-amber-300 transition-colors">
                   <Globe className="w-3.5 h-3.5" /> 網站
                 </a>
               )}
               {profile.instagramHandle && (
-                <a href={`https://instagram.com/${profile.instagramHandle}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-xs text-white/40 hover:text-pink-400 transition-colors">
+                <a href={`https://instagram.com/${profile.instagramHandle}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-xs text-[#8a7ca8] hover:text-pink-400 transition-colors">
                   <InstagramIcon className="w-3.5 h-3.5" /> @{profile.instagramHandle}
                 </a>
               )}
               {profile.twitterHandle && (
-                <a href={`https://twitter.com/${profile.twitterHandle}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-xs text-white/40 hover:text-blue-400 transition-colors">
+                <a href={`https://twitter.com/${profile.twitterHandle}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-xs text-[#8a7ca8] hover:text-blue-400 transition-colors">
                   <TwitterIcon className="w-3.5 h-3.5" /> @{profile.twitterHandle}
                 </a>
               )}
@@ -571,15 +571,15 @@ export default function UserProfilePage() {
             <div className="flex items-center gap-6 text-sm mt-3">
               <div className="text-center">
                 <p className="text-white font-semibold">{profile.posts.length}</p>
-                <p className="text-white/35 text-xs">貼文</p>
+                <p className="text-[#8a7ca8]/80 text-xs">貼文</p>
               </div>
               <button onClick={() => setFollowModal('followers')} className="text-center hover:opacity-70 transition-opacity">
                 <p className="text-white font-semibold">{profile.followers}</p>
-                <p className="text-white/35 text-xs">粉絲</p>
+                <p className="text-[#8a7ca8]/80 text-xs">粉絲</p>
               </button>
               <button onClick={() => setFollowModal('following')} className="text-center hover:opacity-70 transition-opacity">
                 <p className="text-white font-semibold">{profile.following}</p>
-                <p className="text-white/35 text-xs">追蹤中</p>
+                <p className="text-[#8a7ca8]/80 text-xs">追蹤中</p>
               </button>
             </div>
           </div>
@@ -588,7 +588,7 @@ export default function UserProfilePage() {
         {/* Stories row */}
         {stories.length > 0 && (
           <div>
-            <h2 className="text-sm font-semibold text-white/40 uppercase tracking-wider px-1 mb-3">限時動態</h2>
+            <h2 className="text-sm font-semibold text-[#8a7ca8] uppercase tracking-wider px-1 mb-3">限時動態</h2>
             <div className="flex gap-3 overflow-x-auto pb-1 scrollbar-hide">
               {stories.map(story => (
                 <Link
@@ -600,11 +600,11 @@ export default function UserProfilePage() {
                     <div className="w-full h-full rounded-xl overflow-hidden bg-slate-800">
                       {story.user_avatar
                         ? <img src={story.user_avatar} alt="" className="w-full h-full object-cover" />
-                        : <div className="w-full h-full flex items-center justify-center text-white/40 text-xs">動態</div>
+                        : <div className="w-full h-full flex items-center justify-center text-[#8a7ca8] text-xs">動態</div>
                       }
                     </div>
                   </div>
-                  <span className="text-[10px] text-white/40 truncate max-w-[4rem]">
+                  <span className="text-[10px] text-[#8a7ca8] truncate max-w-[4rem]">
                     {story.is_highlight ? '精選' : new Date(story.expires_at).getTime() > Date.now() ? '限時' : '已過期'}
                   </span>
                 </Link>
@@ -618,9 +618,9 @@ export default function UserProfilePage() {
 
         {/* Posts */}
         <div className="space-y-3">
-          <h2 className="text-sm font-semibold text-white/40 uppercase tracking-wider px-1">貼文</h2>
+          <h2 className="text-sm font-semibold text-[#8a7ca8] uppercase tracking-wider px-1">貼文</h2>
           {profile.posts.length === 0 ? (
-            <div className="text-center py-12 text-white/25">
+            <div className="text-center py-12 text-[#8a7ca8]/60">
               <p className="text-3xl mb-2">📝</p>
               <p className="text-sm">還沒有貼文</p>
             </div>
@@ -631,8 +631,8 @@ export default function UserProfilePage() {
                   className="block bg-white/[0.03] border border-white/8 rounded-2xl p-4 hover:bg-white/[0.06] hover:border-white/14 transition-all"
                 >
                   {post.title && <p className="font-semibold text-white/85 mb-1 line-clamp-1 pr-8">{post.title}</p>}
-                  <p className="text-sm text-white/55 leading-relaxed line-clamp-2 pr-8">{stripHtml(post.content)}</p>
-                  <div className="flex items-center gap-4 mt-3 text-xs text-white/25">
+                  <p className="text-sm text-[#6b5fa8]/85 leading-relaxed line-clamp-2 pr-8">{stripHtml(post.content)}</p>
+                  <div className="flex items-center gap-4 mt-3 text-xs text-[#8a7ca8]/60">
                     <span className="flex items-center gap-1"><Heart className="w-3.5 h-3.5" /> {post.likesCount}</span>
                     <span className="flex items-center gap-1"><MessageSquare className="w-3.5 h-3.5" /> {post.commentsCount}</span>
                     <span className="ml-auto">{new Date(post.createdAt).toLocaleDateString('zh-TW', { month: 'short', day: 'numeric' })}</span>
@@ -644,7 +644,7 @@ export default function UserProfilePage() {
                   <div className="absolute top-3 right-3" ref={openMenuId === post.id ? menuRef : undefined}>
                     <button
                       onClick={e => { e.preventDefault(); e.stopPropagation(); setOpenMenuId(openMenuId === post.id ? null : post.id) }}
-                      className="p-1.5 text-white/30 hover:text-white/70 hover:bg-white/10 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
+                      className="p-1.5 text-[#8a7ca8]/75 hover:text-[#3d3155]/80 hover:bg-white/10 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
                     >
                       <MoreHorizontal className="w-4 h-4" />
                     </button>
@@ -653,7 +653,7 @@ export default function UserProfilePage() {
                         <Link
                           href={`/articles/${post.id}/edit`}
                           onClick={() => setOpenMenuId(null)}
-                          className="flex items-center gap-2.5 px-3 py-2.5 text-sm text-white/70 hover:bg-white/8 transition-colors"
+                          className="flex items-center gap-2.5 px-3 py-2.5 text-sm text-[#3d3155]/80 hover:bg-white/8 transition-colors"
                         >
                           <Pencil className="w-3.5 h-3.5" /> 編輯貼文
                         </Link>

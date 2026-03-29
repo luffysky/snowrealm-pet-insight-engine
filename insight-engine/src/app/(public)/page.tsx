@@ -1,14 +1,15 @@
 'use client'
 
-import React, { useEffect, useMemo, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import dynamic from 'next/dynamic'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
-import { Brain, Sparkles, ChevronRight, Share2, MessageCircleHeart } from 'lucide-react'
+import { ChevronRight, Sparkles, MessageCircleHeart, Brain } from 'lucide-react'
 import { HomeNav } from '@/components/public/HomeNav'
+import type { YukirinControls } from '@/components/public/yukirin/YukirinScene'
 
-// Three.js Canvas — dynamic import, SSR off
-const ThreeCanvas = dynamic(() => import('@/components/public/HomeThreeCanvas'), { ssr: false })
+// VRM 場景 — dynamic + SSR off
+const YukirinScene = dynamic(() => import('@/components/public/yukirin/YukirinScene'), { ssr: false })
 
 // ===== 靜態資料 =====
 
@@ -19,6 +20,7 @@ const quizCards = [
     subtitle: '說說你平常怎麼跟人相處，說不定會看見一個自己從沒注意過的地方。',
     badge: '人際關係',
     href: '/explore',
+    color: 'from-[#b8a9e8]/20 to-[#d8d0f0]/20',
   },
   {
     emoji: '💛',
@@ -26,6 +28,7 @@ const quizCards = [
     subtitle: '在關係裡習慣配合別人的你，有時候可能忘了自己也需要被接住。',
     badge: '自我認識',
     href: '/explore',
+    color: 'from-[#f5b8b5]/20 to-[#fdd5d1]/20',
   },
   {
     emoji: '✨',
@@ -33,6 +36,7 @@ const quizCards = [
     subtitle: '有些優點你根本沒當回事，但身邊的人可能早就注意到了。',
     badge: '故事卡片',
     href: '/explore',
+    color: 'from-[#a8d8ea]/20 to-[#d0eef7]/20',
   },
 ]
 
@@ -70,10 +74,10 @@ function TypewriterText() {
   return <span>{text}</span>
 }
 
-function CuteBadge({ children }: { children: React.ReactNode }) {
+function LavenderBadge({ children }: { children: React.ReactNode }) {
   return (
-    <span className="inline-flex items-center gap-2 rounded-full border border-white/35 bg-white/20 px-3 py-1 text-xs font-medium text-slate-700 shadow-[0_8px_30px_rgba(255,255,255,0.18)] backdrop-blur-xl">
-      <Sparkles className="h-3.5 w-3.5" />
+    <span className="inline-flex items-center gap-1.5 rounded-full border border-[#b8a9e8]/40 bg-[#b8a9e8]/15 px-3 py-1 text-xs font-medium text-[#6b5fa8]">
+      <Sparkles className="h-3 w-3" />
       {children}
     </span>
   )
@@ -82,31 +86,43 @@ function CuteBadge({ children }: { children: React.ReactNode }) {
 // ===== 主頁面 =====
 
 export default function HomePage() {
+  const yukirinRef = useRef<YukirinControls | null>(null)
+
+  const handleYukirinLoad = useCallback((controls: YukirinControls) => {
+    yukirinRef.current = controls
+    // 入場後切換到 happy 表情
+    setTimeout(() => controls.setMood('happy', 600), 800)
+  }, [])
+
   const floatingDots = useMemo(
     () =>
-      Array.from({ length: 14 }, (_, i) => ({
+      Array.from({ length: 10 }, (_, i) => ({
         id: i,
-        left: `${6 + ((i * 7) % 88)}%`,
+        left: `${6 + ((i * 9) % 88)}%`,
         top: `${8 + ((i * 13) % 78)}%`,
-        delay: i * 0.18,
-        duration: 3 + (i % 4),
+        delay: i * 0.22,
+        duration: 3.5 + (i % 3),
       })),
     []
   )
 
   return (
-    <div className="home-page min-h-screen overflow-hidden text-slate-800">
+    <div
+      className="home-page min-h-screen overflow-hidden"
+      style={{ fontFamily: 'var(--font-display)' }}
+    >
       {/* 背景裝飾 */}
-      <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div className="absolute left-[-8%] top-[-4%] h-64 w-64 rounded-full bg-pink-200/45 blur-3xl" />
-        <div className="absolute right-[-6%] top-[8%] h-72 w-72 rounded-full bg-cyan-200/45 blur-3xl" />
-        <div className="absolute bottom-[-6%] left-[20%] h-72 w-72 rounded-full bg-violet-200/35 blur-3xl" />
+      <div className="pointer-events-none fixed inset-0 overflow-hidden">
+        <div className="absolute left-[-10%] top-[-5%] h-80 w-80 rounded-full bg-[#b8a9e8]/25 blur-3xl" />
+        <div className="absolute right-[-8%] top-[10%] h-72 w-72 rounded-full bg-[#f5b8b5]/20 blur-3xl" />
+        <div className="absolute bottom-[-8%] left-[18%] h-80 w-80 rounded-full bg-[#a8d8ea]/20 blur-3xl" />
+        <div className="absolute bottom-[20%] right-[5%] h-56 w-56 rounded-full bg-[#b8a9e8]/15 blur-3xl" />
         {floatingDots.map((dot) => (
           <motion.div
             key={dot.id}
-            className="absolute h-3 w-3 rounded-full bg-white/60 shadow-[0_0_25px_rgba(255,255,255,0.8)]"
+            className="absolute h-2.5 w-2.5 rounded-full bg-[#b8a9e8]/50 shadow-[0_0_20px_rgba(184,169,232,0.6)]"
             style={{ left: dot.left, top: dot.top }}
-            animate={{ y: [0, -12, 0], opacity: [0.45, 0.95, 0.45], scale: [1, 1.25, 1] }}
+            animate={{ y: [0, -14, 0], opacity: [0.35, 0.85, 0.35], scale: [1, 1.3, 1] }}
             transition={{ repeat: Infinity, duration: dot.duration, delay: dot.delay, ease: 'easeInOut' }}
           />
         ))}
@@ -115,69 +131,68 @@ export default function HomePage() {
       {/* Nav */}
       <header className="relative z-20 mx-auto flex w-full max-w-7xl items-center justify-between px-5 py-5 md:px-8 lg:px-10">
         <div className="flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-white/30 bg-white/25 shadow-[0_12px_30px_rgba(126,177,255,0.16)] backdrop-blur-xl">
-            <Brain className="h-5 w-5 text-sky-600" />
+          <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-[#b8a9e8]/40 bg-[#b8a9e8]/15 shadow-[0_8px_20px_rgba(184,169,232,0.2)]">
+            <Brain className="h-5 w-5 text-[#6b5fa8]" />
           </div>
           <div>
-            <p className="text-sm font-semibold tracking-[0.22em] text-sky-700/80">SNOWREALM INSIGHT</p>
-            <p className="text-xs text-slate-500">AI 智慧問卷平台</p>
+            <p className="text-sm font-semibold tracking-[0.2em] text-[#6b5fa8]">SNOWREALM INSIGHT</p>
+            <p className="text-xs text-[#8a7ca8]">AI 智慧問卷平台</p>
           </div>
         </div>
-
-        {/* 所有導覽收入球形下拉按鈕 */}
         <HomeNav />
       </header>
 
-      <main className="relative z-10 mx-auto max-w-7xl px-5 pb-16 md:px-8 lg:px-10">
+      <main className="relative z-10 mx-auto max-w-7xl px-5 pb-20 md:px-8 lg:px-10">
         {/* Hero */}
-        <section className="grid items-center gap-8 pt-3 lg:grid-cols-[1.05fr_0.95fr] lg:gap-10 lg:pt-8">
+        <section className="grid items-center gap-8 pt-3 lg:grid-cols-[1.1fr_0.9fr] lg:gap-12 lg:pt-8">
+          {/* 左側文字 */}
           <motion.div
-            initial={{ opacity: 0, y: 22 }}
+            initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.75, ease: 'easeOut' }}
             className="order-2 lg:order-1"
           >
             <div className="inline-flex flex-wrap items-center gap-2">
-              <CuteBadge>免費填答</CuteBadge>
-              <CuteBadge>自我探索</CuteBadge>
-              <CuteBadge>Story Card</CuteBadge>
+              <LavenderBadge>免費填答</LavenderBadge>
+              <LavenderBadge>自我探索</LavenderBadge>
+              <LavenderBadge>Story Card</LavenderBadge>
             </div>
 
-            <h1 className="mt-5 max-w-2xl text-3xl font-black leading-tight tracking-tight text-slate-800 sm:text-4xl md:text-6xl md:leading-[1.06]">
+            <h1 className="mt-5 max-w-2xl text-3xl font-black leading-tight tracking-tight text-[#3d3155] sm:text-4xl md:text-5xl md:leading-[1.1]">
               有些問題，
-              <span className="block bg-gradient-to-r from-sky-600 via-cyan-500 to-violet-500 bg-clip-text text-transparent">
+              <span className="block bg-gradient-to-r from-[#b8a9e8] via-[#d4a8d8] to-[#f5b8b5] bg-clip-text text-transparent">
                 你可能從沒問過自己。
               </span>
             </h1>
 
-            <p className="mt-5 max-w-xl text-base leading-7 text-slate-600 md:text-lg">
+            <p className="mt-5 max-w-xl text-base leading-7 text-[#8a7ca8] md:text-lg">
               填一填，說不定會看見一個陌生又熟悉的自己。
               每份問卷最後會給你一張專屬的故事卡片，可以收藏，也可以傳給懂你的人。
             </p>
 
-            <div className="mt-4 inline-flex items-center rounded-full border border-white/35 bg-white/25 px-4 py-2 text-sm text-slate-600 shadow-[0_12px_30px_rgba(145,188,255,0.14)] backdrop-blur-xl">
-              <MessageCircleHeart className="mr-2 h-4 w-4 text-pink-500" />
+            <div className="mt-4 inline-flex items-center rounded-full border border-[#b8a9e8]/30 bg-[#b8a9e8]/10 px-4 py-2 text-sm text-[#8a7ca8]">
+              <MessageCircleHeart className="mr-2 h-4 w-4 text-[#f5b8b5]" />
               <TypewriterText />
             </div>
 
             <div className="mt-7 flex flex-col gap-3 sm:flex-row">
               <Link
                 href="/explore"
-                className="inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-sky-500 via-cyan-400 to-violet-400 px-6 py-4 text-base font-semibold text-white shadow-[0_18px_40px_rgba(83,173,255,0.35)] transition hover:scale-[1.02]"
+                className="inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-[#b8a9e8] via-[#c8a8d8] to-[#f5b8b5] px-6 py-4 text-base font-semibold text-white shadow-[0_12px_32px_rgba(184,169,232,0.4)] transition hover:scale-[1.02] hover:shadow-[0_16px_40px_rgba(184,169,232,0.5)]"
               >
                 先玩一份熱門測驗
                 <ChevronRight className="h-4 w-4" />
               </Link>
               <Link
                 href="/register"
-                className="inline-flex items-center justify-center gap-2 rounded-full border border-white/35 bg-white/25 px-6 py-4 text-base font-medium text-slate-700 backdrop-blur-xl transition hover:bg-white/40"
+                className="inline-flex items-center justify-center gap-2 rounded-full border border-[#b8a9e8]/40 bg-[#b8a9e8]/12 px-6 py-4 text-base font-medium text-[#6b5fa8] backdrop-blur-xl transition hover:bg-[#b8a9e8]/20"
               >
                 免費建立問卷
-                <Sparkles className="h-4 w-4 text-violet-500" />
+                <Sparkles className="h-4 w-4 text-[#b8a9e8]" />
               </Link>
             </div>
 
-            <div className="mt-8 grid max-w-2xl grid-cols-3 gap-3">
+            <div className="mt-8 grid max-w-md grid-cols-3 gap-3">
               {[
                 { value: '3 分鐘', label: '快速完成' },
                 { value: '可收藏', label: 'Story Card' },
@@ -185,39 +200,48 @@ export default function HomePage() {
               ].map((item) => (
                 <div
                   key={item.label}
-                  className="rounded-3xl border border-white/30 bg-white/18 px-4 py-4 shadow-[0_10px_30px_rgba(135,170,230,0.12)] backdrop-blur-xl"
+                  className="rounded-2xl border border-[#b8a9e8]/25 bg-white/40 px-3 py-4 shadow-[0_4px_16px_rgba(184,169,232,0.12)] backdrop-blur-xl"
                 >
-                  <div className="text-xl font-black text-slate-800">{item.value}</div>
-                  <div className="mt-1 text-sm text-slate-500">{item.label}</div>
+                  <div className="text-lg font-black text-[#3d3155]">{item.value}</div>
+                  <div className="mt-0.5 text-xs text-[#8a7ca8]">{item.label}</div>
                 </div>
               ))}
             </div>
           </motion.div>
 
-          {/* Three.js 浮空星球 */}
+          {/* 右側雪凜 VRM 場景 */}
           <motion.div
-            initial={{ opacity: 0, y: 22 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.08, ease: 'easeOut' }}
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.9, delay: 0.1, ease: 'easeOut' }}
             className="order-1 lg:order-2"
           >
-            <div className="relative overflow-hidden rounded-[32px] border border-white/30 bg-white/16 shadow-[0_24px_80px_rgba(96,146,255,0.20)] backdrop-blur-2xl">
-              <div className="absolute inset-0 bg-gradient-to-br from-white/10 via-white/5 to-transparent" />
-              <div className="h-[320px] w-full md:h-[480px]">
-                <ThreeCanvas />
+            <div className="relative overflow-hidden rounded-[32px] border border-[#b8a9e8]/30 bg-gradient-to-br from-[#eee8ff]/60 to-[#ffeef5]/60 shadow-[0_24px_80px_rgba(184,169,232,0.25)] backdrop-blur-xl">
+              {/* 內層光暈 */}
+              <div className="absolute inset-0 bg-gradient-to-br from-[#b8a9e8]/10 via-transparent to-[#f5b8b5]/10 pointer-events-none" />
+
+              {/* VRM 場景區域 */}
+              <div className="h-[320px] w-full md:h-[460px]">
+                <YukirinScene
+                  cameraMode="fullBody"
+                  mood="happy"
+                  showBackground
+                  onLoad={handleYukirinLoad}
+                />
               </div>
 
-              <div className="pointer-events-none absolute bottom-4 left-4 right-4 rounded-[28px] border border-white/35 bg-white/28 p-4 shadow-[0_14px_40px_rgba(255,255,255,0.12)] backdrop-blur-2xl md:p-5">
+              {/* 下方故事卡浮層 */}
+              <div className="pointer-events-none absolute bottom-4 left-4 right-4 rounded-[24px] border border-white/40 bg-white/35 p-4 shadow-[0_8px_32px_rgba(184,169,232,0.2)] backdrop-blur-2xl">
                 <div className="flex items-start justify-between gap-4">
                   <div>
-                    <p className="text-xs font-semibold tracking-[0.2em] text-sky-700/75">你的故事卡片</p>
-                    <h3 className="mt-2 text-lg font-bold text-slate-800 md:text-2xl">你最被低估的，是觀察力</h3>
-                    <p className="mt-2 text-sm leading-6 text-slate-600 md:text-base">
+                    <p className="text-xs font-semibold tracking-[0.2em] text-[#6b5fa8]">你的故事卡片</p>
+                    <h3 className="mt-1.5 text-base font-bold text-[#3d3155] md:text-lg">你最被低估的，是觀察力</h3>
+                    <p className="mt-1 text-sm leading-5 text-[#8a7ca8]">
                       你早就看懂很多事了，只是習慣不說。
                     </p>
                   </div>
-                  <div className="hidden rounded-2xl border border-white/35 bg-white/35 p-3 md:block">
-                    <Share2 className="h-5 w-5 text-sky-600" />
+                  <div className="shrink-0 rounded-xl border border-[#b8a9e8]/30 bg-[#b8a9e8]/15 p-2.5">
+                    <span className="text-lg">✨</span>
                   </div>
                 </div>
               </div>
@@ -225,36 +249,37 @@ export default function HomePage() {
           </motion.div>
         </section>
 
-        {/* 熱門測驗 */}
-        <section className="mt-12 md:mt-16">
+        {/* 熱門問卷 — 水平捲動 */}
+        <section className="mt-14 md:mt-18">
           <div className="mb-5 flex items-end justify-between gap-3">
             <div>
-              <p className="text-sm font-semibold tracking-[0.18em] text-sky-700/75">最近大家在問自己的幾件事</p>
-              <h2 className="mt-2 text-xl font-black text-slate-800 sm:text-2xl md:text-3xl">你想先從哪一個開始？</h2>
+              <p className="text-xs font-semibold tracking-[0.18em] text-[#b8a9e8]">最近大家在問自己的幾件事</p>
+              <h2 className="mt-1.5 text-xl font-black text-[#3d3155] sm:text-2xl md:text-3xl">你想先從哪一個開始？</h2>
             </div>
-            <Link href="/explore" className="hidden rounded-full border border-white/30 bg-white/25 px-4 py-2 text-sm text-slate-600 backdrop-blur-xl transition hover:bg-white/35 md:block">
+            <Link href="/explore" className="hidden rounded-full border border-[#b8a9e8]/30 bg-[#b8a9e8]/10 px-4 py-2 text-sm text-[#6b5fa8] transition hover:bg-[#b8a9e8]/20 md:block">
               看更多
             </Link>
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
+          {/* 水平捲動容器 */}
+          <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-none md:grid md:grid-cols-3 md:overflow-visible md:pb-0">
             {quizCards.map((card, index) => (
               <motion.div
                 key={card.title}
                 initial={{ opacity: 0, y: 18 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.55, delay: 0.1 + index * 0.08 }}
-                className="group rounded-[28px] border border-white/30 bg-white/18 p-5 shadow-[0_16px_40px_rgba(122,162,230,0.14)] backdrop-blur-2xl transition hover:-translate-y-1 hover:bg-white/24"
+                className={`group min-w-[78vw] shrink-0 rounded-[24px] border border-[#b8a9e8]/25 bg-gradient-to-br ${card.color} p-5 shadow-[0_8px_24px_rgba(184,169,232,0.12)] backdrop-blur-xl transition hover:-translate-y-1.5 hover:shadow-[0_16px_40px_rgba(184,169,232,0.2)] sm:min-w-[60vw] md:min-w-0`}
               >
                 <div className="flex items-center justify-between">
                   <span className="text-2xl">{card.emoji}</span>
-                  <span className="inline-flex rounded-full border border-white/40 bg-white/32 px-3 py-1 text-xs font-semibold text-sky-600">
+                  <span className="inline-flex rounded-full border border-[#b8a9e8]/40 bg-white/50 px-2.5 py-0.5 text-xs font-semibold text-[#6b5fa8]">
                     {card.badge}
                   </span>
                 </div>
-                <h3 className="mt-4 text-xl font-bold leading-8 text-slate-800">{card.title}</h3>
-                <p className="mt-3 text-sm leading-6 text-slate-600">{card.subtitle}</p>
-                <Link href={card.href} className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-sky-700 transition group-hover:gap-3">
+                <h3 className="mt-4 text-base font-bold leading-snug text-[#3d3155] md:text-lg">{card.title}</h3>
+                <p className="mt-2 text-sm leading-6 text-[#8a7ca8]">{card.subtitle}</p>
+                <Link href={card.href} className="mt-5 inline-flex items-center gap-1.5 text-sm font-semibold text-[#6b5fa8] transition group-hover:gap-2.5">
                   去填填看
                   <ChevronRight className="h-4 w-4" />
                 </Link>
@@ -264,46 +289,47 @@ export default function HomePage() {
         </section>
 
         {/* 故事牆 + CTA */}
-        <section className="mt-12 grid gap-4 lg:grid-cols-[1.05fr_0.95fr]">
-          <div className="rounded-[30px] border border-white/30 bg-white/18 p-6 shadow-[0_16px_40px_rgba(122,162,230,0.12)] backdrop-blur-2xl">
-            <p className="text-sm font-semibold tracking-[0.18em] text-sky-700/75">填完之後，他們這樣說</p>
-            <h2 className="mt-2 text-2xl font-black text-slate-800 md:text-3xl">有些答案，填完才知道</h2>
+        <section className="mt-12 grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
+          {/* 故事牆 */}
+          <div className="rounded-[28px] border border-[#b8a9e8]/25 bg-white/25 p-6 shadow-[0_8px_32px_rgba(184,169,232,0.1)] backdrop-blur-xl">
+            <p className="text-xs font-semibold tracking-[0.18em] text-[#b8a9e8]">填完之後，他們這樣說</p>
+            <h2 className="mt-2 text-xl font-black text-[#3d3155] md:text-2xl">有些答案，填完才知道</h2>
             <div className="mt-5 space-y-3">
               {storyWall.map((item) => (
-                <div key={item.quote} className="rounded-[24px] border border-white/30 bg-white/22 p-4">
-                  <p className="text-base font-bold text-slate-800 md:text-lg leading-snug">{item.quote}</p>
-                  <p className="mt-2 text-sm leading-6 text-slate-500">{item.desc}</p>
+                <div key={item.quote} className="rounded-[20px] border border-[#b8a9e8]/20 bg-white/35 p-4">
+                  <p className="text-sm font-bold text-[#3d3155] md:text-base leading-snug">{item.quote}</p>
+                  <p className="mt-2 text-xs leading-5 text-[#8a7ca8] md:text-sm">{item.desc}</p>
                 </div>
               ))}
             </div>
-            <Link href="/explore" className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-sky-700 transition hover:gap-3">
+            <Link href="/explore" className="mt-5 inline-flex items-center gap-1.5 text-sm font-semibold text-[#6b5fa8] transition hover:gap-2.5">
               看更多故事牆
               <ChevronRight className="h-4 w-4" />
             </Link>
           </div>
 
-          <div className="rounded-[30px] border border-white/30 bg-gradient-to-br from-white/24 to-white/14 p-6 shadow-[0_16px_40px_rgba(122,162,230,0.12)] backdrop-blur-2xl">
-            <p className="text-sm font-semibold tracking-[0.18em] text-sky-700/75">每一份問卷，都會給你一張卡片</p>
-            <h2 className="mt-2 text-2xl font-black text-slate-800 md:text-3xl">不只是測驗，是你的一小片故事</h2>
-            <p className="mt-4 text-sm leading-7 text-slate-600 md:text-base">
+          {/* Story Card CTA */}
+          <div className="rounded-[28px] border border-[#f5b8b5]/30 bg-gradient-to-br from-[#ffeef5]/60 to-[#eee8ff]/60 p-6 shadow-[0_8px_32px_rgba(245,184,181,0.12)] backdrop-blur-xl">
+            <p className="text-xs font-semibold tracking-[0.18em] text-[#b8a9e8]">每一份問卷，都會給你一張卡片</p>
+            <h2 className="mt-2 text-xl font-black text-[#3d3155] md:text-2xl">不只是測驗，是你的一小片故事</h2>
+            <p className="mt-4 text-sm leading-7 text-[#8a7ca8]">
               填完之後，我們會用你的回答生成一張專屬的故事卡片。
               不是評分，不是排名，是一個只屬於你的小畫面。
-              有時候看到的，會讓你想傳給那個最懂你的人。
             </p>
-            <div className="mt-6 rounded-[24px] border border-white/30 bg-white/24 p-4">
-              <div className="flex items-center gap-3 text-slate-700">
-                <div className="rounded-2xl bg-sky-100 p-2">
-                  <Brain className="h-4 w-4 text-sky-500" />
+            <div className="mt-5 rounded-[18px] border border-[#b8a9e8]/25 bg-white/40 p-4">
+              <div className="flex items-center gap-3 text-[#3d3155]">
+                <div className="rounded-xl bg-[#b8a9e8]/20 p-2">
+                  <Brain className="h-4 w-4 text-[#6b5fa8]" />
                 </div>
                 <div>
                   <p className="text-sm font-bold">你的答案，只有你知道</p>
-                  <p className="text-xs text-slate-500">所有回答只用來生成你的故事，不做其他用途。</p>
+                  <p className="text-xs text-[#8a7ca8]">所有回答只用來生成你的故事，不做其他用途。</p>
                 </div>
               </div>
             </div>
             <Link
               href="/explore"
-              className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-sky-400 via-cyan-400 to-violet-400 px-5 py-4 text-base font-semibold text-white shadow-[0_18px_40px_rgba(132,163,255,0.34)] transition hover:scale-[1.01]"
+              className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-[#b8a9e8] to-[#f5b8b5] px-5 py-4 text-base font-semibold text-white shadow-[0_12px_32px_rgba(184,169,232,0.35)] transition hover:scale-[1.01]"
             >
               去填一份看看
               <ChevronRight className="h-4 w-4" />
@@ -313,27 +339,26 @@ export default function HomePage() {
       </main>
 
       {/* Footer */}
-      <footer className="relative z-10 border-t border-white/20 bg-white/10 backdrop-blur-xl">
+      <footer className="relative z-10 border-t border-[#b8a9e8]/20 bg-white/20 backdrop-blur-xl">
         <div className="mx-auto max-w-7xl px-5 py-8 md:px-8 lg:px-10">
           <div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
             <div className="flex items-center gap-2">
-              <Brain className="h-4 w-4 text-sky-600" />
-              <span className="text-sm font-semibold tracking-wide text-sky-700/80">SNOWREALM INSIGHT</span>
+              <Brain className="h-4 w-4 text-[#6b5fa8]" />
+              <span className="text-sm font-semibold tracking-wide text-[#6b5fa8]">SNOWREALM INSIGHT</span>
             </div>
-            <div className="flex flex-wrap justify-center gap-x-6 gap-y-2 text-xs text-slate-500">
-              <Link href="/explore" className="hover:text-slate-700 transition-colors">探索問卷</Link>
-              <Link href="/pricing" className="hover:text-slate-700 transition-colors">定價方案</Link>
-              <Link href="/privacy" className="hover:text-slate-700 transition-colors">隱私權政策</Link>
-              <Link href="/terms" className="hover:text-slate-700 transition-colors">使用條款</Link>
-              <Link href="/login" className="hover:text-slate-700 transition-colors">登入</Link>
-              <Link href="/register" className="hover:text-slate-700 transition-colors">免費註冊</Link>
+            <div className="flex flex-wrap justify-center gap-x-6 gap-y-2 text-xs text-[#8a7ca8]">
+              <Link href="/explore" className="hover:text-[#3d3155] transition-colors">探索問卷</Link>
+              <Link href="/pricing" className="hover:text-[#3d3155] transition-colors">定價方案</Link>
+              <Link href="/privacy" className="hover:text-[#3d3155] transition-colors">隱私權政策</Link>
+              <Link href="/terms" className="hover:text-[#3d3155] transition-colors">使用條款</Link>
+              <Link href="/login" className="hover:text-[#3d3155] transition-colors">登入</Link>
+              <Link href="/register" className="hover:text-[#3d3155] transition-colors">免費註冊</Link>
             </div>
-            <p className="text-xs text-slate-400">© 2026 SnowRealm. All rights reserved.</p>
+            <p className="text-xs text-[#b5a8d0]">© 2026 SnowRealm. All rights reserved.</p>
           </div>
         </div>
       </footer>
 
-      {/* 發文 FAB — 固定右下角，已登入才顯示 */}
       <WriteFab />
     </div>
   )
@@ -351,7 +376,7 @@ function WriteFab() {
   return (
     <Link
       href="/write"
-      className="fixed z-50 w-14 h-14 bg-sky-500 hover:bg-sky-400 text-white rounded-full shadow-lg shadow-sky-500/30 flex items-center justify-center text-2xl transition-all hover:scale-105 active:scale-95"
+      className="fixed z-50 w-14 h-14 bg-gradient-to-br from-[#b8a9e8] to-[#f5b8b5] text-white rounded-full shadow-lg shadow-[#b8a9e8]/40 flex items-center justify-center text-xl transition-all hover:scale-105 active:scale-95"
       style={{ bottom: 'calc(var(--bnav-h, 4.75rem) + 1rem)', left: '1rem' }}
       title="發布文章"
     >

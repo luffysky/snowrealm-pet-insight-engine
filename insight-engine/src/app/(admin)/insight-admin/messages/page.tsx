@@ -92,7 +92,7 @@ function DateSeparator({ date }: { date: string }) {
   return (
     <div className="flex items-center gap-3 my-4">
       <div className="flex-1 h-px bg-white/6" />
-      <span className="text-[10px] text-[#b5a8d0] px-2 py-0.5 bg-white/5 rounded-full">{date}</span>
+      <span className="text-[10px] text-[#6b5fa8] px-2 py-0.5 bg-white/5 rounded-full">{date}</span>
       <div className="flex-1 h-px bg-white/6" />
     </div>
   )
@@ -597,13 +597,13 @@ export default function MessagesPage() {
       {/* Page header */}
       <div className="mb-4 flex items-center gap-3">
         {showThread && (
-          <button onClick={() => setShowThread(false)} className="md:hidden p-2 text-[#b5a8d0] hover:text-[#3d3155] rounded-xl hover:bg-[#b8a9e8]/10 transition-colors">
+          <button onClick={() => setShowThread(false)} className="md:hidden p-2 text-[#6b5fa8] hover:text-[#3d3155] rounded-xl hover:bg-[#b8a9e8]/10 transition-colors">
             <ArrowLeft className="w-5 h-5" />
           </button>
         )}
         <h1 className="text-xl font-bold text-[#3d3155]">私訊</h1>
         {friendRequests.length > 0 && (
-          <span className="flex items-center gap-1.5 px-2.5 py-1 bg-amber-500/15 border border-amber-400/25 rounded-full text-xs text-amber-300 font-medium">
+          <span className="flex items-center gap-1.5 px-2.5 py-1 bg-amber-500/15 border border-amber-400/25 rounded-full text-xs text-amber-700 font-medium">
             <Bell className="w-3 h-3" />
             {friendRequests.length} 筆好友請求
           </span>
@@ -621,7 +621,7 @@ export default function MessagesPage() {
               <button key={tab} onClick={() => setActiveTab(tab)}
                 className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold transition-all ${
                   activeTab === tab
-                    ? 'bg-amber-500/20 text-amber-300 shadow-[0_0_12px_rgba(245,158,11,0.15)]'
+                    ? 'bg-amber-500/20 text-amber-700 shadow-[0_0_12px_rgba(245,158,11,0.15)]'
                     : 'text-[#8a7ca8] hover:text-[#8a7ca8] hover:bg-[#b8a9e8]/10'
                 }`}
               >
@@ -638,7 +638,7 @@ export default function MessagesPage() {
               {/* Search */}
               <div className="px-3 pt-2 pb-1 shrink-0">
                 <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#b5a8d0]" />
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#6b5fa8]" />
                   <input
                     value={search}
                     onChange={e => setSearch(e.target.value)}
@@ -651,13 +651,13 @@ export default function MessagesPage() {
               {/* Conversations */}
               <div className="flex-1 overflow-y-auto px-2 pb-2 space-y-0.5">
                 {loadingConvs ? (
-                  <div className="flex justify-center py-10"><Loader2 className="w-5 h-5 text-[#b5a8d0] animate-spin" /></div>
+                  <div className="flex justify-center py-10"><Loader2 className="w-5 h-5 text-[#6b5fa8] animate-spin" /></div>
                 ) : filteredConvs.length === 0 ? (
                   <div className="flex flex-col items-center py-14 text-center">
                     <div className="w-12 h-12 rounded-[20px] bg-white/5 flex items-center justify-center mb-3">
-                      <MessageCircle className="w-6 h-6 text-[#b5a8d0]" />
+                      <MessageCircle className="w-6 h-6 text-[#6b5fa8]" />
                     </div>
-                    <p className="text-xs text-[#b5a8d0]">還沒有對話</p>
+                    <p className="text-xs text-[#6b5fa8]">還沒有對話</p>
                   </div>
                 ) : filteredConvs.map(conv => {
                   const isActive = selected?.userId === conv.userId
@@ -672,10 +672,10 @@ export default function MessagesPage() {
                       <Avatar name={conv.displayName} url={conv.avatarUrl} online={isActive} />
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between">
-                          <span className={`text-sm font-medium truncate ${isActive ? 'text-amber-200' : 'text-[#3d3155]'}`}>
+                          <span className={`text-sm font-medium truncate ${isActive ? 'text-amber-700' : 'text-[#3d3155]'}`}>
                             {conv.displayName ?? '用戶'}
                           </span>
-                          <span className="text-[10px] text-[#b5a8d0] shrink-0 ml-2">{formatTime(conv.lastMessageAt)}</span>
+                          <span className="text-[10px] text-[#6b5fa8] shrink-0 ml-2">{formatTime(conv.lastMessageAt)}</span>
                         </div>
                         <div className="flex items-center justify-between mt-0.5">
                           <p className="text-xs text-[#8a7ca8] truncate">{conv.lastMessagePreview || '...'}</p>
@@ -721,7 +721,7 @@ export default function MessagesPage() {
               {/* Add friend */}
               <button
                 onClick={() => { setShowAddFriend(s => !s); if (!showAddFriend) loadAllUsers() }}
-                className="w-full flex items-center gap-2 px-3 py-2.5 bg-gradient-to-r from-amber-500/10 to-orange-500/10 hover:from-amber-500/20 hover:to-orange-500/20 border border-amber-400/15 rounded-xl text-sm text-amber-300 transition-all font-medium"
+                className="w-full flex items-center gap-2 px-3 py-2.5 bg-gradient-to-r from-amber-500/10 to-orange-500/10 hover:from-amber-500/20 hover:to-orange-500/20 border border-amber-400/15 rounded-xl text-sm text-amber-700 transition-all font-medium"
               >
                 <UserPlus className="w-4 h-4" />
                 <span>尋找並加好友</span>
@@ -746,7 +746,7 @@ export default function MessagesPage() {
                           <button
                             onClick={() => sendFriendRequest(u.id)}
                             disabled={addingUserId === u.id}
-                            className="px-2.5 py-1 bg-amber-500/15 hover:bg-amber-500/30 border border-amber-400/20 rounded-lg text-[10px] text-amber-300 font-medium transition-colors disabled:opacity-50"
+                            className="px-2.5 py-1 bg-amber-500/15 hover:bg-amber-500/30 border border-amber-400/20 rounded-lg text-[10px] text-amber-700 font-medium transition-colors disabled:opacity-50"
                           >
                             {addingUserId === u.id ? <Loader2 className="w-3 h-3 animate-spin" /> : '邀請'}
                           </button>
@@ -771,13 +771,13 @@ export default function MessagesPage() {
                 </div>
               </div>
               <p className="text-[#8a7ca8] font-medium mb-1">選擇一個對話</p>
-              <p className="text-xs text-[#b5a8d0]">從左側選擇聯絡人開始聊天</p>
+              <p className="text-xs text-[#6b5fa8]">從左側選擇聯絡人開始聊天</p>
             </div>
           ) : (
             <>
               {/* ── Thread header ── */}
               <div className="flex items-center gap-3 px-4 py-3 border-b border-white/8 shrink-0 bg-white/[0.02]">
-                <button onClick={() => setShowThread(false)} className="md:hidden text-[#b5a8d0] hover:text-[#3d3155] p-1">
+                <button onClick={() => setShowThread(false)} className="md:hidden text-[#6b5fa8] hover:text-[#3d3155] p-1">
                   <ArrowLeft className="w-5 h-5" />
                 </button>
                 <Avatar name={selected.displayName} url={selected.avatarUrl} online />
@@ -800,7 +800,7 @@ export default function MessagesPage() {
                         <Trash className="w-3 h-3" />刪除
                       </button>
                       <button onClick={() => { setSelectMode(false); setSelectedMsgIds(new Set()) }}
-                        className="px-2.5 py-1.5 bg-white/5 hover:bg-[#b8a9e8]/12 border border-white/10 rounded-xl text-xs text-[#b5a8d0] transition-colors"
+                        className="px-2.5 py-1.5 bg-white/5 hover:bg-[#b8a9e8]/12 border border-white/10 rounded-xl text-xs text-[#6b5fa8] transition-colors"
                       >
                         取消
                       </button>
@@ -808,12 +808,12 @@ export default function MessagesPage() {
                   ) : (
                     <>
                       <button onClick={() => setSelectMode(true)} title="選取模式"
-                        className="p-2 rounded-xl text-[#b5a8d0] hover:text-[#8a7ca8] hover:bg-white/6 transition-colors"
+                        className="p-2 rounded-xl text-[#6b5fa8] hover:text-[#8a7ca8] hover:bg-white/6 transition-colors"
                       >
                         <CheckSquare className="w-4 h-4" />
                       </button>
                       <button onClick={exportMessages} title="匯出對話"
-                        className="p-2 rounded-xl text-[#b5a8d0] hover:text-[#8a7ca8] hover:bg-white/6 transition-colors"
+                        className="p-2 rounded-xl text-[#6b5fa8] hover:text-[#8a7ca8] hover:bg-white/6 transition-colors"
                       >
                         <Download className="w-4 h-4" />
                       </button>
@@ -826,7 +826,7 @@ export default function MessagesPage() {
                         onUpload={handleBgUpload}
                         onPurchase={handleBgPurchase}
                       />
-                      <button className="p-2 rounded-xl text-[#b5a8d0] hover:text-[#8a7ca8] hover:bg-white/6 transition-colors">
+                      <button className="p-2 rounded-xl text-[#6b5fa8] hover:text-[#8a7ca8] hover:bg-white/6 transition-colors">
                         <Info className="w-4 h-4" />
                       </button>
                     </>
@@ -840,11 +840,11 @@ export default function MessagesPage() {
                 <ChatBgLayer bgId={chatBgId} customUrl={chatCustomUrl} />
                 <div className="relative z-10 px-4 py-3 space-y-1">
                 {loadingMsgs ? (
-                  <div className="flex justify-center pt-10"><Loader2 className="w-5 h-5 text-[#b5a8d0] animate-spin" /></div>
+                  <div className="flex justify-center pt-10"><Loader2 className="w-5 h-5 text-[#6b5fa8] animate-spin" /></div>
                 ) : messages.length === 0 ? (
                   <div className="flex flex-col items-center justify-center h-full text-center py-10">
                     <div className="text-3xl mb-3">👋</div>
-                    <p className="text-sm text-[#b5a8d0]">打個招呼開始聊天吧！</p>
+                    <p className="text-sm text-[#6b5fa8]">打個招呼開始聊天吧！</p>
                   </div>
                 ) : messagesWithDates.map((item, i) => {
                   if (item.type === 'date') return <DateSeparator key={`date-${i}`} date={item.date!} />
@@ -912,8 +912,8 @@ export default function MessagesPage() {
                                     : 'rounded-bl-sm bg-white/[0.08] border border-white/[0.08] shadow-[0_2px_8px_rgba(0,0,0,0.3)]'
                           }`}>
                             <div className="flex items-center gap-2 mb-1.5">
-                              <Music className={`w-3.5 h-3.5 shrink-0 ${isMine ? 'text-[#3d3155]' : 'text-amber-400/70'}`} />
-                              <span className={`text-xs font-medium ${isMine ? 'text-[#3d3155]' : 'text-[#b5a8d0]'}`}>語音訊息</span>
+                              <Music className={`w-3.5 h-3.5 shrink-0 ${isMine ? 'text-[#3d3155]' : 'text-amber-700'}`} />
+                              <span className={`text-xs font-medium ${isMine ? 'text-[#3d3155]' : 'text-[#6b5fa8]'}`}>語音訊息</span>
                             </div>
                             <audio
                               src={(audioUrl ?? publicAudioUrl)!}
@@ -958,7 +958,7 @@ export default function MessagesPage() {
                         ) : (
                           <div className={`px-3.5 py-2.5 text-sm leading-relaxed break-words ${
                             recalled
-                              ? 'bg-white/4 text-[#b5a8d0] italic border border-white/6 rounded-[20px]'
+                              ? 'bg-white/4 text-[#6b5fa8] italic border border-white/6 rounded-[20px]'
                               : isMine
                                 ? 'bg-gradient-to-br from-amber-500 to-orange-400 text-[#3d3155] font-medium rounded-[20px] rounded-br-sm shadow-[0_4px_12px_rgba(245,158,11,0.25)]'
                                 : 'bg-white/[0.08] text-[#3d3155] rounded-[20px] rounded-bl-sm border border-white/[0.08] shadow-[0_2px_8px_rgba(0,0,0,0.3)]'
@@ -967,8 +967,8 @@ export default function MessagesPage() {
                           </div>
                         )}
                         <div className={`flex items-center gap-1.5 ${isMine ? 'justify-end' : 'justify-start'} px-1`}>
-                          <span className="text-[10px] text-[#b5a8d0]">{formatTime(msg.createdAt)}</span>
-                          {msg.isSaved && <Bookmark className="w-2.5 h-2.5 text-amber-400/50" />}
+                          <span className="text-[10px] text-[#6b5fa8]">{formatTime(msg.createdAt)}</span>
+                          {msg.isSaved && <Bookmark className="w-2.5 h-2.5 text-amber-700" />}
                         </div>
                       </div>
 
@@ -989,9 +989,9 @@ export default function MessagesPage() {
                 <div className="border-t border-white/8 shrink-0 bg-white/55 backdrop-blur-sm">
                   {/* Pack tabs */}
                   {loadingStickers ? (
-                    <div className="flex justify-center py-6"><Loader2 className="w-5 h-5 text-[#b5a8d0] animate-spin" /></div>
+                    <div className="flex justify-center py-6"><Loader2 className="w-5 h-5 text-[#6b5fa8] animate-spin" /></div>
                   ) : stickerPacks.length === 0 ? (
-                    <div className="py-6 text-center text-xs text-[#b5a8d0]">尚無貼圖包</div>
+                    <div className="py-6 text-center text-xs text-[#6b5fa8]">尚無貼圖包</div>
                   ) : (
                     <>
                       <div className="flex gap-0.5 px-2 pt-2 overflow-x-auto scrollbar-none">
@@ -1054,7 +1054,7 @@ export default function MessagesPage() {
                         setShowStickerPicker(v => !v)
                         if (!showStickerPicker) void loadStickerPacks()
                       }}
-                      className={`p-1.5 rounded-xl transition-colors ${showStickerPicker ? 'text-amber-400 bg-amber-500/15' : 'text-[#b5a8d0] hover:text-amber-300 hover:bg-[#b8a9e8]/10'}`}
+                      className={`p-1.5 rounded-xl transition-colors ${showStickerPicker ? 'text-amber-400 bg-amber-500/15' : 'text-[#6b5fa8] hover:text-amber-700 hover:bg-[#b8a9e8]/10'}`}
                       title="貼圖"
                     >
                       <Smile className="w-4 h-4" />
@@ -1070,7 +1070,7 @@ export default function MessagesPage() {
                     <button
                       onClick={() => audioFileRef.current?.click()}
                       disabled={audioUploading || recording}
-                      className="p-1.5 text-[#b5a8d0] hover:text-amber-300 hover:bg-[#b8a9e8]/10 rounded-xl transition-colors disabled:opacity-40"
+                      className="p-1.5 text-[#6b5fa8] hover:text-amber-700 hover:bg-[#b8a9e8]/10 rounded-xl transition-colors disabled:opacity-40"
                       title="上傳音訊檔案"
                     >
                       {audioUploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Paperclip className="w-4 h-4" />}
@@ -1107,7 +1107,7 @@ export default function MessagesPage() {
                       className={`shrink-0 self-end mb-1 w-9 h-9 rounded-xl flex items-center justify-center transition-all select-none ${
                         recording
                           ? 'bg-red-500 text-white shadow-[0_4px_12px_rgba(239,68,68,0.4)] scale-110 animate-pulse'
-                          : 'bg-white/8 text-[#8a7ca8] hover:bg-[#b8a9e8]/15 hover:text-amber-300 active:scale-95'
+                          : 'bg-white/8 text-[#8a7ca8] hover:bg-[#b8a9e8]/15 hover:text-amber-700 active:scale-95'
                       } disabled:opacity-40`}
                       title="按住錄音，放開送出"
                     >
@@ -1122,14 +1122,14 @@ export default function MessagesPage() {
                       className={`shrink-0 self-end mb-1 w-9 h-9 rounded-xl flex items-center justify-center transition-all font-medium ${
                         input.trim()
                           ? 'bg-gradient-to-br from-amber-500 to-orange-400 text-white shadow-[0_4px_12px_rgba(245,158,11,0.3)] hover:shadow-[0_4px_16px_rgba(245,158,11,0.4)] hover:scale-105 active:scale-95'
-                          : 'bg-white/8 text-[#b5a8d0] cursor-not-allowed'
+                          : 'bg-white/8 text-[#6b5fa8] cursor-not-allowed'
                       }`}
                     >
                       {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
                     </button>
                   )}
                 </div>
-                <p className="text-center text-[10px] text-[#b5a8d0] mt-1.5">Enter 送出 · Shift+Enter 換行 · 按住麥克風錄音</p>
+                <p className="text-center text-[10px] text-[#6b5fa8] mt-1.5">Enter 送出 · Shift+Enter 換行 · 按住麥克風錄音</p>
               </div>
             </>
           )}
@@ -1153,7 +1153,7 @@ function MessageMenu({ msg, onRecall, onSave, onDelete, menuOpen, onToggleMenu, 
     <div className="self-center relative shrink-0">
       <button
         onClick={(e) => { e.stopPropagation(); onToggleMenu() }}
-        className="p-1.5 rounded-xl text-[#b5a8d0] hover:text-[#8a7ca8] hover:bg-white/8 transition-colors"
+        className="p-1.5 rounded-xl text-[#6b5fa8] hover:text-[#8a7ca8] hover:bg-white/8 transition-colors"
       >
         <MoreHorizontal className="w-3.5 h-3.5" />
       </button>
@@ -1164,13 +1164,13 @@ function MessageMenu({ msg, onRecall, onSave, onDelete, menuOpen, onToggleMenu, 
         >
           {msg.isMine && (
             <button onClick={() => onRecall(msg.id)}
-              className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-xs text-white/65 hover:bg-amber-500/10 hover:text-amber-300 transition-colors"
+              className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-xs text-white/65 hover:bg-amber-500/10 hover:text-amber-700 transition-colors"
             >
               <RotateCcw className="w-3.5 h-3.5" />收回訊息
             </button>
           )}
           <button onClick={() => onSave(msg)}
-            className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-xs text-white/65 hover:bg-amber-500/10 hover:text-amber-300 transition-colors"
+            className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-xs text-white/65 hover:bg-amber-500/10 hover:text-amber-700 transition-colors"
           >
             {msg.isSaved ? <BookmarkCheck className="w-3.5 h-3.5 text-amber-400" /> : <Bookmark className="w-3.5 h-3.5" />}
             {msg.isSaved ? '取消保存' : '保存訊息'}

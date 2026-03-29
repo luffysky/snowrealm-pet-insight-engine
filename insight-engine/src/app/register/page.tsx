@@ -146,14 +146,14 @@ function RegisterForm() {
     }
   }
 
-  const inputCls = 'w-full bg-slate-900 border border-slate-700 text-white rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500 placeholder:text-slate-600'
+  const inputCls = 'w-full bg-white/50 border border-[#b8a9e8]/30 text-[#3d3155] rounded-[14px] px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#b8a9e8]/30 focus:border-[#b8a9e8] placeholder:text-[#b5a8d0] backdrop-blur-sm'
 
   return (
-    <div className="min-h-screen bg-slate-950 flex items-center justify-center px-4">
+    <div className="min-h-screen flex items-center justify-center px-4 py-8" style={{ background: 'linear-gradient(150deg, #f3eeff 0%, #ffeef5 35%, #eef5ff 65%, #fff5ee 100%)', fontFamily: 'var(--font-zen-maru), var(--font-noto-tc), sans-serif' }}>
       <div className="w-full max-w-sm">
-        <div className="bg-slate-800/50 border border-slate-700/50 rounded-2xl p-8 space-y-6">
+        <div className="rounded-[28px] border border-white/40 bg-white/30 p-8 space-y-6 shadow-[0_16px_64px_rgba(184,169,232,0.2)] backdrop-blur-2xl">
           <div className="text-center">
-            <h1 className="text-2xl font-bold text-white">📊 SnowRealm Insight Engine</h1>
+            <h1 className="text-xl font-black text-[#3d3155]">✨ SnowRealm Insight</h1>
             <p className="text-sm text-slate-400 mt-2">
               {inviteToken ? '您已獲邀請，請註冊密碼或快速登入以加入後台' : '免費建立你的問卷系統'}
             </p>
@@ -161,11 +161,11 @@ function RegisterForm() {
 
           {/* ── 步驟指示 ── */}
           <div className="flex items-center gap-2 justify-center text-xs">
-            <span className={`px-2.5 py-1 rounded-full ${step === 'form' ? 'bg-cyan-600 text-white' : 'bg-slate-700 text-slate-400'}`}>
+            <span className={`px-2.5 py-1 rounded-full ${step === 'form' ? 'bg-[#b8a9e8] text-white' : 'bg-[#b8a9e8]/15 text-[#b5a8d0]'}`}>
               1. 填寫資料
             </span>
             <span className="text-slate-600">→</span>
-            <span className={`px-2.5 py-1 rounded-full ${step === 'verify' ? 'bg-cyan-600 text-white' : 'bg-slate-700 text-slate-400'}`}>
+            <span className={`px-2.5 py-1 rounded-full ${step === 'verify' ? 'bg-[#b8a9e8] text-white' : 'bg-[#b8a9e8]/15 text-[#b5a8d0]'}`}>
               2. 驗證 Email
             </span>
           </div>
@@ -217,7 +217,7 @@ function RegisterForm() {
                   <div>
                     <label className="block text-sm text-slate-400 mb-1">後台網址</label>
                     <div className="flex items-center gap-0">
-                      <span className="text-xs text-slate-500 bg-slate-900 border border-r-0 border-slate-700 rounded-l-lg px-3 py-2.5 whitespace-nowrap">/insight-admin/</span>
+                      <span className="text-xs text-[#8a7ca8] bg-[#b8a9e8]/10 border border-r-0 border-[#b8a9e8]/25 rounded-l-[14px] px-3 py-2.5 whitespace-nowrap">/insight-admin/</span>
                       <input type="text" value={slug}
                         onChange={(e) => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '').slice(0, 30))}
                         placeholder="my-brand" className={`${inputCls} rounded-l-none`} required />
@@ -259,7 +259,7 @@ function RegisterForm() {
               {error && <p className="text-sm text-red-400 text-center">{error}</p>}
 
               <button onClick={handleSendCode} disabled={loading}
-                className="w-full py-2.5 bg-cyan-600 hover:bg-cyan-500 disabled:bg-cyan-800 disabled:cursor-not-allowed text-white font-medium rounded-lg transition-colors cursor-pointer">
+                className="w-full py-3 rounded-full bg-gradient-to-r from-[#b8a9e8] to-[#f5b8b5] text-white font-semibold shadow-[0_8px_24px_rgba(184,169,232,0.4)] transition hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-60">
                 {loading ? '寄送中...' : '寄送驗證碼'}
               </button>
             </div>
@@ -283,7 +283,7 @@ function RegisterForm() {
               {error && <p className="text-sm text-red-400 text-center">{error}</p>}
 
               <button type="submit" disabled={loading || code.length !== 6}
-                className="w-full py-2.5 bg-cyan-600 hover:bg-cyan-500 disabled:bg-cyan-800 disabled:cursor-not-allowed text-white font-medium rounded-lg transition-colors cursor-pointer">
+                className="w-full py-3 rounded-full bg-gradient-to-r from-[#b8a9e8] to-[#f5b8b5] text-white font-semibold shadow-[0_8px_24px_rgba(184,169,232,0.4)] transition hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-60">
                 {loading ? '註冊中...' : '完成註冊'}
               </button>
 
@@ -301,8 +301,8 @@ function RegisterForm() {
           )}
 
           <div className="relative">
-            <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-slate-700" /></div>
-            <div className="relative flex justify-center text-xs"><span className="bg-slate-800/50 px-2 text-slate-500">或</span></div>
+            <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-[#b8a9e8]/20" /></div>
+            <div className="relative flex justify-center text-xs"><span className="bg-white/50 px-3 text-[#b5a8d0]">或</span></div>
           </div>
 
           <button onClick={() => { window.location.href = `/api/auth/google${inviteToken ? `?invite=${inviteToken}` : ''}` }}
@@ -344,7 +344,7 @@ function EyeOff() {
 export default function RegisterPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center">
         <p className="text-slate-400">載入中...</p>
       </div>
     }>

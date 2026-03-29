@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono, Zen_Maru_Gothic, Noto_Sans_TC } from "next/font/google";
 import "./globals.css";
 import { queryOne } from "@/lib/db";
 import { BottomNav } from "@/components/social/BottomNav";
@@ -14,6 +14,20 @@ const geistSans = Geist({
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
+});
+
+const zenMaruGothic = Zen_Maru_Gothic({
+  variable: "--font-zen-maru",
+  subsets: ["latin"],
+  weight: ["400", "500", "700"],
+  display: "swap",
+});
+
+const notoSansTC = Noto_Sans_TC({
+  variable: "--font-noto-tc",
+  subsets: ["latin"],
+  weight: ["400", "500", "700"],
+  display: "swap",
 });
 
 // 預設 meta（DB 讀取失敗時使用）
@@ -110,7 +124,7 @@ export default function RootLayout({
         />
       </head>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} ${zenMaruGothic.variable} ${notoSansTC.variable} antialiased`}
         suppressHydrationWarning
       >
         {children}

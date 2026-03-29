@@ -67,14 +67,14 @@ export default function LiffPage() {
 
   if (status === 'error') {
     return (
-      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
+      <div className="min-h-screen bg-transparent flex items-center justify-center">
         <p className="text-white/60">載入中…</p>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 flex items-center justify-center">
+    <div className="min-h-screen bg-transparent flex items-center justify-center">
       <div className="text-center space-y-4">
         <div className="text-4xl animate-pulse">🐾</div>
         <p className="text-white/60">正在連接 LINE 帳號…</p>

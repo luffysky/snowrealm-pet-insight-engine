@@ -45,7 +45,7 @@ function TraitSlider({
   return (
     <div className="space-y-2">
       <div className="flex justify-between text-sm">
-        <span className="text-white/70">{label}</span>
+        <span className="text-[#3d3155]/80">{label}</span>
         <span className="text-cyan-400 font-semibold tabular-nums">{value}</span>
       </div>
       <input
@@ -57,7 +57,7 @@ function TraitSlider({
         onChange={e => onChange(Number(e.target.value))}
         className="w-full h-2 rounded-full bg-white/10 accent-cyan-500 cursor-pointer"
       />
-      <div className="flex justify-between text-xs text-white/20">
+      <div className="flex justify-between text-xs text-[#b5a8d0]">
         <span>完全不像</span>
         <span>非常像</span>
       </div>
@@ -111,19 +111,19 @@ export default function RateFriendPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
-        <p className="text-white/40 animate-pulse text-sm">載入中...</p>
+      <div className="min-h-screen bg-transparent flex items-center justify-center">
+        <p className="text-[#8a7ca8] animate-pulse text-sm">載入中...</p>
       </div>
     )
   }
 
   if (done) {
     return (
-      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center gap-6 px-6 text-center">
+      <div className="min-h-screen bg-transparent flex flex-col items-center justify-center gap-6 px-6 text-center">
         <div className="text-6xl">💛</div>
         <div className="space-y-2">
           <h1 className="text-2xl font-bold text-white">感謝你的評分！</h1>
-          <p className="text-white/50 text-sm">你的回答已匿名傳送，幫助你的朋友更了解自己</p>
+          <p className="text-[#6b5fa8] text-sm">你的回答已匿名傳送，幫助你的朋友更了解自己</p>
         </div>
         <Link
           href="/explore"
@@ -136,13 +136,13 @@ export default function RateFriendPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white">
-      <nav className="sticky top-0 z-10 bg-slate-950/80 backdrop-blur-sm border-b border-white/10">
+    <div className="min-h-screen bg-transparent text-white">
+      <nav className="sticky top-0 z-10 bg-transparent/80 backdrop-blur-sm border-b border-white/10">
         <div className="max-w-md mx-auto px-4 py-3 flex items-center justify-between gap-2">
-          <Link href="/" className="text-sm text-white/60 hover:text-white transition-colors">
+          <Link href="/" className="text-sm text-[#6b5fa8] hover:text-white transition-colors">
             ← 首頁
           </Link>
-          <span className="text-xs text-white/30">朋友邀請你評分</span>
+          <span className="text-xs text-[#8a7ca8]/75">朋友邀請你評分</span>
         </div>
       </nav>
 
@@ -150,7 +150,7 @@ export default function RateFriendPage() {
         <div className="text-center space-y-2">
           <div className="text-4xl">🔮</div>
           <h1 className="text-xl font-bold">你覺得你的朋友怎麼樣？</h1>
-          <p className="text-white/50 text-sm">
+          <p className="text-[#6b5fa8] text-sm">
             根據你對他/她的了解，誠實地評分吧！
             <br />你的回答完全匿名，他/她不會知道是你。
           </p>
@@ -158,8 +158,8 @@ export default function RateFriendPage() {
 
         {survey && (
           <div className="bg-white/5 border border-white/10 rounded-xl px-4 py-3">
-            <p className="text-xs text-white/30">關聯問卷</p>
-            <p className="text-sm text-white/70 font-medium">{survey.title}</p>
+            <p className="text-xs text-[#8a7ca8]/75">關聯問卷</p>
+            <p className="text-sm text-[#3d3155]/80 font-medium">{survey.title}</p>
           </div>
         )}
 
@@ -186,7 +186,7 @@ export default function RateFriendPage() {
           {submitting ? '送出中...' : '送出評分 →'}
         </button>
 
-        <p className="text-center text-xs text-white/20">你的評分完全匿名 · 不會透露給任何人</p>
+        <p className="text-center text-xs text-[#b5a8d0]">你的評分完全匿名 · 不會透露給任何人</p>
       </div>
     </div>
   )

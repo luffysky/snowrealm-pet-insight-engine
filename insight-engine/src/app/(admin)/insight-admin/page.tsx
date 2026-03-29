@@ -55,7 +55,7 @@ export default function AdminDashboardPage() {
       .finally(() => setLoading(false))
   }, [selectedSurveyId])
 
-  if (loading) return <p className="text-[#b5a8d0] animate-pulse">載入中…</p>
+  if (loading) return <p className="text-[#6b5fa8] animate-pulse">載入中…</p>
 
   if (!selectedSurveyId || !stats) {
     return (
@@ -124,7 +124,7 @@ export default function AdminDashboardPage() {
             </span>
           </div>
           {qualitySubtitle && (
-            <p className="text-xs text-[#b5a8d0] mt-1">{qualitySubtitle}</p>
+            <p className="text-xs text-[#6b5fa8] mt-1">{qualitySubtitle}</p>
           )}
         </div>
         <StatCard

@@ -128,7 +128,7 @@ export default function AdminPanelPage() {
       .finally(() => setLoading(false))
   }, [])
 
-  if (loading) return <p className="text-[#b5a8d0] animate-pulse">載入系統資訊中...</p>
+  if (loading) return <p className="text-[#6b5fa8] animate-pulse">載入系統資訊中...</p>
   if (error) return <p className="text-red-400">錯誤：{error}</p>
   if (!info) return null
 
@@ -189,7 +189,7 @@ export default function AdminPanelPage() {
                 <span className="w-2.5 h-2.5 rounded-full bg-blue-400 inline-block" />
               )}
               <div>
-                <p className="text-xs text-[#b5a8d0]">{item.label}</p>
+                <p className="text-xs text-[#6b5fa8]">{item.label}</p>
                 <p className="text-sm text-[#3d3155]">
                   {item.isBoolean
                     ? (info.env[item.key] ? '已連接' : '未設定')
@@ -201,7 +201,7 @@ export default function AdminPanelPage() {
           <div className="bg-white/40 backdrop-blur-sm border border-[#b8a9e8]/25 rounded-xl p-3 flex items-center gap-3">
             <span className="w-2.5 h-2.5 rounded-full bg-purple-400 inline-block" />
             <div>
-              <p className="text-xs text-[#b5a8d0]">資料庫大小</p>
+              <p className="text-xs text-[#6b5fa8]">資料庫大小</p>
               <p className="text-sm text-[#3d3155]">{info.dbSize}</p>
             </div>
           </div>
@@ -222,7 +222,7 @@ export default function AdminPanelPage() {
                 </span>
               </div>
               <div className="flex items-center justify-between text-xs">
-                <span className="text-[#b5a8d0] font-mono">{u.username}</span>
+                <span className="text-[#6b5fa8] font-mono">{u.username}</span>
                 {u.hasLine ? <span className="text-green-400">✓ LINE 已綁定</span> : <span className="text-[#8a7ca8]">LINE 未綁定</span>}
               </div>
               <p className="text-xs text-[#8a7ca8]">{formatTime(u.createdAt)}</p>
@@ -233,7 +233,7 @@ export default function AdminPanelPage() {
         <div className="hidden sm:block bg-white/40 backdrop-blur-sm border border-[#b8a9e8]/25 rounded-xl overflow-hidden">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-[#b8a9e8]/25 text-[#b5a8d0] text-xs">
+              <tr className="border-b border-[#b8a9e8]/25 text-[#6b5fa8] text-xs">
                 <th className="text-left px-4 py-2">名稱</th>
                 <th className="text-left px-4 py-2">帳號</th>
                 <th className="text-left px-4 py-2">角色</th>
@@ -245,7 +245,7 @@ export default function AdminPanelPage() {
               {(info.adminUsers ?? []).map((u) => (
                 <tr key={u.id} className="border-b border-[#b8a9e8]/20/50 last:border-0">
                   <td className="px-4 py-2.5 text-[#3d3155] font-medium">{u.displayName || u.username}</td>
-                  <td className="px-4 py-2.5 text-[#b5a8d0] font-mono text-xs">{u.username}</td>
+                  <td className="px-4 py-2.5 text-[#6b5fa8] font-mono text-xs">{u.username}</td>
                   <td className="px-4 py-2.5">
                     <span className={`text-xs px-2 py-0.5 rounded-full ${u.role === 'admin' ? 'bg-[#b8a9e8]/20 text-t-accent' : 'bg-[#b5a8d0]/20 text-[#8a7ca8]'}`}>
                       {u.role === 'admin' ? '管理員' : u.role}
@@ -254,7 +254,7 @@ export default function AdminPanelPage() {
                   <td className="px-4 py-2.5">
                     {u.hasLine ? <span className="text-xs text-green-400">✓ 已綁定</span> : <span className="text-xs text-[#8a7ca8]">未綁定</span>}
                   </td>
-                  <td className="px-4 py-2.5 text-[#b5a8d0] text-xs">{formatTime(u.createdAt)}</td>
+                  <td className="px-4 py-2.5 text-[#6b5fa8] text-xs">{formatTime(u.createdAt)}</td>
                 </tr>
               ))}
             </tbody>
@@ -304,7 +304,7 @@ export default function AdminPanelPage() {
               <div className="space-y-3">
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div className="sm:col-span-2">
-                    <label className="block text-xs text-[#b5a8d0] mb-1">被邀請者 Email</label>
+                    <label className="block text-xs text-[#6b5fa8] mb-1">被邀請者 Email</label>
                     <input
                       type="email"
                       value={inviteEmail}
@@ -314,7 +314,7 @@ export default function AdminPanelPage() {
                     />
                   </div>
                   <div>
-                    <label className="block text-xs text-[#b5a8d0] mb-1">角色</label>
+                    <label className="block text-xs text-[#6b5fa8] mb-1">角色</label>
                     <select
                       value={inviteRole}
                       onChange={(e) => setInviteRole(e.target.value)}
@@ -329,7 +329,7 @@ export default function AdminPanelPage() {
                 <button
                   onClick={handleInvite}
                   disabled={inviting}
-                  className="px-4 py-2 bg-gradient-to-r from-[#b8a9e8] to-[#f5b8b5] hover:opacity-90 disabled:bg-[#b8a9e8]/10 disabled:text-[#b5a8d0] text-white rounded-lg text-sm font-medium transition-colors cursor-pointer"
+                  className="px-4 py-2 bg-gradient-to-r from-[#b8a9e8] to-[#f5b8b5] hover:opacity-90 disabled:bg-[#b8a9e8]/10 disabled:text-[#6b5fa8] text-white rounded-lg text-sm font-medium transition-colors cursor-pointer"
                 >
                   {inviting ? '處理中...' : (inviteEmail.trim() ? '發送邀請' : '產生通用連結')}
                 </button>
@@ -349,14 +349,14 @@ export default function AdminPanelPage() {
               className="bg-white/40 backdrop-blur-sm border border-[#b8a9e8]/25 rounded-xl p-3 text-center"
             >
               <p className="text-2xl font-bold text-t-accent">{count.toLocaleString()}</p>
-              <p className="text-xs text-[#b5a8d0] mt-1">{tableLabels[key] ?? key}</p>
+              <p className="text-xs text-[#6b5fa8] mt-1">{tableLabels[key] ?? key}</p>
             </div>
           ))}
           <div className="bg-white/40 backdrop-blur-sm border border-[#b8a9e8]/30 rounded-xl p-3 text-center">
             <p className="text-2xl font-bold text-emerald-400">
               {info.todayResponses.toLocaleString()}
             </p>
-            <p className="text-xs text-[#b5a8d0] mt-1">今日填答</p>
+            <p className="text-xs text-[#6b5fa8] mt-1">今日填答</p>
           </div>
         </div>
       </section>
@@ -373,7 +373,7 @@ export default function AdminPanelPage() {
                   <p className="text-sm text-[#3d3155]/70">{notifTypeLabels[n.type] ?? n.type}</p>
                   <p className="text-xs text-[#8a7ca8] mt-0.5">{formatTime(n.created_at)}</p>
                 </div>
-                <span className={`text-xs px-2 py-0.5 rounded-full shrink-0 ${n.status === 'sent' ? 'bg-green-500/20 text-green-400' : n.status === 'failed' ? 'bg-red-500/20 text-red-400' : 'bg-yellow-500/20 text-yellow-400'}`}>
+                <span className={`text-xs px-2 py-0.5 rounded-full shrink-0 ${n.status === 'sent' ? 'bg-green-500/20 text-green-400' : n.status === 'failed' ? 'bg-red-500/20 text-red-400' : 'bg-yellow-500/20 text-amber-700'}`}>
                   {n.status === 'sent' ? '已送達' : n.status === 'failed' ? '失敗' : n.status}
                 </span>
               </div>
@@ -383,7 +383,7 @@ export default function AdminPanelPage() {
           <div className="hidden sm:block bg-white/40 backdrop-blur-sm border border-[#b8a9e8]/25 rounded-xl overflow-hidden">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-[#b8a9e8]/25 text-[#b5a8d0] text-xs">
+                <tr className="border-b border-[#b8a9e8]/25 text-[#6b5fa8] text-xs">
                   <th className="text-left px-4 py-2">類型</th>
                   <th className="text-left px-4 py-2">狀態</th>
                   <th className="text-left px-4 py-2">時間</th>
@@ -394,11 +394,11 @@ export default function AdminPanelPage() {
                   <tr key={i} className="border-b border-[#b8a9e8]/20/50 last:border-0">
                     <td className="px-4 py-2 text-[#3d3155]">{notifTypeLabels[n.type] ?? n.type}</td>
                     <td className="px-4 py-2">
-                      <span className={`text-xs px-2 py-0.5 rounded-full ${n.status === 'sent' ? 'bg-green-500/20 text-green-400' : n.status === 'failed' ? 'bg-red-500/20 text-red-400' : 'bg-yellow-500/20 text-yellow-400'}`}>
+                      <span className={`text-xs px-2 py-0.5 rounded-full ${n.status === 'sent' ? 'bg-green-500/20 text-green-400' : n.status === 'failed' ? 'bg-red-500/20 text-red-400' : 'bg-yellow-500/20 text-amber-700'}`}>
                         {n.status === 'sent' ? '已送達' : n.status === 'failed' ? '失敗' : n.status}
                       </span>
                     </td>
-                    <td className="px-4 py-2 text-[#b5a8d0] text-xs">{formatTime(n.created_at)}</td>
+                    <td className="px-4 py-2 text-[#6b5fa8] text-xs">{formatTime(n.created_at)}</td>
                   </tr>
                 ))}
               </tbody>

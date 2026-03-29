@@ -325,7 +325,7 @@ export function BgPicker({
       <button
         onClick={() => setOpen(v => !v)}
         title="更換背景"
-        className="p-2 rounded-xl text-[#b5a8d0] hover:text-[#8a7ca8] hover:bg-white/6 transition-colors"
+        className="p-2 rounded-xl text-[#6b5fa8] hover:text-[#8a7ca8] hover:bg-white/6 transition-colors"
       >
         <Palette className="w-4 h-4" />
       </button>
@@ -348,7 +348,7 @@ export function BgPicker({
                 <button
                   onClick={() => fileRef.current?.click()}
                   disabled={uploading}
-                  className="w-full flex items-center gap-2 px-3 py-2.5 rounded-xl border border-dashed border-white/15 hover:border-white/30 hover:bg-[#b8a9e8]/10 transition-colors text-xs text-[#b5a8d0] hover:text-[#3d3155]"
+                  className="w-full flex items-center gap-2 px-3 py-2.5 rounded-xl border border-dashed border-white/15 hover:border-white/30 hover:bg-[#b8a9e8]/10 transition-colors text-xs text-[#6b5fa8] hover:text-[#3d3155]"
                 >
                   {uploading ? (
                     <span className="w-4 h-4 border-2 border-white/20 border-t-white/60 rounded-full animate-spin" />
@@ -364,7 +364,7 @@ export function BgPicker({
                       className="w-8 h-8 rounded-lg shrink-0 ring-2 ring-violet-500"
                       style={{ backgroundImage: `url(${customUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' }}
                     />
-                    <span className="text-[10px] text-[#b5a8d0] flex-1 truncate">自訂背景</span>
+                    <span className="text-[10px] text-[#6b5fa8] flex-1 truncate">自訂背景</span>
                     <Check className="w-3 h-3 text-violet-400" />
                   </div>
                 )}

@@ -175,7 +175,7 @@ function StoryReportDisplay({ report }: { report: StoryInsightReport }) {
       {/* Unexpected Insight */}
       {report.unexpectedInsight && (
         <div className="bg-amber-500/8 border border-amber-500/30 rounded-[20px] p-6 space-y-2">
-          <h3 className="text-base font-semibold text-amber-300">💡 出人意料的發現</h3>
+          <h3 className="text-base font-semibold text-amber-700">💡 出人意料的發現</h3>
           <p className="text-sm text-[#3d3155]/75 leading-relaxed">{report.unexpectedInsight}</p>
         </div>
       )}

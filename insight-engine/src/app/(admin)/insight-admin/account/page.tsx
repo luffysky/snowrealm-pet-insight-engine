@@ -131,7 +131,7 @@ export default function AccountSettingsPage() {
     }
   }
 
-  if (loading) return <p className="text-[#b5a8d0] animate-pulse">載入中...</p>
+  if (loading) return <p className="text-[#6b5fa8] animate-pulse">載入中...</p>
   if (!profile) return <p className="text-red-400">無法載入帳號資料</p>
 
   const inputCls = 'w-full px-3 py-2 bg-white/60 border border-[#b8a9e8]/30 rounded-lg text-[#3d3155] text-sm focus:border-[#b8a9e8]/30 focus:outline-none'
@@ -187,7 +187,7 @@ export default function AccountSettingsPage() {
             <button
               onClick={handleSaveName}
               disabled={savingName || editName.trim() === (profile.displayName || '')}
-              className="px-4 py-2 bg-gradient-to-r from-[#b8a9e8] to-[#f5b8b5] hover:opacity-90 disabled:bg-[#b8a9e8]/10 disabled:text-[#b5a8d0] text-white rounded-lg text-sm shrink-0 transition-colors cursor-pointer"
+              className="px-4 py-2 bg-gradient-to-r from-[#b8a9e8] to-[#f5b8b5] hover:opacity-90 disabled:bg-[#b8a9e8]/10 disabled:text-[#6b5fa8] text-white rounded-lg text-sm shrink-0 transition-colors cursor-pointer"
             >
               {savingName ? '...' : '儲存'}
             </button>
@@ -271,7 +271,7 @@ export default function AccountSettingsPage() {
         <button
           onClick={handleChangePassword}
           disabled={savingPw || !currentPw || !newPw}
-          className="px-4 py-2 bg-gradient-to-r from-[#b8a9e8] to-[#f5b8b5] hover:opacity-90 disabled:bg-[#b8a9e8]/10 disabled:text-[#b5a8d0] text-white rounded-lg text-sm font-medium transition-colors cursor-pointer"
+          className="px-4 py-2 bg-gradient-to-r from-[#b8a9e8] to-[#f5b8b5] hover:opacity-90 disabled:bg-[#b8a9e8]/10 disabled:text-[#6b5fa8] text-white rounded-lg text-sm font-medium transition-colors cursor-pointer"
         >
           {savingPw ? '修改中...' : '確認修改密碼'}
         </button>

@@ -10,7 +10,7 @@ export function StatCard({ title, value, subtitle }: StatCardProps) {
       <p className="text-xs sm:text-sm text-[#8a7ca8] mb-1">{title}</p>
       <p className="text-2xl sm:text-3xl font-bold text-[#6b5fa8]">{value}</p>
       {subtitle && (
-        <p className="text-xs text-[#b5a8d0] mt-1">{subtitle}</p>
+        <p className="text-xs text-[#6b5fa8] mt-1">{subtitle}</p>
       )}
     </div>
   )

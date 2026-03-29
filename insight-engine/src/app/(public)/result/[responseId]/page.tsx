@@ -46,18 +46,18 @@ export default function ResultPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
-        <p className="text-white/40 animate-pulse text-sm">載入結果中...</p>
+      <div className="min-h-screen bg-transparent flex items-center justify-center">
+        <p className="text-[#8a7ca8] animate-pulse text-sm">載入結果中...</p>
       </div>
     )
   }
 
   if (!result?.resultType) {
     return (
-      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center gap-4 px-6 text-center">
+      <div className="min-h-screen bg-transparent flex flex-col items-center justify-center gap-4 px-6 text-center">
         <p className="text-5xl">🎯</p>
         <h1 className="text-xl font-bold text-white">找不到結果</h1>
-        <p className="text-white/50 text-sm">此連結可能已失效</p>
+        <p className="text-[#6b5fa8] text-sm">此連結可能已失效</p>
         <Link href="/explore" className="text-cyan-400 text-sm underline">探索其他問卷</Link>
       </div>
     )
@@ -66,7 +66,7 @@ export default function ResultPage() {
   const rt = result.resultType
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white">
+    <div className="min-h-screen bg-transparent text-white">
       {/* Ambient background blobs */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
         <div className="absolute -top-40 -left-40 w-96 h-96 rounded-full opacity-20 blur-3xl"
@@ -75,17 +75,17 @@ export default function ResultPage() {
           style={{ background: 'radial-gradient(circle, #2563eb, transparent)' }} />
       </div>
 
-      <nav className="sticky top-0 z-10 bg-slate-950/80 backdrop-blur-sm border-b border-white/10">
+      <nav className="sticky top-0 z-10 bg-transparent/80 backdrop-blur-sm border-b border-white/10">
         <div className="max-w-md mx-auto px-4 py-3 flex items-center justify-between gap-2">
-          <Link href="/" className="text-sm text-white/60 hover:text-white transition-colors">← 首頁</Link>
-          <Link href="/explore" className="text-sm text-white/50 hover:text-white transition-colors">
+          <Link href="/" className="text-sm text-[#6b5fa8] hover:text-white transition-colors">← 首頁</Link>
+          <Link href="/explore" className="text-sm text-[#6b5fa8] hover:text-white transition-colors">
             🔍 探索問卷
           </Link>
         </div>
       </nav>
 
       <div className="relative max-w-md mx-auto px-4 py-10 space-y-6">
-        <p className="text-center text-white/40 text-xs tracking-wide">{result.surveyTitle}</p>
+        <p className="text-center text-[#8a7ca8] text-xs tracking-wide">{result.surveyTitle}</p>
 
         {/* Liquid glass share card */}
         <div className="p-px rounded-3xl bg-gradient-to-br from-white/20 via-white/5 to-violet-500/15 shadow-2xl shadow-violet-900/20">
@@ -107,7 +107,7 @@ export default function ResultPage() {
 
               <div className="space-y-2">
                 <h1 className="text-3xl font-bold text-white">{rt.name}</h1>
-                <p className="text-white/55 leading-relaxed text-sm px-2">{rt.description}</p>
+                <p className="text-[#6b5fa8]/85 leading-relaxed text-sm px-2">{rt.description}</p>
               </div>
 
               {rt.traits && rt.traits.length > 0 && (
@@ -186,7 +186,7 @@ export default function ResultPage() {
         </div>
 
         <div className="text-center pt-2">
-          <Link href="/explore" className="text-xs text-white/25 hover:text-white/45 transition-colors">
+          <Link href="/explore" className="text-xs text-[#8a7ca8]/60 hover:text-[#8a7ca8] transition-colors">
             探索更多問卷 →
           </Link>
         </div>

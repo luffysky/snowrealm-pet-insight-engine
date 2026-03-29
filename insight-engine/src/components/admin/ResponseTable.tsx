@@ -79,7 +79,7 @@ export function ResponseTable({
 
   if (responses.length === 0) {
     return (
-      <div className="rounded-[20px] border border-[#b8a9e8]/25 bg-white/40 backdrop-blur-sm p-8 text-center text-[#b5a8d0]">
+      <div className="rounded-[20px] border border-[#b8a9e8]/25 bg-white/40 backdrop-blur-sm p-8 text-center text-[#6b5fa8]">
         尚無填答資料
       </div>
     )
@@ -111,7 +111,7 @@ export function ResponseTable({
         <div className="flex items-center gap-3 px-4 sm:px-6 py-2.5 bg-[#b8a9e8]/10 border-b border-[#b8a9e8]/20">
           <button
             onClick={() => { setSelected(new Set()); setConfirmBatch(false); setBatchMode(false) }}
-            className="text-[#b5a8d0] hover:text-[#6b5fa8] text-xs cursor-pointer"
+            className="text-[#6b5fa8] hover:text-[#6b5fa8] text-xs cursor-pointer"
           >
             取消選取
           </button>
@@ -129,7 +129,7 @@ export function ResponseTable({
               </button>
               <button
                 onClick={() => setConfirmBatch(false)}
-                className="text-[#b5a8d0] hover:text-[#8a7ca8] text-xs cursor-pointer"
+                className="text-[#6b5fa8] hover:text-[#8a7ca8] text-xs cursor-pointer"
               >
                 取消
               </button>
@@ -152,7 +152,7 @@ export function ResponseTable({
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2 min-w-0">
                 <StatusBadge status={response.status} />
-                <span className="text-xs text-[#b5a8d0] shrink-0">{formatDateTime(response.submittedAt ?? response.createdAt)}</span>
+                <span className="text-xs text-[#6b5fa8] shrink-0">{formatDateTime(response.submittedAt ?? response.createdAt)}</span>
               </div>
               <div className="flex items-center gap-3 shrink-0">
                 {batchMode && (
@@ -169,7 +169,7 @@ export function ResponseTable({
                     <button onClick={() => handleDelete(response.id)} disabled={deletingId === response.id} className="text-red-400 text-xs py-1 cursor-pointer">
                       {deletingId === response.id ? '中...' : '確認'}
                     </button>
-                    <button onClick={() => setConfirmId(null)} className="text-[#b5a8d0] text-xs py-1 cursor-pointer">取消</button>
+                    <button onClick={() => setConfirmId(null)} className="text-[#6b5fa8] text-xs py-1 cursor-pointer">取消</button>
                   </span>
                 ) : (
                   <button onClick={() => { setBatchMode(true); setSelected(new Set([response.id])) }} className="text-red-400/60 text-xs py-1 cursor-pointer">刪除</button>
@@ -177,7 +177,7 @@ export function ResponseTable({
               </div>
             </div>
             {(response.utmSource ?? response.source) && (
-              <p className="text-xs text-[#b5a8d0]">來源：{response.utmSource ?? response.source}</p>
+              <p className="text-xs text-[#6b5fa8]">來源：{response.utmSource ?? response.source}</p>
             )}
             {response.tags.length > 0 && (
               <div className="flex flex-wrap gap-1">
@@ -186,7 +186,7 @@ export function ResponseTable({
                     {tag.key}: {tag.value}
                   </span>
                 ))}
-                {response.tags.length > 4 && <span className="text-xs text-[#b5a8d0]">+{response.tags.length - 4}</span>}
+                {response.tags.length > 4 && <span className="text-xs text-[#6b5fa8]">+{response.tags.length - 4}</span>}
               </div>
             )}
           </div>
@@ -247,19 +247,19 @@ export function ResponseTable({
                       </span>
                     ))}
                     {response.tags.length > 3 && (
-                      <span className="text-xs text-[#b5a8d0]">+{response.tags.length - 3}</span>
+                      <span className="text-xs text-[#6b5fa8]">+{response.tags.length - 3}</span>
                     )}
                   </div>
                 </td>
                 <td className="px-4 sm:px-6 py-3 text-center">
                   {response.clickEvents?.some((e) => e.eventType === 'line_friend')
                     ? <span className="text-emerald-500">✓</span>
-                    : <span className="text-[#b5a8d0]">-</span>}
+                    : <span className="text-[#6b5fa8]">-</span>}
                 </td>
                 <td className="px-4 sm:px-6 py-3 text-center">
                   {response.clickEvents?.some((e) => e.eventType === 'instagram')
                     ? <span className="text-[#b8a9e8]">✓</span>
-                    : <span className="text-[#b5a8d0]">-</span>}
+                    : <span className="text-[#6b5fa8]">-</span>}
                 </td>
                 <td className="px-4 sm:px-6 py-3">
                   <NotesCell responseId={response.id} initialNotes={response.notes} />
@@ -283,7 +283,7 @@ export function ResponseTable({
                         </button>
                         <button
                           onClick={() => setConfirmId(null)}
-                          className="text-[#b5a8d0] hover:text-[#8a7ca8] text-sm cursor-pointer px-2 py-1 -mx-2 -my-1"
+                          className="text-[#6b5fa8] hover:text-[#8a7ca8] text-sm cursor-pointer px-2 py-1 -mx-2 -my-1"
                         >
                           取消
                         </button>
@@ -407,7 +407,7 @@ function NotesCell({ responseId, initialNotes }: { responseId: string; initialNo
           disabled={saving}
         />
         <button onClick={save} disabled={saving} className="text-[#6b5fa8] hover:text-[#3d3155] text-xs cursor-pointer">✓</button>
-        <button onClick={() => { setValue(initialNotes ?? ''); setEditing(false) }} className="text-[#b5a8d0] hover:text-[#8a7ca8] text-xs cursor-pointer">✕</button>
+        <button onClick={() => { setValue(initialNotes ?? ''); setEditing(false) }} className="text-[#6b5fa8] hover:text-[#8a7ca8] text-xs cursor-pointer">✕</button>
       </div>
     )
   }
@@ -418,7 +418,7 @@ function NotesCell({ responseId, initialNotes }: { responseId: string; initialNo
       className="text-[#8a7ca8] text-xs cursor-pointer hover:text-[#3d3155] max-w-[160px] truncate inline-block transition-colors"
       title={value || '點擊新增備註'}
     >
-      {value || <span className="text-[#b5a8d0]">—</span>}
+      {value || <span className="text-[#6b5fa8]">—</span>}
     </span>
   )
 }

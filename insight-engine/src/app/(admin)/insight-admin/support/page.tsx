@@ -452,7 +452,7 @@ function StatsBar({ stats }: { stats: { open: number; inProgress: number; resolv
   return (
     <div className="flex gap-3 px-4 py-2 border-b border-[#b8a9e8]/25 text-xs text-[#8a7ca8]">
       <span>開放 <strong className="text-red-400">{stats.open}</strong></span>
-      <span>進行中 <strong className="text-yellow-400">{stats.inProgress}</strong></span>
+      <span>進行中 <strong className="text-amber-700">{stats.inProgress}</strong></span>
       <span>已解決 <strong className="text-emerald-400">{stats.resolved}</strong></span>
     </div>
   )

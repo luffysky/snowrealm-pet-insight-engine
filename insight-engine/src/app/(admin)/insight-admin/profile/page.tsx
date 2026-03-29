@@ -268,7 +268,7 @@ function ProfilePage() {
           {/* Theme picker */}
           {showThemePicker && isOwnProfile && (
             <div className="px-4 py-3 bg-white/55 backdrop-blur-sm border-b border-white/8">
-              <p className="text-xs text-[#b5a8d0] mb-2">選擇主題色</p>
+              <p className="text-xs text-[#6b5fa8] mb-2">選擇主題色</p>
               <div className="flex flex-wrap gap-2">
                 {PROFILE_THEMES.map(t => (
                   <button
@@ -332,13 +332,13 @@ function ProfilePage() {
               <div className="space-y-3">
                 <div>
                   <h1 className="text-xl font-bold text-[#3d3155]">{displayName}</h1>
-                  <p className="text-sm text-[#b5a8d0]">@{me?.userName}</p>
+                  <p className="text-sm text-[#6b5fa8]">@{me?.userName}</p>
                 </div>
                 {profile?.bio && <p className="text-sm text-[#8a7ca8] leading-relaxed">{profile.bio}</p>}
                 <div className="flex flex-wrap gap-3">
                   {profile?.websiteUrl && (
                     <a href={ensureHttps(profile.websiteUrl)} target="_blank" rel="noreferrer"
-                      className="flex items-center gap-1.5 text-xs text-amber-400/70 hover:text-amber-300 transition-colors"
+                      className="flex items-center gap-1.5 text-xs text-amber-700 hover:text-amber-300 transition-colors"
                     >
                       <LinkIcon className="w-3.5 h-3.5" /> {profile.websiteUrl.replace(/^https?:\/\//, '')}
                     </a>
@@ -360,21 +360,21 @@ function ProfilePage() {
                 </div>
                 <div className="flex gap-4 text-xs text-[#8a7ca8]">
                   <span><strong className="text-[#8a7ca8]">{posts.length}</strong> 篇貼文</span>
-                  {!profile?.isProfilePublic && <span className="text-amber-400/60">🔒 私人模式</span>}
+                  {!profile?.isProfilePublic && <span className="text-amber-700">🔒 私人模式</span>}
                 </div>
               </div>
             ) : (
               <div className="space-y-3">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="text-xs text-[#b5a8d0] mb-1 block">顯示名稱</label>
+                    <label className="text-xs text-[#6b5fa8] mb-1 block">顯示名稱</label>
                     <input value={form.displayName} onChange={e => setForm(p => ({ ...p, displayName: e.target.value }))}
                       placeholder={me?.userName}
                       className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-xl text-sm text-[#3d3155] placeholder-[#b5a8d0] outline-none focus:border-amber-400/40"
                     />
                   </div>
                   <div>
-                    <label className="text-xs text-[#b5a8d0] mb-1 block">個人網站</label>
+                    <label className="text-xs text-[#6b5fa8] mb-1 block">個人網站</label>
                     <input value={form.websiteUrl} onChange={e => setForm(p => ({ ...p, websiteUrl: e.target.value }))}
                       placeholder="https://..."
                       className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-xl text-sm text-[#3d3155] placeholder-[#b5a8d0] outline-none focus:border-amber-400/40"
@@ -382,7 +382,7 @@ function ProfilePage() {
                   </div>
                 </div>
                 <div>
-                  <label className="text-xs text-[#b5a8d0] mb-1 block">個人簡介</label>
+                  <label className="text-xs text-[#6b5fa8] mb-1 block">個人簡介</label>
                   <textarea value={form.bio} onChange={e => setForm(p => ({ ...p, bio: e.target.value }))}
                     placeholder="介紹一下自己..."
                     rows={2}
@@ -391,14 +391,14 @@ function ProfilePage() {
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="text-xs text-[#b5a8d0] mb-1 flex items-center gap-1"><InstagramIcon className="w-3 h-3 text-pink-400" /> Instagram</label>
+                    <label className="text-xs text-[#6b5fa8] mb-1 flex items-center gap-1"><InstagramIcon className="w-3 h-3 text-pink-400" /> Instagram</label>
                     <input value={form.instagramHandle} onChange={e => setForm(p => ({ ...p, instagramHandle: e.target.value }))}
                       placeholder="username"
                       className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-xl text-sm text-[#3d3155] placeholder-[#b5a8d0] outline-none focus:border-pink-400/40"
                     />
                   </div>
                   <div>
-                    <label className="text-xs text-[#b5a8d0] mb-1 flex items-center gap-1"><TwitterIcon className="w-3 h-3 text-blue-400" /> Twitter / X</label>
+                    <label className="text-xs text-[#6b5fa8] mb-1 flex items-center gap-1"><TwitterIcon className="w-3 h-3 text-blue-400" /> Twitter / X</label>
                     <input value={form.twitterHandle} onChange={e => setForm(p => ({ ...p, twitterHandle: e.target.value }))}
                       placeholder="username"
                       className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-xl text-sm text-[#3d3155] placeholder-[#b5a8d0] outline-none focus:border-blue-400/40"
@@ -443,7 +443,7 @@ function ProfilePage() {
           {(['posts', 'articles'] as const).map(tab => (
             <button key={tab} onClick={() => setActiveTab(tab)}
               className={`px-5 py-2.5 text-sm font-medium transition-colors ${
-                activeTab === tab ? 'text-amber-300 border-b-2 border-amber-400 -mb-px' : 'text-[#b5a8d0] hover:text-[#3d3155]'
+                activeTab === tab ? 'text-amber-300 border-b-2 border-amber-400 -mb-px' : 'text-[#6b5fa8] hover:text-[#3d3155]'
               }`}
             >
               {tab === 'posts' ? '短貼文' : '長文章'}
@@ -459,7 +459,7 @@ function ProfilePage() {
         ) : posts.length === 0 ? (
           <div className="text-center py-16">
             <p className="text-4xl mb-3">✨</p>
-            <p className="text-[#b5a8d0] text-sm">還沒有{activeTab === 'posts' ? '貼文' : '文章'}，來發第一篇吧！</p>
+            <p className="text-[#6b5fa8] text-sm">還沒有{activeTab === 'posts' ? '貼文' : '文章'}，來發第一篇吧！</p>
           </div>
         ) : (
           <div className="space-y-4">

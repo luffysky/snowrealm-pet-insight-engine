@@ -195,7 +195,7 @@ export default function AiSettingsPage() {
       {/* 平台合作夥伴（僅總後台對你的帳號開啟；同組織其他人仍受額度限制） */}
       {stats?.platformPartner && (
         <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-4 text-sm text-amber-100/90">
-          <p className="font-medium text-amber-200">🤝 平台合作夥伴權限（僅限本帳號）</p>
+          <p className="font-medium text-amber-700">🤝 平台合作夥伴權限（僅限本帳號）</p>
           <p className="mt-1 text-amber-100/70">
             使用平台提供的 AI Key 時，系統<strong>不會</strong>因免費次數上限而擋下你的請求；用量仍會入帳供營運參考。
             同租戶其他管理員／編輯者<strong>不會</strong>自動獲得此權限。
@@ -285,7 +285,7 @@ export default function AiSettingsPage() {
             </h3>
             <button onClick={resetSetup} className="text-[#8a7ca8] hover:text-[#3d3155] text-sm cursor-pointer">✕ 取消</button>
           </div>
-          <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-3 text-xs text-amber-300">
+          <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-3 text-xs text-amber-700">
             🔒 API Key 會以 AES-256-GCM 加密儲存，前端永遠不會看到明文。
           </div>
           <div className="space-y-3">
@@ -302,7 +302,7 @@ export default function AiSettingsPage() {
             <button
               onClick={() => setSetupStep('model')}
               disabled={!apiKeyInput.trim()}
-              className="px-4 py-2 bg-gradient-to-r from-[#b8a9e8] to-[#f5b8b5] hover:opacity-90 disabled:bg-[#b8a9e8]/10 disabled:text-[#b5a8d0] text-white rounded-lg text-sm font-medium transition-colors cursor-pointer"
+              className="px-4 py-2 bg-gradient-to-r from-[#b8a9e8] to-[#f5b8b5] hover:opacity-90 disabled:bg-[#b8a9e8]/10 disabled:text-[#6b5fa8] text-white rounded-lg text-sm font-medium transition-colors cursor-pointer"
             >
               下一步 →
             </button>

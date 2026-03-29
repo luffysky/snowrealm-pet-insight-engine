@@ -98,9 +98,9 @@ export default function MarketplacePage() {
   )
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white">
+    <div className="min-h-screen text-[#3d3155]" style={{ background: 'linear-gradient(150deg, #f3eeff 0%, #ffeef5 35%, #eef5ff 65%, #fff5ee 100%)', fontFamily: 'var(--font-zen-maru), var(--font-noto-tc), sans-serif' }}>
       {/* Header */}
-      <div className="sticky top-0 z-10 bg-slate-950/95 backdrop-blur-xl border-b border-white/6">
+      <div className="sticky top-0 z-10 bg-transparent/95 backdrop-blur-xl border-b border-white/6">
         <div className="max-w-4xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between gap-3 mb-4">
             <div className="flex items-center gap-3">
@@ -113,12 +113,12 @@ export default function MarketplacePage() {
           </div>
           {/* Search */}
           <div className="relative mb-3">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#b5a8d0]" />
             <input
               value={search}
               onChange={e => setSearch(e.target.value)}
               placeholder="搜尋商品..."
-              className="w-full pl-9 pr-4 py-2 bg-white/5 border border-white/8 rounded-xl text-sm text-white placeholder-white/25 outline-none focus:border-violet-400/40"
+              className="w-full pl-9 pr-4 py-2 bg-white/5 border border-white/8 rounded-xl text-sm text-[#3d3155] placeholder-white/25 outline-none focus:border-violet-400/40"
             />
           </div>
           {/* Type tabs */}
@@ -128,7 +128,7 @@ export default function MarketplacePage() {
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium whitespace-nowrap transition-colors shrink-0 ${
                   typeFilter === t.key
                     ? 'bg-violet-500/20 text-violet-300 border border-violet-500/30'
-                    : 'text-slate-400 hover:text-slate-200 border border-slate-700/50'
+                    : 'text-slate-400 hover:text-slate-200 border border-[#b8a9e8]/25'
                 }`}>
                 <span>{t.emoji}</span> {t.label}
               </button>
@@ -140,7 +140,7 @@ export default function MarketplacePage() {
       {/* Toast */}
       {toast && (
         <div className={`fixed top-20 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-2xl text-sm font-medium shadow-xl ${
-          toast.type === 'ok' ? 'bg-emerald-500 text-white' : 'bg-red-500 text-white'
+          toast.type === 'ok' ? 'bg-emerald-500 text-[#3d3155]' : 'bg-red-500 text-[#3d3155]'
         }`}>
           {toast.text}
         </div>
@@ -150,7 +150,7 @@ export default function MarketplacePage() {
         {/* Featured section */}
         {typeFilter === 'all' && !search && (
           <div className="mb-8">
-            <h2 className="text-sm font-semibold text-white/60 mb-3 flex items-center gap-2">
+            <h2 className="text-sm font-semibold text-[#8a7ca8] mb-3 flex items-center gap-2">
               <Star className="w-4 h-4 text-amber-400" fill="currentColor" /> 精選推薦
             </h2>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
@@ -172,10 +172,10 @@ export default function MarketplacePage() {
         ) : (
           <>
             {(typeFilter !== 'all' || search) && (
-              <h2 className="text-sm font-semibold text-white/60 mb-3">{filtered.length} 件商品</h2>
+              <h2 className="text-sm font-semibold text-[#8a7ca8] mb-3">{filtered.length} 件商品</h2>
             )}
             {typeFilter === 'all' && !search && (
-              <h2 className="text-sm font-semibold text-white/60 mb-3">全部商品</h2>
+              <h2 className="text-sm font-semibold text-[#8a7ca8] mb-3">全部商品</h2>
             )}
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
               {filtered.map(item => (
@@ -187,9 +187,9 @@ export default function MarketplacePage() {
 
         {/* Creator CTA */}
         <div className="mt-12 p-6 bg-gradient-to-r from-violet-900/30 to-indigo-900/30 border border-violet-500/20 rounded-2xl text-center">
-          <h3 className="text-base font-bold text-white mb-2">想成為創作者？</h3>
+          <h3 className="text-base font-bold text-[#3d3155] mb-2">想成為創作者？</h3>
           <p className="text-sm text-slate-400 mb-4">上傳你的貼圖包、背景，每次銷售獲得 <span className="text-amber-300 font-semibold">70% Z幣分潤</span></p>
-          <a href="/messages" className="inline-flex items-center gap-2 px-5 py-2.5 bg-violet-500 hover:bg-violet-400 text-white font-semibold rounded-xl text-sm transition-colors">
+          <a href="/messages" className="inline-flex items-center gap-2 px-5 py-2.5 bg-violet-500 hover:bg-violet-400 text-[#3d3155] font-semibold rounded-xl text-sm transition-colors">
             聯繫管理員申請
           </a>
         </div>
@@ -221,7 +221,7 @@ function ItemCard({ item, purchasing, onPurchase }: {
         )}
         {item.is_featured && (
           <div className="absolute top-2 right-2 w-6 h-6 bg-amber-500 rounded-full flex items-center justify-center">
-            <Star className="w-3 h-3 text-white" fill="currentColor" />
+            <Star className="w-3 h-3 text-[#3d3155]" fill="currentColor" />
           </div>
         )}
       </div>
@@ -229,7 +229,7 @@ function ItemCard({ item, purchasing, onPurchase }: {
       {/* Info */}
       <div className="p-3">
         <div className="flex items-start justify-between gap-1 mb-1">
-          <p className="font-semibold text-sm text-white truncate flex-1">{item.name}</p>
+          <p className="font-semibold text-sm text-[#3d3155] truncate flex-1">{item.name}</p>
           <span className={`text-[10px] px-1.5 py-0.5 rounded-full border shrink-0 ${typeInfo?.color ?? 'bg-slate-700 text-slate-400 border-slate-600'}`}>
             {typeInfo?.label ?? item.type}
           </span>

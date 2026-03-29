@@ -47,16 +47,16 @@ function ReferralSection({ onEarned }: { onEarned?: () => void }) {
     <div className="bg-white/5 border border-emerald-400/15 rounded-xl p-4 space-y-3">
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-sm font-medium text-white/80">🤝 邀請好友賺 Z幣</p>
-          <p className="text-xs text-white/40 mt-0.5">每成功邀請一位好友 +10 Z幣</p>
+          <p className="text-sm font-medium text-[#3d3155]">🤝 邀請好友賺 Z幣</p>
+          <p className="text-xs text-[#b5a8d0] mt-0.5">每成功邀請一位好友 +10 Z幣</p>
         </div>
-        <div className="text-right text-xs text-white/30">
+        <div className="text-right text-xs text-[#b5a8d0]">
           <p>成功 {successReferrals} 位</p>
           {pendingReferrals > 0 && <p className="text-amber-400/60">待確認 {pendingReferrals}</p>}
         </div>
       </div>
       <div className="flex gap-2">
-        <div className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs text-white/50 truncate font-mono">
+        <div className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs text-[#8a7ca8] truncate font-mono">
           {data.referralUrl}
         </div>
         <button
@@ -67,7 +67,7 @@ function ReferralSection({ onEarned }: { onEarned?: () => void }) {
         </button>
       </div>
       {data.info?.referrerName && (
-        <p className="text-xs text-white/30">由 {data.info.referrerName} 邀請加入</p>
+        <p className="text-xs text-[#b5a8d0]">由 {data.info.referrerName} 邀請加入</p>
       )}
     </div>
   )
@@ -161,8 +161,8 @@ function CheckInCard({
             {done ? '✅' : '📅'}
           </div>
           <div>
-            <p className="font-semibold text-white text-sm">每日簽到</p>
-            <p className="text-xs text-white/40 mt-0.5">
+            <p className="font-semibold text-[#3d3155] text-sm">每日簽到</p>
+            <p className="text-xs text-[#b5a8d0] mt-0.5">
               {done ? '今日已完成，明天再來' : `簽到領 +${reward} Z幣，每天都有`}
             </p>
           </div>
@@ -176,7 +176,7 @@ function CheckInCard({
               ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/20 cursor-default'
               : checking
               ? 'bg-blue-500/20 text-blue-300 border border-blue-400/30 cursor-wait'
-              : 'bg-blue-500 hover:bg-blue-400 text-white shadow-lg shadow-blue-500/20 active:scale-95'
+              : 'bg-blue-500 hover:bg-blue-400 text-[#3d3155] shadow-lg shadow-blue-500/20 active:scale-95'
           }`}
         >
           {checking ? (
@@ -208,7 +208,7 @@ function CheckInCard({
                     ? 'bg-emerald-500/30 text-emerald-300 border border-emerald-500/40'
                     : isToday && !done
                     ? 'bg-blue-500/20 text-blue-300 border border-blue-400/40 ring-1 ring-blue-400/30'
-                    : 'bg-white/5 text-white/20 border border-white/10'
+                    : 'bg-white/5 text-[#b5a8d0] border border-white/10'
                 }`}
               >
                 {isDone ? '✓' : isToday ? '今' : day}
@@ -283,8 +283,8 @@ function AdWatchSection({ onEarned }: { onEarned: () => void }) {
       )}
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-sm font-medium text-white/80">👁️ 觀看廣告賺 Z幣</p>
-          <p className="text-xs text-white/40 mt-0.5">今日剩餘 {quota.limit - quota.todayCount}/{quota.limit} 次</p>
+          <p className="text-sm font-medium text-[#3d3155]">👁️ 觀看廣告賺 Z幣</p>
+          <p className="text-xs text-[#b5a8d0] mt-0.5">今日剩餘 {quota.limit - quota.todayCount}/{quota.limit} 次</p>
         </div>
         <button
           onClick={handleWatch}
@@ -371,12 +371,12 @@ function TaskItem({ task, onComplete, completing }: TaskItemProps) {
       <div className="flex items-center gap-3">
         <span className="text-xl">{task.emoji}</span>
         <div>
-          <p className={`text-sm font-medium ${task.isCompleted ? 'text-white/40 line-through' : 'text-white/80'}`}>
+          <p className={`text-sm font-medium ${task.isCompleted ? 'text-[#b5a8d0] line-through' : 'text-[#3d3155]'}`}>
             {task.title}
           </p>
-          <p className="text-xs text-white/30">{task.description}</p>
+          <p className="text-xs text-[#b5a8d0]">{task.description}</p>
           {task.maxCompletions > 1 && (
-            <p className="text-xs text-white/20 mt-0.5">
+            <p className="text-xs text-[#b5a8d0] mt-0.5">
               今日 {task.completionsToday}/{task.maxCompletions}
             </p>
           )}
@@ -410,7 +410,7 @@ function RechargeCard({ pkg }: { pkg: RechargePackage }) {
     <div className="relative bg-white/5 border border-white/10 hover:border-amber-400/30 rounded-xl p-4 transition-colors">
       {pkg.badge && (
         <span
-          className={`absolute -top-2 right-3 text-xs text-white font-semibold px-2 py-0.5 rounded-full ${pkg.badgeColor ?? 'bg-amber-500'}`}
+          className={`absolute -top-2 right-3 text-xs text-[#3d3155] font-semibold px-2 py-0.5 rounded-full ${pkg.badgeColor ?? 'bg-amber-500'}`}
         >
           {pkg.badge}
         </span>
@@ -420,8 +420,8 @@ function RechargeCard({ pkg }: { pkg: RechargePackage }) {
         <p className="text-xs text-amber-200/40">Z幣</p>
       </div>
       <div className="text-center mb-3">
-        <p className="text-xl font-semibold text-white">NT${pkg.ntd}</p>
-        <p className="text-xs text-white/30">≈ NT${perCoin} / Z幣</p>
+        <p className="text-xl font-semibold text-[#3d3155]">NT${pkg.ntd}</p>
+        <p className="text-xs text-[#b5a8d0]">≈ NT${perCoin} / Z幣</p>
       </div>
       <a
         href={href}
@@ -500,13 +500,13 @@ function EarnGuide({ onAction }: EarnGuideProps) {
           <div className="flex items-center gap-3">
             <span className="text-lg w-6 text-center">{item.emoji}</span>
             <div>
-              <p className="text-sm text-white/70">{item.label}</p>
-              <p className="text-xs text-white/30">{item.desc}</p>
+              <p className="text-sm text-[#3d3155]">{item.label}</p>
+              <p className="text-xs text-[#b5a8d0]">{item.desc}</p>
             </div>
           </div>
           <div className="flex items-center gap-2 shrink-0">
             <span className="text-sm font-medium text-amber-300">{item.amount}</span>
-            <span className="text-white/20 text-xs">→</span>
+            <span className="text-[#b5a8d0] text-xs">→</span>
           </div>
         </button>
       ))}
@@ -608,7 +608,7 @@ export default function ZcoinShopPage() {
   const completedOtherCount = otherTasks.filter((t) => t.isCompleted).length
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white" style={{ paddingBottom: 'var(--bnav-h, 76px)' }}>
+    <div className="min-h-screen text-[#3d3155]" style={{ paddingBottom: 'var(--bnav-h, 76px)' }}>
       {/* Toast */}
       {toast && (
         <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 bg-amber-500 text-slate-900 font-medium text-sm px-4 py-2 rounded-full shadow-lg animate-bounce">
@@ -617,13 +617,13 @@ export default function ZcoinShopPage() {
       )}
 
       {/* Top nav */}
-      <nav className="sticky top-0 z-10 bg-slate-950/80 backdrop-blur-sm border-b border-white/10">
+      <nav className="sticky top-0 z-10 backdrop-blur-xl border-b border-[#b8a9e8]/20 bg-[rgba(243,238,255,0.85)]">
         <div className="max-w-md mx-auto px-4 py-3 flex items-center justify-between gap-2">
-          <Link href="/" className="text-sm text-white/60 hover:text-white transition-colors">
+          <Link href="/" className="text-sm text-[#8a7ca8] hover:text-[#3d3155] transition-colors">
             ← 首頁
           </Link>
           <span className="text-sm font-medium text-amber-300">🪙 Z幣商店</span>
-          <Link href="/wallet" className="text-sm text-white/50 hover:text-white transition-colors">
+          <Link href="/wallet" className="text-sm text-[#8a7ca8] hover:text-[#3d3155] transition-colors">
             錢包
           </Link>
         </div>
@@ -650,8 +650,8 @@ export default function ZcoinShopPage() {
         {!loadingTasks && otherTasks.length > 0 && (
           <section id="tasks" className="mb-8">
             <div className="flex items-center justify-between mb-3">
-              <p className="text-sm font-medium text-white/70">其他每日任務</p>
-              <span className="text-xs text-white/30">
+              <p className="text-sm font-medium text-[#3d3155]">其他每日任務</p>
+              <span className="text-xs text-[#b5a8d0]">
                 {completedOtherCount}/{otherTasks.length} 完成
               </span>
             </div>
@@ -675,13 +675,13 @@ export default function ZcoinShopPage() {
 
         {/* Z幣充值方案 */}
         <section id="recharge" className="mb-8">
-          <p className="text-sm font-medium text-white/70 mb-3">充值 Z幣</p>
+          <p className="text-sm font-medium text-[#3d3155] mb-3">充值 Z幣</p>
           <div className="grid grid-cols-2 gap-3">
             {RECHARGE_PACKAGES.map((pkg) => (
               <RechargeCard key={pkg.id} pkg={pkg} />
             ))}
           </div>
-          <p className="text-xs text-white/20 mt-3 text-center">
+          <p className="text-xs text-[#b5a8d0] mt-3 text-center">
             購買即表示同意服務條款。Z幣僅限平台內使用，不可兌換現金。
           </p>
         </section>
@@ -693,7 +693,7 @@ export default function ZcoinShopPage() {
 
         {/* 如何賺取 Z幣（互動版）*/}
         <section className="mb-6">
-          <p className="text-sm font-medium text-white/70 mb-3">如何賺取 Z幣</p>
+          <p className="text-sm font-medium text-[#3d3155] mb-3">如何賺取 Z幣</p>
           <EarnGuide onAction={handleEarnAction} />
         </section>
       </div>

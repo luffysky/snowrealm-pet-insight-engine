@@ -143,7 +143,7 @@ function PostPreviewCard({ post, meId }: { post: SocialPost; meId: string | null
     <LoginPrompt open={loginPrompt} onClose={() => setLoginPrompt(false)} />
     {lightboxUrl && (
       <div className="fixed inset-0 z-[300] bg-black/95 flex items-center justify-center" onClick={() => setLightboxUrl(null)}>
-        <button className="absolute top-4 right-4 p-2 text-white/60 hover:text-white bg-white/10 rounded-full" onClick={() => setLightboxUrl(null)}>
+        <button className="absolute top-4 right-4 p-2 text-[#6b5fa8] hover:text-[#3d3155] bg-white/10 rounded-full" onClick={() => setLightboxUrl(null)}>
           <X className="w-5 h-5" />
         </button>
         <img src={lightboxUrl} alt="" className="max-w-full max-h-full object-contain rounded-lg" onClick={e => e.stopPropagation()} />
@@ -188,7 +188,7 @@ function PostPreviewCard({ post, meId }: { post: SocialPost; meId: string | null
             {post.authorAvatar ? <img src={post.authorAvatar} alt="" className="w-full h-full object-cover" /> : initials}
           </Link>
           <Link href={`/u/${post.userId}`} onClick={e => e.stopPropagation()}
-            className="text-xs text-white/50 font-medium hover:text-white/80 transition-colors"
+            className="text-xs text-[#6b5fa8] font-medium hover:text-[#3d3155] transition-colors"
           >{post.authorName ?? '用戶'}</Link>
           {!isOwn && post.userId && !post.isFollowing && (
             meId ? (
@@ -204,14 +204,14 @@ function PostPreviewCard({ post, meId }: { post: SocialPost; meId: string | null
               </button>
             )
           )}
-          <span className="text-xs text-white/25">·</span>
-          <span className="text-xs text-white/30">{timeStr}</span>
+          <span className="text-xs text-[#8a7ca8]/60">·</span>
+          <span className="text-xs text-[#8a7ca8]/75">{timeStr}</span>
           {post.type === 'article' && (
             <span className="ml-auto text-[10px] px-1.5 py-0.5 bg-blue-500/15 text-blue-400 rounded-full font-medium">文章</span>
           )}
         </div>
         {post.title && <h3 className="font-bold text-white/90 text-base line-clamp-2">{post.title}</h3>}
-        <p className="text-sm text-white/60 leading-relaxed line-clamp-3">{stripHtml(post.content)}</p>
+        <p className="text-sm text-[#6b5fa8] leading-relaxed line-clamp-3">{stripHtml(post.content)}</p>
         {post.tags.length > 0 && (
           <div className="flex flex-wrap gap-1">
             {post.tags.slice(0, 3).map(t => (
@@ -222,13 +222,13 @@ function PostPreviewCard({ post, meId }: { post: SocialPost; meId: string | null
         <div className="flex items-center justify-between pt-1 border-t border-white/5">
           <div className="flex items-center gap-1">
             <button onClick={toggleLike} disabled={liking}
-              className={`flex items-center gap-1 px-2 py-1 rounded-lg text-xs transition-colors ${liked ? 'text-red-400 bg-red-400/10' : 'text-white/30 hover:text-red-400 hover:bg-white/5'}`}
+              className={`flex items-center gap-1 px-2 py-1 rounded-lg text-xs transition-colors ${liked ? 'text-red-400 bg-red-400/10' : 'text-[#8a7ca8]/75 hover:text-red-400 hover:bg-white/5'}`}
             >
               <Heart className={`w-3.5 h-3.5 ${liked ? 'fill-red-400' : ''}`} />
               {likesCount > 0 && <span>{likesCount}</span>}
             </button>
             <button onClick={e => { e.stopPropagation(); router.push(`${postUrl}#comments`) }}
-              className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs text-white/30 hover:text-blue-400 hover:bg-white/5 transition-colors"
+              className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs text-[#8a7ca8]/75 hover:text-blue-400 hover:bg-white/5 transition-colors"
             >
               <MessageSquare className="w-3.5 h-3.5" />
               {commentsCount > 0 && <span>{commentsCount}</span>}
@@ -236,12 +236,12 @@ function PostPreviewCard({ post, meId }: { post: SocialPost; meId: string | null
           </div>
           <div className="flex items-center gap-1">
             <button onClick={e => { e.stopPropagation(); setShowShareCard(true) }}
-              className="p-1.5 rounded-lg text-white/25 hover:text-white/60 hover:bg-white/5 transition-colors"
+              className="p-1.5 rounded-lg text-[#8a7ca8]/60 hover:text-[#6b5fa8] hover:bg-white/5 transition-colors"
             >
               <Share2 className="w-3.5 h-3.5" />
             </button>
             <button onClick={toggleBookmark} disabled={bookmarking}
-              className={`p-1.5 rounded-lg transition-colors ${bookmarked ? 'text-amber-400 hover:text-amber-300' : 'text-white/25 hover:text-amber-400 hover:bg-white/5'}`}
+              className={`p-1.5 rounded-lg transition-colors ${bookmarked ? 'text-amber-400 hover:text-amber-300' : 'text-[#8a7ca8]/60 hover:text-amber-400 hover:bg-white/5'}`}
             >
               <Bookmark className={`w-3.5 h-3.5 ${bookmarked ? 'fill-current' : ''}`} />
             </button>
@@ -268,14 +268,14 @@ function SurveyCard({ survey }: { survey: ExploreSurvey }) {
       </div>
       <div className="p-4 flex flex-col gap-2 flex-1">
         {survey.tenantName && (
-          <span className="text-[10px] text-white/30 uppercase tracking-wider">{survey.tenantName}</span>
+          <span className="text-[10px] text-[#8a7ca8]/75 uppercase tracking-wider">{survey.tenantName}</span>
         )}
         <h3 className="text-sm font-semibold text-white/85 line-clamp-2 leading-snug">{label}</h3>
         {survey.subtitle && (
-          <p className="text-xs text-white/40 line-clamp-2 leading-relaxed">{survey.subtitle}</p>
+          <p className="text-xs text-[#8a7ca8] line-clamp-2 leading-relaxed">{survey.subtitle}</p>
         )}
         <div className="mt-auto pt-2 flex items-center justify-between">
-          <span className="text-xs text-white/30">{survey.responseCount.toLocaleString()} 人填答</span>
+          <span className="text-xs text-[#8a7ca8]/75">{survey.responseCount.toLocaleString()} 人填答</span>
           <span className="text-xs text-amber-400/70 group-hover:text-amber-300 transition-colors">立即填答 →</span>
         </div>
       </div>
@@ -294,13 +294,13 @@ function StoryMiniCard({ story }: { story: ExploreStory }) {
       <div className="flex items-center gap-1.5">
         <Sparkles className="w-3.5 h-3.5 text-purple-400/60" />
         <span className="text-[10px] text-purple-300/50 uppercase tracking-wider">故事小卡</span>
-        <span className="ml-auto text-[10px] text-white/20">{timeStr}</span>
+        <span className="ml-auto text-[10px] text-[#b5a8d0]">{timeStr}</span>
       </div>
       {story.oneLiner && (
-        <p className="text-sm text-white/70 leading-relaxed line-clamp-3 italic">「{story.oneLiner}」</p>
+        <p className="text-sm text-[#3d3155]/80 leading-relaxed line-clamp-3 italic">「{story.oneLiner}」</p>
       )}
       <div className="mt-auto flex items-center justify-between">
-        <span className="text-[10px] text-white/30 truncate">{story.surveyTitle}</span>
+        <span className="text-[10px] text-[#8a7ca8]/75 truncate">{story.surveyTitle}</span>
         <span className="text-[10px] text-purple-400/60 group-hover:text-purple-300 shrink-0 transition-colors">查看 →</span>
       </div>
     </Link>
@@ -313,15 +313,15 @@ function CreatorCard({ user, meId }: { user: ExploreUser; meId: string | null })
   return (
     <div className="flex items-center gap-3 p-3 bg-white/[0.03] border border-white/8 rounded-2xl hover:bg-white/[0.06] transition-colors">
       <Link href={`/u/${user.id}`} className="shrink-0">
-        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-sky-500/30 to-indigo-500/30 flex items-center justify-center text-sm font-bold text-white/80 overflow-hidden">
+        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-sky-500/30 to-indigo-500/30 flex items-center justify-center text-sm font-bold text-[#3d3155] overflow-hidden">
           {user.avatarUrl ? <img src={user.avatarUrl} alt="" className="w-full h-full object-cover" /> : initials}
         </div>
       </Link>
       <div className="flex-1 min-w-0">
-        <Link href={`/u/${user.id}`} className="text-sm font-medium text-white/80 hover:text-white truncate block transition-colors">
+        <Link href={`/u/${user.id}`} className="text-sm font-medium text-[#3d3155] hover:text-white truncate block transition-colors">
           {user.displayName ?? '用戶'}
         </Link>
-        <p className="text-[10px] text-white/30">{user.followerCount} 粉絲 · {user.postCount} 貼文</p>
+        <p className="text-[10px] text-[#8a7ca8]/75">{user.followerCount} 粉絲 · {user.postCount} 貼文</p>
       </div>
       {meId && meId !== user.id && (
         <FollowButton targetUserId={user.id} compact />
@@ -427,7 +427,7 @@ function ArticlesPageInner() {
   ]
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white" style={{ paddingBottom: 'var(--bnav-h, 76px)' }}>
+    <div className="min-h-screen bg-transparent text-white" style={{ paddingBottom: 'var(--bnav-h, 76px)' }}>
       {showCreateModal && (
         <CreatePostModal onClose={() => setShowCreateModal(false)} onCreated={handlePostCreated} />
       )}
@@ -452,12 +452,12 @@ function ArticlesPageInner() {
         <div className="absolute inset-0 bg-gradient-to-br from-amber-600/5 via-transparent to-purple-600/5 pointer-events-none" />
         <div className="max-w-4xl mx-auto px-4 py-8 text-center">
           <h1 className="text-2xl font-bold text-white mb-1">探索社群</h1>
-          <p className="text-white/35 text-sm">探索問卷 · 閱讀貼文 · 發現創作者</p>
+          <p className="text-[#8a7ca8]/80 text-sm">探索問卷 · 閱讀貼文 · 發現創作者</p>
         </div>
       </div>
 
       {/* Tabs */}
-      <div className="sticky top-0 z-20 bg-slate-950/90 backdrop-blur-xl border-b border-white/8">
+      <div className="sticky top-0 z-20 bg-transparent/90 backdrop-blur-xl border-b border-white/8">
         <div className="max-w-4xl mx-auto px-4">
           <div className="flex gap-1 py-2 overflow-x-auto scrollbar-none">
             {TABS.map(t => (
@@ -465,7 +465,7 @@ function ArticlesPageInner() {
                 className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-colors ${
                   activeTab === t.key
                     ? 'bg-amber-500/15 border border-amber-400/30 text-amber-300'
-                    : 'text-white/45 hover:text-white/75 hover:bg-white/5'
+                    : 'text-[#8a7ca8] hover:text-[#3d3155]/85 hover:bg-white/5'
                 }`}
               >
                 {t.icon} {t.label}
@@ -482,7 +482,7 @@ function ArticlesPageInner() {
           <>
             <div className="flex flex-col sm:flex-row gap-3 mb-5">
               <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#8a7ca8]/75" />
                 <input
                   value={search}
                   onChange={e => { setSearch(e.target.value); if (!e.target.value) applyTagFilter('') }}
@@ -494,7 +494,7 @@ function ArticlesPageInner() {
                 {CATEGORIES.map(c => (
                   <button key={c.key} onClick={() => setPostTypeFilter(c.key)}
                     className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium transition-colors ${
-                      postTypeFilter === c.key ? 'bg-amber-500/20 border border-amber-400/30 text-amber-300' : 'bg-white/5 border border-white/10 text-white/50 hover:text-white/80'
+                      postTypeFilter === c.key ? 'bg-amber-500/20 border border-amber-400/30 text-amber-300' : 'bg-white/5 border border-white/10 text-[#6b5fa8] hover:text-[#3d3155]'
                     }`}
                   >
                     <span>{c.emoji}</span> {c.label}
@@ -504,7 +504,7 @@ function ArticlesPageInner() {
             </div>
             {trendingTags.length > 0 && (
               <div className="flex flex-wrap gap-2 mb-5">
-                <span className="flex items-center gap-1 text-xs text-white/30">
+                <span className="flex items-center gap-1 text-xs text-[#8a7ca8]/75">
                   <TrendingUp className="w-3.5 h-3.5" /> 熱門：
                 </span>
                 {trendingTags.map(t => (
@@ -512,7 +512,7 @@ function ArticlesPageInner() {
                     className={`text-xs px-2.5 py-1 border rounded-full transition-colors ${
                       tagFilter === t
                         ? 'bg-amber-500/10 border-amber-400/40 text-amber-300'
-                        : 'bg-white/5 border-white/10 text-white/50 hover:text-amber-300 hover:border-amber-400/30'
+                        : 'bg-white/5 border-white/10 text-[#6b5fa8] hover:text-amber-300 hover:border-amber-400/30'
                     }`}
                   >
                     #{t}
@@ -527,7 +527,7 @@ function ArticlesPageInner() {
             ) : filteredPosts.length === 0 ? (
               <div className="text-center py-20">
                 <p className="text-4xl mb-3">🔍</p>
-                <p className="text-white/40">沒有找到相關貼文</p>
+                <p className="text-[#8a7ca8]">沒有找到相關貼文</p>
               </div>
             ) : (
               <>
@@ -537,7 +537,7 @@ function ArticlesPageInner() {
                 {hasMore && !search && (
                   <div className="flex justify-center mt-8">
                     <button onClick={() => loadPosts(false)} disabled={loading}
-                      className="flex items-center gap-2 px-6 py-2.5 bg-white/5 border border-white/10 rounded-xl text-sm text-white/60 hover:text-white hover:bg-white/10 transition-colors disabled:opacity-50"
+                      className="flex items-center gap-2 px-6 py-2.5 bg-white/5 border border-white/10 rounded-xl text-sm text-[#6b5fa8] hover:text-[#3d3155] hover:bg-white/10 transition-colors disabled:opacity-50"
                     >
                       {loading ? <><span className="w-4 h-4 border-2 border-white/20 border-t-white/60 rounded-full animate-spin" /> 載入中</> : '載入更多'}
                     </button>
@@ -551,7 +551,7 @@ function ArticlesPageInner() {
         {/* Surveys tab */}
         {activeTab === 'surveys' && (
           <>
-            <p className="text-xs text-white/30 mb-4">探索熱門問卷，分享你的觀點</p>
+            <p className="text-xs text-[#8a7ca8]/75 mb-4">探索熱門問卷，分享你的觀點</p>
             {loading ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {[1,2,3,4,5,6].map(i => <div key={i} className="h-48 bg-white/5 rounded-2xl animate-pulse" />)}
@@ -559,7 +559,7 @@ function ArticlesPageInner() {
             ) : surveys.length === 0 ? (
               <div className="text-center py-20">
                 <p className="text-4xl mb-3">📋</p>
-                <p className="text-white/40">目前沒有公開問卷</p>
+                <p className="text-[#8a7ca8]">目前沒有公開問卷</p>
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -572,7 +572,7 @@ function ArticlesPageInner() {
         {/* Stories tab */}
         {activeTab === 'stories' && (
           <>
-            <p className="text-xs text-white/30 mb-4">來自填答者的故事小卡，每一張都是真實的一瞬間</p>
+            <p className="text-xs text-[#8a7ca8]/75 mb-4">來自填答者的故事小卡，每一張都是真實的一瞬間</p>
             {loading ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {[1,2,3,4,5,6].map(i => <div key={i} className="h-36 bg-white/5 rounded-2xl animate-pulse" />)}
@@ -580,8 +580,8 @@ function ArticlesPageInner() {
             ) : stories.length === 0 ? (
               <div className="text-center py-20">
                 <p className="text-4xl mb-3">✨</p>
-                <p className="text-white/40">還沒有人分享故事小卡</p>
-                <p className="text-xs text-white/25 mt-1">填完問卷後可以生成並分享你的故事</p>
+                <p className="text-[#8a7ca8]">還沒有人分享故事小卡</p>
+                <p className="text-xs text-[#8a7ca8]/60 mt-1">填完問卷後可以生成並分享你的故事</p>
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -594,7 +594,7 @@ function ArticlesPageInner() {
         {/* Creators tab */}
         {activeTab === 'creators' && (
           <>
-            <p className="text-xs text-white/30 mb-4">追蹤有趣的創作者，訂閱他們的最新動態</p>
+            <p className="text-xs text-[#8a7ca8]/75 mb-4">追蹤有趣的創作者，訂閱他們的最新動態</p>
             {loading ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {[1,2,3,4,5,6].map(i => <div key={i} className="h-16 bg-white/5 rounded-2xl animate-pulse" />)}
@@ -602,7 +602,7 @@ function ArticlesPageInner() {
             ) : creators.length === 0 ? (
               <div className="text-center py-20">
                 <p className="text-4xl mb-3">👥</p>
-                <p className="text-white/40">還沒有創作者</p>
+                <p className="text-[#8a7ca8]">還沒有創作者</p>
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -619,7 +619,7 @@ function ArticlesPageInner() {
 
 export default function ArticlesPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-slate-950" />}>
+    <Suspense fallback={<div className="min-h-screen bg-transparent" />}>
       <ArticlesPageInner />
     </Suspense>
   )

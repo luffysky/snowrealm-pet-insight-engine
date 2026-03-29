@@ -90,7 +90,7 @@ function DataCard({
       {/* Highlights */}
       {highlights.length > 0 && (
         <div className="space-y-2 mb-4">
-          <p className="text-xs text-[#b5a8d0] font-medium uppercase tracking-wide">關鍵發現</p>
+          <p className="text-xs text-[#6b5fa8] font-medium uppercase tracking-wide">關鍵發現</p>
           {highlights.map((h, i) => (
             <div key={i} className="flex items-start gap-2 text-sm">
               <span className="shrink-0 mt-0.5">
@@ -105,7 +105,7 @@ function DataCard({
       {/* Top recommendation */}
       {topRec && (
         <div className="bg-white/5 border border-white/10 rounded-xl p-3 mb-4">
-          <p className="text-xs text-[#b5a8d0] mb-1">建議行動</p>
+          <p className="text-xs text-[#6b5fa8] mb-1">建議行動</p>
           <p className="text-sm text-[#3d3155]/85">🎯 {topRec.action}</p>
         </div>
       )}
@@ -113,8 +113,8 @@ function DataCard({
       {/* Footer */}
       <div className="border-t border-white/10 pt-3 space-y-1">
         <p className="text-xs text-[#8a7ca8] font-medium">SnowRealm Insight Engine</p>
-        <p className="text-xs text-[#b5a8d0] font-mono truncate">{shareUrl}</p>
-        <p className="text-xs text-[#b5a8d0]">
+        <p className="text-xs text-[#6b5fa8] font-mono truncate">{shareUrl}</p>
+        <p className="text-xs text-[#6b5fa8]">
           {new Date(createdAt).toLocaleDateString('zh-TW', { year: 'numeric', month: '2-digit', day: '2-digit' })}
         </p>
       </div>
@@ -152,7 +152,7 @@ function StoryCard({
       {/* Story Title block */}
       <div className="bg-white/5 border border-white/10 rounded-xl p-4 mb-4 space-y-1">
         <p className="text-base font-bold text-[#3d3155] leading-snug">{report.storyTitle}</p>
-        <p className="text-xs text-[#b5a8d0]">{surveyTitle}</p>
+        <p className="text-xs text-[#6b5fa8]">{surveyTitle}</p>
       </div>
 
       {/* Pull quote */}
@@ -184,8 +184,8 @@ function StoryCard({
       {/* Footer */}
       <div className="border-t border-white/10 pt-3 space-y-1">
         <p className="text-xs text-[#8a7ca8] font-medium">SnowRealm Insight Engine</p>
-        <p className="text-xs text-[#b5a8d0] font-mono truncate">{shareUrl}</p>
-        <p className="text-xs text-[#b5a8d0]">
+        <p className="text-xs text-[#6b5fa8] font-mono truncate">{shareUrl}</p>
+        <p className="text-xs text-[#6b5fa8]">
           {new Date(createdAt).toLocaleDateString('zh-TW', { year: 'numeric', month: '2-digit', day: '2-digit' })}
         </p>
       </div>

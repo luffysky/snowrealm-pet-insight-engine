@@ -166,7 +166,7 @@ function RichMenuColorPicker({
           {valid ? (
             <p className="text-[10px] text-[#3d3155]0 font-mono truncate">{valid}</p>
           ) : value.trim() ? (
-            <p className="text-[10px] text-amber-400/90">格式需為 #RGB 或 #RRGGBB</p>
+            <p className="text-[10px] text-amber-700">格式需為 #RGB 或 #RRGGBB</p>
           ) : null}
         </div>
       </div>
@@ -450,7 +450,7 @@ export default function RichMenuPage() {
                   type="button"
                   onClick={() => handleCreateFromTemplate(t.id, t.channel)}
                   disabled={creating}
-                  className="w-full px-3 py-2 bg-gradient-to-r from-[#b8a9e8] to-[#f5b8b5] hover:opacity-90 disabled:bg-[#b8a9e8]/10 disabled:text-[#b5a8d0] text-white rounded-lg text-sm font-medium transition-colors cursor-pointer"
+                  className="w-full px-3 py-2 bg-gradient-to-r from-[#b8a9e8] to-[#f5b8b5] hover:opacity-90 disabled:bg-[#b8a9e8]/10 disabled:text-[#6b5fa8] text-white rounded-lg text-sm font-medium transition-colors cursor-pointer"
                 >
                   {creating ? '建立中...' : '建立並設為預設'}
                 </button>
@@ -595,7 +595,7 @@ export default function RichMenuPage() {
             type="button"
             onClick={handleCreateFromEditor}
             disabled={creating || editorButtons.length !== 6}
-            className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 disabled:bg-[#b8a9e8]/10 disabled:text-[#b5a8d0] text-white rounded-lg text-sm font-medium cursor-pointer"
+            className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 disabled:bg-[#b8a9e8]/10 disabled:text-[#6b5fa8] text-white rounded-lg text-sm font-medium cursor-pointer"
           >
             {creating ? '建立中…' : '依編輯內容建立並設為預設'}
           </button>
@@ -665,7 +665,7 @@ export default function RichMenuPage() {
                 })
               }
               disabled={actionLoading}
-              className="px-3 py-1.5 bg-yellow-600/20 text-yellow-400 rounded-lg text-xs hover:bg-yellow-600/30 disabled:opacity-50 cursor-pointer"
+              className="px-3 py-1.5 bg-yellow-600/20 text-amber-700 rounded-lg text-xs hover:bg-yellow-600/30 disabled:opacity-50 cursor-pointer"
             >
               取消預設
             </button>

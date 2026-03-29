@@ -24,10 +24,10 @@ const REASON_COLORS: Record<string, string> = {
   harassment: 'text-red-400 bg-red-500/10',
   inappropriate: 'text-red-400 bg-red-500/10',
   violence: 'text-red-400 bg-red-500/10',
-  fraud: 'text-yellow-400 bg-yellow-500/10',
+  fraud: 'text-amber-700 bg-yellow-500/10',
   privacy: 'text-purple-400 bg-purple-500/10',
   copyright: 'text-blue-400 bg-blue-500/10',
-  other: 'text-[#b5a8d0] bg-white/5',
+  other: 'text-[#6b5fa8] bg-white/5',
 }
 
 export default function SocialReportsPage() {
@@ -72,7 +72,7 @@ export default function SocialReportsPage() {
           <h1 className="text-xl font-bold text-[#3d3155] flex items-center gap-2">
             <Flag className="w-5 h-5 text-red-400" /> 檢舉管理
           </h1>
-          <p className="text-sm text-[#b5a8d0] mt-0.5">審核用戶舉報的貼文、留言或帳號</p>
+          <p className="text-sm text-[#6b5fa8] mt-0.5">審核用戶舉報的貼文、留言或帳號</p>
         </div>
         {statusTab === 'pending' && pendingCount > 0 && (
           <span className="bg-red-500/20 text-red-400 text-xs font-medium px-2.5 py-1 rounded-full border border-red-500/30">
@@ -88,7 +88,7 @@ export default function SocialReportsPage() {
             className={`px-4 py-2 rounded-xl text-sm font-medium transition-colors ${
               statusTab === tab
                 ? 'bg-amber-500/20 border border-amber-400/30 text-amber-300'
-                : 'bg-white/5 border border-white/10 text-[#b5a8d0] hover:text-[#3d3155]'
+                : 'bg-white/5 border border-white/10 text-[#6b5fa8] hover:text-[#3d3155]'
             }`}
           >
             {tab === 'pending' ? '⏳ 待處理' : tab === 'resolved' ? '✅ 已處理' : '🗑️ 已忽略'}
@@ -132,7 +132,7 @@ function ReportCard({ report, showActions, processing, onResolve, onDismiss }: R
   const timeStr = new Date(report.created_at).toLocaleDateString('zh-TW', {
     month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
   })
-  const reasonColor = REASON_COLORS[report.reason] ?? 'text-[#b5a8d0] bg-white/5'
+  const reasonColor = REASON_COLORS[report.reason] ?? 'text-[#6b5fa8] bg-white/5'
   const targetLink = report.target_type === 'post' ? `/articles/${report.target_id}` : null
 
   return (
@@ -146,7 +146,7 @@ function ReportCard({ report, showActions, processing, onResolve, onDismiss }: R
           <span className="text-xs text-[#8a7ca8] bg-white/5 px-2 py-0.5 rounded-full capitalize">
             {report.target_type === 'post' ? '貼文' : report.target_type === 'comment' ? '留言' : report.target_type === 'user' ? '用戶' : '訊息'}
           </span>
-          <span className="text-xs text-[#b5a8d0]">{timeStr}</span>
+          <span className="text-xs text-[#6b5fa8]">{timeStr}</span>
         </div>
         {targetLink && (
           <a href={targetLink} target="_blank" rel="noopener noreferrer"
@@ -159,17 +159,17 @@ function ReportCard({ report, showActions, processing, onResolve, onDismiss }: R
 
       {/* Content */}
       <div className="space-y-1">
-        <div className="text-xs text-[#b5a8d0]">
+        <div className="text-xs text-[#6b5fa8]">
           <span className="text-[#8a7ca8]">{report.reporter_name}</span> 舉報了{' '}
           {report.target_author_name && <span className="text-[#8a7ca8]">{report.target_author_name}</span>} 的內容
         </div>
         {report.target_content && (
-          <div className="bg-white/5 rounded-lg px-3 py-2 text-xs text-[#b5a8d0] line-clamp-2 border-l-2 border-white/10">
+          <div className="bg-white/5 rounded-lg px-3 py-2 text-xs text-[#6b5fa8] line-clamp-2 border-l-2 border-white/10">
             {report.target_content}
           </div>
         )}
         {report.description && (
-          <p className="text-xs text-[#b5a8d0] italic">「{report.description}」</p>
+          <p className="text-xs text-[#6b5fa8] italic">「{report.description}」</p>
         )}
       </div>
 
@@ -186,7 +186,7 @@ function ReportCard({ report, showActions, processing, onResolve, onDismiss }: R
           <button
             onClick={onDismiss}
             disabled={processing}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 border border-white/10 text-[#b5a8d0] hover:text-[#3d3155] hover:bg-[#b8a9e8]/12 rounded-lg text-xs font-medium transition-colors disabled:opacity-50"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 border border-white/10 text-[#6b5fa8] hover:text-[#3d3155] hover:bg-[#b8a9e8]/12 rounded-lg text-xs font-medium transition-colors disabled:opacity-50"
           >
             <XCircle className="w-3.5 h-3.5" /> 忽略
           </button>

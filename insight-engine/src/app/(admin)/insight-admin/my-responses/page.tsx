@@ -38,20 +38,20 @@ export default function MyResponsesPage() {
       .finally(() => setLoading(false))
   }, [])
 
-  if (loading) return <p className="text-[#b5a8d0] animate-pulse">載入填答記錄...</p>
+  if (loading) return <p className="text-[#6b5fa8] animate-pulse">載入填答記錄...</p>
   if (error) return <p className="text-red-400">錯誤：{error}</p>
 
   return (
     <div className="space-y-4 sm:space-y-6">
       <h1 className="text-xl sm:text-2xl font-bold text-[#3d3155]">📋 我的填答記錄</h1>
-      <p className="text-sm text-[#b5a8d0]">
+      <p className="text-sm text-[#6b5fa8]">
         這裡顯示你以登入帳號身份回答過的問卷。匿名填答不會出現在此列表。
       </p>
 
       {responses.length === 0 ? (
         <div className="bg-white/40 backdrop-blur-sm border border-[#b8a9e8]/25 rounded-xl p-8 text-center">
-          <p className="text-[#b5a8d0] text-sm">尚無填答記錄</p>
-          <p className="text-xs text-[#b5a8d0] mt-1">以登入帳號身份填答問卷後，紀錄將出現在這裡。</p>
+          <p className="text-[#6b5fa8] text-sm">尚無填答記錄</p>
+          <p className="text-xs text-[#6b5fa8] mt-1">以登入帳號身份填答問卷後，紀錄將出現在這裡。</p>
         </div>
       ) : (
         <div className="space-y-3">
@@ -59,7 +59,7 @@ export default function MyResponsesPage() {
             <div key={r.id} className="bg-white/40 backdrop-blur-sm border border-[#b8a9e8]/25 rounded-xl p-4 flex flex-wrap items-center justify-between gap-3">
               <div>
                 <p className="text-[#3d3155] font-medium">{r.surveyTitle}</p>
-                <div className="flex flex-wrap items-center gap-3 mt-1 text-xs text-[#b5a8d0]">
+                <div className="flex flex-wrap items-center gap-3 mt-1 text-xs text-[#6b5fa8]">
                   <span className={`px-2 py-0.5 rounded-full ${
                     r.status === 'completed' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-amber-500/20 text-amber-400'
                   }`}>

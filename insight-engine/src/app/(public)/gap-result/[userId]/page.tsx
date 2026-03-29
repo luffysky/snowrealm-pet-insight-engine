@@ -44,7 +44,7 @@ const GAP_LEVEL_LABEL = {
 function RadarBar({ label, self, others }: { label: string; self: number; others: number }) {
   return (
     <div className="space-y-1.5">
-      <div className="flex justify-between text-xs text-white/50">
+      <div className="flex justify-between text-xs text-[#6b5fa8]">
         <span>{label}</span>
         <span className="space-x-3">
           <span className="text-cyan-400">自評 {self}</span>
@@ -130,18 +130,18 @@ export default function GapResultPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
-        <p className="text-white/40 animate-pulse text-sm">分析中...</p>
+      <div className="min-h-screen bg-transparent flex items-center justify-center">
+        <p className="text-[#8a7ca8] animate-pulse text-sm">分析中...</p>
       </div>
     )
   }
 
   if (snapshots.length === 0) {
     return (
-      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center gap-4 px-6 text-center">
+      <div className="min-h-screen bg-transparent flex flex-col items-center justify-center gap-4 px-6 text-center">
         <p className="text-5xl">🔮</p>
         <h1 className="text-xl font-bold text-white">還沒有數據</h1>
-        <p className="text-white/50 text-sm">
+        <p className="text-[#6b5fa8] text-sm">
           完成問卷並邀請朋友評分後，才會顯示認知落差分析
         </p>
         {surveySlug && (
@@ -157,14 +157,14 @@ export default function GapResultPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white">
+    <div className="min-h-screen bg-transparent text-white">
       {/* Nav */}
-      <nav className="sticky top-0 z-10 bg-slate-950/80 backdrop-blur-sm border-b border-white/10">
+      <nav className="sticky top-0 z-10 bg-transparent/80 backdrop-blur-sm border-b border-white/10">
         <div className="max-w-md mx-auto px-4 py-3 flex items-center justify-between gap-2">
-          <Link href="/" className="text-sm text-white/60 hover:text-white transition-colors">
+          <Link href="/" className="text-sm text-[#6b5fa8] hover:text-white transition-colors">
             ← 首頁
           </Link>
-          <span className="text-xs text-white/30">認知落差分析</span>
+          <span className="text-xs text-[#8a7ca8]/75">認知落差分析</span>
         </div>
       </nav>
 
@@ -182,7 +182,7 @@ export default function GapResultPage() {
 
         {/* 免費摘要卡片 */}
         <div className="bg-white/5 border border-white/10 rounded-2xl p-5 space-y-4">
-          <h2 className="text-sm font-semibold text-white/60 uppercase tracking-wider">
+          <h2 className="text-sm font-semibold text-[#6b5fa8] uppercase tracking-wider">
             初步洞察
           </h2>
 
@@ -190,7 +190,7 @@ export default function GapResultPage() {
           {snapshots.filter(s => s.gapLevel === 'aligned').length > 0 && (
             <div className="space-y-1">
               <p className="text-xs text-emerald-400/80">✅ 你最了解自己的地方</p>
-              <p className="text-sm text-white/80">
+              <p className="text-sm text-[#3d3155]">
                 「{snapshots.filter(s => s.gapLevel === 'aligned')[0].traitKey}」
                 — 你的自評與他人看法高度一致
               </p>
@@ -201,7 +201,7 @@ export default function GapResultPage() {
           {biggestGap && Math.abs(biggestGap.gapScore) > 10 && (
             <div className="space-y-1">
               <p className="text-xs text-amber-400/80">⚠️ 最大認知落差</p>
-              <p className="text-sm text-white/80">
+              <p className="text-sm text-[#3d3155]">
                 「{biggestGap.traitKey}」— 你
                 {biggestGap.gapScore > 0 ? '可能高估了自己' : '可能低估了自己'}
                 （落差 {Math.abs(biggestGap.gapScore).toFixed(0)} 分）
@@ -221,7 +221,7 @@ export default function GapResultPage() {
             ))}
           </div>
 
-          <p className="text-xs text-white/30 text-center">
+          <p className="text-xs text-[#8a7ca8]/75 text-center">
             來自 {Math.max(...snapshots.map(s => s.responseCount))} 位朋友的評分
           </p>
         </div>
@@ -236,16 +236,16 @@ export default function GapResultPage() {
           </button>
         )}
         {generating && (
-          <div className="text-center py-4 text-white/40 text-sm animate-pulse">
+          <div className="text-center py-4 text-[#8a7ca8] text-sm animate-pulse">
             AI 分析中...
           </div>
         )}
         {report && (
           <div className="bg-gradient-to-br from-slate-800 to-slate-900 border border-white/10 rounded-2xl p-5 space-y-3">
-            <p className="text-xs text-white/40 font-semibold uppercase tracking-wider">
+            <p className="text-xs text-[#8a7ca8] font-semibold uppercase tracking-wider">
               ✨ AI 認知落差故事
             </p>
-            <p className="text-sm text-white/80 leading-relaxed whitespace-pre-line">
+            <p className="text-sm text-[#3d3155] leading-relaxed whitespace-pre-line">
               {report.isPartial && !unlocked
                 ? report.aiStory.slice(0, 120) + '...'
                 : report.aiStory}
@@ -253,7 +253,7 @@ export default function GapResultPage() {
             {report.isPartial && !unlocked && (
               <div className="pt-1">
                 <div className="h-8 bg-gradient-to-b from-transparent to-slate-900 -mt-10 mb-2 relative z-10" />
-                <p className="text-xs text-white/30 text-center">— 以下內容已鎖定 —</p>
+                <p className="text-xs text-[#8a7ca8]/75 text-center">— 以下內容已鎖定 —</p>
               </div>
             )}
           </div>
@@ -262,7 +262,7 @@ export default function GapResultPage() {
         {/* 鎖定內容 */}
         {!unlocked && (
           <div className="border border-white/10 rounded-2xl p-5 space-y-4">
-            <p className="text-xs text-white/40 text-center uppercase tracking-wider">
+            <p className="text-xs text-[#8a7ca8] text-center uppercase tracking-wider">
               解鎖完整分析
             </p>
             <div className="space-y-2">
@@ -274,7 +274,7 @@ export default function GapResultPage() {
                   ['🔒', '你的人際盲點完整解析'],
                 ] as const
               ).map(([icon, text]) => (
-                <div key={text} className="flex items-center gap-3 text-sm text-white/30">
+                <div key={text} className="flex items-center gap-3 text-sm text-[#8a7ca8]/75">
                   <span>{icon}</span>
                   <span>{text}</span>
                 </div>
@@ -291,7 +291,7 @@ export default function GapResultPage() {
 
         {/* 邀請更多朋友 */}
         <div className="text-center space-y-2">
-          <p className="text-xs text-white/30">
+          <p className="text-xs text-[#8a7ca8]/75">
             已有 {Math.max(...snapshots.map(s => s.responseCount), 0)} 位朋友評分
           </p>
           {surveySlug && (

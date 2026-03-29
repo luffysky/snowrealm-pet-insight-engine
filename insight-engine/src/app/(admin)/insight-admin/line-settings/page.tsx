@@ -106,7 +106,7 @@ export default function LineSettingsPage() {
     login:    configs.filter((c) => c.group === 'login'),
   }
 
-  if (loading) return <p className="text-[#b5a8d0]">載入中...</p>
+  if (loading) return <p className="text-[#6b5fa8]">載入中...</p>
 
   return (
     <div className="space-y-4 sm:space-y-6 max-w-3xl">
@@ -378,7 +378,7 @@ function SetupGuide() {
       {/* Step 4 */}
       <section className="bg-white/35 backdrop-blur-sm border border-[#b8a9e8]/20 rounded-[20px] p-6 space-y-4">
         <div className="flex items-center gap-3">
-          <span className="w-8 h-8 rounded-full bg-amber-500/20 text-amber-300 flex items-center justify-center text-sm font-bold shrink-0">4</span>
+          <span className="w-8 h-8 rounded-full bg-amber-500/20 text-amber-700 flex items-center justify-center text-sm font-bold shrink-0">4</span>
           <h2 className="text-lg font-semibold text-amber-400">設定 Webhook URL（重要！）</h2>
         </div>
         <p className="text-sm text-slate-300 leading-relaxed">
@@ -396,9 +396,9 @@ function SetupGuide() {
             <li>點「Verify」→ 顯示 <code className="bg-[#b8a9e8]/10 px-1 rounded text-green-300">Success</code> 即成功</li>
           </ol>
         </div>
-        <div className="bg-amber-900/20 border border-amber-700/30 rounded-lg p-3 text-sm text-amber-300 space-y-2">
+        <div className="bg-amber-900/20 border border-amber-700/30 rounded-lg p-3 text-sm text-amber-700 space-y-2">
           <p>⚠️ 若只有 <strong>一個</strong> Messaging API Channel：通常只填 <strong>Official</strong> 金鑰，且 Webhook 只設 <code className="bg-black/30 px-1 rounded">/api/line/webhook/official</code> 即可。</p>
-          <p className="text-amber-200/90">
+          <p className="text-amber-700/80">
             重點：<strong>每一個 Channel 只能填一個 Webhook</strong>。事件只會送到該 URL，不會同時送兩邊；改成我們的網址後，同一 Channel 上<strong>舊的第三方服務就不會再收到事件</strong>（除非改用第二個 Channel）。
           </p>
         </div>
@@ -407,7 +407,7 @@ function SetupGuide() {
       {/* Step 5 */}
       <section className="bg-white/35 backdrop-blur-sm border border-[#b8a9e8]/20 rounded-[20px] p-6 space-y-4">
         <div className="flex items-center gap-3">
-          <span className="w-8 h-8 rounded-full bg-amber-500/20 text-amber-300 flex items-center justify-center text-sm font-bold shrink-0">5</span>
+          <span className="w-8 h-8 rounded-full bg-amber-500/20 text-amber-700 flex items-center justify-center text-sm font-bold shrink-0">5</span>
           <h2 className="text-lg font-semibold text-amber-400">關閉自動回應（重要！）</h2>
         </div>
         <p className="text-sm text-slate-300 leading-relaxed">

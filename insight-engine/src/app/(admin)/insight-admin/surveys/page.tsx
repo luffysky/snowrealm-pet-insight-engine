@@ -124,7 +124,7 @@ export default function SurveysAdminPage() {
     if (selectedSurvey) loadQuestions(selectedSurvey.id)
   }, [selectedSurvey, loadQuestions])
 
-  if (loading) return <p className="text-[#b5a8d0]">載入中...</p>
+  if (loading) return <p className="text-[#6b5fa8]">載入中...</p>
   if (error) return <p className="text-red-400">{error}</p>
 
   return (
@@ -156,7 +156,7 @@ export default function SurveysAdminPage() {
           <p className="text-xs text-[#8a7ca8] leading-relaxed">
             建立後狀態為 <span className="text-emerald-400/90">published</span>，公開連結{' '}
             <code className="text-slate-300">/{'{租戶}'}/{'{slug}'}</code> 即可填寫。若暫不要上線，請在問卷設定改為{' '}
-            <span className="text-amber-400/90">draft</span>。
+            <span className="text-amber-700">draft</span>。
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
@@ -281,16 +281,16 @@ export default function SurveysAdminPage() {
                   : 'bg-white/50 text-[#8a7ca8] border border-[#b8a9e8]/20 hover:text-[#3d3155]'
               } ${dragIdx === i ? 'opacity-40' : ''}`}
             >
-              <span className="text-[#b5a8d0] mr-1 text-xs select-none">⠿</span>
+              <span className="text-[#6b5fa8] mr-1 text-xs select-none">⠿</span>
               {s.cover_image_url && (
                 <img src={s.cover_image_url} alt="" className="w-5 h-5 rounded object-cover shrink-0 opacity-80" />
               )}
-              {s.is_primary && <span className="text-yellow-400" title="主問卷">⭐</span>}
+              {s.is_primary && <span className="text-amber-700" title="主問卷">⭐</span>}
               {s.title}
             </button>
           ))}
           {surveys.length > 1 && (
-            <span className="text-xs text-[#b5a8d0] select-none">拖曳排序</span>
+            <span className="text-xs text-[#6b5fa8] select-none">拖曳排序</span>
           )}
         </div>
       )}
@@ -317,7 +317,7 @@ export default function SurveysAdminPage() {
         </button>
       )}
       {selectedSurvey?.is_primary && (
-        <p className="text-xs text-yellow-400/60">⭐ 此問卷為主問卷，首頁封面將顯示此問卷內容</p>
+        <p className="text-xs text-amber-700">⭐ 此問卷為主問卷，首頁封面將顯示此問卷內容</p>
       )}
 
       {selectedSurvey && (
@@ -504,7 +504,7 @@ function SurveyEditor({
               survey.status === 'published'
                 ? 'bg-emerald-500/20 text-emerald-400'
                 : survey.status === 'draft'
-                  ? 'bg-yellow-500/20 text-yellow-400'
+                  ? 'bg-yellow-500/20 text-amber-700'
                   : 'bg-[#b5a8d0]/20 text-[#8a7ca8]'
             }`}
             title={`資料庫狀態：${survey.status}`}
@@ -728,7 +728,7 @@ function SurveyEditor({
                         </label>
                       ))}
                       <div className="flex items-center gap-2">
-                        <span className="text-xs text-[#b5a8d0] w-20 shrink-0">按鈕文字</span>
+                        <span className="text-xs text-[#6b5fa8] w-20 shrink-0">按鈕文字</span>
                         <input type="text"
                           value={(dc.waitlistButtonText as string) ?? ''}
                           onChange={(e) => update({ waitlistButtonText: e.target.value })}
@@ -750,7 +750,7 @@ function SurveyEditor({
                     <span className="text-sm text-[#3d3155]/70">顯示下載回答按鈕</span>
                   </label>
                   <div className="flex items-center gap-2">
-                    <span className="text-xs text-[#b5a8d0] w-20 shrink-0">自訂 CTA 文字</span>
+                    <span className="text-xs text-[#6b5fa8] w-20 shrink-0">自訂 CTA 文字</span>
                     <input type="text"
                       value={(dc.customCtaText as string) ?? ''}
                       onChange={(e) => update({ customCtaText: e.target.value })}
@@ -758,7 +758,7 @@ function SurveyEditor({
                       className="flex-1 bg-white/50 border border-[#b8a9e8]/20 rounded px-2 py-1 text-xs text-[#3d3155]" />
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-xs text-[#b5a8d0] w-20 shrink-0">自訂 CTA 連結</span>
+                    <span className="text-xs text-[#6b5fa8] w-20 shrink-0">自訂 CTA 連結</span>
                     <input type="text"
                       value={(dc.customCtaUrl as string) ?? ''}
                       onChange={(e) => update({ customCtaUrl: e.target.value })}
@@ -792,7 +792,7 @@ function SurveyEditor({
       {activeTab === 'basic' && !editing && (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
           <div className="col-span-1 sm:col-span-2 flex flex-wrap items-baseline gap-2">
-            <span className="text-[#b5a8d0]">對外可見性：</span>
+            <span className="text-[#6b5fa8]">對外可見性：</span>
             <span
               className={
                 survey.status === 'published'
@@ -806,20 +806,20 @@ function SurveyEditor({
             </span>
             <span className="text-[10px] text-slate-600 font-mono">({survey.status})</span>
           </div>
-          <div><span className="text-[#b5a8d0]">Slug：</span><span className="text-[#3d3155] font-mono">{survey.slug}</span></div>
+          <div><span className="text-[#6b5fa8]">Slug：</span><span className="text-[#3d3155] font-mono">{survey.slug}</span></div>
           {fields.map((f) => (
             <div key={f.key}>
-              <span className="text-[#b5a8d0]">{f.label}：</span>
+              <span className="text-[#6b5fa8]">{f.label}：</span>
               <span className="text-[#3d3155]">{String(survey[f.key] ?? '').slice(0, 60)}{String(survey[f.key] ?? '').length > 60 ? '...' : ''}</span>
             </div>
           ))}
-          <div><span className="text-[#b5a8d0]">A/B 群組：</span><span className="text-[#3d3155]">{survey.variant_group ?? '—'}</span></div>
-          <div><span className="text-[#b5a8d0]">排程開始：</span><span className="text-[#3d3155]">{survey.scheduled_start ? new Date(survey.scheduled_start).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' }) : '—'}</span></div>
-          <div><span className="text-[#b5a8d0]">排程結束：</span><span className="text-[#3d3155]">{survey.scheduled_end ? new Date(survey.scheduled_end).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' }) : '—'}</span></div>
+          <div><span className="text-[#6b5fa8]">A/B 群組：</span><span className="text-[#3d3155]">{survey.variant_group ?? '—'}</span></div>
+          <div><span className="text-[#6b5fa8]">排程開始：</span><span className="text-[#3d3155]">{survey.scheduled_start ? new Date(survey.scheduled_start).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' }) : '—'}</span></div>
+          <div><span className="text-[#6b5fa8]">排程結束：</span><span className="text-[#3d3155]">{survey.scheduled_end ? new Date(survey.scheduled_end).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' }) : '—'}</span></div>
           <div className="col-span-1 sm:col-span-2 mt-2">
-            <span className="text-[#b5a8d0] block mb-1">問卷專屬連結：</span>
+            <span className="text-[#6b5fa8] block mb-1">問卷專屬連結：</span>
             {survey.status !== 'published' && (
-              <p className="text-xs text-amber-400/90 mb-2 rounded-lg border border-amber-500/25 bg-amber-500/10 px-3 py-2">
+              <p className="text-xs text-amber-700 mb-2 rounded-lg border border-amber-500/25 bg-amber-500/10 px-3 py-2">
                 目前為 <strong className="font-semibold">{surveyVisibilityLabel(survey.status)}</strong>（{survey.status}），公開網址會顯示
                 404。請至「編輯」→「對外可見性」改為<strong className="font-semibold">公開</strong>後再分享。
               </p>
@@ -857,7 +857,7 @@ function SurveyEditor({
       {/* OG Settings - editing */}
       {activeTab === 'og' && editing && (
         <div className="space-y-3">
-          <p className="text-xs text-yellow-400/80 mb-2">
+          <p className="text-xs text-amber-700 mb-2">
             ⚠️ 若留空，則會自動採用網站預設的 Meta 標籤。公開問卷頁會輸出 Open Graph / Twitter Card（伺服端
             <code className="mx-0.5 text-slate-300">generateMetadata</code>）。
           </p>
@@ -918,15 +918,15 @@ function SurveyEditor({
             </div>
           )}
           <div className="col-span-1 sm:col-span-2">
-            <span className="text-[#b5a8d0] block mb-1">OG 標題：</span>
+            <span className="text-[#6b5fa8] block mb-1">OG 標題：</span>
             <span className="text-[#3d3155]">{survey.og_title || <span className="text-[#8a7ca8] italic">未設定（將使用網站預設）</span>}</span>
           </div>
           <div className="col-span-1 sm:col-span-2">
-            <span className="text-[#b5a8d0] block mb-1">OG 描述：</span>
+            <span className="text-[#6b5fa8] block mb-1">OG 描述：</span>
             <span className="text-[#3d3155]">{survey.og_description || <span className="text-[#8a7ca8] italic">未設定（將使用網站預設）</span>}</span>
           </div>
           <div className="col-span-1 sm:col-span-2">
-            <span className="text-[#b5a8d0] block mb-1">OG 圖片 URL：</span>
+            <span className="text-[#6b5fa8] block mb-1">OG 圖片 URL：</span>
             {survey.og_image_url ? (
                <a href={survey.og_image_url} target="_blank" rel="noreferrer" className="text-t-accent hover:underline break-all">
                  {survey.og_image_url}
@@ -964,7 +964,7 @@ function SurveyEditor({
 
 const ROUTE_COLORS: Record<string, { bg: string; text: string; border: string }> = {
   main: { bg: 'bg-[#b8a9e8]/20', text: 'text-t-accent', border: 'border-[#b8a9e8]/25' },
-  B: { bg: 'bg-yellow-500/20', text: 'text-yellow-400', border: 'border-yellow-500/30' },
+  B: { bg: 'bg-yellow-500/20', text: 'text-amber-700', border: 'border-yellow-500/30' },
   C: { bg: 'bg-orange-500/20', text: 'text-orange-400', border: 'border-orange-500/30' },
   D: { bg: 'bg-pink-500/20', text: 'text-pink-400', border: 'border-pink-500/30' },
   E: { bg: 'bg-violet-500/20', text: 'text-violet-400', border: 'border-violet-500/30' },
@@ -1182,13 +1182,13 @@ function BranchingPanel({
               return (
                 <div key={rule.id} className="bg-white/35 backdrop-blur-sm border border-[#b8a9e8]/20 rounded-xl p-4 space-y-3">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs text-[#b5a8d0] font-mono">規則 #{idx + 1}</span>
+                    <span className="text-xs text-[#6b5fa8] font-mono">規則 #{idx + 1}</span>
                     <button type="button" onClick={() => handleRemoveRule(rule.id)}
                       className="text-xs text-red-400/60 hover:text-red-300 cursor-pointer">移除</button>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-[80px_1fr] gap-2 sm:items-center">
-                    <label className="text-xs text-[#b5a8d0]">分流題</label>
+                    <label className="text-xs text-[#6b5fa8]">分流題</label>
                     <select value={rule.branchKey}
                       onChange={(e) => handleRuleBranchKeyChange(rule.id, e.target.value)}
                       className="bg-white/50 border border-[#b8a9e8]/20 rounded-lg px-3 py-2 text-sm text-[#3d3155]">
@@ -1201,7 +1201,7 @@ function BranchingPanel({
 
                   {ruleQuestion && (
                     <div className="space-y-2">
-                      <p className="text-xs text-[#b5a8d0]">各答案對應分流：</p>
+                      <p className="text-xs text-[#6b5fa8]">各答案對應分流：</p>
                       {ruleQuestion.options.map((option) => (
                         <div key={option.value}
                           className="grid grid-cols-1 sm:grid-cols-[1fr_160px] gap-2 sm:items-center bg-white/30 backdrop-blur-sm border border-[#b8a9e8]/20 rounded-lg p-2.5">
@@ -1231,7 +1231,7 @@ function BranchingPanel({
                 className="px-4 py-2 bg-gradient-to-r from-[#b8a9e8] to-[#f5b8b5] hover:opacity-90 disabled:opacity-50 text-white rounded-lg text-sm transition-colors cursor-pointer">
                 {branchSaving ? '儲存中...' : '儲存分流規則'}
               </button>
-              {branchDirty ? <span className="text-xs text-yellow-400">有未儲存的變更</span>
+              {branchDirty ? <span className="text-xs text-amber-700">有未儲存的變更</span>
                 : <span className="text-xs text-[#8a7ca8]">尚未修改</span>}
             </div>
           </div>
@@ -1254,9 +1254,9 @@ function BranchingPanel({
             <span className={getColor(activeSubTab).text}>
               {branchNames[activeSubTab] ?? `分流 ${activeSubTab}`}
             </span>
-            <span className="text-[#b5a8d0] ml-2">（{branchQuestions(activeSubTab).length} 題）</span>
+            <span className="text-[#6b5fa8] ml-2">（{branchQuestions(activeSubTab).length} 題）</span>
           </h3>
-          <p className="text-xs text-[#b5a8d0]">這些題目只會出現在此分流。可透過下拉將題目移到其他分流或主題目。</p>
+          <p className="text-xs text-[#6b5fa8]">這些題目只會出現在此分流。可透過下拉將題目移到其他分流或主題目。</p>
           {branchQuestions(activeSubTab).length === 0 ? (
             <p className="text-sm text-[#3d3155]/30 py-4 text-center">此分流尚無題目</p>
           ) : (
@@ -1317,7 +1317,7 @@ function BranchQuestionCard({
         </div>
         <p className="text-sm text-[#3d3155]">{question.content}</p>
         {question.options.length > 0 && (
-          <p className="text-xs text-[#b5a8d0]">選項：{question.options.map((o) => o.label).join('、')}</p>
+          <p className="text-xs text-[#6b5fa8]">選項：{question.options.map((o) => o.label).join('、')}</p>
         )}
       </div>
       <div className="flex flex-col items-end gap-1 shrink-0">
@@ -1456,7 +1456,7 @@ function ResultConfigPanel({
       <div className="flex items-center justify-between">
         <div>
           <p className="text-sm font-medium text-[#3d3155]">結果類型設定</p>
-          <p className="text-xs text-[#b5a8d0] mt-0.5">設定人格測驗的結果類型與計分規則</p>
+          <p className="text-xs text-[#6b5fa8] mt-0.5">設定人格測驗的結果類型與計分規則</p>
         </div>
         <button
           onClick={save}
@@ -1469,7 +1469,7 @@ function ResultConfigPanel({
 
       {/* Result types */}
       <div className="space-y-3">
-        <p className="text-xs text-[#b5a8d0] uppercase tracking-wide">結果類型</p>
+        <p className="text-xs text-[#6b5fa8] uppercase tracking-wide">結果類型</p>
         {resultTypes.map((rt, idx) => (
           <div key={idx} className="bg-white/40 backdrop-blur-sm border border-[#b8a9e8]/20/60 rounded-xl p-3 space-y-2">
             <div className="flex items-center gap-2">
@@ -1520,7 +1520,7 @@ function ResultConfigPanel({
       {resultTypes.some(t => t.key) && singleQuestions.length > 0 && (
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <p className="text-xs text-[#b5a8d0] uppercase tracking-wide">計分規則</p>
+            <p className="text-xs text-[#6b5fa8] uppercase tracking-wide">計分規則</p>
             <p className="text-[10px] text-[#8a7ca8]">每個選項對應的結果類型</p>
           </div>
           {singleQuestions.map(q => (
@@ -1529,7 +1529,7 @@ function ResultConfigPanel({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
                 {q.options.map(opt => (
                   <div key={opt.value} className="flex items-center gap-2">
-                    <span className="text-xs text-[#b5a8d0] truncate w-24 shrink-0">{opt.label}</span>
+                    <span className="text-xs text-[#6b5fa8] truncate w-24 shrink-0">{opt.label}</span>
                     <select
                       value={scoringRules[q.key]?.[opt.value] ?? ''}
                       onChange={e => setRule(q.key, opt.value, e.target.value)}
@@ -1551,7 +1551,7 @@ function ResultConfigPanel({
       {/* Tie breaker */}
       {resultTypes.some(t => t.key) && (
         <div className="flex items-center gap-3">
-          <label className="text-xs text-[#b5a8d0] shrink-0">平手時預設</label>
+          <label className="text-xs text-[#6b5fa8] shrink-0">平手時預設</label>
           <select
             value={tieBreaker}
             onChange={e => setTieBreaker(e.target.value)}
@@ -1802,7 +1802,7 @@ function QuestionList({
                     )}
                     {(q.route === 'B' || q.route === 'C') && (
                       <span className={`text-xs px-1.5 py-0.5 rounded font-mono ${
-                        q.route === 'B' ? 'bg-yellow-500/20 text-yellow-400'
+                        q.route === 'B' ? 'bg-yellow-500/20 text-amber-700'
                         : q.route === 'C' ? 'bg-orange-500/20 text-orange-400'
                         : 'bg-[#b5a8d0]/20 text-[#8a7ca8]'
                       }`}>
@@ -1812,7 +1812,7 @@ function QuestionList({
                   </div>
                   <p className="text-sm text-[#3d3155]">{q.content}</p>
                   {q.options.length > 0 && (
-                    <p className="text-xs text-[#b5a8d0]">
+                    <p className="text-xs text-[#6b5fa8]">
                       選項：{q.options.map((o) => o.label).join('、')}
                     </p>
                   )}
@@ -1859,7 +1859,7 @@ function QuestionList({
       </div>
 
       {questions.some((q) => ['q1','q2','q3','q4','q5','q6','q7','q8','q9','q10'].includes(q.key)) && (
-        <p className="text-xs text-yellow-400/60 bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-3">
+        <p className="text-xs text-amber-700 bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-3">
           ⚠️ q1-q10 的 key 與 CRM 標籤引擎綁定，修改 key 會影響自動標籤分析。建議只修改題目文字與選項，不要更改 key 值。
         </p>
       )}
@@ -2066,7 +2066,7 @@ function RouteChip({
           className="bg-[#b8a9e8]/10 border border-[#b8a9e8]/35 rounded px-2 py-0.5 text-xs text-[#3d3155] w-16"
         />
         <button type="button" onClick={confirm} className="text-xs text-t-accent cursor-pointer">確認</button>
-        <button type="button" onClick={() => { setName(route); setEditing(false) }} className="text-xs text-[#b5a8d0] cursor-pointer">✕</button>
+        <button type="button" onClick={() => { setName(route); setEditing(false) }} className="text-xs text-[#6b5fa8] cursor-pointer">✕</button>
       </div>
     )
   }
@@ -2149,7 +2149,7 @@ function QuestionFormFields({
   return (
     <div className="space-y-3">
       <div className="grid grid-cols-1 sm:grid-cols-[80px_1fr] gap-2 sm:items-center">
-        <label className="text-xs text-[#b5a8d0]">Key</label>
+        <label className="text-xs text-[#6b5fa8]">Key</label>
         <input
           type="text"
           value={form.key}
@@ -2157,7 +2157,7 @@ function QuestionFormFields({
           className="bg-white/50 border border-[#b8a9e8]/20 rounded px-2 py-1 text-sm text-[#3d3155] w-32"
         />
 
-        <label className="text-xs text-[#b5a8d0]">類型</label>
+        <label className="text-xs text-[#6b5fa8]">類型</label>
         <select
           value={form.type}
           onChange={(e) => onChange({ ...form, type: e.target.value })}
@@ -2172,7 +2172,7 @@ function QuestionFormFields({
           <option value="file_upload">file_upload</option>
         </select>
 
-        <label className="text-xs text-[#b5a8d0]">題目</label>
+        <label className="text-xs text-[#6b5fa8]">題目</label>
         <div className="flex items-center gap-2">
           <EmojiPicker
             value={form.emoji || undefined}
@@ -2187,7 +2187,7 @@ function QuestionFormFields({
           />
         </div>
 
-        <label className="text-xs text-[#b5a8d0]">旁白</label>
+        <label className="text-xs text-[#6b5fa8]">旁白</label>
         <input
           type="text"
           value={form.narrative}
@@ -2196,7 +2196,7 @@ function QuestionFormFields({
           className="bg-white/50 border border-[#b8a9e8]/20 rounded px-2 py-1 text-sm text-[#3d3155]"
         />
 
-        <label className="text-xs text-[#b5a8d0]">必填</label>
+        <label className="text-xs text-[#6b5fa8]">必填</label>
         <input
           type="checkbox"
           checked={form.is_required}
@@ -2206,7 +2206,7 @@ function QuestionFormFields({
 
         {(form.type === 'single' || form.type === 'multiple') && (
           <>
-            <label className="text-xs text-[#b5a8d0]">其他文字</label>
+            <label className="text-xs text-[#6b5fa8]">其他文字</label>
             <label className="flex items-center gap-2 cursor-pointer">
               <input
                 type="checkbox"
@@ -2219,7 +2219,7 @@ function QuestionFormFields({
           </>
         )}
 
-        <label className="text-xs text-[#b5a8d0]">路線</label>
+        <label className="text-xs text-[#6b5fa8]">路線</label>
         <div className="flex items-center gap-2">
           <select
             value={form.route}
@@ -2250,7 +2250,7 @@ function QuestionFormFields({
                 className="bg-[#b8a9e8]/10 border border-[#b8a9e8]/30 rounded px-2 py-1 text-sm text-[#3d3155] w-16"
               />
               <button type="button" onClick={confirmNewRoute} className="text-xs text-t-accent cursor-pointer">確認</button>
-              <button type="button" onClick={() => { setShowNewRouteInput(false); setNewRouteName('') }} className="text-xs text-[#b5a8d0] cursor-pointer">✕</button>
+              <button type="button" onClick={() => { setShowNewRouteInput(false); setNewRouteName('') }} className="text-xs text-[#6b5fa8] cursor-pointer">✕</button>
             </div>
           )}
         </div>
@@ -2275,7 +2275,7 @@ function QuestionFormFields({
 
         {form.type === 'multiple' && (
           <>
-            <label className="text-xs text-[#b5a8d0]">最多選</label>
+            <label className="text-xs text-[#6b5fa8]">最多選</label>
             <input
               type="number"
               value={form.max_selections ?? ''}
@@ -2295,7 +2295,7 @@ function QuestionFormFields({
 
       {form.type !== 'text' && (
         <div className="space-y-2">
-          <label className="text-xs text-[#b5a8d0]">選項</label>
+          <label className="text-xs text-[#6b5fa8]">選項</label>
           {form.options.map((opt, i) => (
             <div key={i} className="flex items-center gap-2">
               <EmojiPicker
