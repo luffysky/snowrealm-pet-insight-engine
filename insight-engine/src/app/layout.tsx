@@ -5,8 +5,7 @@ import { queryOne } from "@/lib/db";
 import { BottomNav } from "@/components/social/BottomNav";
 import { FloatingChat } from "@/components/social/FloatingChat";
 import { PwaInstallBanner } from "@/components/social/PwaInstallBanner";
-import dynamic from "next/dynamic";
-const YukirinWidget = dynamic(() => import("@/components/public/yukirin/YukirinWidget"), { ssr: false });
+import YukirinWidgetLoader from "@/components/public/yukirin/YukirinWidgetLoader";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -133,7 +132,7 @@ export default function RootLayout({
         <BottomNav />
         <PwaInstallBanner />
         <FloatingChat />
-        <YukirinWidget />
+        <YukirinWidgetLoader />
       </body>
     </html>
   );
