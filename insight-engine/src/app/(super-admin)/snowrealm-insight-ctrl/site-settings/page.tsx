@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 
 interface SiteSettings {
+  site_url: string
   site_title: string
   site_description: string
   og_title: string
@@ -18,7 +19,7 @@ const CARD = 'bg-slate-900/60 border border-slate-800'
 
 export default function SuperAdminSiteSettingsPage() {
   const [settings, setSettings] = useState<SiteSettings>({
-    site_title: '', site_description: '', og_title: '', og_description: '',
+    site_url: '', site_title: '', site_description: '', og_title: '', og_description: '',
     og_image_url: '', og_site_name: '', og_locale: 'zh_TW', twitter_card: 'summary_large_image',
     favicon_url: '',
   })
@@ -34,7 +35,9 @@ export default function SuperAdminSiteSettingsPage() {
       .then(r => r.json())
       .then(data => {
         if (!data.error) {
+          const extra = data.extra_meta ?? {}
           setSettings({
+            site_url: extra.site_url ?? '',
             site_title: data.site_title ?? '',
             site_description: data.site_description ?? '',
             og_title: data.og_title ?? '',
@@ -54,10 +57,11 @@ export default function SuperAdminSiteSettingsPage() {
   async function handleSave() {
     setSaving(true); setMsg('')
     try {
+      const { site_url, ...rest } = settings
       const res = await fetch('/api/super-admin/site-settings', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(settings),
+        body: JSON.stringify({ ...rest, extra_meta: { site_url } }),
       })
       setMsg(res.ok ? '✅ 儲存成功' : '❌ 儲存失敗')
     } catch {
@@ -95,6 +99,7 @@ export default function SuperAdminSiteSettingsPage() {
   if (loading) return <p className="text-white/50 animate-pulse">載入設定中...</p>
 
   const inputCls = 'w-full bg-slate-950 border border-slate-700 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500 placeholder:text-slate-600'
+  const shareBase = settings.site_url.trim() || (typeof window !== 'undefined' ? window.location.origin : 'https://insight.snowrealm.pet')
 
   return (
     <div className="max-w-3xl mx-auto space-y-8">
@@ -106,6 +111,19 @@ export default function SuperAdminSiteSettingsPage() {
       {/* 基本 Meta */}
       <section className={`${CARD} rounded-xl p-6 space-y-4`}>
         <h2 className="text-lg font-semibold text-white/90">📝 基本 Meta 標籤</h2>
+        <div>
+          <label className="block text-sm text-white/50 mb-1">
+            網站網址 <span className="text-cyan-500/70">（分享測試用）</span>
+          </label>
+          <input
+            type="url"
+            value={settings.site_url}
+            onChange={e => update('site_url', e.target.value)}
+            placeholder="https://insight.snowrealm.pet"
+            className={inputCls}
+          />
+          <p className="text-xs text-white/25 mt-1">填入公開首頁網址，分享測試按鈕會用這個 URL</p>
+        </div>
         <div>
           <label className="block text-sm text-white/50 mb-1">網站標題 (title)</label>
           <input type="text" value={settings.site_title} onChange={e => update('site_title', e.target.value)} placeholder="SnowRealm Insight Engine — 問卷系統" className={inputCls} />
@@ -208,10 +226,16 @@ export default function SuperAdminSiteSettingsPage() {
       {/* 分享測試 */}
       <section className={`${CARD} rounded-xl p-6 space-y-3`}>
         <h2 className="text-lg font-semibold text-white/90">🔗 分享測試</h2>
-        <p className="text-sm text-white/40">儲存後點下方按鈕，確認分享預覽是否正確。</p>
+        <p className="text-sm text-white/40">
+          儲存後點下方按鈕，確認分享預覽是否正確。
+          {settings.site_url
+            ? <span className="text-cyan-400/70 ml-1">測試網址：{settings.site_url}</span>
+            : <span className="text-amber-400/60 ml-1">請先填寫上方「網站網址」欄位</span>
+          }
+        </p>
         <div className="flex flex-wrap gap-3">
           <a
-            href={typeof window !== 'undefined' ? `https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(window.location.origin)}` : '#'}
+            href={`https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(shareBase)}`}
             target="_blank"
             rel="noopener noreferrer"
             className="px-4 py-2 bg-[#06C755] hover:opacity-80 text-white text-sm font-medium rounded-lg transition-opacity cursor-pointer"
@@ -219,7 +243,7 @@ export default function SuperAdminSiteSettingsPage() {
             💬 分享到 LINE
           </a>
           <a
-            href={typeof window !== 'undefined' ? `https://developers.facebook.com/tools/debug/?q=${encodeURIComponent(window.location.origin)}` : '#'}
+            href={`https://developers.facebook.com/tools/debug/?q=${encodeURIComponent(shareBase)}`}
             target="_blank"
             rel="noopener noreferrer"
             className="px-4 py-2 bg-blue-700 hover:bg-blue-600 text-white text-sm font-medium rounded-lg transition-colors cursor-pointer"
@@ -227,7 +251,7 @@ export default function SuperAdminSiteSettingsPage() {
             🔍 FB 除錯工具
           </a>
           <a
-            href={typeof window !== 'undefined' ? `https://www.opengraph.xyz/url/${encodeURIComponent(window.location.origin)}` : '#'}
+            href={`https://www.opengraph.xyz/url/${encodeURIComponent(shareBase)}`}
             target="_blank"
             rel="noopener noreferrer"
             className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white text-sm font-medium rounded-lg transition-colors cursor-pointer"
