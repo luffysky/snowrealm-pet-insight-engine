@@ -271,7 +271,7 @@ function MessageContent({ content, edited, isMine, onLightbox }: { content: stri
     return (
       <img
         src={url} alt="貼圖"
-        className="w-[50vw] max-w-[180px] h-auto object-contain rounded-xl cursor-pointer hover:scale-105 transition-transform"
+        className="w-[50vw] max-w-[160px] sm:max-w-[200px] lg:max-w-[240px] h-auto object-contain rounded-xl cursor-pointer hover:scale-105 transition-transform"
         onClick={() => onLightbox?.(url, 'image')}
       />
     )
@@ -1568,6 +1568,19 @@ export default function MessagesPage() {
                         </button>
                       )}
                     </div>
+
+                    {/* 共用背景給對方 */}
+                    {active && (
+                      <div className="border-t border-white/8 pt-3">
+                        <button
+                          onClick={() => sendThemeSync(themeKey)}
+                          className="w-full flex items-center justify-center gap-2 py-2 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-300 hover:bg-amber-500/20 transition-colors"
+                        >
+                          🎨 傳送目前背景給 {active.displayName ?? '對方'}
+                        </button>
+                        <p className="text-[10px] text-white/20 text-center mt-1.5">對方會收到邀請，可選擇是否套用</p>
+                      </div>
+                    )}
                   </div>
                 )}
 
