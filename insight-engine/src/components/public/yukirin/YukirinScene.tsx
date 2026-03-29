@@ -14,8 +14,8 @@ function detectTier(): QualityTier {
   if (typeof window === 'undefined') return 'mid'
   const gl = document.createElement('canvas').getContext('webgl2')
   if (!gl) return 'low'
-  // 手機裝置降一級
-  if (/Mobile|Android/i.test(navigator.userAgent)) return 'mid'
+  // 低階 Android 降級，iPhone / 現代 Android 維持 high
+  if (/Android/.test(navigator.userAgent) && !/Chrome\/[7-9]\d|Chrome\/1\d\d/.test(navigator.userAgent)) return 'mid'
   return 'high'
 }
 
@@ -228,10 +228,11 @@ export default function YukirinScene({
     const renderer = new THREE.WebGLRenderer({
       alpha: true,
       antialias: true,
-      powerPreference: 'low-power',
+      precision: 'highp',
+      powerPreference: 'high-performance',
     })
     renderer.setSize(width, height)
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 3))
     renderer.toneMapping = THREE.ACESFilmicToneMapping
     renderer.toneMappingExposure = 1.2
     renderer.outputColorSpace = THREE.SRGBColorSpace
@@ -268,6 +269,22 @@ export default function YukirinScene({
         box.setFromObject(vrm.scene)
         vrm.scene.position.y = -box.min.y
       }
+
+      // 提升紋理品質：各向異性過濾（消除斜角模糊）
+      const maxAnisotropy = renderer.capabilities.getMaxAnisotropy()
+      vrm.scene.traverse((node) => {
+        if (node instanceof THREE.Mesh) {
+          const materials = Array.isArray(node.material) ? node.material : [node.material]
+          materials.forEach((mat) => {
+            if (!mat) return
+            const m = mat as THREE.MeshStandardMaterial
+            if (m.map) m.map.anisotropy = maxAnisotropy
+            if (m.normalMap) m.normalMap.anisotropy = maxAnisotropy
+            if (m.roughnessMap) m.roughnessMap.anisotropy = maxAnisotropy
+            if (m.emissiveMap) m.emissiveMap.anisotropy = maxAnisotropy
+          })
+        }
+      })
 
       scene.add(vrm.scene)
       vrmRef.current = vrm
