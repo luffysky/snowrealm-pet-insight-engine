@@ -201,9 +201,7 @@ export default function YukirinChatPanel({ onClose }: YukirinChatPanelProps) {
     <div
       className="flex flex-col rounded-2xl overflow-hidden shadow-[0_16px_48px_rgba(0,0,0,0.4)] border border-white/10"
       style={{ width: 288, height: 460, background: 'rgba(15,9,30,0.92)', backdropFilter: 'blur(20px)' }}
-      // 阻止點擊/指針事件冒泡到 widget 拖曳層
-      onPointerDown={e => e.stopPropagation()}
-      onClick={e => e.stopPropagation()}
+      // 不阻擋 pointerDown：讓標題列可往上冒泡觸發 widget 拖曳
     >
       {/* ── 雪凜 3D 頭像區 ─────────────────────────────────── */}
       <div className="relative flex-shrink-0" style={{ height: 130 }}>
@@ -216,15 +214,22 @@ export default function YukirinChatPanel({ onClose }: YukirinChatPanelProps) {
             className="w-full h-full"
           />
         </div>
-        {/* 頂部標題列 */}
-        <div className="absolute top-0 left-0 right-0 flex items-center justify-between px-3 pt-2.5 pointer-events-none">
-          <div>
+        {/* 頂部標題列（cursor-grab = 這裡可拖曳整個視窗） */}
+        <div className="absolute top-0 left-0 right-0 flex items-center justify-between px-3 pt-2.5 cursor-grab active:cursor-grabbing">
+          <div className="flex items-center gap-1.5 pointer-events-none">
+            {/* 拖曳把手提示 */}
+            <svg width="8" height="10" viewBox="0 0 8 10" fill="rgba(255,255,255,0.2)">
+              <circle cx="2" cy="2" r="1"/><circle cx="6" cy="2" r="1"/>
+              <circle cx="2" cy="5" r="1"/><circle cx="6" cy="5" r="1"/>
+              <circle cx="2" cy="8" r="1"/><circle cx="6" cy="8" r="1"/>
+            </svg>
             <span className="text-white/90 text-xs font-semibold drop-shadow">雪凜</span>
-            <span className="text-white/40 text-[10px] ml-1.5">AI 嚮導</span>
+            <span className="text-white/40 text-[10px]">AI 嚮導</span>
           </div>
           <button
             onClick={onClose}
-            className="pointer-events-auto w-6 h-6 rounded-full bg-white/10 border border-white/15 flex items-center justify-center text-white/50 hover:text-white hover:bg-white/20 transition-colors text-[10px]"
+            onPointerDown={e => e.stopPropagation()}
+            className="w-6 h-6 rounded-full bg-white/10 border border-white/15 flex items-center justify-center text-white/50 hover:text-white hover:bg-white/20 transition-colors text-[10px]"
           >
             ✕
           </button>
@@ -235,8 +240,11 @@ export default function YukirinChatPanel({ onClose }: YukirinChatPanelProps) {
         />
       </div>
 
-      {/* ── 訊息列表 ───────────────────────────────────────── */}
-      <div className="flex-1 overflow-y-auto px-3 py-2 space-y-2 scrollbar-thin scrollbar-thumb-white/10">
+      {/* ── 訊息列表（阻擋 pointer 防止捲動誤觸發拖曳）──── */}
+      <div
+        className="flex-1 overflow-y-auto px-3 py-2 space-y-2 scrollbar-thin scrollbar-thumb-white/10"
+        onPointerDown={e => e.stopPropagation()}
+      >
         {messages.map(msg => (
           <div
             key={msg.id}
@@ -280,7 +288,7 @@ export default function YukirinChatPanel({ onClose }: YukirinChatPanelProps) {
 
       {/* ── 快捷回覆按鈕 ──────────────────────────────────── */}
       {quickReplies.length > 0 && !isLoading && (
-        <div className="px-3 pb-2 flex gap-1.5 flex-wrap">
+        <div className="px-3 pb-2 flex gap-1.5 flex-wrap" onPointerDown={e => e.stopPropagation()}>
           {quickReplies.map(qr => (
             <button
               key={qr}
@@ -294,6 +302,7 @@ export default function YukirinChatPanel({ onClose }: YukirinChatPanelProps) {
       )}
 
       {/* ── 輸入區 ────────────────────────────────────────── */}
+      {/* ── 輸入區（阻擋 pointer 防止打字誤觸發拖曳）──────── */}
       <form
         onSubmit={handleSubmit}
         className="flex items-center gap-2 px-3 pb-3 pt-1 border-t border-white/8"

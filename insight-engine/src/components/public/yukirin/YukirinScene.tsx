@@ -112,6 +112,10 @@ interface YukirinSceneProps {
   showBackground?: boolean
   /** 開啟 360° 軌道旋轉（拖拽/捏合/滾輪） */
   allowOrbit?: boolean
+  /** 效能模式：high = 全效能（預設）/ low = 省電（低 DPR、無背景粒子、無閒置動畫） */
+  quality?: 'high' | 'low'
+  /** FPS 持續低於 20 時觸發（最多一次，可用來主動關心使用者）*/
+  onLowPerformance?: () => void
   /** 外部注入的 mood 變更（從 AI Guide 觸發） */
   onLoad?: (controls: YukirinControls) => void
   className?: string
@@ -145,6 +149,8 @@ export default function YukirinScene({
   mood = 'happy',
   showBackground = true,
   allowOrbit = false,
+  quality = 'high',
+  onLowPerformance,
   onLoad,
   className = '',
 }: YukirinSceneProps) {
@@ -165,6 +171,14 @@ export default function YukirinScene({
   const targetBodyYRotRef = useRef(0)
   const currentBodyYRotRef = useRef(0)
   const randomActionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // FPS 監控（低效能偵測）
+  const fpsBufferRef = useRef<number[]>([])
+  const lastPerfCheckRef = useRef(0)
+  const perfWarningFiredRef = useRef(false)
+  // 用 ref 存 callback 避免加入 effect 依賴
+  const onLowPerformanceRef = useRef(onLowPerformance)
+  onLowPerformanceRef.current = onLowPerformance
 
   // Orbit 軌道旋轉
   const orbitRef = useRef({
@@ -236,14 +250,15 @@ export default function YukirinScene({
     camera.lookAt(preset.target[0], preset.target[1], preset.target[2])
     cameraRef.current = camera
 
+    const isLowQuality = quality === 'low'
     const renderer = new THREE.WebGLRenderer({
       alpha: true,
-      antialias: true,
-      precision: 'highp',
-      powerPreference: 'high-performance',
+      antialias: !isLowQuality,
+      precision: isLowQuality ? 'mediump' : 'highp',
+      powerPreference: isLowQuality ? 'low-power' : 'high-performance',
     })
     renderer.setSize(width, height)
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 3))
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, isLowQuality ? 1.5 : 3))
     renderer.toneMapping = THREE.ACESFilmicToneMapping
     renderer.toneMappingExposure = 1.2
     renderer.outputColorSpace = THREE.SRGBColorSpace
@@ -254,7 +269,7 @@ export default function YukirinScene({
 
     let sphereGroup: THREE.Group | null = null
     let particles: THREE.Points | null = null
-    if (showBackground) {
+    if (showBackground && !isLowQuality) {
       sphereGroup = createGlassSpheres(scene, tier)
       particles = createParticles(scene, tier)
     }
@@ -346,7 +361,7 @@ export default function YukirinScene({
         const delay = 4000 + Math.random() * 9000
         randomActionTimerRef.current = setTimeout(scheduleRandomAction, delay)
       }
-      setTimeout(scheduleRandomAction, 3000)
+      if (!isLowQuality) setTimeout(scheduleRandomAction, 3000)
     }).catch((err) => {
       console.error('[YukirinScene] VRM 載入失敗', err)
     })
@@ -509,10 +524,30 @@ export default function YukirinScene({
     }
 
     // ── 動畫主迴圈 ─────────────────────────────────────────────────────────
+    let lastFrameMs = performance.now()
     const animate = () => {
       rafRef.current = requestAnimationFrame(animate)
       const delta = clockRef.current.getDelta()
       const elapsed = clockRef.current.elapsedTime
+
+      // FPS 監控（高效能模式才監測，低效能模式已自行降速）
+      if (!isLowQuality && !perfWarningFiredRef.current) {
+        const now = performance.now()
+        const frameMs = now - lastFrameMs
+        lastFrameMs = now
+        if (frameMs > 0) {
+          fpsBufferRef.current.push(1000 / frameMs)
+          if (fpsBufferRef.current.length > 90) fpsBufferRef.current.shift()
+        }
+        if (now - lastPerfCheckRef.current > 10000 && fpsBufferRef.current.length >= 60) {
+          lastPerfCheckRef.current = now
+          const avg = fpsBufferRef.current.reduce((a, b) => a + b, 0) / fpsBufferRef.current.length
+          if (avg < 20) {
+            perfWarningFiredRef.current = true
+            onLowPerformanceRef.current?.()
+          }
+        }
+      }
 
       const vrm = vrmRef.current
 
@@ -630,7 +665,7 @@ export default function YukirinScene({
       renderer.dispose()
       container.removeChild(renderer.domElement)
     }
-  }, [cameraMode, mood, showBackground, allowOrbit, onLoad, transitionExpression, playArmWave])
+  }, [cameraMode, mood, showBackground, allowOrbit, quality, onLoad, transitionExpression, playArmWave])
 
   return (
     <div

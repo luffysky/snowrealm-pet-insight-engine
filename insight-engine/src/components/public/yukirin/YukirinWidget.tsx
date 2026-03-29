@@ -40,10 +40,17 @@ function getTimedLine(): Line {
 }
 
 // ── 氣泡元件 ──────────────────────────────────────────────────────────────
-function SpeechBubble({ text, visible, onClose }: { text: string; visible: boolean; onClose: () => void }) {
+function SpeechBubble({
+  text, visible, onClose, actions,
+}: {
+  text: string
+  visible: boolean
+  onClose: () => void
+  actions?: { label: string; onClick: () => void }[]
+}) {
   return (
     <div
-      className={`absolute bottom-[calc(100%+8px)] right-0 w-52 transition-all duration-300 pointer-events-auto ${
+      className={`absolute bottom-[calc(100%+8px)] right-0 w-56 transition-all duration-300 pointer-events-auto ${
         visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2 pointer-events-none'
       }`}
     >
@@ -55,10 +62,38 @@ function SpeechBubble({ text, visible, onClose }: { text: string; visible: boole
           ✕
         </button>
         <p className="text-xs text-[#3d3155] leading-relaxed pr-3">{text}</p>
+        {actions && actions.length > 0 && (
+          <div className="flex gap-1.5 mt-2 flex-wrap">
+            {actions.map(a => (
+              <button
+                key={a.label}
+                onClick={a.onClick}
+                className="text-[10px] px-2 py-0.5 rounded-full bg-[#b8a9e8]/20 border border-[#b8a9e8]/40 text-[#5a4878] hover:bg-[#b8a9e8]/35 transition-colors"
+              >
+                {a.label}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
       {/* 三角形尾巴（右下角） */}
       <div className="absolute -bottom-[6px] right-5 w-3 h-3 bg-white/90 border-r border-b border-[#b8a9e8]/40 rotate-45" />
     </div>
+  )
+}
+
+// ── 效能圖示 ──────────────────────────────────────────────────────────────
+function QualityIcon({ isLow }: { isLow: boolean }) {
+  return isLow ? (
+    // 省電：葉子形
+    <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor">
+      <path d="M5 1C2.5 1 1 3 1 5.5c0 1.5.7 2.8 1.8 3.5C4 7.5 5 6 5 6s1 1.5 2.2 3c1.1-.7 1.8-2 1.8-3.5C9 3 7.5 1 5 1z"/>
+    </svg>
+  ) : (
+    // 高效能：閃電
+    <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor">
+      <path d="M6 1L2 6h3.5L4 9l4-5H4.5L6 1z"/>
+    </svg>
   )
 }
 
@@ -69,8 +104,53 @@ export default function YukirinWidget() {
   const [orbitOpen, setOrbitOpen] = useState(false)
   const [bubbleVisible, setBubbleVisible] = useState(false)
   const [currentLine, setCurrentLine] = useState<Line>(LINES[0])
+  const [bubbleActions, setBubbleActions] = useState<{ label: string; onClick: () => void }[] | undefined>()
   const yukirinRef = useRef<YukirinControls | null>(null)
   const bubbleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // ── 效能設定 ──────────────────────────────────────────────────────────────
+  const [performanceMode, setPerformanceModeState] = useState<'high' | 'low'>(() => {
+    if (typeof window === 'undefined') return 'high'
+    return (localStorage.getItem('yukirin-quality') as 'high' | 'low') ?? 'high'
+  })
+
+  const setPerformanceMode = useCallback((mode: 'high' | 'low') => {
+    setPerformanceModeState(mode)
+    localStorage.setItem('yukirin-quality', mode)
+  }, [])
+
+  const togglePerformance = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (isDraggingRef.current) return
+    setPerformanceMode(performanceMode === 'high' ? 'low' : 'high')
+  }, [performanceMode, setPerformanceMode])
+
+  const handleLowPerformance = useCallback(() => {
+    // 雪凜主動關心，語氣委婉
+    setCurrentLine({
+      text: '欸嘿...感覺你的裝置好像有點喘 🥺 要不要讓我切換到省電模式？這樣我就不會佔用太多資源了～',
+      mood: 'relaxed',
+    })
+    setBubbleActions([
+      {
+        label: '好啊，切換吧',
+        onClick: () => {
+          setPerformanceMode('low')
+          setBubbleVisible(false)
+          setBubbleActions(undefined)
+        },
+      },
+      {
+        label: '沒關係',
+        onClick: () => {
+          setBubbleVisible(false)
+          setBubbleActions(undefined)
+        },
+      },
+    ])
+    setBubbleVisible(true)
+    yukirinRef.current?.setMood('relaxed', 400)
+  }, [setPerformanceMode])
 
   // ── 拖曳移動（document-level listener，不依賴 setPointerCapture） ─────────
   const [widgetPos, setWidgetPos] = useState<{ x: number; y: number } | null>(null)
@@ -121,6 +201,7 @@ export default function YukirinWidget() {
   const showBubble = useCallback(() => {
     const line = getTimedLine()
     setCurrentLine(line)
+    setBubbleActions(undefined)
     setBubbleVisible(true)
     yukirinRef.current?.setMood(line.mood, 400)
     bubbleTimerRef.current = setTimeout(() => {
@@ -191,17 +272,30 @@ export default function YukirinWidget() {
               <SpeechBubble
                 text={currentLine.text}
                 visible={bubbleVisible}
-                onClose={() => setBubbleVisible(false)}
+                onClose={() => { setBubbleVisible(false); setBubbleActions(undefined) }}
+                actions={bubbleActions}
               />
 
               {/* 雪凜 3D 視窗 */}
               <div className="relative w-24 h-28 sm:w-28 sm:h-32">
-                {/* 關閉按鈕 */}
+                {/* 關閉按鈕（左上） */}
                 <button
                   onClick={handleClose}
                   className="absolute -top-2 -left-2 z-10 w-5 h-5 rounded-full bg-white/80 border border-[#b8a9e8]/40 flex items-center justify-center text-[10px] text-[#8a7ca8] hover:text-[#3d3155] shadow-sm transition-colors cursor-pointer"
                 >
                   ✕
+                </button>
+                {/* 效能切換按鈕（右上） */}
+                <button
+                  onClick={togglePerformance}
+                  className={`absolute -top-2 -right-2 z-10 w-5 h-5 rounded-full bg-white/80 border border-[#b8a9e8]/40 flex items-center justify-center shadow-sm transition-colors cursor-pointer ${
+                    performanceMode === 'low'
+                      ? 'text-emerald-500 hover:text-emerald-700'
+                      : 'text-[#8a7ca8] hover:text-[#3d3155]'
+                  }`}
+                  title={performanceMode === 'high' ? '切換到省電模式' : '切換到高效能模式'}
+                >
+                  <QualityIcon isLow={performanceMode === 'low'} />
                 </button>
                 {/* 展開 360° 按鈕 */}
                 <button
@@ -234,6 +328,8 @@ export default function YukirinWidget() {
                     cameraMode="upperBody"
                     mood="happy"
                     showBackground={false}
+                    quality={performanceMode}
+                    onLowPerformance={handleLowPerformance}
                     onLoad={handleLoad}
                     className="w-full h-full"
                   />
