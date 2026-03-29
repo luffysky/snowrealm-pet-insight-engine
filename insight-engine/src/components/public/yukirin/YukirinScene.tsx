@@ -121,9 +121,9 @@ export interface YukirinControls {
 }
 
 const CAMERA_PRESETS = {
-  fullBody:   { pos: [0, 0.8, 3.5] as const, target: [0, 0.8, 0] as const },
-  upperBody:  { pos: [0, 1.2, 2.0] as const, target: [0, 1.2, 0] as const },
-  face:       { pos: [0, 1.5, 1.2] as const, target: [0, 1.5, 0] as const },
+  fullBody:   { pos: [0, 0.9, 2.2] as const, target: [0, 0.9, 0] as const },
+  upperBody:  { pos: [0, 1.2, 1.4] as const, target: [0, 1.2, 0] as const },
+  face:       { pos: [0, 1.5, 0.9] as const, target: [0, 1.5, 0] as const },
 }
 
 // 表情對應 VRM Expression 名稱
@@ -227,7 +227,21 @@ export default function YukirinScene({
     loader.loadAsync('/models/Yukirin.vrm').then((gltf) => {
       const vrm: VRM = gltf.userData.vrm
       VRMUtils.removeUnnecessaryJoints(vrm.scene)
-      vrm.scene.rotation.y = Math.PI
+      // VRM 模型預設面向 -Z（與 Three.js 相機方向一致），不需旋轉
+      vrm.scene.rotation.y = 0
+
+      // 自動縮放：把模型高度撐到約 1.6m 單位
+      const box = new THREE.Box3().setFromObject(vrm.scene)
+      const modelHeight = box.max.y - box.min.y
+      if (modelHeight > 0) {
+        const targetHeight = 1.65
+        const scale = targetHeight / modelHeight
+        vrm.scene.scale.setScalar(scale)
+        // 把腳底對齊 y=0
+        box.setFromObject(vrm.scene)
+        vrm.scene.position.y = -box.min.y
+      }
+
       scene.add(vrm.scene)
       vrmRef.current = vrm
 
