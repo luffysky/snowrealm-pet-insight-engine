@@ -7,28 +7,47 @@
 
 ## 🔴 Bug 修復（阻礙功能正常運作）
 
-### BUG-1 分流邏輯壞了（19 題全顯示）
-- 檔案：`src/hooks/useSurveyFlow.ts`
-- 問題：選「沒有且暫時不考慮」仍顯示全部 19 題
-- 修法：替換 `resolveRoutes` + `filterQuestions` 兩個函式（詳見 CLAUDE.md）
-- 同時：確認 DB `surveys.branch_config` 非 NULL
+### ~~BUG-1 分流邏輯壞了（19 題全顯示）~~ ✅
+- ~~檔案：`src/hooks/useSurveyFlow.ts`~~
+- ~~問題：選「沒有且暫時不考慮」仍顯示全部 19 題~~
+- ~~修法：替換 `resolveRoutes` + `filterQuestions` 兩個函式~~
 
-### BUG-2 AI 對話建立問卷報錯 `ai_usage_logs_action_check`
-- 需跑 SQL（Supabase）：
-  ```sql
-  ALTER TABLE ai_usage_logs DROP CONSTRAINT ai_usage_logs_action_check;
-  ALTER TABLE ai_usage_logs ADD CONSTRAINT ai_usage_logs_action_check
-    CHECK (action IN ('generate','regenerate','generate_meta','regenerate_meta','chat','insight','story','sentiment'));
-  ```
+### ~~BUG-2 AI 對話建立問卷報錯 `ai_usage_logs_action_check`~~ ✅
+- ~~SQL 已執行：constraint 已更新，允許 chat/insight/story/sentiment~~
 
 ### BUG-3 OG 分享顯示 coverTitle 而非自訂 OG
 - 診斷：`SELECT og_title FROM surveys WHERE slug = 'maoxingtianxia-mvp-survey'`
 - 確認 `[org]/[slug]/page.tsx` 有 `export const dynamic = 'force-dynamic'`
 
-### BUG-4 3 個 admin API 缺 `requireRole`
-- `ai-sentiment/route.ts` → `requireRole('viewer')`
-- `responses/[id]/route.ts` → `requireRole('viewer')`
-- `line/test/route.ts` → `requireRole('admin')`
+### ~~BUG-4 3 個 admin API 缺 `requireRole`~~ ✅
+- ~~`ai-sentiment` / `responses/[id]` / `line/test` 均已加 requireRole~~
+
+---
+
+## 🔴 Bug 修復（來自 bug_fix.md）
+
+### BUG-F1 限時動態：正在回覆時倒數不暫停
+- 問題：在回覆限時動態時，倒數計時器繼續，導致切到下一則無法送出
+- 修法：偵測到 reply input focus 時，暫停倒數計時器；失去 focus 才繼續
+- 涉及檔案：限時動態元件（Stories player）
+
+### BUG-F2 私訊懸浮視窗無法單一聯絡人
+- 問題：有全域懸浮視窗，但沒辦法把「單一聯絡人」的對話窗變成獨立懸浮視窗
+- 目標：像 FB Messenger 右下角懸浮泡泡，點個別聯絡人可以獨立展開聊天
+
+### ~~BUG-F3 AI 生成問卷副標題用毛行天下的~~ ✅
+- ~~修法：`ai-generate/route.ts` SYSTEM_PROMPT 加入 `narrative` 欄位，要求 AI 依主題生成~~
+- ~~`GeneratedQuestion` interface 加 `narrative` 欄位~~
+
+### BUG-F4 限時動態文字功能大升級（需要整個重做）
+- 現況：目前用「加入畫布」按鈕，體驗差
+- 目標：像 IG 那樣直接在畫布上打字，點一下可編輯，拖曳改位置
+- 技術：使用 TipTap，文字元素可拖曳定位，縮排調整更直覺
+- 涉及：整個限時動態文字工具的 UI/UX 重做
+
+### ~~BUG-F5 管理員每次都要重新登入~~ ✅
+- ~~修法：cookie + JWT 延長至 30 天，middleware 加 sliding window（剩餘 < 7 天自動續期）~~
+- ~~修改：`auth/login/route.ts`、`src/middleware.ts`~~
 
 ---
 

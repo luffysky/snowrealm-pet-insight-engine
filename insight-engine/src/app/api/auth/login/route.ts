@@ -69,13 +69,17 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
   const defaultTid = tenants.length > 0 ? tenants[0].tid : 'default'
 
-  const token = await signToken({
-    sub: user.id,
-    tenants,
-    tid: defaultTid,
-    role: tenants.length > 0 ? tenants[0].role : 'admin',
-    name: user.display_name ?? loginId,
-  })
+  const SESSION_SECONDS = 60 * 60 * 24 * 30 // 30 天
+  const token = await signToken(
+    {
+      sub: user.id,
+      tenants,
+      tid: defaultTid,
+      role: tenants.length > 0 ? tenants[0].role : 'admin',
+      name: user.display_name ?? loginId,
+    },
+    SESSION_SECONDS,
+  )
 
   // LINE Notify 通知
   notifyUserLogin({
@@ -98,7 +102,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
-    maxAge: 60 * 60 * 24,
+    maxAge: SESSION_SECONDS,
     path: '/',
   })
   // 清除舊版 cookie

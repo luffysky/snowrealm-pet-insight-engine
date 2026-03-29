@@ -1,6 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { verifyToken, type TokenPayload } from '@/lib/jwt'
+import { verifyToken, signToken, type TokenPayload } from '@/lib/jwt'
 import { checkRateLimit } from '@/lib/rateLimit'
+
+const SESSION_SECONDS = 60 * 60 * 24 * 30   // 30 天
+const RENEW_THRESHOLD = 60 * 60 * 24 * 7    // 剩餘不足 7 天時自動續期
+
+/** 如 token 即將過期，在 response 上設定更新後的 cookie */
+async function maybeRenewSession(auth: TokenPayload, response: NextResponse): Promise<void> {
+  const remaining = auth.exp - Math.floor(Date.now() / 1000)
+  if (remaining < RENEW_THRESHOLD) {
+    const { exp: _exp, ...rest } = auth
+    const newToken = await signToken(rest, SESSION_SECONDS)
+    response.cookies.set('admin_session', newToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: SESSION_SECONDS,
+      path: '/',
+    })
+  }
+}
 
 /** 解析 JWT 認證，回傳 payload 或 null */
 async function getAuthContext(request: NextRequest): Promise<TokenPayload | null> {
@@ -77,15 +96,19 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
         }
         // 移除 slug，rewrite 到實際 admin 頁面
         const rest = afterAdmin.slice(firstSegment.length) // e.g. "/surveys" or ""
-        return NextResponse.rewrite(new URL(`/insight-admin${rest}`, request.url), {
+        const res = NextResponse.rewrite(new URL(`/insight-admin${rest}`, request.url), {
           request: { headers: withTenantHeaders(request, auth, specificAccess) },
         })
+        await maybeRenewSession(auth, res)
+        return res
       }
     }
 
-    return NextResponse.next({
+    const res = NextResponse.next({
       request: { headers: withTenantHeaders(request, auth, defaultAccess) },
     })
+    await maybeRenewSession(auth, res)
+    return res
   }
 
   // Admin API /api/admin/...
@@ -98,9 +121,11 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
     const access = getTenantAccess(auth, targetSlug)
     if (!access) return NextResponse.json({ error: '未授權或無子帳號權限' }, { status: 403 })
 
-    return NextResponse.next({
+    const res = NextResponse.next({
       request: { headers: withTenantHeaders(request, auth, access) },
     })
+    await maybeRenewSession(auth, res)
+    return res
   }
 
   // Public user API /api/zcoin/... /api/ad-view /api/referral — 注入認證但不強制要求
@@ -131,9 +156,11 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
       return NextResponse.redirect(new URL('/', request.url))
     }
     const access = getTenantAccess(auth) ?? { tid: auth.tid ?? 'default', role: 'super_admin' }
-    return NextResponse.next({
+    const res = NextResponse.next({
       request: { headers: withTenantHeaders(request, auth, access) },
     })
+    await maybeRenewSession(auth, res)
+    return res
   }
 
   // Super Admin API /api/super-admin/...
@@ -162,7 +189,7 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
     if (contentType.startsWith('multipart/form-data') || contentType.startsWith('application/octet-stream')) {
       return NextResponse.next()
     }
-    return NextResponse.next({
+    const superRes = NextResponse.next({
       request: {
         headers: (() => {
           const headers = new Headers(request.headers)
@@ -173,6 +200,8 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
         })(),
       },
     })
+    await maybeRenewSession(auth, superRes)
+    return superRes
   }
 
   return NextResponse.next()

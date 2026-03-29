@@ -17,6 +17,7 @@ interface GeneratedQuestion {
   key: string
   type: 'single' | 'multiple' | 'text'
   content: string
+  narrative: string
   options: { label: string; value: string }[]
   isRequired: boolean
   route: string
@@ -34,6 +35,7 @@ const SYSTEM_PROMPT = `你是專業的問卷設計師。根據使用者提供的
 7. key 格式為 q1, q2, q3...
 8. isRequired 預設為 true，text 題可設為 false
 9. 題目要有邏輯順序：先簡單→再深入→最後開放
+10. narrative 是題目的補充說明或情境描述（10~30 字），直接切入主題，不要提及品牌名稱
 
 回傳格式為純 JSON 陣列，不要加 markdown code block：
 [
@@ -41,6 +43,7 @@ const SYSTEM_PROMPT = `你是專業的問卷設計師。根據使用者提供的
     "key": "q1",
     "type": "single",
     "content": "題目文字",
+    "narrative": "簡短說明這題的用意或情境，幫助填答者理解",
     "options": [{"label": "選項A", "value": "選項A"}],
     "isRequired": true,
     "route": "all"
@@ -136,6 +139,7 @@ function parseGeneratedQuestions(raw: string): GeneratedQuestion[] {
     key: typeof q.key === 'string' ? q.key : `q${i + 1}`,
     type: (['single', 'multiple', 'text'] as const).find((t) => t === q.type) ?? 'single',
     content: typeof q.content === 'string' ? q.content : '',
+    narrative: typeof q.narrative === 'string' ? q.narrative : '',
     options: Array.isArray(q.options)
       ? (q.options as { label: string; value: string }[]).map((o) => ({
           label: String(o.label ?? o.value ?? ''),
