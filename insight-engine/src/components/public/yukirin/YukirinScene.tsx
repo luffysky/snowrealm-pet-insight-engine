@@ -154,6 +154,12 @@ export default function YukirinScene({
   const mouseRef = useRef({ x: 0, y: 0 })
   const rafRef = useRef<number>(0)
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null)
+  const cameraRef = useRef<THREE.PerspectiveCamera | null>(null)
+  const clickCooldownRef = useRef(false)
+
+  // 點擊互動：隨機切換表情
+  const CLICK_REACTIONS: YukirinMood[] = ['surprised', 'wink', 'excited', 'happy', 'relaxed']
+  const clickReactionIdxRef = useRef(0)
 
   // 平滑過渡表情
   const transitionExpression = useCallback((vrm: VRM, target: YukirinMood, durationMs = 300) => {
@@ -190,6 +196,7 @@ export default function YukirinScene({
     const preset = CAMERA_PRESETS[cameraMode]
     camera.position.set(preset.pos[0], preset.pos[1], preset.pos[2])
     camera.lookAt(preset.target[0], preset.target[1], preset.target[2])
+    cameraRef.current = camera
 
     const renderer = new THREE.WebGLRenderer({
       alpha: true,
@@ -246,6 +253,53 @@ export default function YukirinScene({
       }
     }
     window.addEventListener('mousemove', onMouseMove)
+
+    // ── 點擊互動 ───────────────────────────────────────────────────────────
+    const onClick = (e: MouseEvent) => {
+      const vrm = vrmRef.current
+      if (!vrm || clickCooldownRef.current) return
+
+      const rect = container.getBoundingClientRect()
+      const ndcX = ((e.clientX - rect.left) / rect.width) * 2 - 1
+      const ndcY = -((e.clientY - rect.top) / rect.height) * 2 + 1
+
+      // Raycast hit test
+      const raycaster = new THREE.Raycaster()
+      raycaster.setFromCamera(new THREE.Vector2(ndcX, ndcY), camera)
+      const intersects = raycaster.intersectObjects(vrm.scene.children, true)
+
+      if (intersects.length > 0) {
+        clickCooldownRef.current = true
+        // 輪流播放互動表情
+        const reactions = CLICK_REACTIONS
+        const idx = clickReactionIdxRef.current % reactions.length
+        const reaction = reactions[idx]
+        clickReactionIdxRef.current++
+
+        transitionExpression(vrm, reaction, 200)
+        // 搖頭 / 點頭動畫
+        const headBone = vrm.humanoid.getNormalizedBoneNode('head')
+        if (headBone) {
+          let t = 0
+          const headAnim = () => {
+            t += 0.12
+            if (t < Math.PI * 2) {
+              headBone.rotation.y = Math.sin(t * 2) * 0.18
+              requestAnimationFrame(headAnim)
+            } else {
+              headBone.rotation.y = 0
+            }
+          }
+          requestAnimationFrame(headAnim)
+        }
+        // 2 秒後恢復 happy
+        setTimeout(() => {
+          transitionExpression(vrm, 'happy', 400)
+          clickCooldownRef.current = false
+        }, 2000)
+      }
+    }
+    container.addEventListener('click', onClick)
 
     // ── 陀螺儀（行動裝置） ─────────────────────────────────────────────────
     const onDeviceOrientation = (e: DeviceOrientationEvent) => {
@@ -347,6 +401,7 @@ export default function YukirinScene({
       window.removeEventListener('mousemove', onMouseMove)
       window.removeEventListener('deviceorientation', onDeviceOrientation)
       window.removeEventListener('resize', onResize)
+      container.removeEventListener('click', onClick)
       renderer.dispose()
       container.removeChild(renderer.domElement)
     }
@@ -355,7 +410,7 @@ export default function YukirinScene({
   return (
     <div
       ref={mountRef}
-      className={`w-full h-full ${className}`}
+      className={`w-full h-full cursor-pointer ${className}`}
       aria-hidden="true"
     />
   )
