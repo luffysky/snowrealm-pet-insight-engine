@@ -12,6 +12,7 @@ interface Stats {
   pendingReports: number
   totalAlbumPhotos: number
   totalBlogs: number
+  totalAlbums: number
 }
 
 interface Album {
@@ -20,8 +21,20 @@ interface Album {
   author_name: string | null
   author_avatar: string | null
   name: string
+  description: string | null
+  cover_image: string | null
   is_public: boolean
   photo_count: string
+  created_at: string
+  updated_at: string | null
+}
+
+interface AlbumPhoto {
+  id: string
+  url: string
+  caption: string | null
+  is_public: boolean
+  display_order: number
   created_at: string
 }
 
@@ -202,6 +215,9 @@ export default function SocialMonitorPage() {
   const [expandedConv, setExpandedConv] = useState<{ u1: string; u2: string } | null>(null)
   const [convMessages, setConvMessages] = useState<DmMessage[]>([])
   const [convLoading, setConvLoading] = useState(false)
+  const [expandedAlbum, setExpandedAlbum] = useState<string | null>(null)
+  const [albumPhotos, setAlbumPhotos] = useState<AlbumPhoto[]>([])
+  const [albumPhotosLoading, setAlbumPhotosLoading] = useState(false)
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   const fetchStats = useCallback(async () => {
@@ -271,6 +287,25 @@ export default function SocialMonitorPage() {
     fetchStats()
   }
 
+  const loadAlbumPhotos = async (albumId: string) => {
+    if (expandedAlbum === albumId) {
+      setExpandedAlbum(null)
+      setAlbumPhotos([])
+      return
+    }
+    setExpandedAlbum(albumId)
+    setAlbumPhotosLoading(true)
+    try {
+      const res = await fetch(`/api/super-admin/social?tab=album_detail&albumId=${albumId}`)
+      if (res.ok) {
+        const data = await res.json() as { photos?: AlbumPhoto[] }
+        setAlbumPhotos(data.photos ?? [])
+      }
+    } finally {
+      setAlbumPhotosLoading(false)
+    }
+  }
+
   const loadConvMessages = async (u1: string, u2: string) => {
     if (expandedConv?.u1 === u1 && expandedConv?.u2 === u2) {
       setExpandedConv(null)
@@ -328,7 +363,7 @@ export default function SocialMonitorPage() {
   const TABS: { key: Tab; label: string; icon: typeof Flag; count?: number }[] = [
     { key: 'reports', label: '檢舉', icon: Flag, count: pendingCount || undefined },
     { key: 'posts', label: '貼文', icon: FileText, count: stats?.totalPosts || undefined },
-    { key: 'albums', label: '相簿', icon: ImageIcon, count: stats?.totalAlbumPhotos || undefined },
+    { key: 'albums', label: '相簿', icon: ImageIcon, count: stats?.totalAlbums || undefined },
     { key: 'blogs', label: '部落格', icon: BookOpen, count: stats?.totalBlogs || undefined },
     { key: 'dms', label: '私訊', icon: MessageSquare, count: stats?.totalDms || undefined },
     { key: 'users', label: '用戶', icon: Users, count: stats?.totalUsers || undefined },
@@ -361,10 +396,11 @@ export default function SocialMonitorPage() {
 
       {/* Stats Overview */}
       {stats && (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3">
           {[
             { label: '待審檢舉', value: stats.pendingReports, color: 'text-red-400', icon: Flag },
             { label: '貼文', value: stats.totalPosts, color: 'text-blue-400', icon: FileText },
+            { label: '相簿', value: stats.totalAlbums ?? 0, color: 'text-pink-300', icon: ImageIcon },
             { label: '相簿照片', value: stats.totalAlbumPhotos, color: 'text-pink-400', icon: ImageIcon },
             { label: '部落格文章', value: stats.totalBlogs, color: 'text-amber-400', icon: BookOpen },
             { label: '私訊對話', value: stats.totalDms, color: 'text-purple-400', icon: MessageSquare },
@@ -437,8 +473,8 @@ export default function SocialMonitorPage() {
                     )}
                   </p>
                   {r.target_content && (
-                    <div className="mt-2 bg-black/30 border border-white/5 rounded-xl px-3 py-2 text-xs text-white/50 line-clamp-2">
-                      {r.target_content}
+                    <div className="mt-2 bg-black/30 border border-white/5 rounded-xl px-3 py-2 text-xs text-white/50">
+                      {renderDmContent(r.target_content)}
                     </div>
                   )}
                   {r.description && (
@@ -518,12 +554,11 @@ export default function SocialMonitorPage() {
         </div>
       )}
 
-      {/* Albums Tab — grouped by user */}
+      {/* Albums Tab — grouped by user, expandable photo grid */}
       {tab === 'albums' && (
         <div className="space-y-3">
           {loading && <p className="text-slate-400 text-sm py-4 text-center">載入中...</p>}
           {!loading && albums.length === 0 && <EmptyState icon={ImageIcon} text="目前沒有相簿" />}
-          {/* Group by user */}
           {(() => {
             const byUser = albums.reduce<Record<string, { name: string | null; avatar: string | null; items: Album[] }>>((acc, a) => {
               const key = a.user_id
@@ -541,24 +576,85 @@ export default function SocialMonitorPage() {
                   <span className="text-xs text-white/30 ml-auto">{group.items.length} 個相簿</span>
                 </div>
                 <div className="divide-y divide-slate-700/20">
-                  {group.items.map(album => (
-                    <div key={album.id} className="px-4 py-2.5 flex items-center gap-3">
-                      <ImageIcon className="w-4 h-4 text-pink-400/60 shrink-0" />
-                      <div className="flex-1 min-w-0">
-                        <span className="text-sm text-white/75">{album.name}</span>
-                        <span className="ml-2 text-xs text-white/30">{album.photo_count} 張照片</span>
-                        {!album.is_public && <span className="ml-2 text-[10px] text-white/25 bg-white/5 border border-white/10 rounded-full px-1.5 py-0.5">私密</span>}
+                  {group.items.map(album => {
+                    const isAlbumExpanded = expandedAlbum === album.id
+                    return (
+                      <div key={album.id}>
+                        {/* Album header row */}
+                        <div className="px-4 py-2.5 flex items-center gap-3">
+                          {album.cover_image ? (
+                            <img src={album.cover_image} alt="" className="w-10 h-8 object-cover rounded-lg shrink-0" />
+                          ) : (
+                            <div className="w-10 h-8 bg-white/5 border border-white/10 rounded-lg flex items-center justify-center shrink-0">
+                              <ImageIcon className="w-4 h-4 text-pink-400/40" />
+                            </div>
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="text-sm text-white/75">{album.name}</span>
+                              {!album.is_public && <span className="text-[10px] text-orange-400/70 bg-orange-500/10 border border-orange-400/20 rounded-full px-1.5 py-0.5">🔒 私密</span>}
+                              <span className="text-xs text-white/30">{album.photo_count} 張</span>
+                            </div>
+                            {album.description && <p className="text-xs text-white/35 truncate mt-0.5">{album.description}</p>}
+                          </div>
+                          <span className="text-xs text-white/25 shrink-0">{new Date(album.created_at).toLocaleDateString('zh-TW')}</span>
+                          <button
+                            onClick={() => void loadAlbumPhotos(album.id)}
+                            className={`px-2.5 py-1 rounded-lg text-xs transition-colors shrink-0 ${isAlbumExpanded ? 'bg-pink-500/20 border border-pink-400/30 text-pink-300' : 'bg-white/5 border border-white/10 text-white/40 hover:text-white/70'}`}
+                            title={isAlbumExpanded ? '收起' : '展開照片'}
+                          >
+                            {isAlbumExpanded ? '▲ 收起' : '▼ 看照片'}
+                          </button>
+                          <button
+                            onClick={() => void handleDeleteAlbum(album.id, album.name)}
+                            className="p-1 text-red-400/40 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-colors shrink-0"
+                            title="刪除相簿"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+
+                        {/* Expanded photo grid */}
+                        {isAlbumExpanded && (
+                          <div className="border-t border-white/5 bg-black/20 px-4 py-3">
+                            {albumPhotosLoading ? (
+                              <p className="text-xs text-white/30 text-center py-4">載入照片中...</p>
+                            ) : albumPhotos.length === 0 ? (
+                              <p className="text-xs text-white/30 text-center py-4">相簿內沒有照片</p>
+                            ) : (
+                              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2">
+                                {albumPhotos.map((photo, idx) => (
+                                  <a
+                                    key={photo.id}
+                                    href={photo.url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="group relative aspect-square overflow-hidden rounded-xl bg-white/5 border border-white/10 hover:border-pink-400/30 transition-colors"
+                                    title={photo.caption ?? `照片 ${idx + 1}`}
+                                  >
+                                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                                    <img
+                                      src={photo.url}
+                                      alt={photo.caption ?? ''}
+                                      className="w-full h-full object-cover group-hover:opacity-90 transition-opacity"
+                                    />
+                                    {!photo.is_public && (
+                                      <span className="absolute top-1 right-1 text-[9px] bg-black/70 text-orange-300 rounded px-1">🔒</span>
+                                    )}
+                                    {photo.caption && (
+                                      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent px-1.5 py-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <p className="text-[10px] text-white/80 line-clamp-2">{photo.caption}</p>
+                                      </div>
+                                    )}
+                                  </a>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </div>
-                      <span className="text-xs text-white/25 shrink-0">{new Date(album.created_at).toLocaleDateString('zh-TW')}</span>
-                      <button
-                        onClick={() => void handleDeleteAlbum(album.id, album.name)}
-                        className="p-1 text-red-400/40 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-colors shrink-0"
-                        title="刪除相簿"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  ))}
+                    )
+                  })}
                 </div>
               </div>
             ))

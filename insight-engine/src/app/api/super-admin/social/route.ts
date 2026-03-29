@@ -72,8 +72,29 @@ interface AlbumRow extends Record<string, unknown> {
   author_name: string | null
   author_avatar: string | null
   name: string
+  description: string | null
+  cover_image: string | null
   is_public: boolean
   photo_count: string
+  created_at: string
+  updated_at: string | null
+}
+
+interface AlbumPhotoRow extends Record<string, unknown> {
+  id: string
+  url: string
+  caption: string | null
+  is_public: boolean
+  display_order: number
+  created_at: string
+}
+
+interface AlbumPhotoRow extends Record<string, unknown> {
+  id: string
+  url: string
+  caption: string | null
+  is_public: boolean
+  display_order: number
   created_at: string
 }
 
@@ -100,22 +121,24 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
   const tab = req.nextUrl.searchParams.get('tab') ?? 'reports'
 
   if (tab === 'stats') {
-    const [rPending, rPosts, rDms, rUsers, rAlbums, rBlogs] = await Promise.all([
+    const [rPending, rPosts, rDms, rUsers, rAlbumPhotos, rBlogs, rAlbums] = await Promise.all([
       query<{ cnt: string }>(`SELECT COUNT(*) as cnt FROM social_reports WHERE status = 'pending'`),
       query<{ cnt: string }>(`SELECT COUNT(*) as cnt FROM social_posts`),
       query<{ cnt: string }>(`SELECT COUNT(DISTINCT CONCAT(LEAST(from_user_id::text,to_user_id::text),'_',GREATEST(from_user_id::text,to_user_id::text))) as cnt FROM direct_messages`),
       query<{ cnt: string }>(`SELECT COUNT(*) as cnt FROM admin_users`),
       query<{ cnt: string }>(`SELECT COUNT(*) as cnt FROM user_album_photos`).catch(() => [{ cnt: '0' }]),
       query<{ cnt: string }>(`SELECT COUNT(*) as cnt FROM user_blog_articles`).catch(() => [{ cnt: '0' }]),
+      query<{ cnt: string }>(`SELECT COUNT(*) as cnt FROM user_albums`).catch(() => [{ cnt: '0' }]),
     ])
     return NextResponse.json({
       stats: {
-        pendingReports: parseInt(rPending[0]?.cnt ?? '0'),
-        totalPosts:     parseInt(rPosts[0]?.cnt ?? '0'),
-        totalDms:       parseInt(rDms[0]?.cnt ?? '0'),
-        totalUsers:     parseInt(rUsers[0]?.cnt ?? '0'),
-        totalAlbumPhotos: parseInt(rAlbums[0]?.cnt ?? '0'),
-        totalBlogs:     parseInt(rBlogs[0]?.cnt ?? '0'),
+        pendingReports:   parseInt(rPending[0]?.cnt ?? '0'),
+        totalPosts:       parseInt(rPosts[0]?.cnt ?? '0'),
+        totalDms:         parseInt(rDms[0]?.cnt ?? '0'),
+        totalUsers:       parseInt(rUsers[0]?.cnt ?? '0'),
+        totalAlbumPhotos: parseInt(rAlbumPhotos[0]?.cnt ?? '0'),
+        totalBlogs:       parseInt(rBlogs[0]?.cnt ?? '0'),
+        totalAlbums:      parseInt(rAlbums[0]?.cnt ?? '0'),
       }
     })
   }
@@ -248,12 +271,12 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
     try {
       const rows = await query<AlbumRow>(
         `SELECT ua.id, ua.user_id::text, au.display_name as author_name, au.avatar_url as author_avatar,
-                ua.name, ua.is_public, ua.created_at,
+                ua.name, ua.description, ua.cover_image, ua.is_public, ua.created_at, ua.updated_at,
                 COUNT(uap.id)::text as photo_count
          FROM user_albums ua
          LEFT JOIN admin_users au ON au.id = ua.user_id
          LEFT JOIN user_album_photos uap ON uap.album_id = ua.id
-         GROUP BY ua.id, au.display_name, au.avatar_url, ua.user_id, ua.name, ua.is_public, ua.created_at
+         GROUP BY ua.id, au.display_name, au.avatar_url, ua.user_id, ua.name, ua.description, ua.cover_image, ua.is_public, ua.created_at, ua.updated_at
          ORDER BY au.display_name NULLS LAST, ua.created_at DESC
          LIMIT $1 OFFSET $2`,
         [pageSize, offset]
@@ -261,6 +284,23 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
       return NextResponse.json({ albums: rows })
     } catch {
       return NextResponse.json({ albums: [] })
+    }
+  }
+
+  if (tab === 'album_detail') {
+    const albumId = req.nextUrl.searchParams.get('albumId')
+    if (!albumId) return NextResponse.json({ error: '缺少 albumId' }, { status: 400 })
+    try {
+      const photos = await query<AlbumPhotoRow>(
+        `SELECT id, url, caption, is_public, display_order, created_at
+         FROM user_album_photos
+         WHERE album_id = $1
+         ORDER BY display_order ASC, created_at ASC`,
+        [albumId]
+      )
+      return NextResponse.json({ photos })
+    } catch {
+      return NextResponse.json({ photos: [] })
     }
   }
 
