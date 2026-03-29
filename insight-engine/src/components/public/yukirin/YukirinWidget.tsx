@@ -70,52 +70,44 @@ export default function YukirinWidget() {
   const yukirinRef = useRef<YukirinControls | null>(null)
   const bubbleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  // ── 拖曳移動 ─────────────────────────────────────────────────────────────
+  // ── 拖曳移動（document-level listener，不依賴 setPointerCapture） ─────────
   const [widgetPos, setWidgetPos] = useState<{ x: number; y: number } | null>(null)
   const [isGrabbing, setIsGrabbing] = useState(false)
-  const dragStartRef = useRef<{ px: number; py: number; wx: number; wy: number; pointerId: number; el: HTMLElement } | null>(null)
   const isDraggingRef = useRef(false)
 
   const onDragStart = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
     const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
-    dragStartRef.current = {
-      px: e.clientX,
-      py: e.clientY,
-      wx: rect.left,
-      wy: rect.top,
-      pointerId: e.pointerId,
-      el: e.currentTarget as HTMLElement,
-    }
+    const startPx = e.clientX, startPy = e.clientY
+    const startWx = rect.left,  startWy = rect.top
+    const el = e.currentTarget as HTMLElement
+    const pid = e.pointerId
     isDraggingRef.current = false
-    // 不在這裡 setPointerCapture，避免攔截按鈕的 click 事件
-  }, [])
 
-  const onDragMove = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
-    if (!dragStartRef.current) return
-    const dx = e.clientX - dragStartRef.current.px
-    const dy = e.clientY - dragStartRef.current.py
-
-    if (!isDraggingRef.current && (Math.abs(dx) > 5 || Math.abs(dy) > 5)) {
-      isDraggingRef.current = true
-      setIsGrabbing(true)
-      // 確認是拖動後才捕獲 pointer，這樣按鈕的 click 不受影響
-      dragStartRef.current.el.setPointerCapture(dragStartRef.current.pointerId)
+    const handleMove = (ev: PointerEvent) => {
+      if (ev.pointerId !== pid) return
+      const dx = ev.clientX - startPx
+      const dy = ev.clientY - startPy
+      if (!isDraggingRef.current && (Math.abs(dx) > 5 || Math.abs(dy) > 5)) {
+        isDraggingRef.current = true
+        setIsGrabbing(true)
+      }
+      if (!isDraggingRef.current) return
+      const newX = Math.max(0, Math.min(window.innerWidth  - el.offsetWidth,  startWx + dx))
+      const newY = Math.max(0, Math.min(window.innerHeight - el.offsetHeight, startWy + dy))
+      setWidgetPos({ x: newX, y: newY })
     }
-    if (!isDraggingRef.current) return
 
-    const el = dragStartRef.current.el
-    const w = el.offsetWidth
-    const h = el.offsetHeight
-    const newX = Math.max(0, Math.min(window.innerWidth - w, dragStartRef.current.wx + dx))
-    const newY = Math.max(0, Math.min(window.innerHeight - h, dragStartRef.current.wy + dy))
-    setWidgetPos({ x: newX, y: newY })
-  }, [])
+    const handleUp = (ev: PointerEvent) => {
+      if (ev.pointerId !== pid) return
+      document.removeEventListener('pointermove', handleMove)
+      document.removeEventListener('pointerup',   handleUp)
+      setIsGrabbing(false)
+      // 延遲清除，讓 click 事件先觸發再重置
+      setTimeout(() => { isDraggingRef.current = false }, 50)
+    }
 
-  const onDragEnd = useCallback(() => {
-    dragStartRef.current = null
-    setIsGrabbing(false)
-    // 延遲清除 isDraggingRef，讓 click 事件先觸發並被攔截
-    setTimeout(() => { isDraggingRef.current = false }, 50)
+    document.addEventListener('pointermove', handleMove)
+    document.addEventListener('pointerup',   handleUp)
   }, [])
 
   // ── 說話邏輯 ─────────────────────────────────────────────────────────────
@@ -182,8 +174,6 @@ export default function YukirinWidget() {
           : { bottom: 'calc(var(--bnav-h, 76px) + 12px)', right: '12px' }
       }
       onPointerDown={onDragStart}
-      onPointerMove={onDragMove}
-      onPointerUp={onDragEnd}
     >
       {open ? (
         <div className="relative flex flex-col items-end">
