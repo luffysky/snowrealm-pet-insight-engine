@@ -75,7 +75,7 @@ export default function SuperAdminSiteSettingsPage() {
       const form = new FormData()
       form.append('file', file)
       form.append('folder', target === 'og' ? 'og' : 'favicon')
-      const res = await fetch('/api/admin/upload', { method: 'POST', body: form })
+      const res = await fetch('/api/super-admin/upload', { method: 'POST', body: form })
       const data = await res.json()
       if (res.ok && data.url) {
         const key = target === 'og' ? 'og_image_url' : 'favicon_url'
