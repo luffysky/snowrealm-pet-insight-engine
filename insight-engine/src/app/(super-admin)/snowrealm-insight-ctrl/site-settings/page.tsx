@@ -205,6 +205,38 @@ export default function SuperAdminSiteSettingsPage() {
         </div>
       </section>
 
+      {/* 分享測試 */}
+      <section className={`${CARD} rounded-xl p-6 space-y-3`}>
+        <h2 className="text-lg font-semibold text-white/90">🔗 分享測試</h2>
+        <p className="text-sm text-white/40">儲存後點下方按鈕，確認分享預覽是否正確。</p>
+        <div className="flex flex-wrap gap-3">
+          <a
+            href={typeof window !== 'undefined' ? `https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(window.location.origin)}` : '#'}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="px-4 py-2 bg-[#06C755] hover:opacity-80 text-white text-sm font-medium rounded-lg transition-opacity cursor-pointer"
+          >
+            💬 分享到 LINE
+          </a>
+          <a
+            href={typeof window !== 'undefined' ? `https://developers.facebook.com/tools/debug/?q=${encodeURIComponent(window.location.origin)}` : '#'}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="px-4 py-2 bg-blue-700 hover:bg-blue-600 text-white text-sm font-medium rounded-lg transition-colors cursor-pointer"
+          >
+            🔍 FB 除錯工具
+          </a>
+          <a
+            href={typeof window !== 'undefined' ? `https://www.opengraph.xyz/url/${encodeURIComponent(window.location.origin)}` : '#'}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white text-sm font-medium rounded-lg transition-colors cursor-pointer"
+          >
+            👁️ OG 預覽檢查
+          </a>
+        </div>
+      </section>
+
       {/* 儲存 */}
       <div className="flex items-center gap-4">
         <button onClick={handleSave} disabled={saving} className="px-6 py-2.5 bg-cyan-600 hover:bg-cyan-500 disabled:bg-cyan-800 text-white font-medium rounded-lg transition-colors cursor-pointer">

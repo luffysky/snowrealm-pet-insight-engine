@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { queryOne, query } from '@/lib/db'
 import { verifyToken } from '@/lib/jwt'
+import { revalidatePath } from 'next/cache'
 
 async function verifySuperAdmin(request: NextRequest) {
   const token = request.cookies.get('admin_session')?.value
@@ -68,6 +69,9 @@ export async function PUT(request: NextRequest) {
         JSON.stringify(body.extra_meta ?? {}),
       ]
     )
+
+    // 清除首頁 metadata 快取，讓 OG 標籤即時生效
+    revalidatePath('/', 'layout')
 
     return NextResponse.json({ success: true })
   } catch (err) {
