@@ -2,11 +2,28 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import dynamic from 'next/dynamic'
-import type { YukirinControls, YukirinMood } from './YukirinScene'
+import type { YukirinMood } from './YukirinScene'
 
 const YukirinScene = dynamic(() => import('./YukirinScene'), { ssr: false })
+const RikuScene    = dynamic(() => import('./RikuScene'),    { ssr: false })
 const YukirinOrbitModal = dynamic(() => import('./YukirinOrbitModal'), { ssr: false })
 const YukirinChatPanel = dynamic(() => import('./YukirinChatPanel'), { ssr: false })
+
+// 兩個角色共用的控制介面
+interface AnyControls {
+  setMood: (mood: string, durationMs?: number) => void
+  playAnimation: (name: string) => void
+}
+
+type CharacterKey = 'yukirin' | 'riku'
+
+const POSES = [
+  { key: 'fbx_idle',      label: '待機', icon: '🧍' },
+  { key: 'fbx_breathing', label: '呼吸', icon: '😌' },
+  { key: 'fbx_happy',     label: '開心', icon: '💃' },
+  { key: 'fbx_happy2',    label: '活潑', icon: '🎉' },
+  { key: 'fbx_sitting',   label: '坐姿', icon: '🪑' },
+] as const
 
 // ── 隨機台詞 ───────────────────────────────────────────────────────────────
 type Line = { text: string; mood: YukirinMood }
@@ -108,8 +125,29 @@ export default function YukirinWidget() {
   const [bubbleVisible, setBubbleVisible] = useState(false)
   const [currentLine, setCurrentLine] = useState<Line>(LINES[0])
   const [bubbleActions, setBubbleActions] = useState<{ label: string; onClick: () => void }[] | undefined>()
-  const yukirinRef = useRef<YukirinControls | null>(null)
+  const yukirinRef = useRef<AnyControls | null>(null)
   const bubbleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // ── 角色 + 姿勢 ────────────────────────────────────────────────────────────
+  const [character, setCharacterState] = useState<CharacterKey>(() =>
+    (typeof window !== 'undefined' ? localStorage.getItem('yukirin-character') as CharacterKey : null) ?? 'yukirin'
+  )
+  const [currentPose, setCurrentPoseState] = useState<string>(() =>
+    (typeof window !== 'undefined' ? localStorage.getItem('yukirin-pose') : null) ?? 'fbx_breathing'
+  )
+
+  const switchCharacter = useCallback((char: CharacterKey) => {
+    if (char === character) return
+    setCharacterState(char)
+    localStorage.setItem('yukirin-character', char)
+    yukirinRef.current = null  // 切換時重置 ref，等新場景的 onLoad
+  }, [character])
+
+  const setPose = useCallback((poseName: string) => {
+    setCurrentPoseState(poseName)
+    localStorage.setItem('yukirin-pose', poseName)
+    yukirinRef.current?.playAnimation(poseName)
+  }, [])
 
   // ── 面板尺寸（可拖曳調整）────────────────────────────────────────────────
   const [panelSize, setPanelSize] = useState({ w: 288, h: 460 })
@@ -248,8 +286,13 @@ export default function YukirinWidget() {
   }, [])
 
   // ── 說話邏輯 ─────────────────────────────────────────────────────────────
-  const handleLoad = useCallback((controls: YukirinControls) => {
+  const handleLoad = useCallback((controls: AnyControls) => {
     yukirinRef.current = controls
+    // 恢復上次保存的姿勢
+    const savedPose = localStorage.getItem('yukirin-pose') ?? 'fbx_breathing'
+    if (savedPose !== 'fbx_breathing') {
+      setTimeout(() => controls.playAnimation(savedPose), 800)
+    }
   }, [])
 
   const showBubble = useCallback(() => {
@@ -364,7 +407,7 @@ export default function YukirinWidget() {
                 actions={bubbleActions}
               />
 
-              {/* 雪凜 3D 視窗 */}
+              {/* 3D 視窗 */}
               <div className="relative w-24 h-28 sm:w-28 sm:h-32">
                 {/* 關閉按鈕（左上） */}
                 <button
@@ -412,16 +455,66 @@ export default function YukirinWidget() {
                   className="w-full h-full rounded-2xl overflow-hidden bg-gradient-to-b from-[#f3eeff] to-[#ffeef5] border border-[#b8a9e8]/30 shadow-[0_8px_32px_rgba(184,169,232,0.35)] cursor-pointer"
                   title="點我說話"
                 >
-                  <YukirinScene
-                    cameraMode="upperBody"
-                    mood="happy"
-                    showBackground={false}
-                    quality={performanceMode}
-                    onLowPerformance={handleLowPerformance}
-                    onLoad={handleLoad}
-                    className="w-full h-full"
-                  />
+                  {character === 'riku' ? (
+                    <RikuScene
+                      cameraMode="upperBody"
+                      mood="happy"
+                      showBackground={false}
+                      quality={performanceMode}
+                      onLowPerformance={handleLowPerformance}
+                      onLoad={handleLoad as (c: import('./RikuScene').RikuControls) => void}
+                      className="w-full h-full"
+                    />
+                  ) : (
+                    <YukirinScene
+                      cameraMode="upperBody"
+                      mood="happy"
+                      showBackground={false}
+                      quality={performanceMode}
+                      onLowPerformance={handleLowPerformance}
+                      onLoad={handleLoad as (c: import('./YukirinScene').YukirinControls) => void}
+                      className="w-full h-full"
+                    />
+                  )}
                 </button>
+              </div>
+
+              {/* ── 角色切換 + 姿勢選擇 ────────────────────────────────── */}
+              <div className="w-24 sm:w-28 mt-2 space-y-1.5" onPointerDown={e => e.stopPropagation()}>
+                {/* 角色切換 */}
+                <div className="flex items-center bg-white/60 backdrop-blur-sm border border-[#b8a9e8]/30 rounded-full h-[18px] overflow-hidden shadow-sm">
+                  <button
+                    onClick={(e) => { e.stopPropagation(); if (!isDraggingRef.current) switchCharacter('yukirin') }}
+                    className={`flex-1 flex items-center justify-center text-[8px] h-full transition-colors cursor-pointer font-medium ${character === 'yukirin' ? 'bg-[#b8a9e8]/50 text-[#3d3155]' : 'text-[#8a7ca8] hover:text-[#5a4878]'}`}
+                  >
+                    🌸 雪凜
+                  </button>
+                  <div className="w-px h-3 bg-[#b8a9e8]/40 shrink-0" />
+                  <button
+                    onClick={(e) => { e.stopPropagation(); if (!isDraggingRef.current) switchCharacter('riku') }}
+                    className={`flex-1 flex items-center justify-center text-[8px] h-full transition-colors cursor-pointer font-medium ${character === 'riku' ? 'bg-[#b8a9e8]/50 text-[#3d3155]' : 'text-[#8a7ca8] hover:text-[#5a4878]'}`}
+                  >
+                    ❄️ 陸
+                  </button>
+                </div>
+
+                {/* 姿勢選擇 */}
+                <div className="flex justify-between px-0.5">
+                  {POSES.map(p => (
+                    <button
+                      key={p.key}
+                      onClick={(e) => { e.stopPropagation(); if (!isDraggingRef.current) setPose(p.key) }}
+                      className={`w-[17px] h-[17px] sm:w-[18px] sm:h-[18px] rounded-full flex items-center justify-center text-[8px] transition-all cursor-pointer border ${
+                        currentPose === p.key
+                          ? 'bg-[#b8a9e8]/60 border-[#b8a9e8]/80 shadow-sm'
+                          : 'bg-white/50 border-white/30 hover:bg-white/80'
+                      }`}
+                      title={p.label}
+                    >
+                      {p.icon}
+                    </button>
+                  ))}
+                </div>
               </div>
             </>
           )}
@@ -439,7 +532,7 @@ export default function YukirinWidget() {
 
       {/* 360° Orbit Modal */}
       {orbitOpen && (
-        <YukirinOrbitModal onClose={() => setOrbitOpen(false)} />
+        <YukirinOrbitModal onClose={() => setOrbitOpen(false)} character={character} />
       )}
     </div>
   )
