@@ -1160,6 +1160,13 @@ export default function MessagesPage() {
               <ArrowLeft className="w-4 h-4" />
             </button>
             <h1 className="font-bold text-lg tracking-tight">訊息</h1>
+            {/* 桌機版導覽連結 */}
+            <div className="hidden md:flex items-center gap-1 ml-auto">
+              <Link href="/" className="w-8 h-8 flex items-center justify-center rounded-lg text-white/40 hover:text-white hover:bg-white/8 transition-colors text-base" title="首頁">🏠</Link>
+              <Link href="/blog" className="w-8 h-8 flex items-center justify-center rounded-lg text-white/40 hover:text-white hover:bg-white/8 transition-colors text-base" title="部落格">📰</Link>
+              <Link href="/explore" className="w-8 h-8 flex items-center justify-center rounded-lg text-white/40 hover:text-white hover:bg-white/8 transition-colors text-base" title="探索">🔍</Link>
+              <Link href="/profile" className="w-8 h-8 flex items-center justify-center rounded-lg text-white/40 hover:text-white hover:bg-white/8 transition-colors text-base" title="我的頁面">👤</Link>
+            </div>
           </div>
           {/* Tab bar */}
           <div className="px-4 flex gap-1 pt-2">

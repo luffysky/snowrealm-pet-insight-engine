@@ -5,10 +5,10 @@ import { useRouter, usePathname } from 'next/navigation'
 import dynamic from 'next/dynamic'
 import type { YukirinControls, YukirinMood } from './YukirinScene'
 import type { GuideAction, GuideMessage } from '@/lib/guideEngine'
+import { getFallbackResponse } from '@/lib/guideFallbacks'
 
 const YukirinScene = dynamic(() => import('./YukirinScene'), { ssr: false })
 
-// ── 快捷按鈕列 ────────────────────────────────────────────────────────────
 const DEFAULT_QUICK_REPLIES = ['帶我逛逛', '功能怎麼用', '找我聊天']
 
 interface ChatMessage {
@@ -18,16 +18,116 @@ interface ChatMessage {
   mood?: YukirinMood
 }
 
+interface TurnsInfo {
+  isUnlimited: boolean
+  freeRemaining: number | null
+  purchasedCredits: number | null
+  zcoinBalance: number | null
+  isLoggedIn?: boolean
+}
+
 interface YukirinChatPanelProps {
   onClose: () => void
 }
 
+// ── 購買次數面板 ──────────────────────────────────────────────────────────────
+function BuyTurnsPanel({
+  zcoinBalance,
+  isLoggedIn,
+  onBought,
+  onClose,
+}: {
+  zcoinBalance: number | null
+  isLoggedIn: boolean
+  onBought: (addedTurns: number, newBalance: number, totalCredits: number) => void
+  onClose: () => void
+}) {
+  const [loading, setLoading] = useState<string | null>(null)
+  const [error, setError] = useState('')
+
+  const packs = [
+    { key: 's', zcoins: 5,  turns: 20,  label: '20 次' },
+    { key: 'm', zcoins: 10, turns: 50,  label: '50 次' },
+    { key: 'l', zcoins: 20, turns: 120, label: '120 次', badge: '最划算' },
+  ] as const
+
+  const handleBuy = async (pack: 's' | 'm' | 'l') => {
+    if (!isLoggedIn) { setError('請先登入帳號才能購買～'); return }
+    setLoading(pack)
+    setError('')
+    try {
+      const res = await fetch('/api/guide/buy-turns', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pack }),
+      })
+      const data = await res.json()
+      if (!res.ok) { setError(data.error ?? '購買失敗，請稍後再試'); return }
+      onBought(data.addedTurns, data.newZcoinBalance, data.totalCredits)
+    } catch {
+      setError('網路錯誤，請再試一次')
+    } finally {
+      setLoading(null)
+    }
+  }
+
+  return (
+    <div
+      className="px-3 pb-3 pt-2 border-t border-white/8"
+      onPointerDown={e => e.stopPropagation()}
+    >
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-xs font-semibold text-white/70">💬 今日免費次數已用完</span>
+        <button onClick={onClose} className="text-white/30 hover:text-white/60 text-xs">略過</button>
+      </div>
+      <p className="text-[10px] text-white/40 mb-2.5">
+        用 Z幣 換更多對話次數吧～
+        {zcoinBalance !== null && <span className="text-[#b8a9e8] ml-1">（你有 {zcoinBalance} Z幣）</span>}
+      </p>
+
+      {!isLoggedIn && (
+        <p className="text-[10px] text-amber-400 mb-2">⚠️ 請先登入才能使用 Z幣</p>
+      )}
+
+      <div className="flex gap-1.5 flex-wrap">
+        {packs.map(p => {
+          const canAfford = zcoinBalance !== null && zcoinBalance >= p.zcoins
+          return (
+            <button
+              key={p.key}
+              onClick={() => handleBuy(p.key)}
+              disabled={!!loading || !isLoggedIn || !canAfford}
+              className="relative flex-1 min-w-0 py-2 px-1.5 rounded-xl border text-center transition-all disabled:opacity-40"
+              style={{
+                background: canAfford && isLoggedIn ? 'rgba(184,169,232,0.12)' : 'rgba(255,255,255,0.04)',
+                borderColor: canAfford && isLoggedIn ? 'rgba(184,169,232,0.35)' : 'rgba(255,255,255,0.08)',
+              }}
+            >
+              {p.badge && (
+                <span className="absolute -top-1.5 left-1/2 -translate-x-1/2 text-[8px] bg-[#b8a9e8] text-black rounded-full px-1.5 py-0 font-bold whitespace-nowrap">
+                  {p.badge}
+                </span>
+              )}
+              <div className="text-[11px] font-bold text-white/80 mt-0.5">
+                {loading === p.key ? '...' : p.label}
+              </div>
+              <div className="text-[9px] text-[#b8a9e8] mt-0.5">{p.zcoins} Z幣</div>
+            </button>
+          )
+        })}
+      </div>
+
+      {error && <p className="text-[10px] text-red-400 mt-1.5">{error}</p>}
+    </div>
+  )
+}
+
+// ── 主元件 ───────────────────────────────────────────────────────────────────
 export default function YukirinChatPanel({ onClose }: YukirinChatPanelProps) {
   const router = useRouter()
   const pathname = usePathname()
   const yukirinRef = useRef<YukirinControls | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
-  const inputRef = useRef<HTMLInputElement>(null)
   const abortRef = useRef<AbortController | null>(null)
 
   const [messages, setMessages] = useState<ChatMessage[]>([
@@ -43,16 +143,27 @@ export default function YukirinChatPanel({ onClose }: YukirinChatPanelProps) {
   const [streamingText, setStreamingText] = useState('')
   const [quickReplies, setQuickReplies] = useState<string[]>(DEFAULT_QUICK_REPLIES)
 
+  // 次數狀態
+  const [turnsInfo, setTurnsInfo] = useState<TurnsInfo | null>(null)
+  const [showBuyPanel, setShowBuyPanel] = useState(false)
+
   // 捲到最新訊息
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, streamingText])
 
+  // 開啟時查詢剩餘次數（每次打開都重查）
+  useEffect(() => {
+    fetch('/api/guide/turns')
+      .then(r => r.json())
+      .then((data: TurnsInfo) => setTurnsInfo(data))
+      .catch(() => {})
+  }, [])
+
   const handleLoad = useCallback((controls: YukirinControls) => {
     yukirinRef.current = controls
   }, [])
 
-  // 執行 LLM 回傳的 UI action
   const executeAction = useCallback((action: GuideAction) => {
     switch (action.type) {
       case 'navigate':
@@ -88,7 +199,6 @@ export default function YukirinChatPanel({ onClose }: YukirinChatPanelProps) {
     setStreamingText('')
     setQuickReplies([])
 
-    // 組裝歷史（只送 role + content）
     const history: GuideMessage[] = messages.slice(-8).map(m => ({
       role: m.role,
       content: m.text,
@@ -107,6 +217,39 @@ export default function YukirinChatPanel({ onClose }: YukirinChatPanelProps) {
         }),
         signal: abortRef.current.signal,
       })
+
+      // 次數用完 → 顯示購買面板
+      if (res.status === 402) {
+        const data = await res.json()
+        setTurnsInfo(prev => prev
+          ? { ...prev, freeRemaining: 0, purchasedCredits: 0, isLoggedIn: data.isLoggedIn }
+          : { isUnlimited: false, freeRemaining: 0, purchasedCredits: 0, zcoinBalance: null, isLoggedIn: data.isLoggedIn }
+        )
+        yukirinRef.current?.setMood('sad', 300)
+        setMessages(prev => [...prev, {
+          id: (Date.now() + 1).toString(),
+          role: 'assistant',
+          text: '欸嘿，今天的次數用完了 😴 用 Z幣 換更多對話吧～',
+          mood: 'sad',
+        }])
+        setShowBuyPanel(true)
+        return
+      }
+
+      // AI 暫時不可用 → 備用腳本
+      if (res.status === 503) {
+        const fallback = getFallbackResponse(text)
+        yukirinRef.current?.setMood(fallback.mood, 300)
+        setStreamingText('')
+        setMessages(prev => [...prev, {
+          id: (Date.now() + 1).toString(),
+          role: 'assistant',
+          text: fallback.text,
+          mood: fallback.mood,
+        }])
+        setQuickReplies(fallback.quickReplies ?? DEFAULT_QUICK_REPLIES)
+        return
+      }
 
       if (!res.ok || !res.body) throw new Error('API error')
 
@@ -135,6 +278,9 @@ export default function YukirinChatPanel({ onClose }: YukirinChatPanelProps) {
               chunk?: string
               action?: GuideAction | null
               quickReplies?: string[] | null
+              isUnlimited?: boolean
+              freeRemaining?: number | null
+              purchasedRemaining?: number | null
             }
 
             if (evt.type === 'mood' && evt.mood) {
@@ -144,7 +290,6 @@ export default function YukirinChatPanel({ onClose }: YukirinChatPanelProps) {
 
             if (evt.type === 'chunk' && evt.text) {
               accText += evt.text
-              // LLM 回傳 JSON，串流時直接顯示「...」，完成後再顯示解析結果
               setStreamingText('...')
             }
 
@@ -156,6 +301,15 @@ export default function YukirinChatPanel({ onClose }: YukirinChatPanelProps) {
               if (evt.text) accText = evt.text
               if (evt.action) finalAction = evt.action
               if (evt.quickReplies) finalQuickReplies = evt.quickReplies
+
+              // 更新次數顯示
+              if (!evt.isUnlimited && evt.freeRemaining !== undefined) {
+                setTurnsInfo(prev => prev ? {
+                  ...prev,
+                  freeRemaining: evt.freeRemaining ?? null,
+                  purchasedCredits: evt.purchasedRemaining ?? prev.purchasedCredits,
+                } : null)
+              }
             }
           } catch { /* skip */ }
         }
@@ -176,13 +330,15 @@ export default function YukirinChatPanel({ onClose }: YukirinChatPanelProps) {
     } catch (err: unknown) {
       if ((err as Error)?.name === 'AbortError') return
       setStreamingText('')
+      const fallback = getFallbackResponse(text)
+      yukirinRef.current?.setMood(fallback.mood, 300)
       setMessages(prev => [...prev, {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        text: '欸嘿，我剛剛腦袋當機了一下 😅',
-        mood: 'surprised',
+        text: fallback.text,
+        mood: fallback.mood,
       }])
-      setQuickReplies(DEFAULT_QUICK_REPLIES)
+      setQuickReplies(fallback.quickReplies ?? DEFAULT_QUICK_REPLIES)
     } finally {
       setIsLoading(false)
     }
@@ -197,11 +353,44 @@ export default function YukirinChatPanel({ onClose }: YukirinChatPanelProps) {
     sendMessage(text)
   }, [sendMessage])
 
+  const handleBought = useCallback((addedTurns: number, newBalance: number, totalCredits: number) => {
+    setTurnsInfo(prev => prev ? {
+      ...prev,
+      purchasedCredits: totalCredits,
+      zcoinBalance: newBalance,
+    } : null)
+    setShowBuyPanel(false)
+    yukirinRef.current?.setMood('excited', 300)
+    setMessages(prev => [...prev, {
+      id: (Date.now() + 2).toString(),
+      role: 'assistant',
+      text: `欸嘿！成功換到 ${addedTurns} 次對話了 🎉 繼續聊吧～`,
+      mood: 'excited',
+    }])
+    setQuickReplies(DEFAULT_QUICK_REPLIES)
+  }, [])
+
+  // 次數倒數顯示文字
+  const turnsLabel = (() => {
+    if (!turnsInfo || turnsInfo.isUnlimited) return null
+    const free = turnsInfo.freeRemaining ?? 0
+    const bought = turnsInfo.purchasedCredits ?? 0
+    if (free > 0) return { text: `💬 免費 ${free} / 20`, color: free <= 5 ? 'text-amber-400' : 'text-white/30' }
+    if (bought > 0) return { text: `💎 購買 ${bought} 次`, color: 'text-[#b8a9e8]' }
+    return { text: '💬 次數已用完', color: 'text-red-400' }
+  })()
+
+  const isInputDisabled = isLoading || (
+    !turnsInfo?.isUnlimited &&
+    turnsInfo !== null &&
+    (turnsInfo.freeRemaining ?? 0) <= 0 &&
+    (turnsInfo.purchasedCredits ?? 0) <= 0
+  )
+
   return (
     <div
       className="flex flex-col rounded-2xl overflow-hidden shadow-[0_16px_48px_rgba(0,0,0,0.4)] border border-white/10"
       style={{ width: 288, height: 460, background: 'rgba(15,9,30,0.92)', backdropFilter: 'blur(20px)' }}
-      // 不阻擋 pointerDown：讓標題列可往上冒泡觸發 widget 拖曳
     >
       {/* ── 雪凜 3D 頭像區 ─────────────────────────────────── */}
       <div className="relative flex-shrink-0" style={{ height: 130 }}>
@@ -214,10 +403,8 @@ export default function YukirinChatPanel({ onClose }: YukirinChatPanelProps) {
             className="w-full h-full"
           />
         </div>
-        {/* 頂部標題列（cursor-grab = 這裡可拖曳整個視窗） */}
         <div className="absolute top-0 left-0 right-0 flex items-center justify-between px-3 pt-2.5 cursor-grab active:cursor-grabbing">
           <div className="flex items-center gap-1.5 pointer-events-none">
-            {/* 拖曳把手提示 */}
             <svg width="8" height="10" viewBox="0 0 8 10" fill="rgba(255,255,255,0.2)">
               <circle cx="2" cy="2" r="1"/><circle cx="6" cy="2" r="1"/>
               <circle cx="2" cy="5" r="1"/><circle cx="6" cy="5" r="1"/>
@@ -234,22 +421,18 @@ export default function YukirinChatPanel({ onClose }: YukirinChatPanelProps) {
             ✕
           </button>
         </div>
-        {/* 漸層遮罩，讓頭像下方與訊息區融合 */}
         <div className="absolute bottom-0 left-0 right-0 h-8 pointer-events-none"
           style={{ background: 'linear-gradient(to bottom, transparent, rgba(15,9,30,0.92))' }}
         />
       </div>
 
-      {/* ── 訊息列表（阻擋 pointer 防止捲動誤觸發拖曳）──── */}
+      {/* ── 訊息列表 ───────────────────────────────────────── */}
       <div
         className="flex-1 overflow-y-auto px-3 py-2 space-y-2 scrollbar-thin scrollbar-thumb-white/10"
         onPointerDown={e => e.stopPropagation()}
       >
         {messages.map(msg => (
-          <div
-            key={msg.id}
-            className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
-          >
+          <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
             <div
               className={`text-xs leading-relaxed px-3 py-2 rounded-2xl max-w-[80%] ${
                 msg.role === 'assistant'
@@ -267,7 +450,6 @@ export default function YukirinChatPanel({ onClose }: YukirinChatPanelProps) {
           </div>
         ))}
 
-        {/* 串流中：顯示思考點點 */}
         {isLoading && (
           <div className="flex justify-start">
             <div
@@ -286,9 +468,9 @@ export default function YukirinChatPanel({ onClose }: YukirinChatPanelProps) {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* ── 快捷回覆按鈕 ──────────────────────────────────── */}
-      {quickReplies.length > 0 && !isLoading && (
-        <div className="px-3 pb-2 flex gap-1.5 flex-wrap" onPointerDown={e => e.stopPropagation()}>
+      {/* ── 快捷回覆 ──────────────────────────────────────── */}
+      {quickReplies.length > 0 && !isLoading && !showBuyPanel && (
+        <div className="px-3 pb-1.5 flex gap-1.5 flex-wrap" onPointerDown={e => e.stopPropagation()}>
           {quickReplies.map(qr => (
             <button
               key={qr}
@@ -301,33 +483,58 @@ export default function YukirinChatPanel({ onClose }: YukirinChatPanelProps) {
         </div>
       )}
 
-      {/* ── 輸入區 ────────────────────────────────────────── */}
-      {/* ── 輸入區（阻擋 pointer 防止打字誤觸發拖曳）──────── */}
-      <form
-        onSubmit={handleSubmit}
-        className="flex items-center gap-2 px-3 pb-3 pt-1 border-t border-white/8"
-        onPointerDown={e => e.stopPropagation()}
-      >
-        <input
-          ref={inputRef}
-          value={input}
-          onChange={e => setInput(e.target.value)}
-          placeholder="跟雪凜說點什麼..."
-          disabled={isLoading}
-          className="flex-1 bg-white/8 border border-white/10 rounded-full px-3 py-1.5 text-xs text-white/80 placeholder-white/25 outline-none focus:border-[#b8a9e8]/40 transition-colors disabled:opacity-50"
-          style={{ fontSize: 12 }}
-        />
-        <button
-          type="submit"
-          disabled={!input.trim() || isLoading}
-          className="w-7 h-7 rounded-full flex items-center justify-center transition-all disabled:opacity-30 flex-shrink-0"
-          style={{ background: 'linear-gradient(135deg, #b8a9e8, #f5b8b5)' }}
+      {/* ── 次數倒數 chip ─────────────────────────────────── */}
+      {turnsLabel && !showBuyPanel && (
+        <div
+          className="px-3 pb-1 flex items-center justify-between"
+          onPointerDown={e => e.stopPropagation()}
         >
-          <svg width="12" height="12" viewBox="0 0 12 12" fill="white">
-            <path d="M1 6h10M7 2l4 4-4 4" stroke="white" strokeWidth="1.5" strokeLinecap="round" fill="none"/>
-          </svg>
-        </button>
-      </form>
+          <span className={`text-[10px] ${turnsLabel.color}`}>{turnsLabel.text}</span>
+          {(turnsInfo?.freeRemaining ?? 1) <= 0 && (turnsInfo?.purchasedCredits ?? 0) <= 0 && (
+            <button
+              onClick={() => setShowBuyPanel(true)}
+              className="text-[10px] text-[#b8a9e8] hover:text-white transition-colors"
+            >
+              Z幣購買 →
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* ── 購買面板 或 輸入區 ─────────────────────────────── */}
+      {showBuyPanel ? (
+        <BuyTurnsPanel
+          zcoinBalance={turnsInfo?.zcoinBalance ?? null}
+          isLoggedIn={turnsInfo?.isLoggedIn ?? false}
+          onBought={handleBought}
+          onClose={() => setShowBuyPanel(false)}
+        />
+      ) : (
+        <form
+          onSubmit={handleSubmit}
+          className="flex items-center gap-2 px-3 pb-3 pt-1 border-t border-white/8"
+          onPointerDown={e => e.stopPropagation()}
+        >
+          <input
+            value={input}
+            onChange={e => setInput(e.target.value)}
+            placeholder={isInputDisabled && !isLoading ? '次數已用完，請購買或明天再來' : '跟雪凜說點什麼...'}
+            disabled={isInputDisabled}
+            className="flex-1 bg-white/8 border border-white/10 rounded-full px-3 py-1.5 text-xs text-white/80 placeholder-white/25 outline-none focus:border-[#b8a9e8]/40 transition-colors disabled:opacity-50"
+            style={{ fontSize: 12 }}
+          />
+          <button
+            type="submit"
+            disabled={!input.trim() || isInputDisabled}
+            className="w-7 h-7 rounded-full flex items-center justify-center transition-all disabled:opacity-30 flex-shrink-0"
+            style={{ background: 'linear-gradient(135deg, #b8a9e8, #f5b8b5)' }}
+          >
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="white">
+              <path d="M1 6h10M7 2l4 4-4 4" stroke="white" strokeWidth="1.5" strokeLinecap="round" fill="none"/>
+            </svg>
+          </button>
+        </form>
+      )}
     </div>
   )
 }
