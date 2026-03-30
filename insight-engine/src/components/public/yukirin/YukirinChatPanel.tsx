@@ -151,6 +151,8 @@ export default function YukirinChatPanel({ onClose }: YukirinChatPanelProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const abortRef = useRef<AbortController | null>(null)
 
+  const inputRef = useRef<HTMLInputElement>(null)
+
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       id: '0',
@@ -228,6 +230,8 @@ export default function YukirinChatPanel({ onClose }: YukirinChatPanelProps) {
     const userMsg: ChatMessage = { id: Date.now().toString(), role: 'user', text }
     setMessages(prev => appendMessage(prev, userMsg))
     setInput('')
+    // 清空後立即 focus，避免手機鍵盤縮回去
+    requestAnimationFrame(() => inputRef.current?.focus())
     setIsLoading(true)
     setStreamingText('')
     setQuickReplies([])
@@ -245,7 +249,11 @@ export default function YukirinChatPanel({ onClose }: YukirinChatPanelProps) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           message: text,
-          context: { currentPage: pathname ?? '/' },
+          context: {
+            currentPage: pathname ?? '/',
+            currentAnimation: yukirinRef.current?.getCurrentAnimation(),
+            currentMood: yukirinRef.current?.getCurrentMood(),
+          },
           history,
         }),
         signal: abortRef.current.signal,
@@ -311,6 +319,7 @@ export default function YukirinChatPanel({ onClose }: YukirinChatPanelProps) {
               chunk?: string
               action?: GuideAction | null
               quickReplies?: string[] | null
+              animation?: string | null
               isUnlimited?: boolean
               freeRemaining?: number | null
               purchasedRemaining?: number | null
@@ -334,6 +343,10 @@ export default function YukirinChatPanel({ onClose }: YukirinChatPanelProps) {
               if (evt.text) accText = evt.text
               if (evt.action) finalAction = evt.action
               if (evt.quickReplies) finalQuickReplies = evt.quickReplies
+              // 觸發動作動畫（雪凜自我感知系統）
+              if (evt.animation) {
+                yukirinRef.current?.playAnimation(evt.animation)
+              }
 
               // 更新次數顯示
               if (!evt.isUnlimited && evt.freeRemaining !== undefined) {
@@ -375,6 +388,8 @@ export default function YukirinChatPanel({ onClose }: YukirinChatPanelProps) {
       setQuickReplies(fallback.quickReplies ?? DEFAULT_QUICK_REPLIES)
     } finally {
       setIsLoading(false)
+      // AI 回覆完畢後重新 focus 輸入框
+      requestAnimationFrame(() => inputRef.current?.focus())
     }
   }, [isLoading, messages, pathname, executeAction])
 
@@ -425,6 +440,7 @@ export default function YukirinChatPanel({ onClose }: YukirinChatPanelProps) {
     <div
       className="flex flex-col rounded-2xl overflow-hidden shadow-[0_16px_48px_rgba(0,0,0,0.4)] border border-white/10"
       style={{ width: 288, height: 460, background: 'rgba(15,9,30,0.92)', backdropFilter: 'blur(20px)' }}
+      onPointerDown={e => e.stopPropagation()}
     >
       {/* ── 雪凜 3D 頭像區 ─────────────────────────────────── */}
       <div className="relative flex-shrink-0" style={{ height: 130 }}>
@@ -550,6 +566,8 @@ export default function YukirinChatPanel({ onClose }: YukirinChatPanelProps) {
           onPointerDown={e => e.stopPropagation()}
         >
           <input
+            ref={inputRef}
+            autoFocus
             value={input}
             onChange={e => setInput(e.target.value)}
             placeholder={isInputDisabled && !isLoading ? '次數已用完，請購買或明天再來' : '跟雪凜說點什麼...'}

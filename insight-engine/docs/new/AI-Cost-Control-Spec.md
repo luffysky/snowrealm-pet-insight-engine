@@ -85,77 +85,29 @@
 
 ### 2.4 實際路由代碼
 
-```typescript
-// lib/llm/router.ts
+```
+路由邏輯已移至 Yukirin-AI-Guide-Spec.md 第三章「分層模型路由引擎」
 
-interface RoutingDecision {
-  provider: 'openai' | 'anthropic';
-  model: string;
-  maxTokens: number;
-  useCache: boolean;
-}
+摘要：
+- 管理員：閒聊永遠走 Claude Sonnet（無限額度）
+- 一般使用者：每天 5 則 Premium 閒聊走 Claude Sonnet
+  → 雪凜自動判斷哪些對話值得升級（情緒性、深度、長訊息）
+  → 用完後無感降回 GPT-4o-mini
+- 問卷分析/結果解讀：永遠走 Claude Sonnet，不佔聊天額度
+- 導覽/功能/Z幣客服：永遠走 GPT-4o-mini，不佔額度
+- Bug 回報：走 Claude Sonnet，不佔額度（鼓勵回報）
 
-export function routeRequest(intent: Intent, context: UserContext): RoutingDecision {
-  switch (intent) {
-    // === 便宜的走 GPT-4o-mini ===
-    case 'chitchat':
-      return {
-        provider: 'openai',
-        model: 'gpt-4o-mini',
-        maxTokens: 200,       // 閒聊不需要長回覆
-        useCache: false,       // 閒聊沒有重複 prompt
-      };
+成本影響：
+  每天 1000 DAU × 平均 2 則 premium 閒聊 × 800 tokens = 1.6M tokens
+  Claude Sonnet: 1.6M × $3 input + 1M × $15 output ≈ $20/月（增加）
+  但 5 則上限封頂了最大成本，不會失控
 
-    case 'feature_help':
-      return {
-        provider: 'openai',
-        model: 'gpt-4o-mini',
-        maxTokens: 300,
-        useCache: true,        // feature 文檔可以快取
-      };
-
-    case 'zcoin_support':
-      return {
-        provider: 'openai',
-        model: 'gpt-4o-mini',
-        maxTokens: 250,
-        useCache: true,        // Z幣 FAQ 可以快取
-      };
-
-    // === 需要品質的走 Claude ===
-    case 'result_explain':
-      return {
-        provider: 'anthropic',
-        model: 'claude-sonnet-4-6-20260218',
-        maxTokens: 500,        // 結果解讀需要細膩
-        useCache: true,        // system prompt 快取
-      };
-
-    case 'tour':
-      return {
-        provider: 'anthropic',
-        model: 'claude-sonnet-4-6-20260218',
-        maxTokens: 400,
-        useCache: true,        // 導覽腳本可以快取
-      };
-
-    case 'bug_report':
-      return {
-        provider: 'anthropic',
-        model: 'claude-sonnet-4-6-20260218',
-        maxTokens: 400,
-        useCache: false,       // Bug 內容每次不同
-      };
-
-    default:
-      return {
-        provider: 'openai',
-        model: 'gpt-4o-mini',
-        maxTokens: 200,
-        useCache: false,
-      };
-  }
-}
+  1000 DAU 新月成本估算：
+  GPT-4o-mini（Standard 閒聊 + 功能 + 客服）: ~$35
+  Claude Sonnet（Premium 閒聊 5則/天/人）: ~$20
+  Claude Sonnet（結果解讀 + 故事卡，獨立）: ~$35
+  意圖分類: ~$2
+  合計: ~$92（vs 原本 $82，多 $10 但品質大幅提升）
 ```
 
 ---

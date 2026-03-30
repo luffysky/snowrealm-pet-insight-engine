@@ -18,6 +18,10 @@ export interface GuideContext {
   zcoinBalance?: number
   isNewUser?: boolean
   tourCompleted?: boolean
+  /** 雪凜目前正在做的動作（來自 AnimationManager） */
+  currentAnimation?: string
+  /** 雪凜目前的心情 */
+  currentMood?: string
 }
 
 export interface GuideMessage {
@@ -30,6 +34,8 @@ export interface GuideResponse {
   mood: GuideMood
   action?: GuideAction | null
   quickReplies?: string[]
+  /** 要播放的動作動畫名稱（觸發前端 playAnimation） */
+  animation?: string | null
 }
 
 export type GuideAction =
@@ -88,9 +94,23 @@ const FORMAT_INSTRUCTION = `
 {
   "text": "你要對使用者說的話（繁體中文、口語化、不超過 100 字）",
   "mood": "happy 或 excited 或 thinking 或 neutral 或 relaxed 或 sad 或 wink 或 surprised",
+  "animation": null 或 "wave|nod|shake_head|tilt_head|bow|shrug|think|excited|sway|dance|stretch",
   "action": null 或 { "type": "navigate|highlight|scroll", "target": "路徑或選擇器" },
   "quickReplies": null 或 ["選項1", "選項2", "選項3"]
-}`
+}
+
+動畫使用指引：
+- 說歡迎/打招呼 → animation: "wave"
+- 表示同意/鼓勵 → animation: "nod"
+- 表示不對/否定 → animation: "shake_head"
+- 可愛撒嬌 → animation: "tilt_head"
+- 道謝/抱歉 → animation: "bow"
+- 不確定 → animation: "shrug"
+- 思考中 → animation: "think"
+- 超級興奮 → animation: "excited"
+- 輕鬆聊天 → animation: "sway"
+- 開心/慶祝 → animation: "dance"
+- 沒特別事情 → animation: null`
 
 export function buildSystemPrompt(intent: GuideIntent, context: GuideContext): string {
   let intentPrompt = ''
@@ -171,7 +191,11 @@ Z幣知識庫：
     ? `\n使用者目前在頁面：${context.currentPage}`
     : ''
 
-  return YUKIRIN_BASE_PERSONA + intentPrompt + pageInfo + FORMAT_INSTRUCTION
+  const animationInfo = context.currentAnimation
+    ? `\n\n你現在的身體狀態：\n正在做的動作：${context.currentAnimation}\n目前心情：${context.currentMood ?? 'neutral'}\n你可以在回覆中自然提到自己的動作，像真的有身體一樣。例如：（一邊揮手）嗨嗨～`
+    : ''
+
+  return YUKIRIN_BASE_PERSONA + intentPrompt + pageInfo + animationInfo + FORMAT_INSTRUCTION
 }
 
 // ── 解析 LLM 回應 ─────────────────────────────────────────────────────────
@@ -187,6 +211,7 @@ export function parseGuideResponse(raw: string): GuideResponse {
     return {
       text: parsed.text ?? '欸嘿～有什麼我可以幫你的嗎？',
       mood: (parsed.mood as GuideMood) ?? 'happy',
+      animation: parsed.animation ?? null,
       action: parsed.action ?? null,
       quickReplies: parsed.quickReplies ?? undefined,
     }

@@ -17,6 +17,15 @@ import {
   startSupportTicket,
   appendSupportMessage,
 } from '@/lib/supportEngine'
+import { getPlatformKey } from '@/lib/aiService'
+import {
+  classifyIntent,
+  buildSystemPrompt,
+  parseGuideResponse,
+  type GuideContext,
+} from '@/lib/guideEngine'
+import { buildYukirinFlexMessage } from '@/lib/proactive/pushEngine'
+import { executeSkillFromChat } from '@/lib/skills/skillEngine'
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://insight.snowrealm.pet'
 /** 主問卷 / Rich Menu「填問卷」對應的租戶 slug；預設毛行天下租戶（勿用不存在的 `default` 以免問卷路徑 404） */
@@ -145,8 +154,74 @@ async function handleTextMessage(text: string, userId?: string): Promise<LineTex
     return []
   }
 
+  // 雪凜技能觸發（問卷推薦、Z幣查詢等）
+  try {
+    const skillResult = await executeSkillFromChat(text, userId)
+    if (skillResult?.executed && skillResult.message) {
+      const flexMsg = buildYukirinFlexMessage(
+        skillResult.message,
+        skillResult.mood ?? 'happy',
+        skillResult.action
+      ) as unknown as LineTextMessage
+      return [flexMsg]
+    }
+  } catch {
+    // skill fallback to AI chat
+  }
+
+  // 雪凜 AI 對話（一般訊息 → 雪凜回覆）
+  if (userId) {
+    const aiReply = await handleYukirinAiChat(text, userId)
+    if (aiReply) return [aiReply]
+  }
+
   // 一般關鍵字自動回覆
   return await getAutoReply(text, userId)
+}
+
+// ----- 雪凜 AI 對話 -----
+
+async function handleYukirinAiChat(text: string, _lineUserId: string): Promise<LineTextMessage | null> {
+  const aiKey = getPlatformKey()
+  if (!aiKey) return null
+
+  try {
+    const context: GuideContext = { trigger: 'manual' }
+    const intent = classifyIntent(text, context)
+    const systemPrompt = buildSystemPrompt(intent, context)
+
+    const res = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${aiKey.apiKey}`,
+      },
+      body: JSON.stringify({
+        model: aiKey.model,
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: text },
+        ],
+        max_tokens: 200,
+        temperature: 0.8,
+      }),
+      signal: AbortSignal.timeout(8000),
+    })
+
+    if (!res.ok) return null
+    const data = await res.json() as { choices?: Array<{ message?: { content?: string } }> }
+    const raw = data.choices?.[0]?.message?.content ?? ''
+    if (!raw) return null
+
+    const parsed = parseGuideResponse(raw)
+    const action = parsed.action && 'target' in parsed.action
+      ? { type: parsed.action.type, target: (parsed.action as { type: string; target: string }).target }
+      : undefined
+    const flexMsg = buildYukirinFlexMessage(parsed.text, parsed.mood, action)
+    return flexMsg as unknown as LineTextMessage
+  } catch {
+    return null
+  }
 }
 
 // ----- 關鍵字自動回覆邏輯 -----

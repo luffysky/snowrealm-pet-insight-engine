@@ -902,8 +902,8 @@ const API_SECURITY = {
 
   // CORS
   allowedOrigins: [
-    'https://insight.snowrealm.pet',
-    'https://admin.snowrealm.pet',
+    'https://insight.snowrealm.one',
+    'https://admin.snowrealm.one',
   ],
 
   // API Key 管理
@@ -918,7 +918,7 @@ const API_SECURITY = {
 // 3. 後台存取安全
 const ADMIN_SECURITY = {
   // 後台獨立域名
-  adminDomain: 'https://admin.snowrealm.pet',
+  adminDomain: 'https://admin.snowrealm.one',
 
   // IP 白名單（可選，超嚴格模式）
   ipWhitelist: false, // 初期不開，VPN 使用者會被擋

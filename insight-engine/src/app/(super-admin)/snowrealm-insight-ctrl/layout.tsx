@@ -4,7 +4,7 @@ import { ReactNode, useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { SuperAdminBg, SA_THEMES, type SuperAdminTheme } from '@/components/super-admin/SuperAdminBg'
-import { LayoutDashboard, Building2, Users, BarChart3, Shield, Headphones, Bell, Smartphone, Palette, Globe, DollarSign, Sticker, ClipboardList, HeartPulse, TrendingDown, LogOut, Menu, ChevronRight, Sparkles, ShoppingBag } from 'lucide-react'
+import { LayoutDashboard, Building2, Users, BarChart3, Shield, Headphones, Bell, Smartphone, Palette, Globe, DollarSign, Sticker, ClipboardList, HeartPulse, TrendingDown, LogOut, Menu, ChevronRight, Sparkles, ShoppingBag, Bot, ShieldAlert, FileWarning, CreditCard, BrainCircuit, Radio, MessageSquare, FolderOpen } from 'lucide-react'
 
 const NAV_ITEMS = [
   { group: '營運管理', items: [
@@ -14,11 +14,24 @@ const NAV_ITEMS = [
     { href: '/snowrealm-insight-ctrl/usage',         label: '用量追蹤',   icon: BarChart3 },
     { href: '/snowrealm-insight-ctrl/plans',         label: '收費規劃',   icon: DollarSign },
   ]},
+  { group: '安全監控', items: [
+    { href: '/snowrealm-insight-ctrl/security',      label: '安全總覽',   icon: ShieldAlert },
+    { href: '/snowrealm-insight-ctrl/moderation',    label: '內容審核',   icon: FileWarning },
+  ]},
   { group: '社群系統', items: [
     { href: '/snowrealm-insight-ctrl/social',        label: '社群監控',   icon: Shield },
     { href: '/snowrealm-insight-ctrl/support',       label: '客服工單',   icon: Headphones },
     { href: '/snowrealm-insight-ctrl/stickers',      label: '貼圖管理',   icon: Sticker },
     { href: '/snowrealm-insight-ctrl/marketplace',   label: '市集管理',   icon: ShoppingBag },
+  ]},
+  { group: '財務', items: [
+    { href: '/snowrealm-insight-ctrl/orders',        label: '金流訂單',   icon: CreditCard },
+    { href: '/snowrealm-insight-ctrl/ai-cost',       label: 'AI 成本',    icon: BrainCircuit },
+  ]},
+  { group: '即時監控', items: [
+    { href: '/snowrealm-insight-ctrl/live-feed',     label: '即時活動流', icon: Radio },
+    { href: '/snowrealm-insight-ctrl/conversations', label: 'AI 對話記錄', icon: MessageSquare },
+    { href: '/snowrealm-insight-ctrl/files',         label: '檔案管理',   icon: FolderOpen },
   ]},
   { group: '平台推播', items: [
     { href: '/snowrealm-insight-ctrl/notifications', label: '平台通知',   icon: Bell },
@@ -30,6 +43,9 @@ const NAV_ITEMS = [
     { href: '/snowrealm-insight-ctrl/audit',         label: '操作審計',   icon: ClipboardList },
     { href: '/snowrealm-insight-ctrl/health',        label: '系統健康',   icon: HeartPulse },
     { href: '/snowrealm-insight-ctrl/analytics',     label: '分析儀表板', icon: TrendingDown },
+  ]},
+  { group: 'AI 設定', items: [
+    { href: '/snowrealm-insight-ctrl/ai-settings',   label: 'AI 指令控制', icon: Bot },
   ]},
 ]
 

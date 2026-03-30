@@ -124,6 +124,10 @@ interface YukirinSceneProps {
 export interface YukirinControls {
   setMood: (mood: YukirinMood, durationMs?: number) => void
   playAnimation: (name: string) => void
+  /** 取得目前正在播放的動作名稱 */
+  getCurrentAnimation: () => string
+  /** 取得目前心情 */
+  getCurrentMood: () => YukirinMood
 }
 
 const CAMERA_PRESETS = {
@@ -158,6 +162,7 @@ export default function YukirinScene({
   const vrmRef = useRef<VRM | null>(null)
   const clockRef = useRef(new THREE.Clock())
   const currentMoodRef = useRef<YukirinMood>(mood)
+  const currentAnimationRef = useRef<string>('idle')
   const blinkTimerRef = useRef(0)
   const blinkIntervalRef = useRef(3 + Math.random() * 4) // 3-7 秒
   const mouseRef = useRef({ x: 0, y: 0 })
@@ -498,8 +503,12 @@ export default function YukirinScene({
       // 暴露外部控制 API
       if (onLoad) {
         onLoad({
-          setMood: (m, dur) => transitionExpression(vrm, m, dur),
+          setMood: (m, dur) => {
+            currentMoodRef.current = m
+            transitionExpression(vrm, m, dur)
+          },
           playAnimation: (name) => {
+            currentAnimationRef.current = name
             switch (name) {
               case 'wave':        playArmWave(vrm); break
               case 'nod':         playNod(vrm); break
@@ -513,7 +522,11 @@ export default function YukirinScene({
               case 'dance':       playDanceStep(); break
               case 'stretch':     playStretch(vrm); break
             }
+            // 動作播放完畢後重置為 idle（3 秒後）
+            setTimeout(() => { currentAnimationRef.current = 'idle' }, 3000)
           },
+          getCurrentAnimation: () => currentAnimationRef.current,
+          getCurrentMood: () => currentMoodRef.current,
         })
       }
 

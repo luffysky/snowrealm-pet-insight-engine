@@ -1,0 +1,490 @@
+/*
+ * SnowRealm Insight — Liquid Glass Animation System
+ * 液態玻璃動畫系統
+ * 
+ * 五層動畫：
+ *   1. 光澤流動 (::before sheen)
+ *   2. 邊緣呼吸 (::after border breathe)
+ *   3. 懸浮微顫 (float)
+ *   4. 觸碰漣漪 (.ripple, 需 JS)
+ *   5. 數據條流光 (bar shimmer)
+ *
+ * 使用方式：
+ *   <div class="glass">...</div>
+ *   <div class="glass glass--highlight">...</div>
+ *   <div class="glass glass--warm">...</div>
+ *   <button class="glass-btn">...</button>
+ *   <span class="glass-tag">...</span>
+ *   <div class="glass-bar"><div class="glass-bar__fill" style="width:80%"></div></div>
+ *   <div class="glass-avatar">L</div>
+ *
+ * 效能注意：
+ *   - 所有動畫使用 transform 和 opacity（GPU 加速）
+ *   - 低階裝置加 class="glass--static" 關閉所有動畫
+ *   - 建議用 will-change 只在可見元素上
+ */
+
+
+/* ============================================
+   BASE: 玻璃面板
+   ============================================ */
+
+.glass {
+  position: relative;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 20px;
+  overflow: hidden;
+  transition: border-color 0.4s ease, box-shadow 0.4s ease;
+
+  /* Layer 3: 懸浮微顫（極慢、極小位移） */
+  animation: glass-float 10s ease-in-out infinite;
+}
+
+.glass:hover {
+  border-color: rgba(255, 255, 255, 0.25);
+  box-shadow: 0 8px 40px rgba(140, 120, 220, 0.1);
+}
+
+
+/* Layer 1: 光澤流動（慢速、柔邊、寬漸層帶） */
+.glass::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(
+    120deg,
+    transparent 0%,
+    transparent 25%,
+    rgba(255, 255, 255, 0.02) 32%,
+    rgba(255, 255, 255, 0.05) 42%,
+    rgba(255, 255, 255, 0.03) 52%,
+    rgba(255, 255, 255, 0.01) 60%,
+    transparent 68%,
+    transparent 100%
+  );
+  animation: glass-sheen 16s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Layer 2: 邊緣呼吸 */
+.glass::after {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: 20px;
+  border: 1px solid transparent;
+  background: linear-gradient(
+    135deg,
+    rgba(184, 169, 232, 0.15),
+    rgba(245, 184, 181, 0.1),
+    rgba(168, 216, 234, 0.1)
+  ) border-box;
+  -webkit-mask:
+    linear-gradient(#fff 0 0) padding-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  animation: glass-border-breathe 8s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 0;
+}
+
+
+/* ============================================
+   VARIANTS: 面板變體
+   ============================================ */
+
+/* 高亮紫色 — 用於重點卡片、結果展示 */
+.glass--highlight {
+  background: rgba(184, 169, 232, 0.06);
+  border-color: rgba(184, 169, 232, 0.2);
+}
+.glass--highlight::after {
+  background: linear-gradient(
+    135deg,
+    rgba(184, 169, 232, 0.3),
+    rgba(245, 184, 181, 0.2)
+  ) border-box;
+}
+
+/* 暖色 — 用於 CTA 區塊、故事卡 */
+.glass--warm {
+  background: rgba(245, 184, 181, 0.05);
+  border-color: rgba(245, 184, 181, 0.15);
+}
+.glass--warm::before {
+  background: linear-gradient(
+    120deg,
+    transparent 0%, transparent 35%,
+    rgba(245, 200, 190, 0.06) 40%,
+    rgba(245, 200, 190, 0.1) 45%,
+    rgba(245, 200, 190, 0.06) 50%,
+    transparent 55%, transparent 100%
+  );
+}
+
+/* 冰藍 — 用於數據面板、AI 洞察 */
+.glass--ice {
+  background: rgba(168, 216, 234, 0.05);
+  border-color: rgba(168, 216, 234, 0.15);
+}
+.glass--ice::before {
+  background: linear-gradient(
+    120deg,
+    transparent 0%, transparent 35%,
+    rgba(168, 216, 234, 0.06) 40%,
+    rgba(168, 216, 234, 0.1) 45%,
+    rgba(168, 216, 234, 0.06) 50%,
+    transparent 55%, transparent 100%
+  );
+}
+
+/* 金色 — 用於 Z 幣相關、招財、成就 */
+.glass--gold {
+  background: rgba(240, 216, 138, 0.04);
+  border-color: rgba(240, 216, 138, 0.15);
+}
+.glass--gold::after {
+  background: linear-gradient(
+    135deg,
+    rgba(240, 216, 138, 0.2),
+    rgba(245, 184, 181, 0.15)
+  ) border-box;
+}
+
+
+/* ============================================
+   LIGHT MODE: 淺色場景（後台等）
+   ============================================ */
+
+.glass--light {
+  background: rgba(255, 255, 255, 0.42);
+  border-color: rgba(255, 255, 255, 0.65);
+  box-shadow: 0 8px 32px rgba(140, 120, 200, 0.08);
+}
+.glass--light:hover {
+  box-shadow: 0 12px 40px rgba(140, 120, 200, 0.12);
+}
+.glass--light::before {
+  background: linear-gradient(
+    120deg,
+    transparent 0%, transparent 35%,
+    rgba(255, 255, 255, 0.15) 40%,
+    rgba(255, 255, 255, 0.25) 45%,
+    rgba(255, 255, 255, 0.15) 50%,
+    transparent 55%, transparent 100%
+  );
+}
+.glass--light::after {
+  background: linear-gradient(
+    135deg,
+    rgba(184, 169, 232, 0.2),
+    rgba(245, 184, 181, 0.15),
+    rgba(168, 216, 234, 0.15)
+  ) border-box;
+}
+
+
+/* ============================================
+   COMPONENTS: 小元件
+   ============================================ */
+
+/* --- Tag 標籤 --- */
+.glass-tag {
+  display: inline-block;
+  padding: 4px 14px;
+  border-radius: 10px;
+  background: rgba(184, 169, 232, 0.08);
+  border: 1px solid rgba(184, 169, 232, 0.15);
+  font-size: 12px;
+  color: rgba(200, 190, 240, 0.7);
+  position: relative;
+  overflow: hidden;
+}
+.glass-tag::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -100%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.06), transparent);
+  animation: glass-tag-shimmer 8s ease-in-out infinite;
+}
+
+/* --- Button 按鈕 --- */
+.glass-btn {
+  display: inline-block;
+  padding: 14px 32px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(184, 169, 232, 0.2), rgba(245, 184, 181, 0.15));
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: rgba(240, 235, 255, 0.9);
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  animation: glass-float 12s ease-in-out infinite;
+  animation-delay: -2s;
+}
+.glass-btn:hover {
+  background: linear-gradient(135deg, rgba(184, 169, 232, 0.3), rgba(245, 184, 181, 0.25));
+  border-color: rgba(255, 255, 255, 0.25);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px rgba(140, 120, 220, 0.15);
+}
+.glass-btn::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(120deg, transparent 30%, rgba(255, 255, 255, 0.1) 45%, transparent 55%);
+  animation: glass-sheen 14s ease-in-out infinite;
+  pointer-events: none;
+}
+
+/* --- Button Primary (實色漸層) --- */
+.glass-btn--primary {
+  background: linear-gradient(135deg, #b8a9e8, #f5b8b5);
+  border-color: rgba(255, 255, 255, 0.2);
+  color: #fff;
+  box-shadow: 0 4px 20px rgba(184, 169, 232, 0.3);
+}
+.glass-btn--primary:hover {
+  box-shadow: 0 8px 30px rgba(184, 169, 232, 0.4);
+  background: linear-gradient(135deg, #c4b8ee, #f8c8c5);
+}
+
+/* --- Avatar 頭像 --- */
+.glass-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, rgba(184, 169, 232, 0.15), rgba(245, 184, 181, 0.1));
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  font-weight: 700;
+  color: rgba(184, 169, 232, 0.6);
+  flex-shrink: 0;
+  position: relative;
+  overflow: hidden;
+  animation: glass-float 14s ease-in-out infinite;
+  animation-delay: -3s;
+}
+.glass-avatar::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, transparent 40%, rgba(255, 255, 255, 0.08) 50%, transparent 60%);
+  animation: glass-sheen 12s ease-in-out infinite;
+}
+
+/* --- Progress Bar 進度條 --- */
+.glass-bar {
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.06);
+  overflow: hidden;
+}
+.glass-bar__fill {
+  height: 100%;
+  border-radius: 2px;
+  background: linear-gradient(90deg, rgba(184, 169, 232, 0.5), rgba(245, 184, 181, 0.4));
+  position: relative;
+  overflow: hidden;
+  transition: width 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.glass-bar__fill::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  animation: glass-bar-shimmer 6s ease-in-out infinite;
+}
+
+/* --- Input 輸入框 --- */
+.glass-input {
+  width: 100%;
+  padding: 12px 16px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1.5px solid rgba(255, 255, 255, 0.1);
+  color: rgba(240, 235, 255, 0.9);
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+.glass-input:focus {
+  border-color: rgba(184, 169, 232, 0.4);
+  box-shadow: 0 0 20px rgba(184, 169, 232, 0.08);
+}
+.glass-input::placeholder {
+  color: rgba(200, 190, 230, 0.3);
+}
+
+/* --- Divider 分隔線 --- */
+.glass-divider {
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.1),
+    transparent
+  );
+  margin: 16px 0;
+}
+
+/* --- Badge 小徽章 --- */
+.glass-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 14px;
+  border-radius: 20px;
+  background: rgba(184, 169, 232, 0.1);
+  border: 1px solid rgba(184, 169, 232, 0.2);
+}
+.glass-badge__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #b8a9e8;
+  animation: glass-dot-pulse 2s ease-in-out infinite;
+}
+
+
+/* ============================================
+   RIPPLE: 觸碰漣漪（需要 JS 配合）
+   ============================================ */
+
+.glass-ripple {
+  position: absolute;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgba(255, 255, 255, 0.12) 0%,
+    transparent 70%
+  );
+  transform: scale(0);
+  animation: glass-ripple-expand 0.8s ease-out forwards;
+  pointer-events: none;
+  z-index: 5;
+}
+
+
+/* ============================================
+   KEYFRAMES
+   ============================================ */
+
+/* 光澤流動（慢速、不規則路徑） */
+@keyframes glass-sheen {
+  0%   { transform: translateX(-25%) translateY(-8%) rotate(22deg); }
+  33%  { transform: translateX(10%) translateY(5%) rotate(24deg); }
+  66%  { transform: translateX(25%) translateY(-3%) rotate(26deg); }
+  100% { transform: translateX(-25%) translateY(-8%) rotate(22deg); }
+}
+
+/* 邊緣呼吸（更柔和的範圍） */
+@keyframes glass-border-breathe {
+  0%, 100% { opacity: 0.2; }
+  50%      { opacity: 0.5; }
+}
+
+/* 懸浮微顫（只有 1px，幾乎感覺不到） */
+@keyframes glass-float {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-1px); }
+}
+
+/* 觸碰漣漪 */
+@keyframes glass-ripple-expand {
+  0%   { transform: scale(0); opacity: 1; }
+  100% { transform: scale(4); opacity: 0; }
+}
+
+/* 標籤光掠（慢速） */
+@keyframes glass-tag-shimmer {
+  0%   { left: -100%; }
+  50%  { left: 100%; }
+  100% { left: -100%; }
+}
+
+/* 數據條流光（慢速） */
+@keyframes glass-bar-shimmer {
+  0%   { transform: translateX(-100%); }
+  50%  { transform: translateX(100%); }
+  100% { transform: translateX(-100%); }
+}
+
+/* 圓點脈衝 */
+@keyframes glass-dot-pulse {
+  0%, 100% { opacity: 0.5; box-shadow: 0 0 4px rgba(184, 169, 232, 0.3); }
+  50%      { opacity: 1;   box-shadow: 0 0 12px rgba(184, 169, 232, 0.6); }
+}
+
+
+/* ============================================
+   PERFORMANCE: 低階裝置靜態模式
+   ============================================ */
+
+.glass--static,
+.glass--static *,
+.glass--static::before,
+.glass--static::after {
+  animation: none !important;
+  transition: none !important;
+}
+.glass--static {
+  /* 關閉所有動畫，改用純靜態背景 */
+  background: rgba(240, 235, 255, 0.85);
+  border: 1px solid rgba(220, 210, 240, 0.5);
+}
+.glass--static::before,
+.glass--static::after {
+  display: none;
+}
+
+/* prefers-reduced-motion 自動降級 */
+@media (prefers-reduced-motion: reduce) {
+  .glass,
+  .glass::before,
+  .glass::after,
+  .glass-btn,
+  .glass-btn::before,
+  .glass-tag::before,
+  .glass-avatar,
+  .glass-avatar::before,
+  .glass-bar__fill::after,
+  .glass-badge__dot {
+    animation: none !important;
+  }
+}
+
+
+/* ============================================
+   BACKDROP FILTER: 模糊背景（可選層）
+   加在需要看到背景模糊效果的面板上
+   ============================================ */
+
+.glass--blur {
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+}
+
+/* 輕度模糊 */
+.glass--blur-light {
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}

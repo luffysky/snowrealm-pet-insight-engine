@@ -236,6 +236,7 @@ export async function POST(req: NextRequest) {
           type: 'complete',
           text: parsed.text,
           mood: parsed.mood,
+          animation: parsed.animation ?? null,
           action: parsed.action ?? null,
           quickReplies: parsed.quickReplies ?? null,
           // 剩餘次數回傳給前端更新計數器

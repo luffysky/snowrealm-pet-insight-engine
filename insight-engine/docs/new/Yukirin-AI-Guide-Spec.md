@@ -127,46 +127,278 @@
 
 ---
 
-## 三、雙 LLM 路由引擎
+## 三、分層模型路由引擎
 
-### 3.1 為什麼要雙 LLM
+### 3.1 三層模型定義
 
-| | Claude | GPT |
-|---|--------|-----|
-| 長處 | 長文分析、結果解讀、細膩對話 | 快速回應、閒聊、創意發想 |
-| 適合 | 結果解讀、導覽腳本、Bug 整理 | 閒聊陪伴、功能快答、Z幣查詢 |
-| 成本 | 較高 | Haiku/mini 較便宜 |
-| 延遲 | 稍慢但穩定 | 較快 |
+| 層級 | 模型 | 用途 | 誰能用 |
+|------|------|------|--------|
+| Premium（高級） | Claude Sonnet 4.6 | 閒聊時更有溫度、更聰明的回覆 | 管理員無限 / 一般使用者每天 5 則 |
+| Standard（標準） | GPT-4o-mini | 日常閒聊、功能說明、Z幣客服 | 所有人，無限制 |
+| Analysis（分析） | Claude Sonnet 4.6 | 問卷結果解讀、故事卡生成 | 不計入聊天額度，獨立計算 |
 
-### 3.2 路由邏輯
+### 3.2 關鍵規則
+
+```
+1. 管理員（你）登入時 → 所有閒聊都走 Premium，無次數限制
+2. 一般使用者每天 5 則 Premium 閒聊額度
+3. Premium 用完 → 自動降回 Standard，雪凜不會告訴使用者（無感切換）
+4. 問卷分析、結果解讀 → 永遠走 Analysis（Claude Sonnet），不佔聊天額度
+5. 導覽、功能說明、Z幣客服 → 永遠走 Standard（夠用了）
+6. 雪凜自己判斷哪些對話值得用 Premium
+```
+
+### 3.3 兩個獨立的計數器
 
 ```typescript
-// api/ai-guide/route.ts
+// 聊天額度和分析額度完全分開
+
+interface DailyQuota {
+  premiumChats: {
+    used: number;      // 今天用了幾則 premium 閒聊
+    limit: number;     // 5（一般使用者）或 Infinity（管理員）
+  };
+  analysisQuota: {
+    used: number;      // 今天用了幾次分析
+    limit: number;     // 免費用戶 3 次 / 付費用戶 20 次 / 管理員無限
+  };
+}
+
+// 聊天是聊天，分析是分析，互不干擾
+```
+
+### 3.4 智慧升級偵測（雪凜自己判斷）
+
+```typescript
+// 不是所有閒聊都需要 Premium
+// 雪凜會判斷：這則對話值不值得用高級模型
+
+type ChatCategory = 'deep' | 'casual';
+
+function shouldUsePremium(
+  message: string,
+  context: UserContext,
+  quota: DailyQuota
+): boolean {
+
+  // 管理員永遠用 Premium
+  if (context.isAdmin) return true;
+
+  // 額度用完了就不升級
+  if (quota.premiumChats.used >= quota.premiumChats.limit) return false;
+
+  // 判斷這則對話是否「值得」用 Premium
+  const isDeepChat = detectDeepChat(message, context);
+  return isDeepChat;
+}
+
+function detectDeepChat(message: string, context: UserContext): boolean {
+  const msg = message.toLowerCase();
+
+  // 情緒性對話 → 值得用 Premium（更有溫度）
+  if (/難過|低落|壓力|焦慮|煩|累|不開心|失落|孤單|迷茫|害怕/.test(msg)) return true;
+
+  // 自我探索 → 值得（需要深度回應）
+  if (/我是不是|為什麼我|我覺得自己|我到底|我應該/.test(msg)) return true;
+
+  // 長訊息（超過 50 字）→ 使用者認真在聊 → 值得
+  if (message.length > 50) return true;
+
+  // 對話已經超過 3 輪 → 進入深度對話 → 值得
+  if (context.currentSessionRounds > 3) return true;
+
+  // 其他短訊息 / 打招呼 / 隨口問 → 不需要 Premium
+  // 「嗨」「在嗎」「無聊」「今天天氣好」→ Standard 就夠了
+  return false;
+}
+```
+
+### 3.5 完整路由邏輯
+
+```typescript
+// lib/llm/router.ts
 
 type Intent =
   | 'tour'           // 導覽
   | 'feature_help'   // 功能說明
-  | 'result_explain' // 結果解讀
+  | 'result_explain' // 結果解讀（分析類，不佔聊天額度）
+  | 'story_generate' // 故事卡生成（分析類，不佔聊天額度）
   | 'zcoin_support'  // Z幣客服
   | 'chitchat'       // 閒聊
   | 'bug_report';    // Bug 回報
 
-function selectLLM(intent: Intent, messageLength: number): 'claude' | 'gpt' {
-  // Claude 處理：需要深度分析的任務
-  if (intent === 'result_explain') return 'claude';   // 結果解讀需要細膩
-  if (intent === 'tour') return 'claude';              // 導覽腳本需要連貫
-  if (intent === 'bug_report') return 'claude';        // Bug 整理需要結構化
+interface RoutingResult {
+  provider: 'anthropic' | 'openai';
+  model: string;
+  tier: 'premium' | 'standard' | 'analysis';
+  quotaType: 'chat' | 'analysis' | 'none';  // 扣哪個額度
+}
 
-  // GPT 處理：快速回應的任務
-  if (intent === 'chitchat') return 'gpt';             // 閒聊用便宜快速的
-  if (intent === 'zcoin_support') return 'gpt';        // 查詢類用快的
-  if (intent === 'feature_help') return 'gpt';         // 功能說明用快的
+function routeMessage(
+  intent: Intent,
+  message: string,
+  context: UserContext,
+  quota: DailyQuota
+): RoutingResult {
 
-  return 'gpt'; // 預設用快的
+  // ===== 分析類任務（獨立額度，永遠用 Claude）=====
+  if (intent === 'result_explain' || intent === 'story_generate') {
+    return {
+      provider: 'anthropic',
+      model: 'claude-sonnet-4-6-20260218',
+      tier: 'analysis',
+      quotaType: 'analysis',  // 扣分析額度，不扣聊天
+    };
+  }
+
+  // ===== 固定走 Standard 的任務（不佔任何額度）=====
+  if (intent === 'tour' || intent === 'feature_help' || intent === 'zcoin_support') {
+    return {
+      provider: 'openai',
+      model: 'gpt-4o-mini',
+      tier: 'standard',
+      quotaType: 'none',  // 導覽/功能/客服不扣額度
+    };
+  }
+
+  // ===== Bug 回報（走 Claude 但不扣額度）=====
+  if (intent === 'bug_report') {
+    return {
+      provider: 'anthropic',
+      model: 'claude-sonnet-4-6-20260218',
+      tier: 'premium',
+      quotaType: 'none',  // Bug 回報不扣額度（鼓勵回報）
+    };
+  }
+
+  // ===== 閒聊（核心：判斷是否升級 Premium）=====
+  if (intent === 'chitchat') {
+    const usePremium = shouldUsePremium(message, context, quota);
+
+    if (usePremium) {
+      return {
+        provider: 'anthropic',
+        model: 'claude-sonnet-4-6-20260218',
+        tier: 'premium',
+        quotaType: 'chat',  // 扣聊天額度
+      };
+    } else {
+      return {
+        provider: 'openai',
+        model: 'gpt-4o-mini',
+        tier: 'standard',
+        quotaType: 'none',  // Standard 不扣額度
+      };
+    }
+  }
+
+  // 預設
+  return {
+    provider: 'openai',
+    model: 'gpt-4o-mini',
+    tier: 'standard',
+    quotaType: 'none',
+  };
 }
 ```
 
-### 3.3 意圖分類器
+### 3.6 額度管理
+
+```typescript
+// lib/llm/quota.ts
+
+async function checkAndDeductQuota(
+  userId: string,
+  quotaType: 'chat' | 'analysis' | 'none'
+): Promise<{ allowed: boolean; remaining: number }> {
+
+  if (quotaType === 'none') return { allowed: true, remaining: Infinity };
+
+  const supabase = await createClient();
+  const today = new Date().toISOString().split('T')[0];
+
+  // 取得或建立今日額度記錄
+  const { data } = await supabase
+    .from('daily_quotas')
+    .select('*')
+    .eq('user_id', userId)
+    .eq('date', today)
+    .single();
+
+  const quota = data || {
+    premium_chats_used: 0,
+    analysis_used: 0,
+  };
+
+  if (quotaType === 'chat') {
+    const limit = await isAdmin(userId) ? Infinity : 5;
+    if (quota.premium_chats_used >= limit) {
+      return { allowed: false, remaining: 0 };
+    }
+    // 扣額度
+    await supabase.from('daily_quotas').upsert({
+      user_id: userId,
+      date: today,
+      premium_chats_used: quota.premium_chats_used + 1,
+      analysis_used: quota.analysis_used,
+    });
+    return { allowed: true, remaining: limit - quota.premium_chats_used - 1 };
+  }
+
+  if (quotaType === 'analysis') {
+    const limit = await isAdmin(userId) ? Infinity :
+                  await isPremiumUser(userId) ? 20 : 3;
+    if (quota.analysis_used >= limit) {
+      return { allowed: false, remaining: 0 };
+    }
+    await supabase.from('daily_quotas').upsert({
+      user_id: userId,
+      date: today,
+      premium_chats_used: quota.premium_chats_used,
+      analysis_used: quota.analysis_used + 1,
+    });
+    return { allowed: true, remaining: limit - quota.analysis_used - 1 };
+  }
+
+  return { allowed: true, remaining: Infinity };
+}
+```
+
+### 3.7 無感切換（使用者不知道模型變了）
+
+```typescript
+// 重要：Premium 用完時雪凜不會說「你的高級額度用完了」
+// 她只是默默降回 Standard，使用者感覺不到差異
+// 唯一的差別是回覆的品質微微下降（但語氣一樣）
+
+// 如果使用者問「為什麼你剛才回得比較好」
+// 雪凜：「欸 有嗎？可能剛好靈感來了吧 (´∀`)」
+
+// 不要告訴使用者有 Premium/Standard 的差別
+// 這是後台的事，前台永遠只有「雪凜」
+```
+
+### 3.8 管理員識別
+
+```typescript
+// 你登入時的判斷
+async function isAdmin(userId: string): Promise<boolean> {
+  const { data } = await supabase
+    .from('admin_users')
+    .select('role')
+    .eq('user_id', userId)
+    .eq('is_active', true)
+    .single();
+
+  return !!data;
+}
+
+// 管理員登入時，雪凜可以偷偷打個不一樣的招呼
+// 「老闆來了～ 今天 Insight 有 247 人在用喔 (≧∀≦)」
+// （只有管理員看得到這個，一般使用者看到的是普通招呼）
+```
+
+### 3.9 意圖分類器
 
 ```typescript
 // 第一層：用關鍵字 + 規則快速分類（不花 LLM token）
