@@ -250,6 +250,8 @@ export default function YukirinScene({
   const mixerRef       = useRef<THREE.AnimationMixer | null>(null)
   const fbxClipsRef    = useRef<Record<string, THREE.AnimationClip>>({})
   const currentIdleRef = useRef<THREE.AnimationAction | null>(null)
+  const allowOrbitRef  = useRef(allowOrbit)
+  allowOrbitRef.current = allowOrbit
 
   // 點擊互動：隨機切換表情
   const CLICK_REACTIONS: YukirinMood[] = ['surprised', 'wink', 'excited', 'happy', 'relaxed']
@@ -459,7 +461,8 @@ export default function YukirinScene({
     if (!mixer) return
     const clips = fbxClipsRef.current
 
-    const clipName =
+    // orbit / fullBody 模式只用站立 breathing，避免坐姿讓腿飄空
+    const clipName = allowOrbitRef.current ? 'fbx_breathing' :
       (newMood === 'happy' || newMood === 'excited') ? 'fbx_happy' :
       newMood === 'relaxed' ? 'fbx_sitting' :
       'fbx_breathing'
@@ -664,8 +667,12 @@ export default function YukirinScene({
         })
       }
 
-      // 隨機 idle 動作排程
-      const idleActions = [
+      // 隨機 idle 動作排程（orbit 模式只用站立動作，避免坐姿讓腿飄空）
+      const idleActions = allowOrbit ? [
+        'look_left', 'look_right', 'idle',
+        'nod', 'tilt_head',
+        'fbx_breathing',
+      ] as const : [
         'turn_left', 'turn_right', 'center',
         'wave', 'look_left', 'look_right', 'idle',
         'nod', 'shake_head', 'tilt_head', 'bow',
