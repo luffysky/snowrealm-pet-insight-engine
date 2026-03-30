@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getQuestionsBySurveyId, createQuestion, reorderQuestions } from '@/lib/surveyRepo'
 import { requireRole } from '@/lib/tenant'
+import { queryOne } from '@/lib/db'
 
 export async function GET(
   _request: NextRequest,
@@ -19,6 +20,17 @@ export async function POST(
   if (roleCheck instanceof NextResponse) return roleCheck
   const { id } = await params
   const body = await request.json()
+
+  // 防止同一問卷出現相同 key 的重複題目
+  if (body.key) {
+    const existing = await queryOne<{ id: string }>(
+      `SELECT id FROM questions WHERE survey_id = $1 AND key = $2`,
+      [id, body.key]
+    )
+    if (existing) {
+      return NextResponse.json({ error: `題目 key「${body.key}」已存在，請使用不同的 key` }, { status: 409 })
+    }
+  }
 
   const question = await createQuestion({
     survey_id: id,

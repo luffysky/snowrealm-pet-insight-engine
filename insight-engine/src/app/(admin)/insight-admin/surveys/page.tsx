@@ -1899,14 +1899,16 @@ function QuestionForm({
     allow_other_text: false,
   })
   const [saving, setSaving] = useState(false)
+  const [saveError, setSaveError] = useState('')
 
   const handleSave = async () => {
     if (!form.content.trim()) return
     setSaving(true)
+    setSaveError('')
 
     const options = form.type === 'text' ? [] : form.options.filter((o) => o.label.trim())
 
-    await fetch(`/api/admin/surveys/${surveyId}/questions`, {
+    const res = await fetch(`/api/admin/surveys/${surveyId}/questions`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -1924,6 +1926,11 @@ function QuestionForm({
       }),
     })
     setSaving(false)
+    if (!res.ok) {
+      const err = await res.json() as { error?: string }
+      setSaveError(err.error ?? '新增失敗')
+      return
+    }
     onSaved()
   }
 
@@ -1931,6 +1938,7 @@ function QuestionForm({
     <div className="bg-white/40 backdrop-blur-sm border border-[#b8a9e8]/25 rounded-xl p-4 space-y-3">
       <h3 className="text-sm font-medium text-t-accent">新增題目</h3>
       <QuestionFormFields form={form} onChange={setForm} existingRoutes={existingRoutes} onAddRoute={onAddRoute} onRenameRoute={onRenameRoute} />
+      {saveError && <p className="text-xs text-red-400">{saveError}</p>}
       <div className="flex gap-2 pt-2">
         <button
           type="button"

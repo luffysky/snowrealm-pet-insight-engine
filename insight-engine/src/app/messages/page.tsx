@@ -312,7 +312,8 @@ function isNakedContent(content: string): boolean {
   if (content === '[已收回]') return false
   if (content.startsWith('[img:') || content.startsWith('[gif:') ||
       content.startsWith('[video:') || content.startsWith('[audio:') ||
-      content.startsWith('[file:') || content.startsWith(STICKER_PREFIX)) return true
+      content.startsWith('[AUDIO]:') || content.startsWith('[file:') ||
+      content.startsWith(STICKER_PREFIX)) return true
   const trimmed = content.trim()
   // Single emoji sticker (≤ 4 chars, contains emoji)
   if (trimmed.length <= 4 && /\p{Emoji}/u.test(trimmed)) return true

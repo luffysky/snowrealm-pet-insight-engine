@@ -14,7 +14,35 @@ import {
   GuideMessage,
   UserMemory,
   CharacterType,
+  PromptSettings,
 } from '@/lib/guideEngine'
+
+const PROMPT_SETTINGS_TENANT_ID = '__yukirin_prompts__'
+
+let cachedPromptSettings: PromptSettings | null = null
+let cacheExpiry = 0
+
+/** 載入總後台自訂的 prompt 設定（快取 60 秒，避免每次查 DB） */
+async function loadPromptSettings(): Promise<PromptSettings | null> {
+  const now = Date.now()
+  if (cachedPromptSettings !== null && now < cacheExpiry) return cachedPromptSettings
+
+  try {
+    const row = await queryOne<{ extra_meta: string }>(
+      `SELECT extra_meta FROM site_settings WHERE tenant_id = $1`,
+      [PROMPT_SETTINGS_TENANT_ID]
+    )
+    if (row?.extra_meta) {
+      const parsed = typeof row.extra_meta === 'string' ? JSON.parse(row.extra_meta) : row.extra_meta
+      cachedPromptSettings = parsed as PromptSettings
+      cacheExpiry = now + 60_000
+      return cachedPromptSettings
+    }
+  } catch { /* silently skip — use defaults */ }
+
+  cacheExpiry = now + 60_000
+  return null
+}
 
 /** 從 DB 讀取使用者記憶（角色選擇、暱稱、造訪次數等） */
 async function loadUserMemory(userId: string | null, ip: string): Promise<UserMemory> {
@@ -209,7 +237,10 @@ export async function POST(req: NextRequest) {
   const userMemory = await loadUserMemory(userId, ip)
 
   // 注入身份資訊 + 使用者記憶到 context
-  context = { ...context, userRole, userName, userMemory }
+  // 載入總後台自訂 prompt 設定
+  const promptSettings = await loadPromptSettings()
+
+  context = { ...context, userRole, userName, userMemory, promptSettings: promptSettings ?? undefined }
 
   // super_admin 額外注入今日平台數據
   if (userRole === 'super_admin') {

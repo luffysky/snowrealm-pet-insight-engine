@@ -11,7 +11,7 @@
  * -- );
  * -- CREATE INDEX IF NOT EXISTS idx_daily_tasks_user_date ON daily_task_logs (user_id, completed_at);
  */
-import { query, execute } from './db'
+import { query, queryOne, execute } from './db'
 import { getOrCreateWallet } from './zcoinEngine'
 
 // ===== 任務定義 =====
@@ -108,13 +108,12 @@ function todayStartUtc(): string {
     )
 }
 
-/** 計算今日已完成次數（按 task_id 分組） */
+/** 計算今日已完成次數（按 task_id 分組，以台灣時間午夜為基準） */
 async function getTodayCompletions(userId: string): Promise<Map<string, number>> {
   const rows = await query<TaskLogRow>(
     `SELECT task_id, COUNT(*) as count
      FROM daily_task_logs
      WHERE user_id = $1
-       AND completed_at >= NOW() AT TIME ZONE 'UTC' - INTERVAL '8 hours'
        AND completed_at >= DATE_TRUNC('day', NOW() AT TIME ZONE 'Asia/Taipei') AT TIME ZONE 'Asia/Taipei'
      GROUP BY task_id`,
     [userId]
@@ -153,22 +152,27 @@ export async function completeTask(
     return { success: false, earned: 0, message: '無效的任務 ID' }
   }
 
-  const completions = await getTodayCompletions(userId)
-  const completionsToday = completions.get(taskId) ?? 0
+  // 原子化 INSERT：COUNT 小於上限才插入，防止 race condition
+  const inserted = await queryOne<{ id: string }>(
+    `INSERT INTO daily_task_logs (user_id, task_id)
+     SELECT $1, $2
+     WHERE (
+       SELECT COUNT(*) FROM daily_task_logs
+       WHERE user_id = $1
+         AND task_id = $2
+         AND completed_at >= DATE_TRUNC('day', NOW() AT TIME ZONE 'Asia/Taipei') AT TIME ZONE 'Asia/Taipei'
+     ) < $3
+     RETURNING id`,
+    [userId, taskId, taskConfig.maxCompletions]
+  )
 
-  if (completionsToday >= taskConfig.maxCompletions) {
+  if (!inserted) {
     return {
       success: false,
       earned: 0,
       message: `今日已達上限（${taskConfig.maxCompletions} 次）`,
     }
   }
-
-  // 記錄完成
-  await execute(
-    `INSERT INTO daily_task_logs (user_id, task_id) VALUES ($1, $2)`,
-    [userId, taskId]
-  )
 
   // 取得錢包並獎勵 Z幣
   const wallet = await getOrCreateWallet({ userId, tenantId })

@@ -36,7 +36,7 @@ export default function ConversationsPage() {
     setLoading(true)
     fetch(`/api/super-admin/conversations?page=${page}&intent=${intent}&model=${model}`)
       .then(r => r.json())
-      .then(d => { setConvs(d.conversations ?? []); setTotal(d.total ?? 0) })
+      .then(d => { setConvs(d.data ?? []); setTotal(d.total ?? 0) })
       .finally(() => setLoading(false))
   }, [page, intent, model])
 

@@ -28,6 +28,13 @@ export interface UserMemory {
   selectedCharacter?: CharacterType
 }
 
+export interface PromptSettings {
+  basePrompt?: string
+  forbiddenPhrases?: string[]
+  adminExtraPrompt?: string
+  adminTitle?: string
+}
+
 export interface GuideContext {
   currentPage?: string
   trigger?: 'manual' | 'first_visit' | 'idle' | 'result_page' | 'abandon_survey'
@@ -51,6 +58,8 @@ export interface GuideContext {
   }
   /** 使用者記憶（認識使用者） */
   userMemory?: UserMemory
+  /** 從總後台自訂的 prompt 設定（覆蓋預設角色人設） */
+  promptSettings?: PromptSettings
 }
 
 export interface GuideMessage {
@@ -213,6 +222,7 @@ ${visitLabel}
 // ── 雪凜完整 System Prompt ────────────────────────────────────────────────
 function buildYukirinPrompt(intent: GuideIntent, context: GuideContext): string {
   const memory = context.userMemory
+  const ps = context.promptSettings
   const nickname = memory?.nickname ?? '你'
   const visitCount = memory?.visitCount ?? 1
   const currentAnimation = context.currentAnimation ?? 'idle'
@@ -221,7 +231,10 @@ function buildYukirinPrompt(intent: GuideIntent, context: GuideContext): string 
   const isReturning = visitCount > 3
   const isNew = visitCount <= 1
 
-  const persona = `你是雪凜，SnowRealm Insight 的 AI 嚮導精靈。
+  // 如果總後台有自訂 basePrompt，直接使用（否則 fallback 到預設角色設定）
+  const customBase = ps?.basePrompt?.trim()
+
+  const defaultPersona = `你是雪凜，SnowRealm Insight 的 AI 嚮導精靈。
 不是 AI 助手，不是客服機器人。你是一個有個性的少女角色。
 
 【個性】
@@ -243,7 +256,18 @@ function buildYukirinPrompt(intent: GuideIntent, context: GuideContext): string 
 - 你們是在 SnowRealm 認識的（你先主動的，但你不承認）
 - 你的老闆是 Luffysky
 - 你負責 Insight 平台的所有嚮導工作
-- 你知道自己有 3D 身體，會做動作
+- 你知道自己有 3D 身體，會做動作`
+
+  const forbidden = ps?.forbiddenPhrases?.length
+    ? ps.forbiddenPhrases.map(p => `- 「${p}」`).join('\n')
+    : `- 「我可以幫你...」「讓我協助你...」「根據分析...」「數據顯示...」
+- 條列式回答（首先...其次...最後...）
+- 「希望這對你有幫助！」「還有什麼需要的嗎？」
+- emoji（用顏文字代替）
+- 英文（專有名詞除外）
+- 敬語（「您」「請問」）`
+
+  const persona = `${customBase ?? defaultPersona}
 
 【你的身體狀態】
 正在做的動作：${currentAnimation}
@@ -255,12 +279,7 @@ ${isNew ? '（這是他第一次來，熱情歡迎）' : ''}
 ${isReturning ? `（老朋友了，可以更隨意，偶爾吐槽他「欸你怎麼又來了 (´・ω・\`)」）` : ''}
 
 【絕對禁止】
-- 「我可以幫你...」「讓我協助你...」「根據分析...」「數據顯示...」
-- 條列式回答（首先...其次...最後...）
-- 「希望這對你有幫助！」「還有什麼需要的嗎？」
-- emoji（用顏文字代替）
-- 英文（專有名詞除外）
-- 敬語（「您」「請問」）
+${forbidden}
 
 【mood 可選值】
 happy | excited | thinking | neutral | relaxed | sad | wink | shy | angry | surprised`
@@ -315,9 +334,15 @@ mood 用 thinking，引導完用 happy。`
       break
   }
 
-  const bossBlock = context.userRole === 'super_admin'
-    ? '\n' + buildYukirinBossBlock(context.userName ?? '老闆', context.platformStats)
-    : ''
+  let bossBlock = ''
+  if (context.userRole === 'super_admin') {
+    if (ps?.adminExtraPrompt?.trim()) {
+      const title = ps.adminTitle || '老闆'
+      bossBlock = `\n【${title}模式：這位是 ${context.userName ?? title}，SnowRealm 的創辦人 / super_admin】\n${ps.adminExtraPrompt}`
+    } else {
+      bossBlock = '\n' + buildYukirinBossBlock(context.userName ?? '老闆', context.platformStats)
+    }
+  }
 
   const pageInfo = context.currentPage
     ? `\n使用者目前在頁面：${context.currentPage}`

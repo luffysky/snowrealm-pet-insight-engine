@@ -216,18 +216,27 @@ export async function reorderSurveys(orderedIds: string[], tenantId: string): Pr
   )
 }
 
-/** 依 survey_id 取得題目，可依 route 過濾（預設全部） */
+/** 依 survey_id 取得題目，可依 route 過濾（預設全部）。自動去除同 key 重複列（保留最小 order_index）。 */
 export async function getQuestionsBySurveyId(surveyId: string, route?: string): Promise<QuestionRow[]> {
+  let rows: QuestionRow[]
   if (route) {
-    return query<QuestionRow>(
+    rows = await query<QuestionRow>(
       `SELECT * FROM questions WHERE survey_id = $1 AND route IN ('all', $2) ORDER BY order_index ASC`,
       [surveyId, route]
     )
+  } else {
+    rows = await query<QuestionRow>(
+      `SELECT * FROM questions WHERE survey_id = $1 ORDER BY order_index ASC`,
+      [surveyId]
+    )
   }
-  return query<QuestionRow>(
-    `SELECT * FROM questions WHERE survey_id = $1 ORDER BY order_index ASC`,
-    [surveyId]
-  )
+  // 去除相同 key 的重複題目（DB 裡若有歷史重複資料，僅保留 order_index 最小的一筆）
+  const seen = new Set<string>()
+  return rows.filter(q => {
+    if (seen.has(q.key)) return false
+    seen.add(q.key)
+    return true
+  })
 }
 
 /** 取得所有題目（依 slug，用於 stats 等） */

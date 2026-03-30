@@ -6,6 +6,8 @@ import Link from 'next/link'
 
 type TabKey = 'profile' | 'activity' | 'surveys' | 'stories' | 'zcoin' | 'orders' | 'conversations' | 'files' | 'logins' | 'reports'
 
+interface ZcoinWallet { balance: number; total_earned: number }
+
 const TABS: { key: TabKey; label: string }[] = [
   { key: 'profile', label: '基本資料' },
   { key: 'activity', label: '活動時間線' },
@@ -54,6 +56,11 @@ export default function UserDetailPage() {
   const [loading, setLoading] = useState(true)
   const [tabLoading, setTabLoading] = useState(false)
   const [actioning, setActioning] = useState(false)
+  const [zcoinAmount, setZcoinAmount] = useState('')
+  const [zcoinReason, setZcoinReason] = useState('')
+  const [zcoinWallet, setZcoinWallet] = useState<ZcoinWallet | null>(null)
+  const [grantingZcoin, setGrantingZcoin] = useState(false)
+  const [zcoinMsg, setZcoinMsg] = useState('')
 
   useEffect(() => {
     fetch(`/api/super-admin/users/${userId}/detail`)
@@ -79,11 +86,44 @@ export default function UserDetailPage() {
     }
     fetch(endpoints[tab])
       .then(r => r.json())
-      .then(d => setData(Object.values(d)[0] as unknown[] ?? []))
+      .then(d => {
+        if (tab === 'zcoin') {
+          setData(d.transactions ?? [])
+          setZcoinWallet(d.wallet ?? null)
+        } else {
+          setData(Object.values(d)[0] as unknown[] ?? [])
+        }
+      })
       .finally(() => setTabLoading(false))
   }, [tab, userId])
 
   useEffect(() => { loadTab() }, [loadTab])
+
+  async function grantZcoin() {
+    const amt = parseInt(zcoinAmount, 10)
+    if (!amt || isNaN(amt)) return
+    setGrantingZcoin(true)
+    setZcoinMsg('')
+    try {
+      const res = await fetch(`/api/super-admin/users/${userId}/zcoin`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ amount: amt, reason: zcoinReason || undefined }),
+      })
+      const d = await res.json() as { ok?: boolean; newBalance?: number; error?: string }
+      if (d.ok) {
+        setZcoinMsg(`✅ 已${amt > 0 ? '發放' : '扣除'} ${Math.abs(amt)} Z幣，餘額：${d.newBalance}`)
+        setZcoinWallet(w => w ? { ...w, balance: d.newBalance ?? w.balance } : w)
+        setZcoinAmount('')
+        setZcoinReason('')
+        loadTab() // reload transactions
+      } else {
+        setZcoinMsg(`❌ ${d.error ?? '操作失敗'}`)
+      }
+    } finally {
+      setGrantingZcoin(false)
+    }
+  }
 
   async function action(type: 'ban' | 'warn' | 'force-logout') {
     const labels = { ban: '封鎖', warn: '警告', 'force-logout': '強制登出' }
@@ -187,8 +227,28 @@ export default function UserDetailPage() {
           <p className="text-white/50 animate-pulse">載入資料...</p>
         ) : (
           <Section title={TABS.find(t => t.key === tab)?.label ?? ''}>
+            {tab === 'zcoin' && (
+              <div className="px-4 py-3 border-b border-slate-800 space-y-2">
+                {zcoinWallet && (
+                  <p className="text-sm text-white/60">當前餘額：<span className="text-yellow-400 font-bold">{zcoinWallet.balance}</span> Z幣（累計獲得 {zcoinWallet.total_earned}）</p>
+                )}
+                <div className="flex gap-2 flex-wrap items-center">
+                  <input value={zcoinAmount} onChange={e => setZcoinAmount(e.target.value)}
+                    placeholder="金額（正=發放 負=扣除）" type="number"
+                    className="w-44 px-3 py-1.5 bg-slate-800 border border-slate-700 rounded-lg text-sm text-white placeholder-white/30 focus:outline-none focus:border-yellow-500/50" />
+                  <input value={zcoinReason} onChange={e => setZcoinReason(e.target.value)}
+                    placeholder="備註（可選）"
+                    className="flex-1 min-w-32 px-3 py-1.5 bg-slate-800 border border-slate-700 rounded-lg text-sm text-white placeholder-white/30 focus:outline-none focus:border-yellow-500/50" />
+                  <button onClick={grantZcoin} disabled={grantingZcoin || !zcoinAmount}
+                    className="px-3 py-1.5 bg-yellow-500/20 text-yellow-400 hover:bg-yellow-500/30 rounded-lg text-sm transition-all disabled:opacity-50 shrink-0">
+                    {grantingZcoin ? '處理中...' : '執行'}
+                  </button>
+                </div>
+                {zcoinMsg && <p className="text-sm text-white/60">{zcoinMsg}</p>}
+              </div>
+            )}
             {(data as unknown[]).length === 0 ? (
-              <EmptyState text="無資料" />
+              <EmptyState text={tab === 'zcoin' ? '尚無交易記錄' : '無資料'} />
             ) : (
               <div className="divide-y divide-slate-800/50 max-h-[500px] overflow-y-auto">
                 {(data as unknown[]).map((rawItem, i) => {
