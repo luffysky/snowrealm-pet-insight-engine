@@ -4,6 +4,8 @@ import { useEffect, useRef, useCallback } from 'react'
 import * as THREE from 'three'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import { VRMLoaderPlugin, VRM, VRMUtils } from '@pixiv/three-vrm'
+import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader.js'
+import type { VRMHumanBoneName } from '@pixiv/three-vrm'
 
 export type YukirinMood = 'happy' | 'surprised' | 'relaxed' | 'neutral' | 'wink' | 'excited' | 'thinking' | 'sad' | 'shy' | 'angry'
 
@@ -150,6 +152,56 @@ const MOOD_EXPRESSION: Record<YukirinMood, string> = {
   angry:     'angry',
 }
 
+// ── Mixamo → VRM 骨骼名稱映射 ──────────────────────────────────────────────
+const MIXAMO_TO_VRM: Record<string, string> = {
+  mixamorigHips:          'hips',
+  mixamorigSpine:         'spine',
+  mixamorigSpine1:        'chest',
+  mixamorigSpine2:        'upperChest',
+  mixamorigNeck:          'neck',
+  mixamorigHead:          'head',
+  mixamorigLeftShoulder:  'leftShoulder',
+  mixamorigLeftArm:       'leftUpperArm',
+  mixamorigLeftForeArm:   'leftLowerArm',
+  mixamorigLeftHand:      'leftHand',
+  mixamorigRightShoulder: 'rightShoulder',
+  mixamorigRightArm:      'rightUpperArm',
+  mixamorigRightForeArm:  'rightLowerArm',
+  mixamorigRightHand:     'rightHand',
+  mixamorigLeftUpLeg:     'leftUpperLeg',
+  mixamorigLeftLeg:       'leftLowerLeg',
+  mixamorigLeftFoot:      'leftFoot',
+  mixamorigLeftToeBase:   'leftToes',
+  mixamorigRightUpLeg:    'rightUpperLeg',
+  mixamorigRightLeg:      'rightLowerLeg',
+  mixamorigRightFoot:     'rightFoot',
+  mixamorigRightToeBase:  'rightToes',
+}
+
+/** 把 Mixamo FBX 動畫的骨骼名稱重新對應到 VRM 骨骼節點名稱 */
+function retargetMixamoClip(clip: THREE.AnimationClip, vrm: VRM): THREE.AnimationClip {
+  const boneMap: Record<string, string> = {}
+  for (const [mixamoName, vrmBoneName] of Object.entries(MIXAMO_TO_VRM)) {
+    const node = vrm.humanoid.getNormalizedBoneNode(vrmBoneName as VRMHumanBoneName)
+    if (node) boneMap[mixamoName] = node.name
+  }
+
+  const tracks: THREE.KeyframeTrack[] = []
+  for (const track of clip.tracks) {
+    const dotIdx = track.name.lastIndexOf('.')
+    if (dotIdx === -1) continue
+    const boneName = track.name.slice(0, dotIdx)
+    const property = track.name.slice(dotIdx + 1)
+    if (property !== 'quaternion') continue   // 只用旋轉，避免位移飄移
+    const vrmNodeName = boneMap[boneName]
+    if (!vrmNodeName) continue
+    const newTrack = track.clone()
+    newTrack.name = `${vrmNodeName}.${property}`
+    tracks.push(newTrack)
+  }
+  return new THREE.AnimationClip(clip.name, clip.duration, tracks)
+}
+
 export default function YukirinScene({
   cameraMode = 'fullBody',
   mood = 'happy',
@@ -194,6 +246,10 @@ export default function YukirinScene({
     isDragging: false, dragMoved: false, lastX: 0, lastY: 0, pinchDist: 0,
   })
   const orbitPointersRef = useRef(new Map<number, { x: number; y: number }>())
+
+  const mixerRef       = useRef<THREE.AnimationMixer | null>(null)
+  const fbxClipsRef    = useRef<Record<string, THREE.AnimationClip>>({})
+  const currentIdleRef = useRef<THREE.AnimationAction | null>(null)
 
   // 點擊互動：隨機切換表情
   const CLICK_REACTIONS: YukirinMood[] = ['surprised', 'wink', 'excited', 'happy', 'relaxed']
@@ -397,6 +453,32 @@ export default function YukirinScene({
     requestAnimationFrame(anim)
   }, [])
 
+  /** 根據心情切換 FBX idle 動畫 */
+  const switchIdleByMood = useCallback((newMood: YukirinMood) => {
+    const mixer = mixerRef.current
+    if (!mixer) return
+    const clips = fbxClipsRef.current
+
+    const clipName =
+      (newMood === 'happy' || newMood === 'excited') ? 'fbx_happy' :
+      newMood === 'relaxed' ? 'fbx_sitting' :
+      'fbx_breathing'
+
+    const clip = clips[clipName] ?? clips['fbx_idle']
+    if (!clip) return
+
+    const newAction = mixer.clipAction(clip)
+    newAction.setLoop(THREE.LoopRepeat, Infinity)
+
+    if (currentIdleRef.current && currentIdleRef.current !== newAction) {
+      newAction.reset().fadeIn(0.5).play()
+      currentIdleRef.current.fadeOut(0.5)
+    } else if (!currentIdleRef.current) {
+      newAction.play()
+    }
+    currentIdleRef.current = newAction
+  }, [])
+
   // 平滑過渡表情
   const transitionExpression = useCallback((vrm: VRM, target: YukirinMood, durationMs = 300) => {
     const targetExpr = MOOD_EXPRESSION[target]
@@ -499,6 +581,39 @@ export default function YukirinScene({
       scene.add(vrm.scene)
       vrmRef.current = vrm
 
+      // ── FBX 動畫載入 ──────────────────────────────────────────────────────
+      const fbxLoader = new FBXLoader()
+      const mixer = new THREE.AnimationMixer(vrm.scene)
+      mixerRef.current = mixer
+
+      const FBX_ANIMS: [string, string][] = [
+        ['fbx_idle',      '/animations/idle/Idle.fbx'],
+        ['fbx_breathing', '/animations/idle/breathing -idle.fbx'],
+        ['fbx_happy',     '/animations/idle/happy-idle.fbx'],
+        ['fbx_happy2',    '/animations/idle/happy-dle2.fbx'],
+        ['fbx_sitting',   '/animations/idle/sitting-idle.fbx'],
+      ]
+
+      Promise.all(
+        FBX_ANIMS.map(([name, path]) =>
+          fbxLoader.loadAsync(path)
+            .then(fbx => {
+              if (fbx.animations.length > 0) {
+                fbxClipsRef.current[name] = retargetMixamoClip(fbx.animations[0], vrm)
+              }
+            })
+            .catch(() => { /* 載入失敗跳過 */ })
+        )
+      ).then(() => {
+        // 預設播放呼吸 idle（循環）
+        const defaultClip = fbxClipsRef.current['fbx_breathing'] ?? fbxClipsRef.current['fbx_idle']
+        if (defaultClip) {
+          currentIdleRef.current = mixer.clipAction(defaultClip)
+          currentIdleRef.current.setLoop(THREE.LoopRepeat, Infinity)
+          currentIdleRef.current.play()
+        }
+      })
+
       // 初始表情
       transitionExpression(vrm, mood)
 
@@ -508,6 +623,7 @@ export default function YukirinScene({
           setMood: (m, dur) => {
             currentMoodRef.current = m
             transitionExpression(vrm, m, dur)
+            switchIdleByMood(m)
           },
           playAnimation: (name) => {
             currentAnimationRef.current = name
@@ -523,6 +639,22 @@ export default function YukirinScene({
               case 'sway':        playSway(vrm); break
               case 'dance':       playDanceStep(); break
               case 'stretch':     playStretch(vrm); break
+              case 'fbx_idle':
+              case 'fbx_breathing':
+              case 'fbx_happy':
+              case 'fbx_happy2':
+              case 'fbx_sitting': {
+                const clip = fbxClipsRef.current[name]
+                if (clip && mixerRef.current) {
+                  const action = mixerRef.current.clipAction(clip)
+                  if (currentIdleRef.current && currentIdleRef.current !== action) {
+                    currentIdleRef.current.fadeOut(0.3)
+                  }
+                  action.reset().setLoop(THREE.LoopRepeat, Infinity).fadeIn(0.3).play()
+                  currentIdleRef.current = action
+                }
+                break
+              }
             }
             // 動作播放完畢後重置為 idle（3 秒後）
             setTimeout(() => { currentAnimationRef.current = 'idle' }, 3000)
@@ -538,6 +670,7 @@ export default function YukirinScene({
         'wave', 'look_left', 'look_right', 'idle',
         'nod', 'shake_head', 'tilt_head', 'bow',
         'shrug', 'think', 'excited', 'sway', 'dance', 'stretch',
+        'fbx_happy', 'fbx_breathing', 'fbx_sitting',
       ] as const
       const scheduleRandomAction = () => {
         if (!mountedRef.current) return
@@ -834,6 +967,7 @@ export default function YukirinScene({
       }
 
       // SpringBone 物理更新
+      mixerRef.current?.update(delta)
       vrm?.update(delta)
 
       // 玻璃球漂浮
@@ -887,7 +1021,7 @@ export default function YukirinScene({
       container.removeChild(renderer.domElement)
     }
   }, [cameraMode, mood, showBackground, allowOrbit, quality, onLoad, transitionExpression,
-    playArmWave, playNod, playShakeHead, playTiltHead, playBow, playShrug,
+    switchIdleByMood, playArmWave, playNod, playShakeHead, playTiltHead, playBow, playShrug,
     playThinkPose, playExcitedBounce, playSway, playDanceStep, playStretch])
 
   return (

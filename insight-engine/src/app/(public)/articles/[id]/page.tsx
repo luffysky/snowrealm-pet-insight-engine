@@ -21,7 +21,7 @@ function BlocksRenderer({ blocks, onImageClick }: { blocks: ArticleBlock[]; onIm
       {blocks.map(block => (
         <div key={block.id}>
           {block.type === 'text' && (
-            <div className="prose prose-invert prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: block.textContent ?? '' }} />
+            <div className="prose prose-slate prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: block.textContent ?? '' }} />
           )}
           {block.type === 'image' && block.imageUrl && (
             <div className="space-y-1">
@@ -36,11 +36,11 @@ function BlocksRenderer({ blocks, onImageClick }: { blocks: ArticleBlock[]; onIm
                 <>
                   {block.imageUrl && <img src={block.imageUrl} alt="" className="rounded-xl w-full object-cover cursor-zoom-in"
                     onClick={() => onImageClick?.(block.imageUrl!)} />}
-                  <div className="prose prose-invert prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: block.textContent ?? '' }} />
+                  <div className="prose prose-slate prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: block.textContent ?? '' }} />
                 </>
               ) : (
                 <>
-                  <div className="prose prose-invert prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: block.textContent ?? '' }} />
+                  <div className="prose prose-slate prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: block.textContent ?? '' }} />
                   {block.imageUrl && <img src={block.imageUrl} alt="" className="rounded-xl w-full object-cover cursor-zoom-in"
                     onClick={() => onImageClick?.(block.imageUrl!)} />}
                 </>
@@ -104,7 +104,7 @@ export default function ArticleDetailPage() {
   const timeStr = new Date(post.createdAt).toLocaleDateString('zh-TW', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' })
 
   return (
-    <div className="min-h-screen bg-transparent text-white" style={{ paddingBottom: 'var(--bnav-h, 76px)' }}>
+    <div className="min-h-screen bg-transparent text-slate-800" style={{ paddingBottom: 'var(--bnav-h, 76px)' }}>
       {/* Image lightbox */}
       {lightboxUrl && (
         <div className="fixed inset-0 z-[300] bg-black/95 flex items-center justify-center" onClick={() => setLightboxUrl(null)}>
@@ -121,21 +121,21 @@ export default function ArticleDetailPage() {
       {showShareCard && <PostShareCard post={post} onClose={() => setShowShareCard(false)} />}
 
       {/* Back nav */}
-      <nav className="sticky top-0 z-10 bg-transparent/90 backdrop-blur-md border-b border-white/8">
+      <nav className="sticky top-0 z-10 bg-white/70 backdrop-blur-md border-b border-slate-200/80">
         <div className="max-w-2xl mx-auto px-4 py-3 flex items-center justify-between">
-          <Link href="/articles" className="flex items-center gap-2 text-sm text-[#6b5fa8] hover:text-white transition-colors">
+          <Link href="/articles" className="flex items-center gap-2 text-sm text-[#6b5fa8] hover:text-[#3d3155] transition-colors">
             <ArrowLeft className="w-4 h-4" /> 社群文章
           </Link>
           <div className="flex items-center gap-2">
             <button onClick={() => setShowShareCard(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-500/20 border border-amber-400/30 rounded-xl text-xs text-amber-300 hover:bg-amber-500/30 transition-colors"
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-500/15 border border-amber-400/40 rounded-xl text-xs text-amber-600 hover:bg-amber-500/25 transition-colors"
             >
               📤 分享
             </button>
             <button onClick={copyLink}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 border border-white/10 rounded-xl text-xs text-[#6b5fa8] hover:text-[#3d3155] hover:bg-white/10 transition-colors"
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 border border-slate-200 rounded-xl text-xs text-slate-600 hover:text-slate-800 hover:bg-slate-200 transition-colors"
             >
-              {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <ExternalLink className="w-3.5 h-3.5" />}
+              {copied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <ExternalLink className="w-3.5 h-3.5" />}
               {copied ? '已複製' : '連結'}
             </button>
           </div>
@@ -166,7 +166,7 @@ export default function ArticleDetailPage() {
         {/* Article header */}
         <div className="space-y-4">
           {post.type === 'article' && post.title && (
-            <h1 className="text-2xl sm:text-3xl font-bold text-white leading-snug">{post.title}</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 leading-snug">{post.title}</h1>
           )}
 
           {/* Author + meta */}
@@ -194,7 +194,7 @@ export default function ArticleDetailPage() {
             <div className="flex flex-wrap gap-1.5">
               {post.tags.map(t => (
                 <Link key={t} href={`/articles?tag=${t}`}
-                  className="text-xs px-2.5 py-1 bg-amber-500/10 border border-amber-400/20 rounded-full text-amber-400/70 hover:text-amber-300 transition-colors"
+                  className="text-xs px-2.5 py-1 bg-amber-100 border border-amber-300/60 rounded-full text-amber-700 hover:text-amber-800 hover:bg-amber-200 transition-colors"
                 >
                   #{t}
                 </Link>
@@ -211,7 +211,7 @@ export default function ArticleDetailPage() {
             <BlocksRenderer blocks={blocks} onImageClick={setLightboxUrl} />
           ) : (
             <div
-              className="prose prose-invert prose-sm max-w-none prose-p:text-[#3d3155]/85 prose-img:rounded-xl prose-img:w-full prose-img:max-h-80 prose-img:object-cover prose-img:cursor-zoom-in"
+              className="prose prose-slate prose-sm max-w-none prose-p:text-slate-700 prose-headings:text-slate-900 prose-strong:text-slate-800 prose-img:rounded-xl prose-img:w-full prose-img:max-h-80 prose-img:object-cover prose-img:cursor-zoom-in"
               dangerouslySetInnerHTML={{ __html: post.content }}
               onClick={e => {
                 const target = e.target as HTMLElement
@@ -223,7 +223,7 @@ export default function ArticleDetailPage() {
 
 
         {/* Interaction */}
-        <div className="border-t border-white/8 pt-4">
+        <div className="border-t border-slate-200/80 pt-4">
           <InteractionBar
             postId={post.id}
             initialLikes={post.likesCount}
@@ -238,8 +238,8 @@ export default function ArticleDetailPage() {
 
         {/* Comments */}
         {commentsOpen && (
-          <div className="border-t border-white/8 pt-4">
-            <h3 className="text-sm font-semibold text-[#6b5fa8] mb-4 flex items-center gap-2">
+          <div className="border-t border-slate-200/80 pt-4">
+            <h3 className="text-sm font-semibold text-[#5a4c8a] mb-4 flex items-center gap-2">
               <MessageSquare className="w-4 h-4" /> 留言 ({commentsCount})
             </h3>
             <CommentSection postId={post.id} onCommentAdded={() => setCommentsCount(c => c + 1)} />
