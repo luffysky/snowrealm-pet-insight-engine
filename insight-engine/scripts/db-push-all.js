@@ -20,8 +20,11 @@ if (!DATABASE_URL) {
 
 /** 依相依順序排列（勿依檔名字母序） */
 const MIGRATION_FILES = [
+  // ── 基底 ──
   'migration.sql',
   'migration_branching.sql',
+
+  // ── Phase 5–35 ──
   'migration_phase5.sql',
   'migration_phase6.sql',
   'migration_phase7_tag_rules.sql',
@@ -57,6 +60,56 @@ const MIGRATION_FILES = [
   'migration_phase33_report_sharing.sql',
   'migration_phase34_bot_passcode.sql',
   'migration_phase35_platform_notifications.sql',
+
+  // ── Phase 36–52 ──
+  'migration_phase36_missing_tables.sql',
+  'migration_phase37_template_ratings_story_richmenu.sql',
+  'migration_phase38_sync_fixes.sql',
+  'migration_phase39_ai_constraints_report_type.sql',
+  'migration_phase40_other_text_done_config_share.sql',
+  'migration_phase41_survey_templates.sql',
+  'migration_phase42_growth_engine.sql',
+  'migration_phase43_cognitive_gap.sql',
+  'migration_phase44_message_management.sql',
+  'migration_phase45_social_video.sql',
+  'migration_phase46_stickers.sql',
+  'migration_phase47_survey_cover.sql',
+  'migration_phase48_password_lock.sql',
+  'migration_phase49_game_titles.sql',
+  'migration_phase5_viral_templates.sql',
+  'migration_phase50_reward_system.sql',
+  'migration_phase51_profile_theme.sql',
+  'migration_phase52_zcoin_economy_v2.sql',
+
+  // ── 社群系統 ──
+  'migration_social.sql',
+  'migration_social_bookmarks.sql',
+  'migration_social_notifications.sql',
+  'migration_social_reports.sql',
+  'migration_stories.sql',
+  'migration_follow_dm.sql',
+  'migration_user_bans_blocks.sql',
+  'migration_message_edit.sql',
+  'migration_phase6_zcoin_shop.sql',
+
+  // ── 最新 migrations/ 資料夾 ──
+  'migrations/20260327_sql_arch_indexes.sql',
+  'migrations/20260327_user_album.sql',
+  'migrations/20260328_comment_likes.sql',
+  'migrations/20260328_multi_album.sql',
+  'migrations/20260329_user_blog.sql',
+  'migrations/20260329_blog_cover_position.sql',
+  'migrations/20260329_sticker_columns.sql',
+  'migrations/20260329_marketplace.sql',
+  'migrations/20260329_messages_social.sql',
+  'migrations/20260329_blog_comments_reactions.sql',
+  'migrations/20260329_blog_series.sql',
+  'migrations/20260330_admin_upgrade.sql',
+  'migrations/20260330_yukirin_agent.sql',
+  'migrations/20260330_guide_chat_tables.sql',
+  'migrations/20260330_missing_tables.sql',
+  'migrations/20260330_friend_qr.sql',
+  'migrations/20260331_super_admin_platform.sql',
 ]
 
 function pgSslOption() {
@@ -87,8 +140,12 @@ async function main() {
       }
       const sql = fs.readFileSync(filePath, 'utf8')
       console.log(`\n📄 執行 ${name} …`)
-      await client.query(sql)
-      console.log(`   ✅ 完成`)
+      try {
+        await client.query(sql)
+        console.log(`   ✅ 完成`)
+      } catch (fileErr) {
+        console.warn(`   ⚠️  部分語句失敗（已略過）: ${fileErr.message}`)
+      }
     }
 
     const { rows } = await client.query(

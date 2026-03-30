@@ -116,6 +116,8 @@ function QualityIcon({ isLow }: { isLow: boolean }) {
 
 const MIN_W = 240, MAX_W = 560
 const MIN_H = 360, MAX_H = 680
+const MIN_CHAR_W = 80,  MAX_CHAR_W = 280
+const MIN_CHAR_H = 100, MAX_CHAR_H = 360
 
 // ── 主元件 ────────────────────────────────────────────────────────────────
 export default function YukirinWidget() {
@@ -153,6 +155,17 @@ export default function YukirinWidget() {
   const [panelSize, setPanelSize] = useState({ w: 288, h: 460 })
   const panelSizeRef = useRef({ w: 288, h: 460 })
   const widgetRef = useRef<HTMLDivElement>(null)
+
+  // ── 角色視窗尺寸（可拖曳調整）──────────────────────────────────────────────
+  const [charSize, setCharSize] = useState<{ w: number; h: number }>(() => {
+    if (typeof window === 'undefined') return { w: 96, h: 112 }
+    try {
+      const saved = JSON.parse(localStorage.getItem('yukirin-char-size') ?? 'null') as { w: number; h: number } | null
+      if (saved && saved.w >= MIN_CHAR_W && saved.h >= MIN_CHAR_H) return saved
+    } catch { /* ignore */ }
+    return { w: 96, h: 112 }
+  })
+  const charSizeRef = useRef(charSize)
 
   // ── 效能設定 ──────────────────────────────────────────────────────────────
   const [performanceMode, setPerformanceModeState] = useState<'high' | 'low'>(() => {
@@ -285,6 +298,35 @@ export default function YukirinWidget() {
     document.addEventListener('pointerup',   handleUp)
   }, [])
 
+  // ── 角色視窗 resize ──────────────────────────────────────────────────────
+  const startCharResize = useCallback((e: React.PointerEvent) => {
+    e.stopPropagation()
+    e.preventDefault()
+    const startX = e.clientX
+    const startY = e.clientY
+    const startW = charSizeRef.current.w
+    const startH = charSizeRef.current.h
+    const pid = e.pointerId
+
+    const handleMove = (ev: PointerEvent) => {
+      if (ev.pointerId !== pid) return
+      ev.preventDefault()
+      const newW = Math.max(MIN_CHAR_W, Math.min(MAX_CHAR_W, startW + ev.clientX - startX))
+      const newH = Math.max(MIN_CHAR_H, Math.min(MAX_CHAR_H, startH + ev.clientY - startY))
+      charSizeRef.current = { w: newW, h: newH }
+      setCharSize({ w: newW, h: newH })
+    }
+    const handleUp = (ev: PointerEvent) => {
+      if (ev.pointerId !== pid) return
+      document.removeEventListener('pointermove', handleMove)
+      document.removeEventListener('pointerup', handleUp)
+      // 持久化
+      localStorage.setItem('yukirin-char-size', JSON.stringify(charSizeRef.current))
+    }
+    document.addEventListener('pointermove', handleMove, { passive: false })
+    document.addEventListener('pointerup', handleUp)
+  }, [])
+
   // ── 說話邏輯 ─────────────────────────────────────────────────────────────
   const handleLoad = useCallback((controls: AnyControls) => {
     yukirinRef.current = controls
@@ -407,8 +449,8 @@ export default function YukirinWidget() {
                 actions={bubbleActions}
               />
 
-              {/* 3D 視窗 */}
-              <div className="relative w-24 h-28 sm:w-28 sm:h-32">
+              {/* 3D 視窗（尺寸可拖曳調整） */}
+              <div className="relative" style={{ width: charSize.w, height: charSize.h }}>
                 {/* 關閉按鈕（左上） */}
                 <button
                   onClick={handleClose}
@@ -477,10 +519,23 @@ export default function YukirinWidget() {
                     />
                   )}
                 </button>
+
+                {/* 右下角 resize 把手 */}
+                <div
+                  className="absolute bottom-1 right-1 z-20 cursor-se-resize opacity-30 hover:opacity-80 transition-opacity"
+                  onPointerDown={startCharResize}
+                  title="拖曳調整大小"
+                >
+                  <svg width="10" height="10" viewBox="0 0 10 10" fill="rgba(184,169,232,1)">
+                    <circle cx="8.5" cy="8.5" r="1.2"/>
+                    <circle cx="5.5" cy="8.5" r="1.2"/>
+                    <circle cx="8.5" cy="5.5" r="1.2"/>
+                  </svg>
+                </div>
               </div>
 
               {/* ── 角色切換 + 姿勢選擇 ────────────────────────────────── */}
-              <div className="w-24 sm:w-28 mt-2 space-y-1.5" onPointerDown={e => e.stopPropagation()}>
+              <div className="mt-2 space-y-1.5" style={{ width: charSize.w }} onPointerDown={e => e.stopPropagation()}>
                 {/* 角色切換 */}
                 <div className="flex items-center bg-white/60 backdrop-blur-sm border border-[#b8a9e8]/30 rounded-full h-[18px] overflow-hidden shadow-sm">
                   <button

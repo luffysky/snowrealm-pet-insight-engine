@@ -4,7 +4,7 @@ import { ReactNode, useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { SuperAdminBg, SA_THEMES, type SuperAdminTheme } from '@/components/super-admin/SuperAdminBg'
-import { LayoutDashboard, Building2, Users, BarChart3, Shield, Headphones, Bell, Smartphone, Palette, Globe, DollarSign, Sticker, ClipboardList, HeartPulse, TrendingDown, LogOut, Menu, ChevronRight, Sparkles, ShoppingBag, Bot, ShieldAlert, FileWarning, CreditCard, BrainCircuit, Radio, MessageSquare, FolderOpen } from 'lucide-react'
+import { LayoutDashboard, Building2, Users, BarChart3, Shield, Headphones, Bell, Smartphone, Palette, Globe, DollarSign, Sticker, ClipboardList, HeartPulse, TrendingDown, LogOut, Menu, ChevronRight, Sparkles, ShoppingBag, Bot, ShieldAlert, FileWarning, CreditCard, BrainCircuit, Radio, MessageSquare, FolderOpen, Coins } from 'lucide-react'
 
 const NAV_ITEMS = [
   { group: '營運管理', items: [
@@ -26,6 +26,7 @@ const NAV_ITEMS = [
   ]},
   { group: '財務', items: [
     { href: '/snowrealm-insight-ctrl/orders',        label: '金流訂單',   icon: CreditCard },
+    { href: '/snowrealm-insight-ctrl/zcoin',         label: 'Z幣管理',    icon: Coins },
     { href: '/snowrealm-insight-ctrl/ai-cost',       label: 'AI 成本',    icon: BrainCircuit },
   ]},
   { group: '即時監控', items: [

@@ -117,6 +117,23 @@ export default function NotificationsPage() {
     loadNotifications()
   }
 
+  async function handleSend(id: string) {
+    if (!confirm('確定立即發送？此操作無法撤回。')) return
+    setMsg('發送中...')
+    try {
+      const res = await fetch(`/api/super-admin/notifications/${id}/send`, { method: 'POST' })
+      const data = await res.json() as { ok?: boolean; sentCount?: number; warnings?: string[]; error?: string }
+      if (data.ok) {
+        setMsg(`✅ 已發送給 ${data.sentCount ?? 0} 位用戶${data.warnings?.length ? `（警告：${data.warnings[0]}）` : ''}`)
+      } else {
+        setMsg(`❌ ${data.error ?? '發送失敗'}`)
+      }
+    } catch {
+      setMsg('❌ 網路錯誤')
+    }
+    loadNotifications()
+  }
+
   async function handleStatusChange(id: string, status: string) {
     await fetch(`/api/super-admin/notifications/${id}`, {
       method: 'PATCH',
@@ -260,7 +277,7 @@ export default function NotificationsPage() {
                   {n.status === 'draft' && (
                     <>
                       <button
-                        onClick={() => handleStatusChange(n.id, 'sent')}
+                        onClick={() => handleSend(n.id)}
                         className="px-3 py-1 bg-amber-600/20 hover:bg-amber-600/40 text-amber-400 rounded text-xs transition-colors cursor-pointer"
                       >
                         立即發送
