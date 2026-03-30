@@ -127,10 +127,20 @@ const MAX_MESSAGES = 100
 /** 加入新訊息，超過 MAX_MESSAGES 時循環覆蓋最舊的（保留第 0 筆初始問候） */
 function appendMessage(prev: ChatMessage[], msg: ChatMessage): ChatMessage[] {
   if (prev.length >= MAX_MESSAGES) {
-    // 保留 index 0（初始問候），移除最舊的 user/assistant 那筆
     return [...prev.slice(1), msg]
   }
   return [...prev, msg]
+}
+
+async function saveMessages(msgs: ChatMessage[]) {
+  if (msgs.length === 0) return
+  try {
+    await fetch('/api/guide/history', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ messages: msgs.map(m => ({ role: m.role, text: m.text, mood: m.mood })) }),
+    })
+  } catch { /* non-critical */ }
 }
 
 // ── 主元件 ───────────────────────────────────────────────────────────────────
@@ -168,6 +178,18 @@ export default function YukirinChatPanel({ onClose }: YukirinChatPanelProps) {
     fetch('/api/guide/turns')
       .then(r => r.json())
       .then((data: TurnsInfo) => setTurnsInfo(data))
+      .catch(() => {})
+  }, [])
+
+  // 開啟時載入對話歷史（登入用戶才有）
+  useEffect(() => {
+    fetch('/api/guide/history')
+      .then(r => r.json())
+      .then((data: { messages: ChatMessage[] }) => {
+        if (data.messages && data.messages.length > 0) {
+          setMessages(data.messages)
+        }
+      })
       .catch(() => {})
   }, [])
 
@@ -334,6 +356,7 @@ export default function YukirinChatPanel({ onClose }: YukirinChatPanelProps) {
         mood: finalMood,
       }
       setMessages(prev => appendMessage(prev, assistantMsg))
+      saveMessages([userMsg, assistantMsg])
 
       if (finalAction) executeAction(finalAction)
       setQuickReplies(finalQuickReplies.length > 0 ? finalQuickReplies : DEFAULT_QUICK_REPLIES)
