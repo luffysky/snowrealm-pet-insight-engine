@@ -25,10 +25,11 @@ export async function GET(
   const { conversationId } = await params
 
   try {
+    // conversationId is the user_key from guide_chat_messages
     const rows = await query<{ sender: string; content: string; created_at: string }>(
-      `SELECT sender, content, created_at
-       FROM guide_messages
-       WHERE conversation_id = $1
+      `SELECT role AS sender, content, created_at
+       FROM guide_chat_messages
+       WHERE user_key = $1
        ORDER BY created_at ASC`,
       [conversationId]
     )

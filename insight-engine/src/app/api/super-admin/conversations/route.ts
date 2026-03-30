@@ -26,25 +26,30 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   const offset = (page - 1) * 20
 
   try {
+    // 實際對話存在 guide_chat_messages，以 user_key 分組為對話串
     const countRow = await queryOne<{ total: string }>(
-      `SELECT COUNT(*)::TEXT AS total FROM guide_conversations gc
-       WHERE ($1 = 'all' OR gc.intent_type = $1)
-         AND ($2 = 'all' OR gc.model = $2)`,
-      [intent, model]
+      `SELECT COUNT(DISTINCT user_key)::TEXT AS total FROM guide_chat_messages`,
+      []
     )
     const total = parseInt(countRow?.total ?? '0', 10)
 
     const rows = await query(
-      `SELECT gc.id, gc.user_id, gc.intent_type, gc.model, gc.message_count,
-              gc.total_tokens, gc.created_at,
-              up.nickname, up.display_name
-       FROM guide_conversations gc
-       LEFT JOIN user_profiles up ON up.user_id = gc.user_id
-       WHERE ($1 = 'all' OR gc.intent_type = $1)
-         AND ($2 = 'all' OR gc.model = $2)
-       ORDER BY gc.created_at DESC
-       LIMIT 20 OFFSET $3`,
-      [intent, model, offset]
+      `SELECT
+         gcm.user_key AS id,
+         CASE WHEN gcm.user_key LIKE 'user:%' THEN gcm.user_key::text ELSE NULL END AS user_id,
+         'chat' AS intent_type,
+         'claude' AS model,
+         COUNT(*)::int AS message_count,
+         0 AS total_tokens,
+         MAX(gcm.created_at) AS created_at,
+         up.nickname,
+         up.display_name
+       FROM guide_chat_messages gcm
+       LEFT JOIN user_profiles up ON up.user_id::text = REPLACE(gcm.user_key, 'user:', '')
+       GROUP BY gcm.user_key, up.nickname, up.display_name
+       ORDER BY MAX(gcm.created_at) DESC
+       LIMIT 20 OFFSET $1`,
+      [offset]
     )
 
     return NextResponse.json({ data: rows, total })

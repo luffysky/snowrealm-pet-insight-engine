@@ -29,23 +29,49 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   const statusFilter = status === 'all' ? 'all' : status
 
   try {
+    // 用戶上傳的相片（相簿） + 管理員上傳的媒體資源（media_assets）
     const countRow = await queryOne<{ total: string }>(
-      `SELECT COUNT(*)::TEXT AS total FROM file_metadata fm
-       WHERE ($1 = 'all' OR fm.file_type LIKE $1 || '%')
-         AND ($2 = 'all' OR fm.ai_moderation_status = $2)`,
-      [typeFilter, statusFilter]
+      `SELECT COUNT(*)::TEXT AS total FROM (
+         SELECT id FROM user_album_photos
+         WHERE ($1 = 'all' OR $1 = 'image')
+         UNION ALL
+         SELECT id FROM media_assets
+         WHERE ($1 = 'all' OR mime_type LIKE $1 || '%')
+       ) AS combined`,
+      [typeFilter]
     )
     const total = parseInt(countRow?.total ?? '0', 10)
 
     const rows = await query(
-      `SELECT fm.id, fm.user_id, fm.file_path, fm.file_type, fm.file_size,
-              fm.ai_moderation_status, fm.created_at,
-              up.nickname, up.display_name
-       FROM file_metadata fm
-       LEFT JOIN user_profiles up ON up.user_id = fm.user_id
-       WHERE ($1 = 'all' OR fm.file_type LIKE $1 || '%')
-         AND ($2 = 'all' OR fm.ai_moderation_status = $2)
-       ORDER BY fm.created_at DESC
+      `SELECT
+         uap.id,
+         uap.user_id::text AS user_id,
+         uap.url AS file_path,
+         'image' AS file_type,
+         NULL AS file_size,
+         'approved' AS ai_moderation_status,
+         uap.created_at,
+         up.nickname,
+         up.display_name
+       FROM user_album_photos uap
+       LEFT JOIN user_profiles up ON up.user_id = uap.user_id
+       WHERE ($1 = 'all' OR $1 = 'image')
+         AND ($2 = 'all' OR $2 = 'approved')
+       UNION ALL
+       SELECT
+         ma.id,
+         ma.uploaded_by::text AS user_id,
+         ma.url AS file_path,
+         split_part(ma.mime_type, '/', 1) AS file_type,
+         ma.size_bytes AS file_size,
+         'approved' AS ai_moderation_status,
+         ma.created_at,
+         NULL AS nickname,
+         NULL AS display_name
+       FROM media_assets ma
+       WHERE ($1 = 'all' OR ma.mime_type LIKE $1 || '%')
+         AND ($2 = 'all' OR $2 = 'approved')
+       ORDER BY created_at DESC
        LIMIT 20 OFFSET $3`,
       [typeFilter, statusFilter, offset]
     )
@@ -66,7 +92,13 @@ export async function DELETE(request: NextRequest): Promise<NextResponse> {
     const { fileId } = await request.json() as { fileId: string }
     if (!fileId) return NextResponse.json({ error: '缺少 fileId' }, { status: 400 })
 
-    await execute(`DELETE FROM file_metadata WHERE id = $1`, [fileId])
+    // 嘗試從 user_album_photos 刪除，若不存在再試 media_assets
+    const deleted1 = await queryOne<{ id: string }>(
+      `DELETE FROM user_album_photos WHERE id = $1 RETURNING id`, [fileId]
+    ).catch(() => null)
+    if (!deleted1) {
+      await execute(`DELETE FROM media_assets WHERE id = $1`, [fileId])
+    }
 
     try {
       await execute(
@@ -76,7 +108,7 @@ export async function DELETE(request: NextRequest): Promise<NextResponse> {
           String(auth.sub ?? ''),
           String(auth.name ?? ''),
           'file.delete',
-          'file_metadata',
+          'user_files',
           fileId,
           JSON.stringify({}),
         ]

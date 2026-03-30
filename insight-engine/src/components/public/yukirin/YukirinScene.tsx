@@ -252,6 +252,7 @@ export default function YukirinScene({
   const currentIdleRef    = useRef<THREE.AnimationAction | null>(null)
   const pendingFbxAnimRef = useRef<string>('fbx_breathing') // FBX 還未載入時暫存請求
   const userSelectedPoseRef = useRef<string | null>(null) // 使用者主動選的姿勢，setMood 不覆蓋
+  const waveAnimActiveRef   = useRef(false) // 防止 wave 動畫並行
   const allowOrbitRef  = useRef(allowOrbit)
   allowOrbitRef.current = allowOrbit
 
@@ -263,19 +264,31 @@ export default function YukirinScene({
 
   // 揮手
   const playArmWave = useCallback((vrm: VRM) => {
+    if (waveAnimActiveRef.current) return // 防並行
     const upperArm = vrm.humanoid.getNormalizedBoneNode('rightUpperArm')
     const lowerArm = vrm.humanoid.getNormalizedBoneNode('rightLowerArm')
     if (!upperArm) return
+    waveAnimActiveRef.current = true
     let t = 0
-    const anim = () => {
-      t += 0.07
-      upperArm.rotation.z = -1.0 + Math.sin(t * 3) * 0.3
-      upperArm.rotation.x = -0.1
-      if (lowerArm) lowerArm.rotation.z = 0.15 + Math.sin(t * 3 + 0.5) * 0.15
-      if (t < Math.PI * 2.5) requestAnimationFrame(anim)
-      else { upperArm.rotation.set(0, 0, 0); if (lowerArm) lowerArm.rotation.set(0, 0, 0) }
+    let rafId = 0
+    const reset = () => {
+      upperArm.rotation.set(0, 0, 0)
+      if (lowerArm) lowerArm.rotation.set(0, 0, 0)
+      waveAnimActiveRef.current = false
     }
-    requestAnimationFrame(anim)
+    const anim = () => {
+      if (!mountedRef.current) { reset(); return }
+      t += 0.07
+      // 縮小幅度：-0.5 ± 0.2，讓手臂輕揮而非完全橫展
+      upperArm.rotation.z = -0.5 + Math.sin(t * 3) * 0.2
+      upperArm.rotation.x = -0.05
+      if (lowerArm) lowerArm.rotation.z = 0.1 + Math.sin(t * 3 + 0.5) * 0.1
+      if (t < Math.PI * 2.5) { rafId = requestAnimationFrame(anim) }
+      else { reset() }
+    }
+    rafId = requestAnimationFrame(anim)
+    // 保底：4 秒後強制 reset，避免 rAF 卡住
+    setTimeout(() => { cancelAnimationFrame(rafId); reset() }, 4000)
   }, [])
 
   // 點頭
