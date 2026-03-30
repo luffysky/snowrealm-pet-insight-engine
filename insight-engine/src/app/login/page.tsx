@@ -77,7 +77,7 @@ function LoginForm() {
         </div>
 
         {/* 玻璃卡 */}
-        <div className="rounded-[28px] border border-white/40 bg-white/30 p-8 shadow-[0_16px_64px_rgba(184,169,232,0.2)] backdrop-blur-2xl">
+        <div className="lg-lavender-sharp lg-xl relative p-8">
           <div className="mb-6 text-center">
             <h1 className="text-xl font-black text-[#3d3155]">歡迎回來</h1>
             <p className="mt-1 text-sm text-[#8a7ca8]">登入 SnowRealm Insight</p>

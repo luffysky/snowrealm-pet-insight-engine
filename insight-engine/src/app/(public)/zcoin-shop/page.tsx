@@ -44,7 +44,7 @@ function ReferralSection({ onEarned }: { onEarned?: () => void }) {
   const pendingReferrals = data.info?.referrals.filter(r => r.status === 'pending').length ?? 0
 
   return (
-    <div className="bg-white/5 border border-emerald-400/15 rounded-xl p-4 space-y-3">
+    <div className="lg-light rounded-xl p-4 space-y-3 border-emerald-400/20">
       <div className="flex items-center justify-between">
         <div>
           <p className="text-sm font-medium text-[#3d3155]">🤝 邀請好友賺 Z幣</p>
@@ -277,7 +277,7 @@ function AdWatchSection({ onEarned }: { onEarned: () => void }) {
   if (!quota) return null
 
   return (
-    <div className="bg-white/5 border border-amber-400/15 rounded-xl p-4 space-y-3 relative overflow-hidden">
+    <div className="lg-light rounded-xl p-4 space-y-3 relative overflow-hidden border-amber-400/20">
       {toast && (
         <div className="absolute top-2 right-3 text-xs font-semibold text-amber-300 animate-bounce">{toast}</div>
       )}
@@ -332,7 +332,7 @@ function calcPerCoin(ntd: number, zcoin: number): string {
 
 function BalanceCard({ balance }: { balance: BalanceData | null }) {
   return (
-    <div className="bg-gradient-to-br from-amber-600/20 to-amber-400/10 border border-amber-400/20 rounded-2xl p-6 mb-6 text-center">
+    <div className="lg-lavender-sharp rounded-2xl p-6 mb-6 text-center bg-gradient-to-br from-amber-600/15 to-amber-400/5">
       <p className="text-sm text-amber-200/60 mb-1">目前 Z幣餘額</p>
       <p className="text-5xl font-bold text-amber-300">{balance?.balance ?? 0}</p>
       <p className="text-xs text-amber-200/40 mt-1">Z幣</p>
@@ -362,10 +362,10 @@ function TaskItem({ task, onComplete, completing }: TaskItemProps) {
 
   return (
     <div
-      className={`flex items-center justify-between rounded-xl px-4 py-3 border transition-colors ${
+      className={`flex items-center justify-between rounded-xl px-4 py-3 transition-colors ${
         task.isCompleted
-          ? 'bg-white/3 border-white/5 opacity-50'
-          : 'bg-white/5 border-white/10'
+          ? 'lg-light opacity-50'
+          : 'lg-light'
       }`}
     >
       <div className="flex items-center gap-3">
@@ -407,7 +407,7 @@ function RechargeCard({ pkg }: { pkg: RechargePackage }) {
   const href = `/api/payment/zcoin-recharge?amount=${pkg.zcoin}&package=${pkg.id}`
 
   return (
-    <div className="relative bg-white/5 border border-white/10 hover:border-amber-400/30 rounded-xl p-4 transition-colors">
+    <div className="relative lg-light hover:border-amber-400/30 rounded-xl p-4 transition-colors">
       {pkg.badge && (
         <span
           className={`absolute -top-2 right-3 text-xs text-[#3d3155] font-semibold px-2 py-0.5 rounded-full ${pkg.badgeColor ?? 'bg-amber-500'}`}
@@ -488,7 +488,7 @@ interface EarnGuideProps {
 
 function EarnGuide({ onAction }: EarnGuideProps) {
   return (
-    <div className="bg-white/5 border border-white/10 rounded-xl overflow-hidden">
+    <div className="lg-light rounded-xl overflow-hidden">
       {EARN_GUIDE.map((item, idx) => (
         <button
           key={item.label}

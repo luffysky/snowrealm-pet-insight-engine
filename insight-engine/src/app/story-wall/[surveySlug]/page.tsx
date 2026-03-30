@@ -54,7 +54,7 @@ export default function StoryWallPage() {
         {keywords.length > 0 && (
           <div className="flex flex-wrap gap-2 justify-center">
             {keywords.map((kw, i) => (
-              <span key={i} className="px-3 py-1 text-xs bg-white/5 border border-white/10 rounded-full text-white/50">
+              <span key={i} className="px-3 py-1 text-xs lg-aurora-sharp lg-sm bg-white/5 border border-white/10 rounded-full text-white/50">
                 {kw}
               </span>
             ))}
@@ -84,7 +84,7 @@ export default function StoryWallPage() {
             {items.map((item) => (
               <div
                 key={item.responseId}
-                className={`relative bg-white/5 border rounded-2xl p-5 space-y-3 transition-all ${
+                className={`relative lg-aurora-sharp lg-xl lg-shimmer overflow-hidden rounded-2xl p-5 space-y-3 transition-all ${
                   item.isPinned ? 'border-violet-500/40 bg-violet-500/5' : 'border-white/10'
                 }`}
               >

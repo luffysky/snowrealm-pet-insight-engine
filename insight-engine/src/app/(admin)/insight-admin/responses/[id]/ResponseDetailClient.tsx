@@ -92,7 +92,7 @@ export function ResponseDetailClient({ detail }: { detail: ResponseDetail }) {
       </div>
 
       {/* 基本資訊 */}
-      <div className="bg-white/35 backdrop-blur-sm border border-[#b8a9e8]/20 rounded-[20px] p-6 space-y-3">
+      <div className="lg-lavender-sharp lg-shimmer lg-lg relative overflow-hidden p-6 space-y-3">
         <h2 className="text-lg font-semibold text-[#3d3155]">基本資訊</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
           {/* 狀態 - editable */}
@@ -147,7 +147,7 @@ export function ResponseDetailClient({ detail }: { detail: ResponseDetail }) {
       </div>
 
       {/* 備註 */}
-      <div className="bg-white/35 backdrop-blur-sm border border-[#b8a9e8]/20 rounded-[20px] p-6 space-y-3">
+      <div className="lg-lavender-sharp lg-shimmer lg-lg relative overflow-hidden p-6 space-y-3">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold text-[#3d3155]">備註</h2>
           {!editingNotes && (
@@ -198,7 +198,7 @@ export function ResponseDetailClient({ detail }: { detail: ResponseDetail }) {
       </div>
 
       {/* CRM 標籤 */}
-      <div className="bg-white/35 backdrop-blur-sm border border-[#b8a9e8]/20 rounded-[20px] p-6 space-y-3">
+      <div className="lg-lavender-sharp lg-shimmer lg-lg relative overflow-hidden p-6 space-y-3">
         <h2 className="text-lg font-semibold text-[#3d3155]">CRM 標籤</h2>
         <div className="flex flex-wrap gap-2">
           {detail.tags.length === 0 && (
@@ -217,7 +217,7 @@ export function ResponseDetailClient({ detail }: { detail: ResponseDetail }) {
 
       {/* 點擊事件 */}
       {detail.clickEvents.length > 0 && (
-        <div className="bg-white/35 backdrop-blur-sm border border-[#b8a9e8]/20 rounded-[20px] p-6 space-y-3">
+        <div className="lg-lavender-sharp lg-shimmer lg-lg relative overflow-hidden p-6 space-y-3">
           <h2 className="text-lg font-semibold text-[#3d3155]">點擊事件</h2>
           <div className="flex flex-wrap gap-2">
             {detail.clickEvents.map((e, i) => (
@@ -239,7 +239,7 @@ export function ResponseDetailClient({ detail }: { detail: ResponseDetail }) {
       )}
 
       {/* 問答內容 */}
-      <div className="bg-white/35 backdrop-blur-sm border border-[#b8a9e8]/20 rounded-[20px] p-6 space-y-4">
+      <div className="lg-lavender-sharp lg-shimmer lg-lg relative overflow-hidden p-6 space-y-4">
         <h2 className="text-lg font-semibold text-[#3d3155]">問答內容</h2>
         {detail.answers.map((answer, idx) => (
           <div

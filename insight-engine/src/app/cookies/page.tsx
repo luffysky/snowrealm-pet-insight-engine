@@ -15,7 +15,7 @@ export default function CookiesPage() {
         <h1 className="text-3xl font-bold text-white mt-6 mb-2">Cookie 政策</h1>
         <p className="text-sm text-white/40 mb-10">最後更新日期：2026 年 3 月 22 日</p>
 
-        <div className="space-y-8 text-sm leading-relaxed">
+        <div className="space-y-8 text-sm leading-relaxed lg-light-sharp lg-xl p-6 rounded-2xl">
           <section>
             <h2 className="text-lg font-semibold text-white mb-3">1. 什麼是 Cookie？</h2>
             <p>

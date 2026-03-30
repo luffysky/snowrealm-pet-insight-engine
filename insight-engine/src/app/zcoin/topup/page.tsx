@@ -101,10 +101,10 @@ function TopupContent() {
               key={plan.id}
               onClick={() => { setSelectedPlan(plan.id); soundManager.play('select') }}
               className={[
-                'relative rounded-2xl border p-3.5 text-left transition-all duration-200 active:scale-95',
+                'relative lg-warm-sharp lg-md p-3.5 text-left transition-all duration-200 active:scale-95',
                 isSelected
-                  ? 'bg-[#b8a9e8]/25 border-[#b8a9e8]/60 shadow-[0_0_16px_rgba(184,169,232,0.3)]'
-                  : 'bg-white/8 border-white/20 hover:border-white/35',
+                  ? 'bg-[#b8a9e8]/25 shadow-[0_0_16px_rgba(184,169,232,0.3)]'
+                  : 'hover:bg-white/5',
               ].join(' ')}
             >
               {plan.popular && (

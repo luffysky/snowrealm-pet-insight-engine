@@ -34,7 +34,7 @@ function OgPreviewCard({ og, onRemove }: { og: OgData; onRemove: () => void }) {
       href={og.url}
       target="_blank"
       rel="noopener noreferrer"
-      className="block mt-2 rounded-xl border border-white/10 bg-white/5 hover:bg-white/8 overflow-hidden transition-colors"
+      className="block mt-2 rounded-xl lg-dark-sharp lg-md border border-white/10 bg-white/5 hover:bg-white/8 overflow-hidden transition-colors"
       onClick={e => e.stopPropagation()}
     >
       <div className="flex gap-3 p-3">
@@ -162,12 +162,12 @@ function BlockEditor({ blocks, onChange, onUpload }: {
       <div className="flex items-center gap-2 pt-2">
         <span className="text-xs text-white/20">新增區塊：</span>
         <button onClick={addText}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-white/40 hover:text-white/70 text-xs transition-colors"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg lg-dark-sharp lg-sm bg-white/5 hover:bg-white/10 border border-white/10 text-white/40 hover:text-white/70 text-xs transition-colors"
         >
           <Type className="w-3.5 h-3.5" /> 文字
         </button>
         <button onClick={addImage}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-white/40 hover:text-white/70 text-xs transition-colors"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg lg-dark-sharp lg-sm bg-white/5 hover:bg-white/10 border border-white/10 text-white/40 hover:text-white/70 text-xs transition-colors"
         >
           <ImageIcon className="w-3.5 h-3.5" /> 圖片
         </button>
@@ -364,7 +364,7 @@ export default function WritePage() {
   return (
     <div className="min-h-screen bg-slate-950 text-white">
       {/* Top bar */}
-      <div className="sticky top-0 z-50 bg-slate-950/90 backdrop-blur-xl border-b border-white/8 px-4 py-3 flex items-center justify-between">
+      <div className="sticky top-0 z-50 bg-slate-950/80 backdrop-blur-xl border-b border-white/8 px-4 py-3 flex items-center justify-between lg-dark-sharp">
         <div className="flex items-center gap-3">
           <Link href="/articles" className="p-2 rounded-xl text-white/40 hover:text-white/70 hover:bg-white/5 transition-colors">
             <ArrowLeft className="w-5 h-5" />
@@ -529,7 +529,7 @@ export default function WritePage() {
 
         {/* Error */}
         {error && (
-          <div className="mt-4 px-4 py-3 bg-rose-500/10 border border-rose-400/20 rounded-xl text-rose-400 text-sm">
+          <div className="mt-4 px-4 py-3 lg-dark-sharp lg-md bg-rose-500/10 border border-rose-400/20 rounded-xl text-rose-400 text-sm">
             {error}
           </div>
         )}

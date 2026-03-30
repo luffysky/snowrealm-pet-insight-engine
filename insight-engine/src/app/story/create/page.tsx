@@ -377,7 +377,7 @@ export default function StoryCreatePage() {
 
       {/* ── Panels ── */}
       {panel && (
-        <div className="absolute bottom-[calc(4rem+env(safe-area-inset-bottom,0px))] left-0 right-0 z-30 bg-slate-900/95 backdrop-blur-xl border-t border-white/10 rounded-t-3xl p-4 max-h-[55vh] overflow-y-auto">
+        <div className="absolute bottom-[calc(4rem+env(safe-area-inset-bottom,0px))] left-0 right-0 z-30 lg-void-sharp bg-slate-900/90 backdrop-blur-xl border-t border-white/10 rounded-t-3xl p-4 max-h-[55vh] overflow-y-auto">
 
           {/* Background panel */}
           {panel === 'bg' && (
@@ -407,7 +407,7 @@ export default function StoryCreatePage() {
                 onChange={e => setTextInput(e.target.value)}
                 placeholder="輸入文字..."
                 rows={2}
-                className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-sm text-white placeholder-white/25 outline-none focus:border-amber-400/30 resize-none"
+                className="w-full lg-aurora-sharp lg-md bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-sm text-white placeholder-white/25 outline-none focus:border-amber-400/30 resize-none"
                 autoFocus
               />
               {/* Font */}
@@ -485,14 +485,14 @@ export default function StoryCreatePage() {
             <div className="space-y-3">
               <p className="text-xs font-semibold text-white/40 uppercase tracking-wider">新增投票</p>
               <input value={pollQ} onChange={e => setPollQ(e.target.value)} placeholder="投票問題..."
-                className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-sm text-white placeholder-white/25 outline-none focus:border-amber-400/30"
+                className="w-full lg-aurora-sharp lg-md bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-sm text-white placeholder-white/25 outline-none focus:border-amber-400/30"
               />
               <div className="flex gap-2">
                 <input value={pollA} onChange={e => setPollA(e.target.value)} placeholder="選項 A"
-                  className="flex-1 bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-sm text-white placeholder-white/25 outline-none focus:border-amber-400/30"
+                  className="flex-1 lg-aurora-sharp lg-md bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-sm text-white placeholder-white/25 outline-none focus:border-amber-400/30"
                 />
                 <input value={pollB} onChange={e => setPollB(e.target.value)} placeholder="選項 B"
-                  className="flex-1 bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-sm text-white placeholder-white/25 outline-none focus:border-amber-400/30"
+                  className="flex-1 lg-aurora-sharp lg-md bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-sm text-white placeholder-white/25 outline-none focus:border-amber-400/30"
                 />
               </div>
               <button

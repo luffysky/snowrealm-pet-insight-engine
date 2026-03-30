@@ -157,7 +157,7 @@ export default function RateFriendPage() {
         </div>
 
         {survey && (
-          <div className="bg-white/5 border border-white/10 rounded-xl px-4 py-3">
+          <div className="lg-lavender rounded-xl px-4 py-3">
             <p className="text-xs text-[#8a7ca8]/75">關聯問卷</p>
             <p className="text-sm text-[#3d3155]/80 font-medium">{survey.title}</p>
           </div>

@@ -55,7 +55,7 @@ export default async function PublicStoryCardPage(
     <div className="min-h-screen bg-linear-to-br from-slate-950 via-indigo-950 to-purple-950 text-white flex items-center justify-center px-4 py-12">
       <div className="w-full max-w-sm space-y-6">
         {/* Story Card */}
-        <div className="relative rounded-2xl overflow-hidden border border-white/10 bg-linear-to-br from-slate-900 via-slate-800 to-slate-900 shadow-xl">
+        <div className="lg-aurora-sharp lg-shimmer lg-xl relative overflow-hidden shadow-xl">
           <div className="absolute inset-0 opacity-20 pointer-events-none"
             style={{ background: 'radial-gradient(ellipse at top left, #818cf840, transparent 60%)' }} />
           <div className="relative p-5 space-y-4">

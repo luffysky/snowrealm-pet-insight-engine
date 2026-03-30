@@ -151,7 +151,7 @@ function RegisterForm() {
   return (
     <div className="min-h-screen flex items-center justify-center px-4 py-8" style={{ background: 'linear-gradient(150deg, #f3eeff 0%, #ffeef5 35%, #eef5ff 65%, #fff5ee 100%)', fontFamily: 'var(--font-zen-maru), var(--font-noto-tc), sans-serif' }}>
       <div className="w-full max-w-sm">
-        <div className="rounded-[28px] border border-white/40 bg-white/30 p-8 space-y-6 shadow-[0_16px_64px_rgba(184,169,232,0.2)] backdrop-blur-2xl">
+        <div className="lg-lavender-sharp lg-xl relative p-8 space-y-6">
           <div className="text-center">
             <h1 className="text-xl font-black text-[#3d3155]">✨ SnowRealm Insight</h1>
             <p className="text-sm text-slate-400 mt-2">

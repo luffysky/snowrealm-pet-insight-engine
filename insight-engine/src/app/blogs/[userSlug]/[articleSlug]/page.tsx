@@ -205,7 +205,7 @@ export default async function ArticlePage({
         {/* Series navigation */}
         {series && (
           <div className="mt-12 pt-8 border-t border-white/[0.07]">
-            <div className="bg-white/[0.03] border border-white/8 rounded-2xl overflow-hidden">
+            <div className="lg-dark-sharp lg-shimmer lg-lg relative overflow-hidden">
               <div className="px-5 py-4 border-b border-white/8 flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <span className="text-base">📚</span>
@@ -272,7 +272,7 @@ export default async function ArticlePage({
             {prev ? (
               <Link
                 href={`/blogs/${backSlug}/${prev.slug}`}
-                className="group flex flex-col gap-1.5 p-4 rounded-2xl bg-white/[0.03] border border-white/[0.07] hover:bg-white/[0.06] hover:border-white/15 transition-all"
+                className="group flex flex-col gap-1.5 p-4 lg-dark-sharp lg-lg relative hover:bg-white/[0.03] transition-all"
               >
                 <span className="text-[11px] text-white/30 flex items-center gap-1">
                   ← 上一篇

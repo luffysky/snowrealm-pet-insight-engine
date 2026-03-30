@@ -247,7 +247,7 @@ export default function ArticleDetailPage() {
         )}
 
         {/* CTA */}
-        <div className="bg-gradient-to-r from-amber-600/10 to-purple-600/10 border border-amber-400/15 rounded-2xl p-6 text-center space-y-3">
+        <div className="lg-lavender rounded-2xl p-6 text-center space-y-3">
           <p className="text-[#6b5fa8] text-sm">喜歡這篇文章？試試用 AI 問卷發現更多洞察</p>
           <Link href="/" className="inline-flex items-center gap-2 px-5 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-900 font-semibold rounded-xl text-sm transition-colors">
             ✨ 免費開始使用

@@ -24,7 +24,7 @@ function SuccessContent() {
       {/* 金幣動畫（招財素材完成後替換） */}
       <div className="text-6xl mb-4 animate-bounce">🪙</div>
 
-      <GlassPanel depth="medium" glow className="w-full max-w-sm p-6 text-center">
+      <GlassPanel depth="medium" glow className="w-full max-w-sm p-6 text-center lg-warm-sharp lg-shimmer lg-xl relative overflow-hidden">
         <div className="text-4xl mb-3">🎉</div>
         <h1 className="text-xl font-bold text-white mb-2">
           {isDuplicate ? '訂單已完成' : '儲值成功！'}

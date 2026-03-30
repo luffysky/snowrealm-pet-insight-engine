@@ -132,7 +132,7 @@ export default function NotificationsPage() {
 
   return (
     <div className="min-h-screen bg-slate-950 text-white pb-[var(--bnav-h,0px)]">
-      <nav className="sticky top-0 z-10 bg-slate-950/90 backdrop-blur-md border-b border-white/8">
+      <nav className="sticky top-0 z-10 bg-slate-950/80 backdrop-blur-md border-b border-white/8">
         <div className="max-w-2xl mx-auto px-4 py-3 flex items-center gap-3">
           <button onClick={() => router.back()} className="text-white/50 hover:text-white transition-colors">
             <ArrowLeft className="w-4 h-4" />
@@ -168,7 +168,7 @@ export default function NotificationsPage() {
               const isUnread = !n.readAt
 
               const content = (
-                <div className={`flex items-start gap-3 px-4 py-3.5 transition-colors ${isUnread ? 'bg-amber-400/[0.04]' : ''} ${targetUrl ? 'hover:bg-white/5 cursor-pointer' : ''}`}>
+                <div className={`flex items-start gap-3 px-4 py-3.5 transition-colors lg-dark-sharp relative overflow-hidden ${isUnread ? 'bg-amber-400/[0.04]' : ''} ${targetUrl ? 'hover:bg-white/5 cursor-pointer' : ''}`}>
                   {/* Actor avatar — click to go to profile */}
                   <Link href={`/u/${n.actorId}`} onClick={() => markOneRead(n.id)} className="shrink-0">
                     <div className="w-10 h-10 rounded-full bg-gradient-to-br from-amber-500/30 to-purple-500/30 flex items-center justify-center text-sm font-bold text-white/70 overflow-hidden">

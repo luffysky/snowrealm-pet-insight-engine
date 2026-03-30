@@ -31,27 +31,27 @@ function CardsData({ report }: { report: InsightReport }) {
 
   return (
     <div className="space-y-5">
-      <div className="rounded-2xl border border-violet-500/25 bg-violet-500/10 p-6">
+      <div className="lg-lavender-sharp lg-xl relative p-6">
         <p className="text-xs font-semibold text-violet-400 uppercase tracking-widest mb-3">整體洞察</p>
         <p className="text-white/85 leading-relaxed text-sm">{report.summary}</p>
       </div>
 
       {report.funnelInsight && (
-        <div className="rounded-2xl border border-blue-500/25 bg-blue-500/10 p-6">
+        <div className="lg-lavender-sharp lg-xl relative p-6">
           <p className="text-xs font-semibold text-blue-400 uppercase tracking-widest mb-3">漏斗分析</p>
           <p className="text-white/75 text-sm leading-relaxed">{report.funnelInsight}</p>
         </div>
       )}
 
       {report.audienceInsight && (
-        <div className="rounded-2xl border border-teal-500/25 bg-teal-500/10 p-6">
+        <div className="lg-lavender-sharp lg-xl relative p-6">
           <p className="text-xs font-semibold text-teal-400 uppercase tracking-widest mb-3">受眾洞察</p>
           <p className="text-white/75 text-sm leading-relaxed">{report.audienceInsight}</p>
         </div>
       )}
 
       {report.highlights?.length > 0 && (
-        <div className="rounded-2xl border border-white/10 bg-white/5 p-6 space-y-3">
+        <div className="lg-lavender-sharp lg-xl relative p-6 space-y-3">
           <p className="text-xs font-semibold text-white/50 uppercase tracking-widest">重點發現</p>
           {report.highlights.map((h: InsightHighlight, i: number) => (
             <div key={i} className="flex items-start gap-3 text-sm">
@@ -68,7 +68,7 @@ function CardsData({ report }: { report: InsightReport }) {
       )}
 
       {report.recommendations?.length > 0 && (
-        <div className="rounded-2xl border border-amber-500/25 bg-amber-500/5 p-6 space-y-4">
+        <div className="lg-lavender-sharp lg-xl relative p-6 space-y-4">
           <p className="text-xs font-semibold text-amber-400 uppercase tracking-widest">優化建議</p>
           {report.recommendations.map((r: InsightRecommendation, i: number) => (
             <div key={i} className="flex items-start gap-3 text-sm">
@@ -90,14 +90,14 @@ function CardsData({ report }: { report: InsightReport }) {
 function CardsStory({ report }: { report: StoryInsightReport }) {
   return (
     <div className="space-y-5">
-      <div className="rounded-2xl border border-rose-500/25 bg-rose-500/10 p-6">
+      <div className="lg-lavender-sharp lg-xl relative p-6">
         <h2 className="text-xl font-bold text-white mb-2">{report.storyTitle}</h2>
         {report.shareableOneLiner && (
           <p className="text-rose-300 text-sm font-medium">✨ {report.shareableOneLiner}</p>
         )}
       </div>
 
-      <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
+      <div className="lg-lavender-sharp lg-xl relative p-6">
         <p className="text-xs font-semibold text-white/50 uppercase tracking-widest mb-4">故事敘事</p>
         <div className="text-sm text-white/75 leading-relaxed space-y-3">
           {report.storyBody.split(/\n\n+/).map((p, i) => <p key={i}>{p}</p>)}
@@ -105,7 +105,7 @@ function CardsStory({ report }: { report: StoryInsightReport }) {
       </div>
 
       {report.keyDataPoints?.length > 0 && (
-        <div className="rounded-2xl border border-violet-500/25 bg-violet-500/10 p-6 space-y-2">
+        <div className="lg-lavender-sharp lg-xl relative p-6 space-y-2">
           <p className="text-xs font-semibold text-violet-400 uppercase tracking-widest mb-3">數據支撐</p>
           {report.keyDataPoints.map((d, i) => (
             <div key={i} className="flex items-center gap-2 text-sm text-white/75">
@@ -116,7 +116,7 @@ function CardsStory({ report }: { report: StoryInsightReport }) {
       )}
 
       {report.pullQuotes?.length > 0 && (
-        <div className="rounded-2xl border border-white/10 bg-white/5 p-6 space-y-4">
+        <div className="lg-lavender-sharp lg-xl relative p-6 space-y-4">
           <p className="text-xs font-semibold text-white/50 uppercase tracking-widest">填答者的聲音</p>
           {report.pullQuotes.map((q, i) => (
             <blockquote key={i} className="border-l-4 border-violet-500/60 pl-4 text-sm text-white/70 italic">
@@ -127,7 +127,7 @@ function CardsStory({ report }: { report: StoryInsightReport }) {
       )}
 
       {report.unexpectedInsight && (
-        <div className="rounded-2xl border border-yellow-500/25 bg-yellow-500/10 p-6">
+        <div className="lg-lavender-sharp lg-xl relative p-6">
           <p className="text-xs font-semibold text-yellow-400 uppercase tracking-widest mb-2">出人意料的發現</p>
           <p className="text-white/80 text-sm">{report.unexpectedInsight}</p>
         </div>

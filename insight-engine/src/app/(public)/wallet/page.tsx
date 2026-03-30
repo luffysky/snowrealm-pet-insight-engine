@@ -67,7 +67,7 @@ export default function WalletPage() {
       <h1 className="text-2xl font-bold mb-6 text-center">🪙 我的 Z幣錢包</h1>
 
       {/* 餘額卡片 */}
-      <div className="bg-gradient-to-br from-amber-600/20 to-amber-400/10 border border-amber-400/20 rounded-2xl p-6 mb-6 text-center">
+      <div className="lg-lavender-sharp rounded-2xl p-6 mb-6 text-center bg-gradient-to-br from-amber-600/15 to-amber-400/5">
         <p className="text-sm text-amber-200/60 mb-1">目前餘額</p>
         <p className="text-5xl font-bold text-amber-300">{balance?.balance ?? 0}</p>
         <p className="text-xs text-amber-200/40 mt-1">Z幣</p>
@@ -78,7 +78,7 @@ export default function WalletPage() {
       </div>
 
       {/* 如何賺取 */}
-      <div className="bg-white/5 border border-white/10 rounded-xl p-4 mb-6">
+      <div className="lg-light rounded-xl p-4 mb-6">
         <p className="text-sm font-medium text-[#3d3155] mb-3">如何賺取 Z幣</p>
         <div className="space-y-2 text-sm">
           {[
@@ -106,7 +106,7 @@ export default function WalletPage() {
             {history.map((tx) => (
               <div
                 key={tx.id}
-                className="flex items-center justify-between bg-white/5 border border-white/10 rounded-xl px-4 py-3"
+                className="flex items-center justify-between lg-light rounded-xl px-4 py-3"
               >
                 <div>
                   <p className="text-sm text-[#3d3155]">{REASON_LABEL[tx.reason] ?? tx.reason}</p>

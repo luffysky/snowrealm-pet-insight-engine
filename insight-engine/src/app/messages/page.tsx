@@ -1150,11 +1150,11 @@ export default function MessagesPage() {
         flex-col shrink-0
         w-full md:w-80 lg:w-96
         md:border-r md:border-white/[0.08]
-        md:bg-slate-900/60
+        md:bg-slate-900/60 lg-dark-sharp
         overflow-hidden
       `}>
         {/* 列表頂部導覽 */}
-        <nav className="shrink-0 bg-gradient-to-b from-slate-900 to-slate-900/80 border-b border-white/[0.06] md:from-slate-900 md:to-slate-900">
+        <nav className="shrink-0 lg-dark-sharp bg-gradient-to-b from-slate-900 to-slate-900/80 border-b border-white/[0.06] md:from-slate-900 md:to-slate-900">
           <div className="px-4 pt-4 pb-0 flex items-center gap-3">
             <button onClick={() => router.back()} className="text-white/40 hover:text-white transition-colors md:hidden">
               <ArrowLeft className="w-4 h-4" />
@@ -1398,7 +1398,7 @@ export default function MessagesPage() {
         <div className={`${active ? 'flex' : 'hidden md:flex'} flex-1 flex-col min-h-0 overflow-hidden`}>
           <div className="flex-1 flex flex-col min-h-0">
             {/* 名子層 — 頂部（手機 + 桌機都顯示） */}
-            <div className="shrink-0 bg-gradient-to-b from-slate-900/95 to-slate-950/95 backdrop-blur-xl border-b border-white/[0.06] px-4 py-3 flex items-center gap-3">
+            <div className="shrink-0 lg-dark-sharp bg-gradient-to-b from-slate-900/95 to-slate-950/95 backdrop-blur-xl border-b border-white/[0.06] px-4 py-3 flex items-center gap-3">
               <button onClick={closeConversation} className="text-white/40 hover:text-white transition-colors p-1 -ml-1 rounded-lg hover:bg-white/8">
                 <ArrowLeft className="w-4 h-4" />
               </button>
@@ -1437,7 +1437,7 @@ export default function MessagesPage() {
 
             {/* ── 主題面板 ── */}
             {themePanelOpen && (
-              <div className="shrink-0 bg-slate-950/96 backdrop-blur-2xl border-b border-white/8">
+              <div className="shrink-0 lg-dark-sharp bg-slate-950/96 backdrop-blur-2xl border-b border-white/8">
                 {/* 套用範圍 toggle */}
                 <div className="flex items-center justify-between px-4 py-2 border-b border-white/5">
                   <span className="text-[11px] text-white/40">套用範圍</span>
@@ -1778,7 +1778,7 @@ export default function MessagesPage() {
             <div className="shrink-0">
             {/* 媒體面板 */}
             {mediaPanel && (
-              <div className="border-t border-white/8 bg-slate-900/80">
+              <div className="border-t border-white/8 lg-dark-sharp bg-slate-900/80">
                 {mediaPanel === 'emoji' && (
                   <div>
                     {/* Category tabs */}
@@ -1970,7 +1970,7 @@ export default function MessagesPage() {
             )}
 
             {/* 輸入欄 */}
-            <div className="px-3 pt-2.5 bg-slate-950/80 border-t border-white/[0.06]"
+            <div className="px-3 pt-2.5 lg-dark-sharp bg-slate-950/80 border-t border-white/[0.06]"
               style={{ paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom, 0.75rem))' }}
             >
               {plusMenuOpen && <div className="fixed inset-0 z-10" onClick={() => setPlusMenuOpen(false)} />}
@@ -1984,7 +1984,7 @@ export default function MessagesPage() {
                     <Plus className="w-4 h-4" />
                   </button>
                   {plusMenuOpen && (
-                    <div className="absolute bottom-full left-0 mb-2 bg-slate-800/98 backdrop-blur-xl border border-white/12 rounded-2xl overflow-hidden shadow-2xl min-w-[145px]">
+                    <div className="absolute bottom-full left-0 mb-2 lg-dark-sharp lg-xl bg-slate-800/98 backdrop-blur-xl border border-white/12 rounded-2xl overflow-hidden shadow-2xl min-w-[145px]">
                       <button
                         onClick={() => { setMediaPanel(p => p === 'emoji' ? null : 'emoji'); setPlusMenuOpen(false) }}
                         className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-white/8 text-sm text-white/80 transition-colors"
@@ -2098,7 +2098,7 @@ export default function MessagesPage() {
         <>
           <div className="fixed inset-0 z-40" onClick={() => setMsgMenu(null)} />
           <div
-            className="fixed z-50 bg-slate-800/98 backdrop-blur-xl border border-white/12 rounded-2xl overflow-hidden shadow-2xl shadow-black/60 min-w-[150px]"
+            className="fixed z-50 lg-dark-sharp lg-xl bg-slate-800/98 backdrop-blur-xl border border-white/12 rounded-2xl overflow-hidden shadow-2xl shadow-black/60 min-w-[150px]"
             style={{
               left: Math.min(msgMenu.x, (typeof window !== 'undefined' ? window.innerWidth : 400) - 170),
               top: Math.min(msgMenu.y, (typeof window !== 'undefined' ? window.innerHeight : 800) - 160),
@@ -2197,7 +2197,7 @@ export default function MessagesPage() {
         <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center p-4" onClick={() => setForwardingMsg(null)}>
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
           <div
-            className="relative z-10 w-full max-w-sm bg-slate-900 border border-white/10 rounded-3xl shadow-2xl overflow-hidden"
+            className="relative z-10 w-full max-w-sm lg-dark-sharp lg-2xl bg-slate-900 border border-white/10 rounded-3xl shadow-2xl overflow-hidden"
             onClick={e => e.stopPropagation()}
           >
             <div className="flex items-center justify-between px-5 py-4 border-b border-white/8">

@@ -88,7 +88,7 @@ export default function QuickPostPage() {
   return (
     <div className="min-h-screen bg-slate-950 flex flex-col">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-white/8 sticky top-0 bg-slate-950/90 backdrop-blur-sm z-10">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-white/8 sticky top-0 bg-slate-950/80 backdrop-blur-sm z-10">
         <button onClick={() => router.back()} className="p-2 -ml-2 text-white/40 hover:text-white/70 transition-colors">
           <ArrowLeft className="w-5 h-5" />
         </button>
@@ -147,7 +147,7 @@ export default function QuickPostPage() {
       </div>
 
       {/* Bottom toolbar */}
-      <div className="sticky bottom-0 border-t border-white/8 bg-slate-950/90 backdrop-blur-sm px-4 py-3" style={{ paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom, 0px))' }}>
+      <div className="sticky bottom-0 border-t border-white/8 bg-slate-950/80 backdrop-blur-sm px-4 py-3" style={{ paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom, 0px))' }}>
         <div className="max-w-lg mx-auto flex items-center gap-3">
           <input
             ref={imageRef}
@@ -172,7 +172,7 @@ export default function QuickPostPage() {
               onKeyDown={addTag}
               placeholder={tags.length < 5 ? '# 加入標籤（Enter 確認）' : '最多 5 個標籤'}
               disabled={tags.length >= 5}
-              className="w-full px-3 py-1.5 bg-slate-800/60 border border-white/8 rounded-full text-sm text-white/70 placeholder-white/25 outline-none focus:border-amber-500/30 disabled:opacity-40"
+              className="w-full px-3 py-1.5 lg-dark-sharp lg-sm bg-slate-800/60 border border-white/8 rounded-full text-sm text-white/70 placeholder-white/25 outline-none focus:border-amber-500/30 disabled:opacity-40"
             />
             <Hash className="absolute left-3 top-1/2 -translate-y-1/2 w-3 h-3 text-white/30 pointer-events-none hidden" />
           </div>

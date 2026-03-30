@@ -239,7 +239,7 @@ function FollowListModal({ type, userId, onClose }: { type: 'followers' | 'follo
       style={{ paddingBottom: 'calc(var(--bnav-h, 76px) + 0.5rem)' }}
       onClick={onClose}
     >
-      <div className="w-full max-w-sm bg-white/90 border border-[#b8a9e8]/25 rounded-[20px] overflow-hidden shadow-2xl sm:mb-0" onClick={e => e.stopPropagation()}>
+      <div className="w-full max-w-sm lg-lavender-sharp lg-lg relative overflow-hidden shadow-2xl sm:mb-0" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between px-4 py-3 border-b border-white/8">
           <h3 className="text-sm font-semibold text-[#3d3155]">{type === 'followers' ? `粉絲 · ${users.length}` : `追蹤中 · ${users.length}`}</h3>
           <button onClick={onClose} className="text-[#8a7ca8]/75 hover:text-[#6b5fa8] transition-colors"><X className="w-4 h-4" /></button>
@@ -457,7 +457,7 @@ export default function UserProfilePage() {
 
       <div className="max-w-2xl mx-auto px-4 py-8 space-y-6">
         {/* Profile header */}
-        <div className="bg-white/[0.04] border border-white/8 rounded-3xl overflow-hidden">
+        <div className="lg-lavender-sharp lg-lg relative overflow-hidden">
           {/* Banner */}
           <div className="h-24" style={bannerStyle} />
 
@@ -628,7 +628,7 @@ export default function UserProfilePage() {
             profile.posts.map(post => (
               <div key={post.id} className="relative group">
                 <Link href={`/articles/${post.id}`}
-                  className="block bg-white/[0.03] border border-white/8 rounded-2xl p-4 hover:bg-white/[0.06] hover:border-white/14 transition-all"
+                  className="block lg-lavender rounded-2xl p-4 hover:border-[#b8a9e8]/40 transition-all"
                 >
                   {post.title && <p className="font-semibold text-white/85 mb-1 line-clamp-1 pr-8">{post.title}</p>}
                   <p className="text-sm text-[#6b5fa8]/85 leading-relaxed line-clamp-2 pr-8">{stripHtml(post.content)}</p>

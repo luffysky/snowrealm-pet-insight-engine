@@ -117,7 +117,7 @@ export default async function BlogPage({ params }: { params: Promise<{ userSlug:
               <Link
                 key={article.id}
                 href={`/blogs/${blog.userSlug}/${article.slug}`}
-                className="group flex flex-col sm:flex-row gap-4 sm:gap-5 p-4 sm:p-5 bg-white/[0.03] hover:bg-white/[0.06] border border-white/8 rounded-2xl transition-all"
+                className="group flex flex-col sm:flex-row gap-4 sm:gap-5 p-4 sm:p-5 lg-dark-sharp lg-shimmer lg-lg relative overflow-hidden hover:bg-white/[0.03] transition-all"
               >
                 {article.cover_image && (
                   <div className="shrink-0 w-full sm:w-28 h-40 sm:h-20 rounded-xl overflow-hidden">

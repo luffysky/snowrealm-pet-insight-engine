@@ -79,7 +79,7 @@ function SuperAdminLoginContent() {
       }} />
 
       <div className="w-full max-w-sm relative z-10">
-        <div className="bg-slate-900/80 backdrop-blur-2xl border border-slate-700/40 rounded-3xl p-8 shadow-2xl shadow-black/60">
+        <div className="lg-void-sharp lg-xl relative p-8 shadow-2xl shadow-black/60">
 
           {/* Header */}
           <div className="text-center mb-8">

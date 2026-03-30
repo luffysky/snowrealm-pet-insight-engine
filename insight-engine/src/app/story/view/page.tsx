@@ -287,7 +287,7 @@ function StoryViewInner() {
           if (layer.type === 'poll' && layer.pollId) {
             const ps = pollStates[layer.pollId]
             return (
-              <div key={layer.id} style={style} className="w-64 bg-black/50 backdrop-blur-md rounded-2xl p-3 pointer-events-auto">
+              <div key={layer.id} style={style} className="w-64 lg-aurora-sharp lg-xl bg-black/50 backdrop-blur-md rounded-2xl p-3 pointer-events-auto">
                 <p className="text-white text-sm font-semibold text-center mb-2">{layer.question}</p>
                 {ps?.myChoice ? (
                   <div className="space-y-1.5">
@@ -371,7 +371,7 @@ function StoryViewInner() {
       {/* Viewers drawer */}
       {showViewers && (
         <div className="absolute inset-0 z-50 bg-black/60 flex items-end" onClick={() => setShowViewers(false)}>
-          <div className="w-full bg-slate-900 rounded-t-3xl p-4 max-h-[60vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+          <div className="w-full lg-void-sharp bg-slate-900/95 rounded-t-3xl p-4 max-h-[60vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-3">
               <p className="text-sm font-semibold text-white/60">觀看者 ({viewers.length})</p>
               <button onClick={() => setShowViewers(false)} className="text-white/30">

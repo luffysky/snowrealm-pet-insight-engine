@@ -293,7 +293,7 @@ export default function BlogManagePage() {
             />
           </div>
 
-          <div className="flex items-center justify-between p-4 bg-white/3 border border-white/8 rounded-[20px]">
+          <div className="flex items-center justify-between p-4 lg-lavender lg-lg">
             <div>
               <p className="text-sm font-medium text-[#3d3155]">啟用部落格</p>
               <p className="text-xs text-[#8a7ca8] mt-0.5">關閉後他人無法瀏覽你的部落格</p>

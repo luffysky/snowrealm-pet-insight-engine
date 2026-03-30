@@ -59,14 +59,14 @@ export default function InvitePage() {
         </div>
 
         {/* Invite card */}
-        <div className="bg-gradient-to-br from-cyan-500/10 to-blue-500/10 border border-cyan-400/20 rounded-2xl p-8 space-y-5">
+        <div className="lg-lavender-sharp lg-xl relative p-8 space-y-5">
           <div className="space-y-2">
             <p className="text-slate-400 text-sm">你的朋友</p>
             <p className="text-2xl font-bold text-white">{info.referrerName}</p>
             <p className="text-slate-400 text-sm">邀請你加入 SnowRealm Insight Engine</p>
           </div>
 
-          <div className="bg-white/5 rounded-xl p-4 space-y-3 text-left">
+          <div className="lg-lavender-sharp lg-md relative p-4 space-y-3 text-left">
             {[
               ['🎁', '30 天全功能免費試用（比一般長 7 天）'],
               ['🤖', 'AI 智慧問卷 + 洞察報告'],

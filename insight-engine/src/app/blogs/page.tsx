@@ -52,7 +52,7 @@ export default async function BlogsPage() {
               <Link
                 key={blog.userSlug}
                 href={`/blogs/${blog.userSlug}`}
-                className="group flex items-start gap-4 p-4 sm:p-5 bg-white/[0.03] hover:bg-white/[0.06] border border-white/8 rounded-2xl transition-all"
+                className="group flex items-start gap-4 p-4 sm:p-5 lg-dark-sharp lg-shimmer lg-lg relative overflow-hidden hover:bg-white/[0.03] transition-all"
               >
                 {/* Avatar */}
                 {blog.authorAvatar ? (

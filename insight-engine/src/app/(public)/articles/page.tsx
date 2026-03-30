@@ -154,7 +154,7 @@ function PostPreviewCard({ post, meId }: { post: SocialPost; meId: string | null
     )}
     <article
       onClick={() => router.push(postUrl)}
-      className="bg-white/[0.04] backdrop-blur-xl border border-white/8 border-t-white/14 rounded-3xl overflow-hidden hover:border-white/16 hover:bg-white/[0.06] transition-all group shadow-[0_8px_32px_rgba(0,0,0,0.3),inset_0_1px_0_rgba(255,255,255,0.08)] cursor-pointer">
+      className="lg-lavender-sharp lg-shimmer lg-lg relative overflow-hidden hover:border-[#b8a9e8]/40 transition-all group cursor-pointer">
       {post.videoUrl && (
         <div className="relative overflow-hidden h-48 bg-black">
           <img src={post.videoThumbnailUrl ?? ''} alt="" className="w-full h-full object-cover" />
@@ -260,7 +260,7 @@ function SurveyCard({ survey }: { survey: ExploreSurvey }) {
 
   return (
     <Link href={href}
-      className="group flex flex-col bg-white/[0.04] border border-white/8 rounded-3xl overflow-hidden hover:border-amber-400/20 hover:bg-white/[0.07] transition-all shadow-[0_4px_24px_rgba(0,0,0,0.25)]"
+      className="group flex flex-col lg-lavender lg-lg overflow-hidden hover:border-amber-400/30 transition-all"
     >
       {/* Gradient banner */}
       <div className="h-20 bg-gradient-to-br from-amber-500/20 via-purple-500/10 to-blue-500/15 flex items-center justify-center">
@@ -289,7 +289,7 @@ function StoryMiniCard({ story }: { story: ExploreStory }) {
 
   return (
     <Link href={`/story/${story.responseId}`}
-      className="group flex flex-col bg-gradient-to-br from-purple-900/30 to-slate-900/60 border border-purple-400/15 rounded-3xl p-4 gap-3 hover:border-purple-400/30 hover:from-purple-900/40 transition-all shadow-[0_4px_24px_rgba(0,0,0,0.25)]"
+      className="group flex flex-col lg-lavender-sharp lg-lg p-4 gap-3 hover:border-purple-400/30 transition-all"
     >
       <div className="flex items-center gap-1.5">
         <Sparkles className="w-3.5 h-3.5 text-purple-400/60" />
@@ -311,7 +311,7 @@ function StoryMiniCard({ story }: { story: ExploreStory }) {
 function CreatorCard({ user, meId }: { user: ExploreUser; meId: string | null }) {
   const initials = (user.displayName ?? '?').charAt(0).toUpperCase()
   return (
-    <div className="flex items-center gap-3 p-3 bg-white/[0.03] border border-white/8 rounded-2xl hover:bg-white/[0.06] transition-colors">
+    <div className="flex items-center gap-3 p-3 lg-light rounded-2xl hover:border-[#b8a9e8]/30 transition-colors">
       <Link href={`/u/${user.id}`} className="shrink-0">
         <div className="w-10 h-10 rounded-full bg-gradient-to-br from-sky-500/30 to-indigo-500/30 flex items-center justify-center text-sm font-bold text-[#3d3155] overflow-hidden">
           {user.avatarUrl ? <img src={user.avatarUrl} alt="" className="w-full h-full object-cover" /> : initials}

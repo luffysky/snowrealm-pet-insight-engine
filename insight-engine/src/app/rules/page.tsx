@@ -86,7 +86,7 @@ export default function RulesPage() {
   return (
     <div className="min-h-screen bg-slate-950 text-white">
       {/* Header */}
-      <div className="border-b border-slate-800/60 bg-slate-900/40 backdrop-blur-sm">
+      <div className="border-b border-slate-800/60 lg-dark-sharp bg-slate-900/40 backdrop-blur-sm">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
           <Link href="/" className="text-amber-400 font-bold text-lg">✦ SnowRealm</Link>
           <Link href="/" className="text-sm text-slate-400 hover:text-white transition-colors">← 回首頁</Link>
@@ -108,7 +108,7 @@ export default function RulesPage() {
         {/* Rules */}
         <div className="space-y-8 mb-12">
           {RULES.map((section, i) => (
-            <div key={i} className="bg-slate-900/60 border border-slate-800/60 rounded-2xl p-6">
+            <div key={i} className="lg-dark-sharp lg-xl lg-shimmer relative overflow-hidden rounded-2xl p-6">
               <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
                 <span>{section.icon}</span>
                 {section.title}
@@ -126,14 +126,14 @@ export default function RulesPage() {
         </div>
 
         {/* Enforcement */}
-        <div className="bg-slate-900/60 border border-slate-800/60 rounded-2xl p-6 mb-12">
+        <div className="lg-dark-sharp lg-xl lg-shimmer relative overflow-hidden rounded-2xl p-6 mb-12">
           <h2 className="text-lg font-semibold mb-6 flex items-center gap-2">
             <span>🔨</span>
             違規處理機制
           </h2>
           <div className="space-y-3">
             {ENFORCEMENT.map((e, i) => (
-              <div key={i} className="flex gap-4 p-3 bg-black/20 rounded-xl border border-white/5">
+              <div key={i} className="flex gap-4 p-3 lg-void-sharp lg-md bg-black/20 rounded-xl border border-white/5">
                 <div className="shrink-0 w-28 text-sm font-medium text-white/80">{e.level}</div>
                 <div>
                   <p className="text-sm font-semibold text-amber-300">{e.action}</p>
@@ -145,7 +145,7 @@ export default function RulesPage() {
         </div>
 
         {/* Report */}
-        <div className="bg-gradient-to-br from-red-500/10 to-orange-500/5 border border-red-400/20 rounded-2xl p-6 mb-12 text-center">
+        <div className="lg-dark-sharp lg-xl relative overflow-hidden rounded-2xl p-6 mb-12 text-center bg-gradient-to-br from-red-500/10 to-orange-500/5 border border-red-400/20">
           <div className="text-3xl mb-3">🚨</div>
           <h2 className="text-lg font-semibold mb-2">發現違規？立即舉報</h2>
           <p className="text-sm text-slate-400 mb-4">

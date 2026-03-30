@@ -95,7 +95,7 @@ export default function BroadcastPage() {
       <h1 className="text-xl sm:text-2xl font-bold text-[#3d3155]/90">LINE 推播</h1>
 
       {/* 發送表單 */}
-      <div className="bg-white/35 backdrop-blur-sm border border-[#b8a9e8]/20 rounded-[20px] p-6 space-y-4">
+      <div className="lg-lavender-sharp lg-shimmer lg-lg relative overflow-hidden p-6 space-y-4">
         {/* 模板選擇 */}
         {templates.length > 0 && (
           <div>
@@ -215,7 +215,7 @@ export default function BroadcastPage() {
         {logs.length === 0 ? (
           <p className="text-[#3d3155]0 text-sm">尚無推播紀錄</p>
         ) : (
-          <div className="bg-white/35 backdrop-blur-sm border border-[#b8a9e8]/20 rounded-[20px] overflow-hidden">
+          <div className="lg-lavender-sharp lg-shimmer lg-lg relative overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
