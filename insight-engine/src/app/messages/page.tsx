@@ -392,6 +392,24 @@ interface Conversation {
   nickname?: string | null
 }
 
+interface SearchUser {
+  id: string
+  username: string | null
+  display_name: string | null
+  avatar_url: string | null
+  bio: string | null
+  referral_code: string | null
+  friend_status: string | null
+}
+
+interface PendingRequest {
+  id: string
+  from_user_id: string
+  from_name: string | null
+  from_avatar: string | null
+  created_at: string
+}
+
 function formatLastActive(ts: string | null | undefined): string | null {
   if (!ts) return null
   const diff = Date.now() - new Date(ts).getTime()
@@ -475,6 +493,12 @@ export default function MessagesPage() {
   const [mainTab, setMainTab] = useState<'messages' | 'friends' | 'settings'>('messages')
   const [friends, setFriends] = useState<{ id: string; displayName: string | null; avatarUrl: string | null; relation: 'follower' | 'following' | 'mutual' }[]>([])
   const [friendsLoading, setFriendsLoading] = useState(false)
+  const [friendSearch, setFriendSearch] = useState('')
+  const [friendSearchResults, setFriendSearchResults] = useState<SearchUser[]>([])
+  const [friendSearching, setFriendSearching] = useState(false)
+  const [pendingRequests, setPendingRequests] = useState<PendingRequest[]>([])
+  const [sendingRequest, setSendingRequest] = useState<string | null>(null)
+  const friendSearchTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [hideOnlineStatus, setHideOnlineStatus] = useState(false)
   const [mutedUsers, setMutedUsers] = useState<Set<string>>(new Set())
   // ── 輸入中提示 ──
@@ -563,9 +587,15 @@ export default function MessagesPage() {
       .finally(() => setLoading(false))
   }, [meId])
 
-  // Load friends when tab switches to 'friends'
+  // Load friends + pending requests when tab switches to 'friends'
   useEffect(() => {
-    if (mainTab !== 'friends' || !meId || friends.length > 0) return
+    if (mainTab !== 'friends' || !meId) return
+    // Load pending incoming requests
+    fetch('/api/admin/social/friends?type=incoming')
+      .then(r => r.ok ? r.json() as Promise<{ requests: PendingRequest[] }> : null)
+      .then(d => { if (d?.requests) setPendingRequests(d.requests) })
+      .catch(() => {})
+    if (friends.length > 0) return
     setFriendsLoading(true)
     Promise.all([
       fetch(`/api/admin/social/follow?userId=${meId}&list=followers`).then(r => r.ok ? r.json() as Promise<{ users: { id: string; display_name: string | null; avatar_url: string | null }[] }> : null),
@@ -592,6 +622,51 @@ export default function MessagesPage() {
       setFriends(merged)
     }).catch(() => {}).finally(() => setFriendsLoading(false))
   }, [mainTab, meId, friends.length])
+
+  // Debounced friend search
+  const handleFriendSearch = (q: string) => {
+    setFriendSearch(q)
+    if (friendSearchTimer.current) clearTimeout(friendSearchTimer.current)
+    if (!q.trim()) { setFriendSearchResults([]); return }
+    friendSearchTimer.current = setTimeout(async () => {
+      setFriendSearching(true)
+      try {
+        const res = await fetch(`/api/admin/social/friends?type=search&q=${encodeURIComponent(q.trim())}`)
+        const data = await res.json() as { users?: SearchUser[] }
+        setFriendSearchResults(data.users ?? [])
+      } catch { /* ignore */ } finally {
+        setFriendSearching(false)
+      }
+    }, 350)
+  }
+
+  const sendFriendRequest = async (toUserId: string) => {
+    setSendingRequest(toUserId)
+    try {
+      const res = await fetch('/api/admin/social/friends', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ toUserId }),
+      })
+      const data = await res.json() as { ok?: boolean; error?: string }
+      if (data.ok) {
+        setFriendSearchResults(prev => prev.map(u => u.id === toUserId ? { ...u, friend_status: 'pending' } : u))
+      }
+    } catch { /* ignore */ } finally {
+      setSendingRequest(null)
+    }
+  }
+
+  const handleFriendRequest = async (requestId: string, action: 'accept' | 'decline') => {
+    const res = await fetch('/api/admin/social/friends', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ requestId, action }),
+    })
+    if (res.ok) {
+      setPendingRequests(prev => prev.filter(r => r.id !== requestId))
+    }
+  }
 
   // 監聽瀏覽器上一頁/下一頁（popstate）
   useEffect(() => {
@@ -1257,65 +1332,152 @@ export default function MessagesPage() {
               </div>
             )
           ) : mainTab === 'friends' ? (
-            // ─── 好友列表 (追蹤 + 粉絲) ───
-            friendsLoading ? (
-              <div className="flex justify-center pt-16">
-                <Loader2 className="w-6 h-6 text-white/30 animate-spin" />
-              </div>
-            ) : friends.length === 0 ? (
-              <div className="text-center py-24 px-6 text-white/25">
-                <div className="w-14 h-14 rounded-2xl bg-white/5 flex items-center justify-center mx-auto mb-4">
-                  <span className="text-2xl">👥</span>
-                </div>
-                <p className="text-sm font-medium mb-1">還沒有好友</p>
-                <p className="text-xs text-white/15">追蹤別人或讓別人追蹤你後會出現在這裡</p>
-              </div>
-            ) : (
-              <div className="py-2">
-                {friends.map(f => {
-                  const existing = conversations.find(c => c.userId === f.id)
-                  return (
-                    <button
-                      key={f.id}
-                      onClick={() => {
-                        if (existing) {
-                          openConversation(existing)
-                        } else {
-                          // Start new conversation — create a temporary conv entry
-                          const tempConv: Conversation = {
-                            userId: f.id,
-                            displayName: f.displayName,
-                            avatarUrl: f.avatarUrl,
-                            lastMessagePreview: '',
-                            lastMessageAt: new Date().toISOString(),
-                            unreadCount: 0,
-                          }
-                          openConversation(tempConv)
-                        }
-                        setMainTab('messages')
-                      }}
-                      className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-white/[0.03] transition-all"
-                    >
-                      <div className="w-12 h-12 rounded-full overflow-hidden shrink-0">
-                        {f.avatarUrl
-                          ? <img src={f.avatarUrl} alt="" className="w-full h-full object-cover" />
-                          : <div className="w-full h-full bg-gradient-to-br from-amber-500/40 to-purple-600/40 flex items-center justify-center text-sm font-bold text-white/80">{initials(f.displayName)}</div>
-                        }
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-white/80 truncate">{f.displayName ?? '用戶'}</p>
-                        <p className="text-xs text-white/30 mt-0.5">
-                          {f.relation === 'mutual' ? '互相追蹤' : f.relation === 'follower' ? '追蹤了你' : '你追蹤的'}
-                        </p>
-                      </div>
-                      <span className="shrink-0 text-xs text-amber-400/60 font-medium">
-                        {existing ? '繼續聊' : '私訊'}
-                      </span>
+            // ─── 好友 / 搜索 ───
+            <div className="flex flex-col h-full overflow-y-auto">
+              {/* 搜索框 */}
+              <div className="px-4 pt-3 pb-2 sticky top-0 bg-slate-950/95 backdrop-blur z-10">
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30 text-sm">🔍</span>
+                  <input
+                    type="text"
+                    value={friendSearch}
+                    onChange={e => handleFriendSearch(e.target.value)}
+                    placeholder="搜尋用戶名稱或 ID..."
+                    className="w-full pl-8 pr-8 py-2 bg-white/[0.06] border border-white/10 rounded-xl text-sm text-white placeholder-white/25 focus:outline-none focus:border-amber-400/40 transition-colors"
+                  />
+                  {friendSearch && (
+                    <button onClick={() => { setFriendSearch(''); setFriendSearchResults([]) }} className="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60">
+                      <X className="w-3.5 h-3.5" />
                     </button>
-                  )
-                })}
+                  )}
+                </div>
               </div>
-            )
+
+              {friendSearch.trim() ? (
+                // ─ 搜索結果 ─
+                friendSearching ? (
+                  <div className="flex justify-center pt-10">
+                    <Loader2 className="w-5 h-5 text-white/30 animate-spin" />
+                  </div>
+                ) : friendSearchResults.length === 0 ? (
+                  <div className="text-center py-12 text-white/25 text-sm">找不到「{friendSearch}」</div>
+                ) : (
+                  <div className="py-1">
+                    {friendSearchResults.map(u => {
+                      const name = u.display_name || u.username || '用戶'
+                      const status = u.friend_status
+                      return (
+                        <div key={u.id} className="flex items-center gap-3 px-4 py-3 hover:bg-white/[0.03] transition-all">
+                          <Link href={`/u/${u.id}`} className="w-11 h-11 rounded-full overflow-hidden shrink-0 hover:opacity-80 transition-opacity">
+                            {u.avatar_url
+                              ? <img src={u.avatar_url} alt="" className="w-full h-full object-cover" />
+                              : <div className="w-full h-full bg-gradient-to-br from-cyan-500/40 to-purple-600/40 flex items-center justify-center text-sm font-bold text-white/80">{initials(name)}</div>
+                            }
+                          </Link>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-semibold text-white/80 truncate">{name}</p>
+                            {u.username && <p className="text-xs text-white/30 truncate">@{u.username}</p>}
+                          </div>
+                          {status === 'accepted' ? (
+                            <span className="text-xs text-emerald-400/70 shrink-0">✓ 好友</span>
+                          ) : status === 'pending' ? (
+                            <span className="text-xs text-amber-400/70 shrink-0">⏳ 待確認</span>
+                          ) : (
+                            <button
+                              onClick={() => sendFriendRequest(u.id)}
+                              disabled={sendingRequest === u.id}
+                              className="shrink-0 px-3 py-1 text-xs bg-amber-500/20 text-amber-400 hover:bg-amber-500/30 rounded-lg transition-colors disabled:opacity-50"
+                            >
+                              {sendingRequest === u.id ? '...' : '➕ 加好友'}
+                            </button>
+                          )}
+                        </div>
+                      )
+                    })}
+                  </div>
+                )
+              ) : (
+                <>
+                  {/* 待處理的好友請求 */}
+                  {pendingRequests.length > 0 && (
+                    <div className="px-4 pt-2 pb-1">
+                      <p className="text-[10px] text-white/30 uppercase tracking-widest mb-2">待確認 ({pendingRequests.length})</p>
+                      <div className="space-y-1">
+                        {pendingRequests.map(req => (
+                          <div key={req.id} className="flex items-center gap-3 py-2">
+                            <Link href={`/u/${req.from_user_id}`} className="w-10 h-10 rounded-full overflow-hidden shrink-0">
+                              {req.from_avatar
+                                ? <img src={req.from_avatar} alt="" className="w-full h-full object-cover" />
+                                : <div className="w-full h-full bg-gradient-to-br from-amber-500/40 to-purple-600/40 flex items-center justify-center text-xs font-bold text-white/80">{initials(req.from_name)}</div>
+                              }
+                            </Link>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm text-white/80 truncate">{req.from_name ?? '用戶'}</p>
+                              <p className="text-xs text-white/30">想加你為好友</p>
+                            </div>
+                            <div className="flex gap-1.5 shrink-0">
+                              <button onClick={() => handleFriendRequest(req.id, 'accept')} className="px-2.5 py-1 text-xs bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 rounded-lg transition-colors">接受</button>
+                              <button onClick={() => handleFriendRequest(req.id, 'decline')} className="px-2.5 py-1 text-xs bg-white/5 text-white/40 hover:bg-white/10 rounded-lg transition-colors">拒絕</button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="border-t border-white/[0.06] mt-3 mb-2" />
+                    </div>
+                  )}
+
+                  {/* 追蹤 / 粉絲 */}
+                  {friendsLoading ? (
+                    <div className="flex justify-center pt-10">
+                      <Loader2 className="w-5 h-5 text-white/30 animate-spin" />
+                    </div>
+                  ) : friends.length === 0 ? (
+                    <div className="text-center py-16 px-6 text-white/25">
+                      <div className="text-3xl mb-3">👥</div>
+                      <p className="text-sm font-medium mb-1">還沒有好友</p>
+                      <p className="text-xs text-white/15">用上方搜索框找人加好友</p>
+                    </div>
+                  ) : (
+                    <div className="py-1">
+                      {friends.length > 0 && <p className="px-4 pt-1 pb-1 text-[10px] text-white/30 uppercase tracking-widest">追蹤 / 粉絲</p>}
+                      {friends.map(f => {
+                        const existing = conversations.find(c => c.userId === f.id)
+                        return (
+                          <button
+                            key={f.id}
+                            onClick={() => {
+                              const conv: Conversation = existing ?? {
+                                userId: f.id, displayName: f.displayName, avatarUrl: f.avatarUrl,
+                                lastMessagePreview: '', lastMessageAt: new Date().toISOString(), unreadCount: 0,
+                              }
+                              openConversation(conv)
+                              setMainTab('messages')
+                            }}
+                            className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-white/[0.03] transition-all"
+                          >
+                            <div className="w-11 h-11 rounded-full overflow-hidden shrink-0">
+                              {f.avatarUrl
+                                ? <img src={f.avatarUrl} alt="" className="w-full h-full object-cover" />
+                                : <div className="w-full h-full bg-gradient-to-br from-amber-500/40 to-purple-600/40 flex items-center justify-center text-sm font-bold text-white/80">{initials(f.displayName)}</div>
+                              }
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-semibold text-white/80 truncate">{f.displayName ?? '用戶'}</p>
+                              <p className="text-xs text-white/30 mt-0.5">
+                                {f.relation === 'mutual' ? '互相追蹤' : f.relation === 'follower' ? '追蹤了你' : '你追蹤的'}
+                              </p>
+                            </div>
+                            <span className="shrink-0 text-xs text-amber-400/60 font-medium">
+                              {existing ? '繼續聊' : '私訊'}
+                            </span>
+                          </button>
+                        )
+                      })}
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
           )
           : mainTab === 'settings' ? (
             // ─── 設定 ───
