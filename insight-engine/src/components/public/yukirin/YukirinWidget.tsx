@@ -547,7 +547,7 @@ export default function YukirinWidget() {
                     onClick={(e) => { e.stopPropagation(); if (!isDraggingRef.current) switchCharacter('riku') }}
                     className={`flex-1 flex items-center justify-center text-[8px] h-full transition-colors cursor-pointer font-medium ${character === 'riku' ? 'bg-[#b8a9e8]/50 text-[#3d3155]' : 'text-[#8a7ca8] hover:text-[#5a4878]'}`}
                   >
-                    ❄️ 陸
+                    ❄️ 凜空
                   </button>
                 </div>
 
