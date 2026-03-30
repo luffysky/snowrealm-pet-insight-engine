@@ -260,7 +260,7 @@ export default function NotificationRulesPage() {
               >
                 <div>
                   <p className="text-[#3d3155] font-medium text-sm">{ev.label}</p>
-                  <p className="text-xs text-[#3d3155]0">{ev.desc}</p>
+                  <p className="text-xs text-[#3d3155]/60">{ev.desc}</p>
                 </div>
                 <button
                   onClick={() => togglePref(ev.key)}
@@ -548,7 +548,7 @@ export default function NotificationRulesPage() {
                       <td className="py-2 px-3 text-xs">{log.rule_name ?? '-'}</td>
                       <td className="py-2 px-3 text-xs">
                         <span className="text-[#8a7ca8]">{log.recipient_type === 'admin' ? '管理員' : '使用者'}</span>
-                        <span className="ml-1 text-[#3d3155]0">{log.recipient_id.slice(0, 10)}…</span>
+                        <span className="ml-1 text-[#3d3155]/60">{log.recipient_id.slice(0, 10)}…</span>
                       </td>
                       <td className="py-2 px-3">
                         <span className={`text-xs font-medium ${log.status === 'sent' ? 'text-green-400' : 'text-red-400'}`}>

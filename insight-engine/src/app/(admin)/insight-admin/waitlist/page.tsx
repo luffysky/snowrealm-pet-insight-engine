@@ -280,7 +280,7 @@ export default function AdminWaitlistPage() {
       {loading ? (
         <p className="text-[#8a7ca8] animate-pulse">載入中…</p>
       ) : entries.length === 0 ? (
-        <div className="bg-white/35 backdrop-blur-sm border border-[#b8a9e8]/20 rounded-[20px] p-8 text-center text-[#3d3155]0">
+        <div className="bg-white/35 backdrop-blur-sm border border-[#b8a9e8]/20 rounded-[20px] p-8 text-center text-[#3d3155]/60">
           尚無報名資料
         </div>
       ) : (

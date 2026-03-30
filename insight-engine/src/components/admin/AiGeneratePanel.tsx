@@ -198,7 +198,7 @@ export function AiGeneratePanel({ surveyId, existingCount, onDone, onCancel }: A
       {results && (
         <div className="space-y-4">
           {meta && (
-            <p className="text-xs text-[#3d3155]0">
+            <p className="text-xs text-[#3d3155]/60">
               模型：{meta.provider}/{meta.model} {meta.isFree ? '(免費額度)' : ''}
             </p>
           )}
@@ -269,7 +269,7 @@ export function AiGeneratePanel({ surveyId, existingCount, onDone, onCancel }: A
             >
               重新生成
             </button>
-            <button onClick={onCancel} className="text-sm text-[#3d3155]0 hover:text-slate-300 cursor-pointer">
+            <button onClick={onCancel} className="text-sm text-[#3d3155]/60 hover:text-slate-300 cursor-pointer">
               取消
             </button>
           </div>

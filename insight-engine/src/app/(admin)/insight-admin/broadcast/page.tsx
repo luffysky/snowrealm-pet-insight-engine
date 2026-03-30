@@ -213,7 +213,7 @@ export default function BroadcastPage() {
       <div className="space-y-4">
         <h2 className="text-lg font-semibold text-[#3d3155]">推播紀錄</h2>
         {logs.length === 0 ? (
-          <p className="text-[#3d3155]0 text-sm">尚無推播紀錄</p>
+          <p className="text-[#3d3155]/60 text-sm">尚無推播紀錄</p>
         ) : (
           <div className="lg-lavender-sharp lg-shimmer lg-lg relative overflow-hidden">
             <div className="overflow-x-auto">

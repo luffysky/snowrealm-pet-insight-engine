@@ -223,7 +223,7 @@ function StoryCard({ item, actionLoading, onAction }: StoryCardProps) {
     }`}>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 mb-1 flex-wrap">
-          <span className="text-xs font-mono text-[#3d3155]0">#{shortId(item.responseId)}</span>
+          <span className="text-xs font-mono text-[#3d3155]/60">#{shortId(item.responseId)}</span>
           {item.isPinned && (
             <span className="text-xs px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">
               📌 置頂
@@ -234,7 +234,7 @@ function StoryCard({ item, actionLoading, onAction }: StoryCardProps) {
           </span>
         </div>
         <p className="text-sm text-slate-300 truncate">{item.shareableOneLiner}</p>
-        <p className="text-xs text-[#3d3155]0 mt-1">{formatDate(item.createdAt)}</p>
+        <p className="text-xs text-[#3d3155]/60 mt-1">{formatDate(item.createdAt)}</p>
       </div>
 
       <div className="flex items-center gap-2 shrink-0">

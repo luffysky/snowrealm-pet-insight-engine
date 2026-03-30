@@ -171,7 +171,7 @@ export function ResponseDetailClient({ detail }: { detail: ResponseDetail }) {
               autoFocus
             />
             <div className="flex items-center gap-2 justify-end">
-              <span className="text-xs text-[#3d3155]0 mr-auto">{notes.length}/500</span>
+              <span className="text-xs text-[#3d3155]/60 mr-auto">{notes.length}/500</span>
               <button
                 onClick={() => { setNotes(detail.notes ?? ''); setEditingNotes(false) }}
                 className="px-3 py-1 text-[#8a7ca8] hover:text-[#3d3155] text-sm cursor-pointer"
@@ -191,7 +191,7 @@ export function ResponseDetailClient({ detail }: { detail: ResponseDetail }) {
             </div>
           </div>
         ) : (
-          <p className={`text-sm ${notes ? 'text-slate-300' : 'text-[#3d3155]0'}`}>
+          <p className={`text-sm ${notes ? 'text-slate-300' : 'text-[#3d3155]/60'}`}>
             {notes || '尚無備註'}
           </p>
         )}
@@ -202,7 +202,7 @@ export function ResponseDetailClient({ detail }: { detail: ResponseDetail }) {
         <h2 className="text-lg font-semibold text-[#3d3155]">CRM 標籤</h2>
         <div className="flex flex-wrap gap-2">
           {detail.tags.length === 0 && (
-            <p className="text-[#3d3155]0 text-sm">尚無標籤</p>
+            <p className="text-[#3d3155]/60 text-sm">尚無標籤</p>
           )}
           {detail.tags.map((tag, i) => (
             <span

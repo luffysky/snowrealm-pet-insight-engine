@@ -378,7 +378,7 @@ function SubscriptionPageInner() {
       {/* ─── Section 1: Current Plan ─── */}
       <section className="bg-white/5 border border-white/10 rounded-[20px] p-6">
         <div className="flex flex-wrap items-center gap-3 mb-2">
-          <span className="text-xs text-[#3d3155]0 uppercase tracking-wider">目前方案</span>
+          <span className="text-xs text-[#3d3155]/60 uppercase tracking-wider">目前方案</span>
           <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${PLAN_BADGE_COLORS[data.plan] ?? 'bg-[#b8a9e8]/15 text-[#3d3155]'}`}>
             {data.planName}
           </span>
@@ -433,7 +433,7 @@ function SubscriptionPageInner() {
             ) : (
               <button
                 onClick={() => setCancelConfirm(true)}
-                className="text-sm text-[#3d3155]0 hover:text-red-400 cursor-pointer transition-colors underline"
+                className="text-sm text-[#3d3155]/60 hover:text-red-400 cursor-pointer transition-colors underline"
               >
                 取消訂閱
               </button>
@@ -621,7 +621,7 @@ function PlanComparisonTable({
             if (isCurrent) {
               return (
                 <td key={key} className="px-5 py-4 text-center bg-white/5">
-                  <span className="text-sm text-[#3d3155]0">目前方案</span>
+                  <span className="text-sm text-[#3d3155]/60">目前方案</span>
                 </td>
               )
             }

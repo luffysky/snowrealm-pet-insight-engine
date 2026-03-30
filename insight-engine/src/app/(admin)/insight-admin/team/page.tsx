@@ -133,7 +133,7 @@ export default function TeamPage() {
                   {copied ? '已複製 ✓' : '複製'}
                 </button>
               </div>
-              <p className="text-xs text-[#3d3155]0">
+              <p className="text-xs text-[#3d3155]/60">
                 請將此連結傳給對方，對方用此連結註冊後會自動成為你的團隊成員。
               </p>
             </div>
@@ -168,7 +168,7 @@ export default function TeamPage() {
                 >
                   {inviting ? '產生中...' : '產生 Email 專屬邀請連結'}
                 </button>
-                <div className="text-center text-xs text-[#3d3155]0">或</div>
+                <div className="text-center text-xs text-[#3d3155]/60">或</div>
                 <button
                   onClick={() => handleInvite(true)}
                   disabled={inviting}
@@ -187,7 +187,7 @@ export default function TeamPage() {
         <h2 className="text-lg font-semibold text-[#3d3155] mb-4">
           成員 <span className="text-[#8a7ca8] font-normal text-sm">({members.length})</span>
         </h2>
-        <div className="bg-white/50/30 border border-[#b8a9e8]/20 rounded-xl overflow-hidden">
+        <div className="bg-white/30 border border-[#b8a9e8]/20 rounded-xl overflow-hidden">
           <div className="overflow-x-auto">
           <table className="w-full text-sm min-w-125">
             <thead className="bg-white/40 backdrop-blur-sm">
@@ -200,7 +200,7 @@ export default function TeamPage() {
             </thead>
             <tbody className="divide-y divide-[#b8a9e8]/15/50">
               {members.map((m) => (
-                <tr key={m.id} className="hover:bg-white/50/30">
+                <tr key={m.id} className="hover:bg-white/30">
                   <td className="px-4 py-3 text-[#3d3155]">{m.display_name || '—'}</td>
                   <td className="px-4 py-3 text-slate-300">{m.email || '—'}</td>
                   <td className="px-4 py-3">
@@ -231,7 +231,7 @@ export default function TeamPage() {
           </h2>
           <div className="space-y-2">
             {activeInvites.map((inv) => (
-              <div key={inv.id} className="flex items-center justify-between bg-white/50/30 border border-[#b8a9e8]/20 rounded-lg px-4 py-3">
+              <div key={inv.id} className="flex items-center justify-between bg-white/30 border border-[#b8a9e8]/20 rounded-lg px-4 py-3">
                 <div>
                   <span className="text-[#3d3155] text-sm">{inv.email}</span>
                   <span className="mx-2 text-slate-600">·</span>
@@ -239,7 +239,7 @@ export default function TeamPage() {
                     {inv.role === 'editor' ? '編輯者' : '管理員'}
                   </span>
                   <span className="mx-2 text-slate-600">·</span>
-                  <span className="text-[#3d3155]0 text-xs">
+                  <span className="text-[#3d3155]/60 text-xs">
                     到期：{new Date(inv.expires_at).toLocaleDateString('zh-TW')}
                   </span>
                 </div>

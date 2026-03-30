@@ -135,7 +135,7 @@ export default function SiteSettingsPage() {
       {/* 基本 Meta */}
       <section className={`${CARD} rounded-xl p-6 space-y-4`}>
         <h2 className="text-lg font-semibold text-[#3d3155]">預設 Meta 標籤</h2>
-        <p className="text-xs text-[#3d3155]0 mb-2">當個別問卷未設定專屬 SEO 資料時，將會套用以下全站預設值。</p>
+        <p className="text-xs text-[#3d3155]/60 mb-2">當個別問卷未設定專屬 SEO 資料時，將會套用以下全站預設值。</p>
         <Field label="預設標題 (title)" value={settings.site_title} onChange={v => update('site_title', v)} placeholder="我的問卷系統" />
         <Field label="預設描述 (description)" value={settings.site_description} onChange={v => update('site_description', v)} placeholder="描述你的服務..." textarea />
       </section>
@@ -265,7 +265,7 @@ export default function SiteSettingsPage() {
       {/* LINE Bot 文案設定 */}
       <section className={`${CARD} rounded-xl p-6 space-y-4`}>
         <h2 className="text-lg font-semibold text-[#3d3155]">LINE Bot 文案設定</h2>
-        <p className="text-xs text-[#3d3155]0">設定 LINE 官方帳號 Bot 的回覆文案，留空則使用系統預設文案。</p>
+        <p className="text-xs text-[#3d3155]/60">設定 LINE 官方帳號 Bot 的回覆文案，留空則使用系統預設文案。</p>
         <Field
           label="歡迎加入訊息"
           value={settings.bot_welcome}
@@ -308,7 +308,7 @@ export default function SiteSettingsPage() {
             placeholder="留空則使用系統預設口令"
             className="w-full bg-white/60 border border-[#b8a9e8]/30 text-[#3d3155] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#b8a9e8]/30 focus:border-[#b8a9e8]/50 placeholder:text-[#b5a8d0]"
           />
-          <p className="mt-1 text-xs text-[#3d3155]0">用戶在 Insight Bot 輸入此口令後，可取得一次性管理員註冊連結。</p>
+          <p className="mt-1 text-xs text-[#3d3155]/60">用戶在 Insight Bot 輸入此口令後，可取得一次性管理員註冊連結。</p>
         </div>
       </section>
 

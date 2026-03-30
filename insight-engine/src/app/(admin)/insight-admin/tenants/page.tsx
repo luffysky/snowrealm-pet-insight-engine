@@ -137,7 +137,7 @@ export default function TenantsPage() {
           </thead>
           <tbody>
             {tenants.map((t) => (
-              <tr key={t.id} className="border-b border-[#b8a9e8]/20 hover:bg-white/50/30">
+              <tr key={t.id} className="border-b border-[#b8a9e8]/20 hover:bg-white/30">
                 <td className="px-4 py-3 text-[#3d3155] font-medium">{t.name}</td>
                 <td className="px-4 py-3 text-[#8a7ca8] font-mono text-xs">{t.slug}</td>
                 <td className="px-4 py-3">
@@ -153,7 +153,7 @@ export default function TenantsPage() {
                     {t.is_active ? '啟用' : '停用'}
                   </span>
                 </td>
-                <td className="px-4 py-3 text-[#3d3155]0 text-xs">
+                <td className="px-4 py-3 text-[#3d3155]/60 text-xs">
                   {new Date(t.created_at).toLocaleDateString('zh-TW')}
                 </td>
                 <td className="px-4 py-3 text-right">

@@ -23,7 +23,7 @@ export function TagChart({ distributions, filterKey, title }: TagChartProps) {
     return (
       <div className="bg-white/35 backdrop-blur-sm border border-[#b8a9e8]/20 rounded-[20px] p-6">
         <h3 className="text-sm text-[#8a7ca8] mb-4">{title}</h3>
-        <p className="text-[#3d3155]0 text-center py-8">尚無資料</p>
+        <p className="text-[#3d3155]/60 text-center py-8">尚無資料</p>
       </div>
     )
   }

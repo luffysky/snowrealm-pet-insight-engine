@@ -127,7 +127,7 @@ export default function NotificationStylesPage() {
                       <span className="text-xl">{style.header_emoji}</span>
                       <div>
                         <h3 className="text-[#3d3155] font-medium">{style.label}</h3>
-                        <p className="text-xs text-[#3d3155]0 font-mono">{style.id}</p>
+                        <p className="text-xs text-[#3d3155]/60 font-mono">{style.id}</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
@@ -273,7 +273,7 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 function InfoCell({ label, value, color }: { label: string; value: string; color?: string }) {
   return (
     <div className="space-y-0.5">
-      <p className="text-[#3d3155]0">{label}</p>
+      <p className="text-[#3d3155]/60">{label}</p>
       <div className="flex items-center gap-1.5">
         {color && (
           <span
@@ -290,7 +290,7 @@ function InfoCell({ label, value, color }: { label: string; value: string; color
 function FlexPreview({ style }: { style: NotificationStyle }) {
   return (
     <div className="mt-2">
-      <p className="text-xs text-[#3d3155]0 mb-1">預覽</p>
+      <p className="text-xs text-[#3d3155]/60 mb-1">預覽</p>
       <div className="max-w-xs rounded-lg overflow-hidden border border-[#b8a9e8]/20 shadow-lg">
         {/* Header */}
         <div

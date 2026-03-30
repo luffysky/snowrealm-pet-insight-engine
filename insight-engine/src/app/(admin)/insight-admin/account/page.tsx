@@ -161,21 +161,21 @@ export default function AccountSettingsPage() {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="block text-xs text-[#3d3155]0 mb-1">Email</label>
+            <label className="block text-xs text-[#3d3155]/60 mb-1">Email</label>
             <p className="text-sm text-[#3d3155]/70 bg-white/50 px-3 py-2 rounded-lg border border-[#b8a9e8]/20">
-              {profile.email || <span className="text-[#3d3155]0 italic">未設定</span>}
+              {profile.email || <span className="text-[#3d3155]/60 italic">未設定</span>}
             </p>
           </div>
           <div>
-            <label className="block text-xs text-[#3d3155]0 mb-1">手機號碼</label>
+            <label className="block text-xs text-[#3d3155]/60 mb-1">手機號碼</label>
             <p className="text-sm text-[#3d3155]/70 bg-white/50 px-3 py-2 rounded-lg border border-[#b8a9e8]/20">
-              {profile.phone || <span className="text-[#3d3155]0 italic">未設定</span>}
+              {profile.phone || <span className="text-[#3d3155]/60 italic">未設定</span>}
             </p>
           </div>
         </div>
 
         <div>
-          <label className="block text-xs text-[#3d3155]0 mb-1">顯示名稱</label>
+          <label className="block text-xs text-[#3d3155]/60 mb-1">顯示名稱</label>
           <div className="flex gap-2">
             <input
               type="text"
@@ -199,18 +199,18 @@ export default function AccountSettingsPage() {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-[#b8a9e8]/20">
           <div>
-            <label className="block text-xs text-[#3d3155]0 mb-1">角色</label>
+            <label className="block text-xs text-[#3d3155]/60 mb-1">角色</label>
             <p className="text-sm text-[#3d3155]/70">{profile.role === 'super_admin' ? 'admin' : profile.role}</p>
           </div>
           <div>
-            <label className="block text-xs text-[#3d3155]0 mb-1">建立時間</label>
+            <label className="block text-xs text-[#3d3155]/60 mb-1">建立時間</label>
             <p className="text-sm text-[#3d3155]/70">
               {new Date(profile.createdAt).toLocaleDateString('zh-TW')}
             </p>
           </div>
         </div>
 
-        <p className="text-xs text-[#3d3155]0">
+        <p className="text-xs text-[#3d3155]/60">
           Email 與手機號碼僅用於身份驗證，不會公開顯示。如需變更請聯繫管理員。
         </p>
       </section>
@@ -220,7 +220,7 @@ export default function AccountSettingsPage() {
         <h2 className="text-lg font-semibold text-[#3d3155]/90">🔑 修改密碼</h2>
 
         <div>
-          <label className="block text-xs text-[#3d3155]0 mb-1">目前密碼</label>
+          <label className="block text-xs text-[#3d3155]/60 mb-1">目前密碼</label>
           <div className="relative">
             <input
               type={showCurrentPw ? 'text' : 'password'}
@@ -230,14 +230,14 @@ export default function AccountSettingsPage() {
               className={inputCls}
             />
             <button type="button" onClick={() => setShowCurrentPw(!showCurrentPw)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-[#3d3155]0 hover:text-slate-300 cursor-pointer text-sm">
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-[#3d3155]/60 hover:text-slate-300 cursor-pointer text-sm">
               {showCurrentPw ? '🙈' : '👁'}
             </button>
           </div>
         </div>
 
         <div>
-          <label className="block text-xs text-[#3d3155]0 mb-1">新密碼（至少 6 個字元）</label>
+          <label className="block text-xs text-[#3d3155]/60 mb-1">新密碼（至少 6 個字元）</label>
           <div className="relative">
             <input
               type={showNewPw ? 'text' : 'password'}
@@ -247,14 +247,14 @@ export default function AccountSettingsPage() {
               className={inputCls}
             />
             <button type="button" onClick={() => setShowNewPw(!showNewPw)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-[#3d3155]0 hover:text-slate-300 cursor-pointer text-sm">
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-[#3d3155]/60 hover:text-slate-300 cursor-pointer text-sm">
               {showNewPw ? '🙈' : '👁'}
             </button>
           </div>
         </div>
 
         <div>
-          <label className="block text-xs text-[#3d3155]0 mb-1">確認新密碼</label>
+          <label className="block text-xs text-[#3d3155]/60 mb-1">確認新密碼</label>
           <input
             type="password"
             value={confirmPw}

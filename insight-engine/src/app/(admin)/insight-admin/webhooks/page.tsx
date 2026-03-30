@@ -92,11 +92,11 @@ export default function WebhooksPage() {
 
         {/* Webhook URL 設定 */}
         <div className="space-y-3">
-          <p className="text-xs text-[#3d3155]0 font-medium">
+          <p className="text-xs text-[#3d3155]/60 font-medium">
             LINE Developers Console → Messaging API → Webhook settings
           </p>
           <div className="bg-white/50 rounded-lg p-3">
-            <p className="text-xs text-[#3d3155]0 mb-1">官方帳號 @474iwlht（用戶互動）</p>
+            <p className="text-xs text-[#3d3155]/60 mb-1">官方帳號 @474iwlht（用戶互動）</p>
             <code className="text-sm text-green-300 break-all select-all">
               {process.env.NEXT_PUBLIC_BASE_URL}/api/line/webhook/official
             </code>
@@ -105,7 +105,7 @@ export default function WebhooksPage() {
             </p>
           </div>
           <div className="bg-white/50 rounded-lg p-3">
-            <p className="text-xs text-[#3d3155]0 mb-1">INSIGHT @762wxvfb（管理員通知）</p>
+            <p className="text-xs text-[#3d3155]/60 mb-1">INSIGHT @762wxvfb（管理員通知）</p>
             <code className="text-sm text-green-300 break-all select-all">
               {process.env.NEXT_PUBLIC_BASE_URL}/api/line/webhook
             </code>
@@ -202,7 +202,7 @@ export default function WebhooksPage() {
                       className={`text-xs px-2 py-0.5 rounded cursor-pointer ${
                         c.active
                           ? 'bg-emerald-500/20 text-emerald-400'
-                          : 'bg-[#b8a9e8]/15/20 text-[#3d3155]0'
+                          : 'bg-[#b8a9e8]/15/20 text-[#3d3155]/60'
                       }`}
                     >
                       {c.active ? '啟用中' : '已停用'}

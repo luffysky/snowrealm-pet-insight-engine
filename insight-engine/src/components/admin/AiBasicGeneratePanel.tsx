@@ -109,7 +109,7 @@ export function AiBasicGeneratePanel({ onDone, onCancel }: AiBasicGeneratePanelP
 
         {error && <p className="text-sm text-red-400">{error}</p>}
         {metaInfo && (
-          <p className="text-xs text-[#3d3155]0">
+          <p className="text-xs text-[#3d3155]/60">
             模型：{metaInfo.provider}/{metaInfo.model} {metaInfo.isFree ? '(免費額度)' : ''}
           </p>
         )}

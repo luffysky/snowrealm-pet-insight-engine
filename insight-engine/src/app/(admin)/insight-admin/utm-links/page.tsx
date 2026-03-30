@@ -220,7 +220,7 @@ export default function UtmLinksPage() {
                     )}
                   </div>
                   <p className="text-t-accent text-xs break-all mb-1">{link.full_url}</p>
-                  <p className="text-[#3d3155]0 text-xs">
+                  <p className="text-[#3d3155]/60 text-xs">
                     建立於 {new Date(link.created_at).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' })}
                   </p>
                 </div>

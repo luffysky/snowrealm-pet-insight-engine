@@ -209,14 +209,14 @@ export default function AiSettingsPage() {
           <h3 className="text-sm font-medium text-slate-300 mb-3">📊 免費額度</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="bg-white/40 backdrop-blur-sm rounded-lg p-3">
-              <p className="text-xs text-[#3d3155]0">AI 生成問卷</p>
+              <p className="text-xs text-[#3d3155]/60">AI 生成問卷</p>
               <p className="text-lg font-bold text-[#3d3155]">
                 {stats.platformPartner ? (
                   <>略過上限檢查（本帳號）</>
                 ) : (
                   <>
                     剩餘 {Math.max(0, stats.freeQuota.generate.limit - stats.freeQuota.generate.used)} 次
-                    <span className="text-xs text-[#3d3155]0 ml-2 font-normal">
+                    <span className="text-xs text-[#3d3155]/60 ml-2 font-normal">
                       （已用 {stats.freeQuota.generate.used} / {stats.freeQuota.generate.limit}）
                     </span>
                   </>
@@ -224,14 +224,14 @@ export default function AiSettingsPage() {
               </p>
             </div>
             <div className="bg-white/40 backdrop-blur-sm rounded-lg p-3">
-              <p className="text-xs text-[#3d3155]0">AI 重新生成</p>
+              <p className="text-xs text-[#3d3155]/60">AI 重新生成</p>
               <p className="text-lg font-bold text-[#3d3155]">
                 {stats.platformPartner ? (
                   <>略過上限檢查（本帳號）</>
                 ) : (
                   <>
                     剩餘 {Math.max(0, stats.freeQuota.regenerate.limit - stats.freeQuota.regenerate.used)} 次
-                    <span className="text-xs text-[#3d3155]0 ml-2 font-normal">
+                    <span className="text-xs text-[#3d3155]/60 ml-2 font-normal">
                       （已用 {stats.freeQuota.regenerate.used} / {stats.freeQuota.regenerate.limit}）
                     </span>
                   </>
@@ -239,7 +239,7 @@ export default function AiSettingsPage() {
               </p>
             </div>
           </div>
-          <p className="text-xs text-[#3d3155]0 mt-2">
+          <p className="text-xs text-[#3d3155]/60 mt-2">
             💡 免費額度使用平台 Key（GPT-4o-mini）。用完後需設定自己的 API Key 才能繼續使用。
             {stats.platformPartner && ' 你的帳號為合作夥伴：平台 Key 不套用上述次數上限。'}
           </p>
@@ -377,7 +377,7 @@ export default function AiSettingsPage() {
           <h3 className="text-sm font-medium text-[#8a7ca8]">已設定的 AI Provider</h3>
           {configs.length === 0 ? (
             <div className="bg-white/35 backdrop-blur-sm border border-[#b8a9e8]/20 rounded-xl p-8 text-center">
-              <p className="text-[#3d3155]0 text-sm">尚未設定任何 AI Provider</p>
+              <p className="text-[#3d3155]/60 text-sm">尚未設定任何 AI Provider</p>
               <p className="text-xs text-slate-600 mt-1">
                 點擊上方「+ 新增 AI Provider」開始設定，或使用免費額度體驗。
               </p>
@@ -402,7 +402,7 @@ export default function AiSettingsPage() {
                           {c.isActive ? '啟用' : '停用'}
                         </span>
                       </div>
-                      <p className="text-xs text-[#3d3155]0 mt-0.5">
+                      <p className="text-xs text-[#3d3155]/60 mt-0.5">
                         模型: {c.defaultModel} · Key: {c.hasKey ? '已設定' : '未設定'}
                       </p>
                     </div>
@@ -538,7 +538,7 @@ export default function AiSettingsPage() {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="text-[#3d3155]0 text-xs">
+                <tr className="text-[#3d3155]/60 text-xs">
                   <th className="text-left pb-2">動作</th>
                   <th className="text-left pb-2">Key 來源</th>
                   <th className="text-right pb-2">次數</th>

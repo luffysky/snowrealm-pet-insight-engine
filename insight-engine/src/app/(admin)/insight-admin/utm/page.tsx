@@ -44,7 +44,7 @@ function UtmSection({
     return (
       <div className="bg-white/35 backdrop-blur-sm border border-[#b8a9e8]/20 rounded-[20px] p-6">
         <h2 className="text-lg font-semibold text-[#3d3155] mb-2">{title}</h2>
-        <p className="text-[#3d3155]0 text-sm">尚無資料</p>
+        <p className="text-[#3d3155]/60 text-sm">尚無資料</p>
       </div>
     )
   }

@@ -333,7 +333,7 @@ export function BgPicker({
       {open && (
         <>
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
-          <div className="absolute right-0 top-full mt-2 z-50 w-80 bg-white/50/98 backdrop-blur-2xl border border-white/12 rounded-[20px] shadow-[0_8px_32px_rgba(0,0,0,0.6)] overflow-hidden">
+          <div className="absolute right-0 top-full mt-2 z-50 w-80 bg-white/30 backdrop-blur-2xl border border-white/12 rounded-[20px] shadow-[0_8px_32px_rgba(0,0,0,0.6)] overflow-hidden">
             <div className="flex items-center justify-between px-4 py-3 border-b border-white/8">
               <p className="text-xs font-semibold text-[#3d3155]/70">聊天背景</p>
               <button onClick={() => setOpen(false)} className="text-[#8a7ca8] hover:text-[#3d3155] transition-colors">

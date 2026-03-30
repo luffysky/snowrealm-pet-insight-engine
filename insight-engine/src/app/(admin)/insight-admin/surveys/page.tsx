@@ -587,7 +587,7 @@ function SurveyEditor({
           <div className="rounded-xl border border-[#b8a9e8]/25 bg-white/35 backdrop-blur-sm p-4 space-y-3">
             <div>
               <p className="text-sm font-semibold text-[#3d3155]/90">對外可見性</p>
-              <p className="text-xs text-[#3d3155]0 mt-1">
+              <p className="text-xs text-[#3d3155]/60 mt-1">
                 每份問卷獨立設定。選「不公開」時，公開網址（格式 <span className="font-mono text-[#8a7ca8]">/租戶代碼/slug</span>
                 ）會回傳 404。
               </p>
@@ -617,7 +617,7 @@ function SurveyEditor({
                   />
                   <div>
                     <span className="text-sm text-[#3d3155]/90 font-medium">{opt.title}</span>
-                    <p className="text-xs text-[#3d3155]0 mt-0.5">{opt.desc}</p>
+                    <p className="text-xs text-[#3d3155]/60 mt-0.5">{opt.desc}</p>
                   </div>
                 </label>
               ))}
@@ -665,7 +665,7 @@ function SurveyEditor({
                 <input type="file" accept="image/*" className="hidden" disabled={coverUploading} onChange={handleCoverImageUpload} />
                 {coverUploading ? '上傳中...' : '📷 上傳封面圖片'}
               </label>
-              <p className="text-xs text-[#3d3155]0">建議尺寸 1200×630，支援 JPG / PNG / WebP</p>
+              <p className="text-xs text-[#3d3155]/60">建議尺寸 1200×630，支援 JPG / PNG / WebP</p>
             </div>
           </div>
           {/* 存取密碼 */}
@@ -679,7 +679,7 @@ function SurveyEditor({
                 placeholder="留空表示公開，填入則需輸入密碼才能開啟問卷"
                 className="w-full bg-white/50 border border-[#b8a9e8]/20 rounded-lg px-3 py-1.5 text-sm text-[#3d3155]"
               />
-              <p className="text-xs text-[#3d3155]0">設定後，填答者開啟問卷時需輸入此密碼</p>
+              <p className="text-xs text-[#3d3155]/60">設定後，填答者開啟問卷時需輸入此密碼</p>
             </div>
           </div>
           <div className="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-3">
@@ -830,7 +830,7 @@ function SurveyEditor({
                 target="_blank"
                 rel="noopener noreferrer"
                 className={`break-all font-mono hover:underline ${
-                  survey.status === 'published' ? 'text-t-accent' : 'text-[#3d3155]0 pointer-events-none'
+                  survey.status === 'published' ? 'text-t-accent' : 'text-[#3d3155]/60 pointer-events-none'
                 }`}
                 aria-disabled={survey.status !== 'published'}
                 onClick={(e) => {
@@ -861,7 +861,7 @@ function SurveyEditor({
             ⚠️ 若留空，則會自動採用網站預設的 Meta 標籤。公開問卷頁會輸出 Open Graph / Twitter Card（伺服端
             <code className="mx-0.5 text-slate-300">generateMetadata</code>）。
           </p>
-          <p className="text-[11px] text-[#3d3155]0 leading-relaxed">
+          <p className="text-[11px] text-[#3d3155]/60 leading-relaxed">
             正式環境請確認 <code className="text-[#8a7ca8]">NEXT_PUBLIC_BASE_URL</code> 與實際網域一致，分享預覽與 canonical
             網址才會正確。圖片建議可公開存取的 HTTPS 網址（上傳至 R2 後會自動符合）。
           </p>
@@ -893,7 +893,7 @@ function SurveyEditor({
                   <input type="file" accept="image/jpeg,image/png,image/webp,image/gif,image/svg+xml" className="hidden" onChange={handleOgImageUpload} disabled={ogUploading} />
                   {ogUploading ? '上傳中…' : '📤 上傳圖片'}
                 </label>
-                <span className="text-[10px] text-[#3d3155]0">走 /api/admin/upload（R2），資料夾 survey-og</span>
+                <span className="text-[10px] text-[#3d3155]/60">走 /api/admin/upload（R2），資料夾 survey-og</span>
               </div>
               <input type="text" value={form.og_image_url ?? ''} onChange={(e) => setForm({ ...form, og_image_url: e.target.value })}
                 placeholder="或貼上圖片 HTTPS 網址…" className="w-full bg-white/50 border border-[#b8a9e8]/20 rounded-lg px-3 py-1.5 text-sm text-[#3d3155]" />
@@ -1350,7 +1350,7 @@ function BranchQuestionCard({
               }}
             />
             <button type="button" onClick={confirmNewRoute} className="text-xs text-t-accent cursor-pointer">✓</button>
-            <button type="button" onClick={() => { setShowNewInput(false); setNewRouteName('') }} className="text-xs text-[#3d3155]0 cursor-pointer">✕</button>
+            <button type="button" onClick={() => { setShowNewInput(false); setNewRouteName('') }} className="text-xs text-[#3d3155]/60 cursor-pointer">✕</button>
           </div>
         )}
       </div>

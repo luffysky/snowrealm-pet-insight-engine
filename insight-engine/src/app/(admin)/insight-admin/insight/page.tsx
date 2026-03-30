@@ -695,7 +695,7 @@ export default function InsightPage() {
               <p className="text-sm text-[#8a7ca8]">
                 AI 將從開放題回覆中提煉人文故事，讓數據變得有溫度
               </p>
-              <p className="text-xs text-[#3d3155]0">人會忘記數字，但不會忘記一個好故事。</p>
+              <p className="text-xs text-[#3d3155]/60">人會忘記數字，但不會忘記一個好故事。</p>
             </div>
           )}
 
@@ -743,7 +743,7 @@ function HistoryList({
       )}
 
       {!loading && history.length === 0 && (
-        <p className="text-sm text-[#3d3155]0">尚無歷史報告</p>
+        <p className="text-sm text-[#3d3155]/60">尚無歷史報告</p>
       )}
 
       {!loading && history.length > 0 && (
@@ -765,7 +765,7 @@ function HistoryList({
                 <span className="text-sm text-[#3d3155]">
                   {new Date(item.created_at).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' })}
                 </span>
-                <span className="ml-3 text-xs text-[#3d3155]0">
+                <span className="ml-3 text-xs text-[#3d3155]/60">
                   {item.meta?.provider}/{item.meta?.model}
                   {item.meta?.keySource === 'platform_key' ? '（免費額度）' : ''}
                 </span>

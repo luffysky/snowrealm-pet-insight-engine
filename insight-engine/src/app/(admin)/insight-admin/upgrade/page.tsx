@@ -137,7 +137,7 @@ export default function UpgradePage() {
         >
           💬 聯絡我們升級
         </a>
-        <p className="text-[#3d3155]0 text-xs mt-3">透過 LINE 聯繫，通常 24 小時內回覆</p>
+        <p className="text-[#3d3155]/60 text-xs mt-3">透過 LINE 聯繫，通常 24 小時內回覆</p>
       </div>
     </div>
   )

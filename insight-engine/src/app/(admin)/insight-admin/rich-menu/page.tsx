@@ -40,7 +40,7 @@ node scripts/setup-insight-rich-menu.mjs`
 
 const FORM_INPUT_SM =
   'w-full px-2 py-1.5 bg-white/60 border border-[#b8a9e8]/30 rounded text-[#3d3155] text-xs focus:border-[#b8a9e8]/30 focus:outline-none'
-const FORM_LABEL_SM = 'block text-[10px] text-[#3d3155]0 mb-0.5'
+const FORM_LABEL_SM = 'block text-[10px] text-[#3d3155]/60 mb-0.5'
 
 /** 官方／後台模板常用色 + 中性色，一鍵套用 */
 const RICH_MENU_COLOR_SWATCHES = [
@@ -164,7 +164,7 @@ function RichMenuColorPicker({
             autoComplete="off"
           />
           {valid ? (
-            <p className="text-[10px] text-[#3d3155]0 font-mono truncate">{valid}</p>
+            <p className="text-[10px] text-[#3d3155]/60 font-mono truncate">{valid}</p>
           ) : value.trim() ? (
             <p className="text-[10px] text-amber-700">格式需為 #RGB 或 #RRGGBB</p>
           ) : null}
@@ -178,7 +178,7 @@ function RichMenuColorPicker({
           className="flex w-full items-center justify-between gap-2 rounded-md px-1 py-0.5 text-left text-[10px] font-medium text-[#8a7ca8] transition-colors hover:bg-white/40 backdrop-blur-sm hover:text-[#3d3155]"
         >
           <span>進階取色（飽和度／色相）</span>
-          <span className="shrink-0 text-[#3d3155]0 tabular-nums" aria-hidden>
+          <span className="shrink-0 text-[#3d3155]/60 tabular-nums" aria-hidden>
             {advancedOpen ? '▼' : '▶'}
           </span>
         </button>
@@ -232,7 +232,7 @@ function RichMenuColorPicker({
       </div>
 
       <div>
-        <p className="text-[9px] uppercase tracking-wider text-[#3d3155]0 mb-1.5">快捷色</p>
+        <p className="text-[9px] uppercase tracking-wider text-[#3d3155]/60 mb-1.5">快捷色</p>
         <div className="flex flex-wrap gap-1.5">
           {RICH_MENU_COLOR_SWATCHES.map((c) => (
             <button
@@ -444,7 +444,7 @@ export default function RichMenuPage() {
                   {t.channel === 'official' ? 'Official Bot' : 'Insight Bot'}
                 </span>
               </div>
-              <p className="text-xs text-[#3d3155]0">{t.desc}</p>
+              <p className="text-xs text-[#3d3155]/60">{t.desc}</p>
               <div className="flex flex-col gap-2">
                 <button
                   type="button"
@@ -474,7 +474,7 @@ export default function RichMenuPage() {
           可修改標籤、網址或訊息文字、底色。URI 可使用佔位符（儲存前由伺服器依租戶替換）。
         </p>
         {placeholders.length > 0 && (
-          <p className="text-xs text-[#3d3155]0 font-mono break-all">
+          <p className="text-xs text-[#3d3155]/60 font-mono break-all">
             佔位符：{placeholders.join(' · ')}
           </p>
         )}
@@ -613,7 +613,7 @@ export default function RichMenuPage() {
         </p>
         <div className="relative rounded-lg border border-emerald-500/30 bg-[#0d1117] overflow-hidden">
           <div className="flex items-center justify-between px-3 py-2 border-b border-white/10 bg-black/40">
-            <span className="text-[10px] text-[#3d3155]0 font-mono">bash — insight-engine</span>
+            <span className="text-[10px] text-[#3d3155]/60 font-mono">bash — insight-engine</span>
             <button
               type="button"
               onClick={copyCli}
@@ -672,9 +672,9 @@ export default function RichMenuPage() {
           )}
         </div>
 
-        <div className="rounded-lg border border-[#b8a9e8]/20/80 bg-white/50/35 px-3 py-2.5 text-xs text-[#8a7ca8] leading-relaxed">
+        <div className="rounded-lg border border-[#b8a9e8]/20/80 bg-white/30 px-3 py-2.5 text-xs text-[#8a7ca8] leading-relaxed">
           <p className="font-medium text-slate-300 mb-1.5">能編輯嗎？CRUD 與 LINE 限制</p>
-          <p className="text-[#3d3155]0 mb-2 pl-4 border-l-2 border-[#b8a9e8]/30">
+          <p className="text-[#3d3155]/60 mb-2 pl-4 border-l-2 border-[#b8a9e8]/30">
             <strong className="text-[#8a7ca8]">預設選單</strong>：LINE 規則是「<strong>每一個</strong> Messaging API Channel（Bot）同一時間只能有{' '}
             <strong>一個</strong>套用到<strong>全部好友</strong>的預設 Rich Menu」。若你同時有 <strong>Official</strong> 與{' '}
             <strong>Insight</strong> 兩個 Channel，可<strong>各自</strong>建立一個預設選單——請用上方分頁切換查看／管理。
@@ -685,7 +685,7 @@ export default function RichMenuPage() {
             </li>
             <li>
               <strong className="text-slate-300">建立（C）</strong>：用上方「模板」或「進階」上傳圖並建立，會產生新的{' '}
-              <span className="font-mono text-[#3d3155]0">richMenuId</span>。
+              <span className="font-mono text-[#3d3155]/60">richMenuId</span>。
             </li>
             <li>
               <strong className="text-slate-300">更新（U）</strong>：LINE Messaging API{' '}
@@ -701,7 +701,7 @@ export default function RichMenuPage() {
           <p className="text-[#8a7ca8] animate-pulse">載入中…</p>
         ) : menus.length === 0 ? (
           <div className="bg-white/35 backdrop-blur-sm border border-[#b8a9e8]/20 rounded-xl p-8 text-center">
-            <p className="text-[#3d3155]0 text-sm">尚無 Rich Menu</p>
+            <p className="text-[#3d3155]/60 text-sm">尚無 Rich Menu</p>
             <p className="text-xs text-slate-600 mt-1">使用上方模板或進階編輯建立</p>
           </div>
         ) : (
@@ -729,9 +729,9 @@ export default function RichMenuPage() {
                     <div className="mt-3 space-y-1">
                       {menu.areas.map((area, i) => (
                         <div key={i} className="text-xs text-[#8a7ca8] flex gap-2 flex-wrap">
-                          <span className="text-[#3d3155]0">#{i + 1}</span>
+                          <span className="text-[#3d3155]/60">#{i + 1}</span>
                           <span className="text-slate-300">{area.action.label || area.action.text || '—'}</span>
-                          <span className="text-[#3d3155]0">({area.action.type})</span>
+                          <span className="text-[#3d3155]/60">({area.action.type})</span>
                           {area.action.uri && (
                             <span className="text-t-accent truncate max-w-[300px]">{area.action.uri}</span>
                           )}

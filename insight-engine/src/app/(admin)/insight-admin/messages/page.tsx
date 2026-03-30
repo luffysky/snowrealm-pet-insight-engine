@@ -1236,7 +1236,7 @@ function MessageMenu({ msg, onRecall, onSave, onDelete, menuOpen, onToggleMenu, 
       </button>
       {menuOpen && (
         <div
-          className={`absolute bottom-full mb-1.5 z-50 w-38 bg-white/50/98 backdrop-blur-2xl border border-white/12 rounded-[20px] shadow-[0_8px_32px_rgba(0,0,0,0.5)] overflow-hidden ${align === 'right' ? 'right-0' : 'left-0'}`}
+          className={`absolute bottom-full mb-1.5 z-50 w-38 bg-white/30 backdrop-blur-2xl border border-white/12 rounded-[20px] shadow-[0_8px_32px_rgba(0,0,0,0.5)] overflow-hidden ${align === 'right' ? 'right-0' : 'left-0'}`}
           onClick={e => e.stopPropagation()}
         >
           {msg.isMine && (

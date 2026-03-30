@@ -460,7 +460,7 @@ export function AiSurveyChat({ onDone, onCancel }: AiSurveyChatProps) {
                 <button
                   type="button"
                   onClick={() => setShowAllInspirations(true)}
-                  className="px-3 py-1.5 text-xs text-[#3d3155]0 hover:text-slate-300 transition-colors"
+                  className="px-3 py-1.5 text-xs text-[#3d3155]/60 hover:text-slate-300 transition-colors"
                 >
                   查看更多 ▼
                 </button>
@@ -493,7 +493,7 @@ export function AiSurveyChat({ onDone, onCancel }: AiSurveyChatProps) {
               <button
                 type="button"
                 onClick={() => { navigator.clipboard.writeText(input).catch(() => {}) }}
-                className="absolute right-2 bottom-2 p-1 text-[#3d3155]0 hover:text-slate-300 transition-colors"
+                className="absolute right-2 bottom-2 p-1 text-[#3d3155]/60 hover:text-slate-300 transition-colors"
                 title="複製 Prompt"
               >
                 <Copy className="w-3.5 h-3.5" />

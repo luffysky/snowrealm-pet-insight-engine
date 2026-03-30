@@ -223,9 +223,9 @@ export default function TagRulesPage() {
 
       {/* 規則列表 */}
       {loading ? (
-        <p className="text-[#3d3155]0 text-center py-12">載入中...</p>
+        <p className="text-[#3d3155]/60 text-center py-12">載入中...</p>
       ) : Object.keys(grouped).length === 0 ? (
-        <p className="text-[#3d3155]0 text-center py-12">尚無規則</p>
+        <p className="text-[#3d3155]/60 text-center py-12">尚無規則</p>
       ) : (
         Object.entries(grouped)
           .sort(([a], [b]) => a.localeCompare(b))
@@ -275,7 +275,7 @@ export default function TagRulesPage() {
                       // 顯示模式
                       <>
                         <span className="text-[#8a7ca8] w-36 shrink-0 truncate">{rule.answer_value ?? '(any)'}</span>
-                        <span className="text-[#3d3155]0 w-16 shrink-0">{rule.match_mode}</span>
+                        <span className="text-[#3d3155]/60 w-16 shrink-0">{rule.match_mode}</span>
                         <span className="text-[#3d3155] font-mono">{rule.tag_key}</span>
                         <span className="text-[#8a7ca8]">=</span>
                         <span className="text-emerald-400 font-mono">{rule.tag_value}</span>
@@ -333,7 +333,7 @@ export default function TagRulesPage() {
           ))
       )}
 
-      <p className="text-xs text-[#3d3155]0 text-center">
+      <p className="text-xs text-[#3d3155]/60 text-center">
         共 {rules.length} 條規則 · 問卷提交時自動依規則產生標籤
       </p>
     </div>

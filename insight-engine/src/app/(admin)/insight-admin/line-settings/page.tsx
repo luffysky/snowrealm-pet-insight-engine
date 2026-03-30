@@ -137,7 +137,7 @@ export default function LineSettingsPage() {
                 <div className="flex items-center justify-between">
                   <div>
                     <h2 className="text-lg font-semibold text-[#3d3155]">{meta.emoji} {meta.title}</h2>
-                    {meta.desc && <p className="text-xs text-[#3d3155]0 mt-0.5">{meta.desc}</p>}
+                    {meta.desc && <p className="text-xs text-[#3d3155]/60 mt-0.5">{meta.desc}</p>}
                   </div>
                   {testKey && (
                     <button type="button" onClick={() => handleTest(testKey)} disabled={testing === testKey}
@@ -205,7 +205,7 @@ export default function LineSettingsPage() {
                                 </span>
                                 {item.isSecret && item.source !== 'none' && (
                                   <button type="button" onClick={() => setShowValue((prev) => ({ ...prev, [item.key]: !prev[item.key] }))}
-                                    className="text-xs text-[#3d3155]0 hover:text-slate-300 cursor-pointer shrink-0">
+                                    className="text-xs text-[#3d3155]/60 hover:text-slate-300 cursor-pointer shrink-0">
                                     {showValue[item.key] ? '🙈' : '👁'}
                                   </button>
                                 )}
@@ -233,7 +233,7 @@ export default function LineSettingsPage() {
             )
           })}
 
-          <div className="bg-white/50/30 border border-[#b8a9e8]/10 rounded-xl p-4 text-sm text-[#3d3155]0 space-y-1">
+          <div className="bg-white/30 border border-[#b8a9e8]/10 rounded-xl p-4 text-sm text-[#3d3155]/60 space-y-1">
             <p>ℹ️ <strong className="text-[#8a7ca8]">來源說明</strong></p>
             <p><span className="text-emerald-400">✓ 已驗證</span> = 測試連線成功&nbsp;&nbsp;
               <span className="text-cyan-400">DB</span> = 已在後台設定（加密儲存）&nbsp;&nbsp;
@@ -262,7 +262,7 @@ function SetupGuide() {
   const CopyBlock = ({ label, value, id }: { label: string; value: string; id: string }) => (
     <div className="bg-white/40 backdrop-blur-sm rounded-[14px] p-3 flex items-center justify-between gap-3">
       <div className="min-w-0">
-        <p className="text-xs text-[#3d3155]0 mb-1">{label}</p>
+        <p className="text-xs text-[#3d3155]/60 mb-1">{label}</p>
         <code className="text-sm text-green-300 break-all">{value}</code>
       </div>
       <button type="button" onClick={() => copy(value, id)}
@@ -282,7 +282,7 @@ function SetupGuide() {
           然後將取得的金鑰填入左邊的「環境設定」分頁，並在 <strong className="text-[#3d3155]">Messaging API</strong> 設定
           Webhook URL 且 Verify 成功。完成後系統才能收事件、發訊息。
         </p>
-        <p className="text-xs text-[#3d3155]0">
+        <p className="text-xs text-[#3d3155]/60">
           更完整的「官方帳號 vs Insight、Rich Menu、Webhook 是否互斥」說明見專案{' '}
           <code className="text-[#8a7ca8]">docs/line-official-vs-insight.md</code>。
         </p>
@@ -313,7 +313,7 @@ function SetupGuide() {
           <li>填寫帳號名稱（品牌名稱）、選擇類別</li>
           <li>設定大頭貼（建議 640×640 px）和狀態消息</li>
         </ol>
-        <div className="bg-white/40 backdrop-blur-sm rounded-lg p-3 text-sm text-[#3d3155]0">
+        <div className="bg-white/40 backdrop-blur-sm rounded-lg p-3 text-sm text-[#3d3155]/60">
           💡 如果已有官方帳號可跳過此步驟
         </div>
       </section>
@@ -352,21 +352,21 @@ function SetupGuide() {
             <span className="text-lg">🔑</span>
             <div>
               <p className="text-sm font-medium text-[#3d3155]">Channel Access Token</p>
-              <p className="text-xs text-[#3d3155]0 mt-0.5">Messaging API 分頁 → 最下面「Channel access token」→ 點「Issue」產生</p>
+              <p className="text-xs text-[#3d3155]/60 mt-0.5">Messaging API 分頁 → 最下面「Channel access token」→ 點「Issue」產生</p>
             </div>
           </div>
           <div className="flex items-start gap-3">
             <span className="text-lg">🔐</span>
             <div>
               <p className="text-sm font-medium text-[#3d3155]">Channel Secret</p>
-              <p className="text-xs text-[#3d3155]0 mt-0.5">Basic settings 分頁 → 「Channel secret」</p>
+              <p className="text-xs text-[#3d3155]/60 mt-0.5">Basic settings 分頁 → 「Channel secret」</p>
             </div>
           </div>
           <div className="flex items-start gap-3">
             <span className="text-lg">🆔</span>
             <div>
               <p className="text-sm font-medium text-[#3d3155]">Channel ID</p>
-              <p className="text-xs text-[#3d3155]0 mt-0.5">Basic settings 分頁 → 「Channel ID」（一串數字）</p>
+              <p className="text-xs text-[#3d3155]/60 mt-0.5">Basic settings 分頁 → 「Channel ID」（一串數字）</p>
             </div>
           </div>
         </div>
@@ -473,7 +473,7 @@ function SetupGuide() {
           <div>
             <p className="text-sm font-medium text-[#3d3155]">Q：Rich Menu 只能預設一個？官方跟後台都要怎麼辦？</p>
             <p className="text-sm text-[#8a7ca8] mt-1">
-              A：對<strong>同一個 Bot（同一個 Channel）</strong>，全體使用者的預設 Rich Menu 同一時間只有一個。若需要「給顧客的選單」和「給管理員的選單」並存，請使用<strong>兩個</strong> Messaging API Channel（Official + Insight），在 Rich Menu 頁用分頁分別管理。詳見 <code className="text-[#3d3155]0">docs/line-official-vs-insight.md</code>。
+              A：對<strong>同一個 Bot（同一個 Channel）</strong>，全體使用者的預設 Rich Menu 同一時間只有一個。若需要「給顧客的選單」和「給管理員的選單」並存，請使用<strong>兩個</strong> Messaging API Channel（Official + Insight），在 Rich Menu 頁用分頁分別管理。詳見 <code className="text-[#3d3155]/60">docs/line-official-vs-insight.md</code>。
             </p>
           </div>
         </div>

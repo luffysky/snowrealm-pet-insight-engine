@@ -91,7 +91,7 @@ function TemplateCard({
           <div>
             <h3 className="font-semibold text-[#3d3155] text-sm leading-tight">{template.name}</h3>
             {template.industry && (
-              <span className="text-xs text-[#3d3155]0 mt-0.5 block">{industryLabel(template.industry)}</span>
+              <span className="text-xs text-[#3d3155]/60 mt-0.5 block">{industryLabel(template.industry)}</span>
             )}
           </div>
         </div>
@@ -117,7 +117,7 @@ function TemplateCard({
       )}
 
       <div className="flex items-center justify-between pt-1 mt-auto">
-        <div className="flex items-center gap-3 text-xs text-[#3d3155]0">
+        <div className="flex items-center gap-3 text-xs text-[#3d3155]/60">
           <span>使用 {template.use_count} 次</span>
           {template.rating_count > 0 && (
             <span>⭐ {averageRating(template.rating_sum, template.rating_count)}</span>
@@ -257,7 +257,7 @@ function StickerPackCard({ pack }: { pack: StickerPack }) {
         </div>
       )}
 
-      <p className="text-xs text-[#3d3155]0">{pack.stickers.length} 張貼圖</p>
+      <p className="text-xs text-[#3d3155]/60">{pack.stickers.length} 張貼圖</p>
     </div>
   )
 }
@@ -429,7 +429,7 @@ export default function SurveyTemplatesPage() {
       {category === 'templates' && (
         <div className="space-y-5">
           {/* Template tabs */}
-          <div className="flex gap-1 bg-white/50/30 p-1 rounded-lg w-fit">
+          <div className="flex gap-1 bg-white/30 p-1 rounded-lg w-fit">
             {TABS.map((tab) => (
               <button
                 key={tab.key}
@@ -483,7 +483,7 @@ export default function SurveyTemplatesPage() {
           {loadingTemplates ? (
             <div className="text-[#8a7ca8] animate-pulse py-8 text-center">載入中…</div>
           ) : templates.length === 0 ? (
-            <div className="text-center py-16 text-[#3d3155]0">
+            <div className="text-center py-16 text-[#3d3155]/60">
               <div className="text-5xl mb-4">📋</div>
               <p className="text-lg">
                 {activeTab === 'tenant' ? '你還沒有建立任何模板'
@@ -558,7 +558,7 @@ export default function SurveyTemplatesPage() {
           {loadingStickers ? (
             <div className="text-[#8a7ca8] animate-pulse py-8 text-center">載入中…</div>
           ) : stickerPacks.length === 0 ? (
-            <div className="text-center py-16 text-[#3d3155]0">
+            <div className="text-center py-16 text-[#3d3155]/60">
               <div className="text-5xl mb-4">😄</div>
               <p>目前沒有可用的貼圖包</p>
               <p className="text-sm mt-2 text-slate-600">Super Admin 可在控制台新增貼圖包</p>

@@ -306,7 +306,7 @@ export default function SupportCenterPage() {
             {loading ? (
               <p className="text-[#8a7ca8] text-sm text-center py-8 animate-pulse">載入中…</p>
             ) : tickets.length === 0 ? (
-              <p className="text-[#3d3155]0 text-sm text-center py-8">沒有工單</p>
+              <p className="text-[#3d3155]/60 text-sm text-center py-8">沒有工單</p>
             ) : (
               tickets.map(ticket => (
                 <TicketCard
@@ -347,7 +347,7 @@ export default function SupportCenterPage() {
           }`}
         >
           {!selectedTicket ? (
-            <div className="flex-1 flex items-center justify-center text-[#3d3155]0">
+            <div className="flex-1 flex items-center justify-center text-[#3d3155]/60">
               <div className="text-center space-y-2">
                 <p className="text-4xl">📬</p>
                 <p>選擇一個工單查看對話</p>
@@ -492,7 +492,7 @@ function TicketCard({
           <p className="text-xs text-[#8a7ca8] mt-0.5 truncate">
             {truncate(ticket.lastMessage, 30) || '尚無訊息'}
           </p>
-          <div className="flex items-center gap-2 mt-1 text-[10px] text-[#3d3155]0">
+          <div className="flex items-center gap-2 mt-1 text-[10px] text-[#3d3155]/60">
             <span>{CHANNEL_ICONS[ticket.channel] ?? '📩'}</span>
             <span>{ticket.lineDisplayName ?? ticket.email ?? '匿名'}</span>
             <span className="ml-auto">{relativeTime(ticket.lastMessageAt ?? ticket.createdAt)}</span>
@@ -577,7 +577,7 @@ function CustomerInfoBar({ ticket }: { ticket: Ticket }) {
     <div className="flex items-center gap-3 px-4 py-2 border-b border-[#b8a9e8]/25 text-xs text-[#8a7ca8] bg-white/[0.02]">
       <span>{CHANNEL_ICONS[ticket.channel] ?? '📩'}</span>
       <span className="text-[#3d3155]">{ticket.lineDisplayName ?? ticket.email ?? '匿名用戶'}</span>
-      {ticket.email && <span className="text-[#3d3155]0">{ticket.email}</span>}
+      {ticket.email && <span className="text-[#3d3155]/60">{ticket.email}</span>}
       <span className="ml-auto text-[10px]">
         {ticket.messageCount} 則訊息 · 建立於 {relativeTime(ticket.createdAt)}
       </span>
@@ -589,7 +589,7 @@ function MessageBubble({ message }: { message: Message }) {
   if (message.senderType === 'system') {
     return (
       <div className="text-center">
-        <span className="text-[11px] text-[#3d3155]0 bg-white/5 px-3 py-1 rounded-full">
+        <span className="text-[11px] text-[#3d3155]/60 bg-white/5 px-3 py-1 rounded-full">
           {message.content}
         </span>
       </div>
@@ -602,7 +602,7 @@ function MessageBubble({ message }: { message: Message }) {
     <div className={`flex ${isAdmin ? 'justify-end' : 'justify-start'}`}>
       <div className={`max-w-[75%] ${isAdmin ? 'order-1' : ''}`}>
         <div className={`flex items-center gap-2 mb-0.5 ${isAdmin ? 'justify-end' : ''}`}>
-          <span className="text-[11px] text-[#3d3155]0">
+          <span className="text-[11px] text-[#3d3155]/60">
             {message.senderName ?? (isAdmin ? '客服' : '顧客')}
           </span>
           <span className="text-[10px] text-slate-600">{relativeTime(message.createdAt)}</span>
@@ -659,7 +659,7 @@ function ReplyArea({
               className="w-full text-left px-4 py-2 text-sm hover:bg-[#b8a9e8]/10 cursor-pointer transition"
             >
               <span className="text-[#3d3155]">{t.title}</span>
-              <span className="text-xs text-[#3d3155]0 ml-2">{truncate(t.content, 30)}</span>
+              <span className="text-xs text-[#3d3155]/60 ml-2">{truncate(t.content, 30)}</span>
             </button>
           ))}
         </div>
