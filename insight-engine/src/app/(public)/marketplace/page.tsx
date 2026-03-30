@@ -108,7 +108,7 @@ export default function MarketplacePage() {
               <h1 className="text-xl font-bold">SnowRealm 市集</h1>
             </div>
             <div className="flex items-center gap-2 px-3 py-1.5 bg-amber-500/10 border border-amber-500/20 rounded-xl">
-              <span className="text-xs text-amber-300 font-semibold">{zcoinBalance} Z幣</span>
+              <span className="text-xs text-amber-700 font-semibold">{zcoinBalance} Z幣</span>
             </div>
           </div>
           {/* Search */}
@@ -127,8 +127,8 @@ export default function MarketplacePage() {
               <button key={t.key} onClick={() => setTypeFilter(t.key)}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium whitespace-nowrap transition-colors shrink-0 ${
                   typeFilter === t.key
-                    ? 'bg-violet-500/20 text-violet-300 border border-violet-500/30'
-                    : 'text-slate-400 hover:text-slate-200 border border-[#b8a9e8]/25'
+                    ? 'bg-violet-500/20 text-violet-700 border border-violet-500/30'
+                    : 'text-[#8a7ca8] hover:text-[#3d3155] border border-[#b8a9e8]/25'
                 }`}>
                 <span>{t.emoji}</span> {t.label}
               </button>
@@ -151,7 +151,7 @@ export default function MarketplacePage() {
         {typeFilter === 'all' && !search && (
           <div className="mb-8">
             <h2 className="text-sm font-semibold text-[#8a7ca8] mb-3 flex items-center gap-2">
-              <Star className="w-4 h-4 text-amber-400" fill="currentColor" /> 精選推薦
+              <Star className="w-4 h-4 text-amber-600" fill="currentColor" /> 精選推薦
             </h2>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
               {filtered.filter(i => i.is_featured).slice(0, 6).map(item => (
@@ -188,7 +188,7 @@ export default function MarketplacePage() {
         {/* Creator CTA */}
         <div className="mt-12 p-6 bg-gradient-to-r from-violet-900/30 to-indigo-900/30 border border-violet-500/20 rounded-2xl text-center">
           <h3 className="text-base font-bold text-[#3d3155] mb-2">想成為創作者？</h3>
-          <p className="text-sm text-slate-400 mb-4">上傳你的貼圖包、背景，每次銷售獲得 <span className="text-amber-300 font-semibold">70% Z幣分潤</span></p>
+          <p className="text-sm text-slate-400 mb-4">上傳你的貼圖包、背景，每次銷售獲得 <span className="text-amber-700 font-semibold">70% Z幣分潤</span></p>
           <a href="/messages" className="inline-flex items-center gap-2 px-5 py-2.5 bg-violet-500 hover:bg-violet-400 text-[#3d3155] font-semibold rounded-xl text-sm transition-colors">
             聯繫管理員申請
           </a>

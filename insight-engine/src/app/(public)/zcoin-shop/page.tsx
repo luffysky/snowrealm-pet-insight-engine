@@ -146,7 +146,7 @@ function CheckInCard({
     >
       {/* Toast */}
       {toast && (
-        <div className="absolute -top-8 left-1/2 -translate-x-1/2 text-xs font-semibold text-amber-300 whitespace-nowrap animate-bounce">
+        <div className="absolute -top-8 left-1/2 -translate-x-1/2 text-xs font-semibold text-amber-700 whitespace-nowrap animate-bounce">
           {toast}
         </div>
       )}
@@ -279,7 +279,7 @@ function AdWatchSection({ onEarned }: { onEarned: () => void }) {
   return (
     <div className="lg-light rounded-xl p-4 space-y-3 relative overflow-hidden border-amber-400/20">
       {toast && (
-        <div className="absolute top-2 right-3 text-xs font-semibold text-amber-300 animate-bounce">{toast}</div>
+        <div className="absolute top-2 right-3 text-xs font-semibold text-amber-700 animate-bounce">{toast}</div>
       )}
       <div className="flex items-center justify-between">
         <div>
@@ -289,7 +289,7 @@ function AdWatchSection({ onEarned }: { onEarned: () => void }) {
         <button
           onClick={handleWatch}
           disabled={!quota.canWatch || watching}
-          className="relative px-4 py-2 rounded-xl text-sm font-medium bg-amber-500/20 border border-amber-400/30 text-amber-300 hover:bg-amber-500/30 transition-colors disabled:opacity-40 disabled:cursor-not-allowed min-w-[80px] text-center"
+          className="relative px-4 py-2 rounded-xl text-sm font-medium bg-amber-100 border border-amber-300 text-amber-800 hover:bg-amber-200 transition-colors disabled:opacity-40 disabled:cursor-not-allowed min-w-[80px] text-center"
         >
           {watching ? (
             <span className="flex items-center gap-1 justify-center">
@@ -333,16 +333,16 @@ function calcPerCoin(ntd: number, zcoin: number): string {
 function BalanceCard({ balance }: { balance: BalanceData | null }) {
   return (
     <div className="lg-lavender-sharp rounded-2xl p-6 mb-6 text-center bg-gradient-to-br from-amber-600/15 to-amber-400/5">
-      <p className="text-sm text-amber-200/60 mb-1">目前 Z幣餘額</p>
-      <p className="text-5xl font-bold text-amber-300">{balance?.balance ?? 0}</p>
-      <p className="text-xs text-amber-200/40 mt-1">Z幣</p>
-      <div className="flex justify-center gap-6 mt-4 text-xs text-amber-200/50">
+      <p className="text-sm text-amber-800/70 mb-1">目前 Z幣餘額</p>
+      <p className="text-5xl font-bold text-amber-700">{balance?.balance ?? 0}</p>
+      <p className="text-xs text-amber-700/60 mt-1">Z幣</p>
+      <div className="flex justify-center gap-6 mt-4 text-xs text-amber-800/60">
         <span>累計賺取 {balance?.totalEarned ?? 0}</span>
         <span>累計花費 {balance?.totalSpent ?? 0}</span>
       </div>
       <Link
         href="/wallet"
-        className="inline-block mt-3 text-xs text-amber-300/60 hover:text-amber-300 transition-colors underline underline-offset-2"
+        className="inline-block mt-3 text-xs text-amber-700/60 hover:text-amber-700 transition-colors underline underline-offset-2"
       >
         查看完整交易記錄 →
       </Link>
@@ -383,7 +383,7 @@ function TaskItem({ task, onComplete, completing }: TaskItemProps) {
         </div>
       </div>
       <div className="flex items-center gap-2 shrink-0">
-        <span className="text-sm font-semibold text-amber-300">+{task.reward}</span>
+        <span className="text-sm font-semibold text-amber-700">+{task.reward}</span>
         {task.isCompleted ? (
           <span className="text-xs text-emerald-400 bg-emerald-400/10 border border-emerald-400/20 rounded-full px-2 py-0.5">
             完成
@@ -392,7 +392,7 @@ function TaskItem({ task, onComplete, completing }: TaskItemProps) {
           <button
             onClick={() => onComplete(task.id)}
             disabled={isCompleting || remaining <= 0}
-            className="text-xs bg-amber-500/20 hover:bg-amber-500/30 border border-amber-400/30 text-amber-300 rounded-full px-3 py-0.5 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="text-xs bg-amber-100 hover:bg-amber-200 border border-amber-300 text-amber-800 rounded-full px-3 py-0.5 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isCompleting ? '...' : `領取 (${remaining})`}
           </button>
@@ -416,8 +416,8 @@ function RechargeCard({ pkg }: { pkg: RechargePackage }) {
         </span>
       )}
       <div className="text-center mb-3">
-        <p className="text-3xl font-bold text-amber-300">{pkg.zcoin}</p>
-        <p className="text-xs text-amber-200/40">Z幣</p>
+        <p className="text-3xl font-bold text-amber-700">{pkg.zcoin}</p>
+        <p className="text-xs text-amber-700/60">Z幣</p>
       </div>
       <div className="text-center mb-3">
         <p className="text-xl font-semibold text-[#3d3155]">NT${pkg.ntd}</p>
@@ -493,7 +493,7 @@ function EarnGuide({ onAction }: EarnGuideProps) {
         <button
           key={item.label}
           onClick={() => onAction(item.action)}
-          className={`w-full flex items-center justify-between px-4 py-3 text-left hover:bg-white/5 active:bg-white/8 transition-colors ${
+          className={`w-full flex items-center justify-between px-4 py-3 text-left hover:bg-[#3d3155]/6 active:bg-[#3d3155]/10 transition-colors ${
             idx !== EARN_GUIDE.length - 1 ? 'border-b border-white/5' : ''
           }`}
         >
@@ -505,7 +505,7 @@ function EarnGuide({ onAction }: EarnGuideProps) {
             </div>
           </div>
           <div className="flex items-center gap-2 shrink-0">
-            <span className="text-sm font-medium text-amber-300">{item.amount}</span>
+            <span className="text-sm font-medium text-amber-700">{item.amount}</span>
             <span className="text-[#b5a8d0] text-xs">→</span>
           </div>
         </button>
@@ -622,7 +622,7 @@ export default function ZcoinShopPage() {
           <Link href="/" className="text-sm text-[#8a7ca8] hover:text-[#3d3155] transition-colors">
             ← 首頁
           </Link>
-          <span className="text-sm font-medium text-amber-300">🪙 Z幣商店</span>
+          <span className="text-sm font-medium text-amber-700">🪙 Z幣商店</span>
           <Link href="/wallet" className="text-sm text-[#8a7ca8] hover:text-[#3d3155] transition-colors">
             錢包
           </Link>

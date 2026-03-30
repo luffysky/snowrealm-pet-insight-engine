@@ -190,7 +190,7 @@ export default function GapResultPage() {
           {snapshots.filter(s => s.gapLevel === 'aligned').length > 0 && (
             <div className="space-y-1">
               <p className="text-xs text-emerald-400/80">✅ 你最了解自己的地方</p>
-              <p className="text-sm text-[#3d3155]">
+              <p className="text-sm text-[#8a7ca8]">
                 「{snapshots.filter(s => s.gapLevel === 'aligned')[0].traitKey}」
                 — 你的自評與他人看法高度一致
               </p>
@@ -201,7 +201,7 @@ export default function GapResultPage() {
           {biggestGap && Math.abs(biggestGap.gapScore) > 10 && (
             <div className="space-y-1">
               <p className="text-xs text-amber-400/80">⚠️ 最大認知落差</p>
-              <p className="text-sm text-[#3d3155]">
+              <p className="text-sm text-[#8a7ca8]">
                 「{biggestGap.traitKey}」— 你
                 {biggestGap.gapScore > 0 ? '可能高估了自己' : '可能低估了自己'}
                 （落差 {Math.abs(biggestGap.gapScore).toFixed(0)} 分）
@@ -245,7 +245,7 @@ export default function GapResultPage() {
             <p className="text-xs text-[#8a7ca8] font-semibold uppercase tracking-wider">
               ✨ AI 認知落差故事
             </p>
-            <p className="text-sm text-[#3d3155] leading-relaxed whitespace-pre-line">
+            <p className="text-sm text-white/85 leading-relaxed whitespace-pre-line">
               {report.isPartial && !unlocked
                 ? report.aiStory.slice(0, 120) + '...'
                 : report.aiStory}
