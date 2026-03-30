@@ -261,7 +261,7 @@ export function BlogEditor({ articleId, onSaved, onCancel }: Props) {
   }
 
   return (
-    <div className="flex flex-col min-h-0 h-full">
+    <div className="flex flex-col min-h-0 h-full bg-slate-900/90 backdrop-blur-sm">
       {/* Header */}
       <div className="shrink-0 flex items-center gap-3 px-4 py-3 border-b border-white/8 bg-slate-900/80">
         <button onClick={onCancel} className="text-white/40 hover:text-white/70 transition-colors p-1.5 rounded-lg hover:bg-white/8">
