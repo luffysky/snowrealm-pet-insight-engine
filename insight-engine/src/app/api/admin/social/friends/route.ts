@@ -23,6 +23,51 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
 
   const type = req.nextUrl.searchParams.get('type') ?? 'incoming'
 
+  // 搜尋用戶 by username / display_name / referral_code
+  if (type === 'search') {
+    const q = (req.nextUrl.searchParams.get('q') ?? '').trim()
+    if (!q) return NextResponse.json({ users: [] })
+    const rows = await query<Record<string, unknown>>(
+      `SELECT u.id, u.username, u.display_name, u.avatar_url, u.bio, u.referral_code,
+              fr.status AS friend_status
+       FROM admin_users u
+       LEFT JOIN friend_requests fr ON (
+         (fr.from_user_id = $1 AND fr.to_user_id = u.id::text)
+         OR (fr.from_user_id = u.id::text AND fr.to_user_id = $1)
+       )
+       WHERE u.id::text <> $1
+         AND u.deleted_at IS NULL
+         AND (
+           u.username ILIKE $2
+           OR u.display_name ILIKE $2
+           OR u.referral_code ILIKE $2
+         )
+       ORDER BY u.display_name ASC
+       LIMIT 20`,
+      [myId, `%${q}%`]
+    )
+    return NextResponse.json({ users: rows })
+  }
+
+  // 透過 userId 取得單一用戶資料（用於加好友頁面）
+  if (type === 'profile') {
+    const targetId = req.nextUrl.searchParams.get('userId')
+    if (!targetId) return NextResponse.json({ error: '缺少 userId' }, { status: 400 })
+    const row = await queryOne<Record<string, unknown>>(
+      `SELECT u.id, u.username, u.display_name, u.avatar_url, u.bio, u.referral_code,
+              fr.status AS friend_status
+       FROM admin_users u
+       LEFT JOIN friend_requests fr ON (
+         (fr.from_user_id = $1 AND fr.to_user_id = u.id::text)
+         OR (fr.from_user_id = u.id::text AND fr.to_user_id = $1)
+       )
+       WHERE u.id::text = $2 AND u.deleted_at IS NULL`,
+      [myId, targetId]
+    )
+    if (!row) return NextResponse.json({ error: '找不到用戶' }, { status: 404 })
+    return NextResponse.json({ user: row })
+  }
+
   if (type === 'users') {
     // All users except self, with friend status
     const rows = await query<Record<string, unknown>>(

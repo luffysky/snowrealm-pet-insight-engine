@@ -72,11 +72,34 @@ export default function AiSettingsPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message: testMessage, isAdminTest: tab === 'admin' }),
       })
-      const data = await res.json() as { reply?: string; text?: string; mood?: string }
-      setTestResult({
-        text: data.reply ?? data.text ?? '（無回應）',
-        mood: data.mood ?? 'neutral',
-      })
+      if (!res.ok || !res.body) throw new Error(`HTTP ${res.status}`)
+
+      // /api/guide/chat 回傳 SSE stream，需要讀取 complete event
+      const reader = res.body.getReader()
+      const dec = new TextDecoder()
+      let buf = ''
+      let finalText = ''
+      let finalMood = 'neutral'
+
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+        buf += dec.decode(value, { stream: true })
+        const lines = buf.split('\n')
+        buf = lines.pop() ?? ''
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue
+          try {
+            const evt = JSON.parse(line.slice(6)) as { type?: string; text?: string; mood?: string }
+            if (evt.type === 'complete') {
+              finalText = evt.text ?? ''
+              finalMood = evt.mood ?? 'neutral'
+            }
+          } catch { /* skip */ }
+        }
+      }
+
+      setTestResult({ text: finalText || '（無回應）', mood: finalMood })
     } catch {
       setTestResult({ text: '測試失敗，請確認 AI Key 已設定', mood: 'sad' })
     } finally {

@@ -319,6 +319,31 @@ export async function POST(req: NextRequest) {
           purchasedRemaining: isUnlimited ? null : quotaResult.purchasedRemaining,
         })
 
+        // ── 記錄 AI 成本到 ai_cost_log ──────────────────────────────────
+        try {
+          const systemTokens = Math.ceil(systemPrompt.length / 3.5)
+          const inputTokens = systemTokens + messages.reduce((s, m) => s + Math.ceil((m.content?.length ?? 0) / 3.5), 0)
+          const outputTokens = Math.ceil(fullText.length / 3.5)
+          const costPerInputK = aiKey.model.includes('gpt-4o-mini') ? 0.00015
+            : aiKey.model.includes('gpt-4o') ? 0.0025
+            : aiKey.model.includes('haiku') ? 0.00025
+            : aiKey.model.includes('sonnet') ? 0.003
+            : aiKey.model.includes('opus') ? 0.015
+            : 0.00015
+          const costPerOutputK = aiKey.model.includes('gpt-4o-mini') ? 0.0006
+            : aiKey.model.includes('gpt-4o') ? 0.01
+            : aiKey.model.includes('haiku') ? 0.00125
+            : aiKey.model.includes('sonnet') ? 0.015
+            : aiKey.model.includes('opus') ? 0.075
+            : 0.0006
+          const totalCost = (inputTokens / 1000) * costPerInputK + (outputTokens / 1000) * costPerOutputK
+          await execute(
+            `INSERT INTO ai_cost_log (user_id, model, intent_type, prompt_tokens, completion_tokens, total_cost_usd)
+             VALUES ($1, $2, $3, $4, $5, $6)`,
+            [userId, aiKey.model, intent, inputTokens, outputTokens, totalCost]
+          )
+        } catch { /* 成本記錄失敗不影響主流程 */ }
+
         // ── 情侶互動觸發檢查 ──────────────────────────────────────────────
         const coupleCount = body.coupleCount ?? 0
         const lastCoupleAt = body.lastCoupleAt ?? 0
