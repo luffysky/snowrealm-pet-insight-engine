@@ -61,7 +61,7 @@ export async function POST(req: NextRequest) {
     ok: true,
     addedTurns: packDef.turns,
     totalCredits: creditRow?.credits ?? packDef.turns,
-    newZcoinBalance: result.balance,
+    newZcoinBalance: result.newBalance,
   })
 }
 
