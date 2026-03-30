@@ -20,12 +20,14 @@ export async function GET(): Promise<NextResponse> {
 
   const { tenantId } = roleCheck as TenantContext
 
+  // 透過 tenant_users 找屬於此租戶的用戶之錢包
+  // 不用 w.tenant_id 過濾，避免因 tenant_id 欄位值不一致而漏掉資料
   const wallets = await query<WalletRow>(
     `SELECT w.id, w.user_id, w.line_user_id, au.username,
             w.balance, w.total_earned, w.total_spent, w.created_at
      FROM zcoin_wallets w
-     LEFT JOIN admin_users au ON au.id = w.user_id
-     WHERE w.tenant_id = $1
+     INNER JOIN admin_users au ON au.id = w.user_id
+     INNER JOIN tenant_users tu ON tu.user_id = au.id AND tu.tenant_id = $1
      ORDER BY w.balance DESC
      LIMIT 200`,
     [tenantId]
