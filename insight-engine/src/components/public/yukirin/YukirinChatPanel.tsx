@@ -486,8 +486,8 @@ export default function YukirinChatPanel({ onClose }: YukirinChatPanelProps) {
 
   return (
     <div
-      className="flex flex-col rounded-2xl overflow-hidden shadow-[0_16px_48px_rgba(0,0,0,0.4)] border border-white/10"
-      style={{ width: 288, height: 460, maxHeight: 'calc(100dvh - 110px)', background: 'rgba(15,9,30,0.92)', backdropFilter: 'blur(20px)' }}
+      className="flex flex-col rounded-2xl overflow-hidden shadow-[0_16px_48px_rgba(0,0,0,0.4)] border border-white/10 w-full h-full"
+      style={{ background: 'rgba(15,9,30,0.92)', backdropFilter: 'blur(20px)' }}
     >
       {/* ── 雪凜 3D 頭像區 ─────────────────────────────────── */}
       <div className="relative flex-shrink-0" style={{ height: 130 }}>

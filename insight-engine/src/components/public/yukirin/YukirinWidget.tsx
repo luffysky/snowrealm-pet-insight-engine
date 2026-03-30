@@ -97,6 +97,9 @@ function QualityIcon({ isLow }: { isLow: boolean }) {
   )
 }
 
+const MIN_W = 240, MAX_W = 560
+const MIN_H = 360, MAX_H = 680
+
 // ── 主元件 ────────────────────────────────────────────────────────────────
 export default function YukirinWidget() {
   const [open, setOpen] = useState(false)
@@ -107,6 +110,11 @@ export default function YukirinWidget() {
   const [bubbleActions, setBubbleActions] = useState<{ label: string; onClick: () => void }[] | undefined>()
   const yukirinRef = useRef<YukirinControls | null>(null)
   const bubbleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // ── 面板尺寸（可拖曳調整）────────────────────────────────────────────────
+  const [panelSize, setPanelSize] = useState({ w: 288, h: 460 })
+  const panelSizeRef = useRef({ w: 288, h: 460 })
+  const widgetRef = useRef<HTMLDivElement>(null)
 
   // ── 效能設定 ──────────────────────────────────────────────────────────────
   const [performanceMode, setPerformanceModeState] = useState<'high' | 'low'>(() => {
@@ -193,6 +201,52 @@ export default function YukirinWidget() {
     document.addEventListener('pointerup',   handleUp)
   }, [])
 
+  // ── 面板 resize（右下角 + 右邊 + 下邊把手）──────────────────────────────
+  const startPanelResize = useCallback((
+    e: React.PointerEvent,
+    mode: 'se' | 'e' | 's'   // 東南角 | 右邊 | 下邊
+  ) => {
+    e.stopPropagation()
+    e.preventDefault()
+    const startX = e.clientX
+    const startY = e.clientY
+    const startW = panelSizeRef.current.w
+    const startH = panelSizeRef.current.h
+    const pid = e.pointerId
+
+    // 取得 widget 目前的絕對左上角位置（用於向右/下擴張時對齊）
+    const rect = widgetRef.current?.getBoundingClientRect()
+    const anchorX = rect?.left ?? (window.innerWidth  - startW - 12)
+    const anchorY = rect?.top  ?? (window.innerHeight - startH - 76 - 12)
+
+    const handleMove = (ev: PointerEvent) => {
+      if (ev.pointerId !== pid) return
+      ev.preventDefault()
+      const dx = ev.clientX - startX
+      const dy = ev.clientY - startY
+      let newW = startW
+      let newH = startH
+
+      if (mode === 'e'  || mode === 'se') newW = Math.max(MIN_W, Math.min(MAX_W, startW + dx))
+      if (mode === 's'  || mode === 'se') newH = Math.max(MIN_H, Math.min(MAX_H, startH + dy))
+
+      panelSizeRef.current = { w: newW, h: newH }
+      setPanelSize({ w: newW, h: newH })
+
+      // 確保 widget 左上角釘住（防止 bottom/right 定位漂移）
+      setWidgetPos({ x: anchorX, y: anchorY })
+    }
+
+    const handleUp = (ev: PointerEvent) => {
+      if (ev.pointerId !== pid) return
+      document.removeEventListener('pointermove', handleMove)
+      document.removeEventListener('pointerup',   handleUp)
+    }
+
+    document.addEventListener('pointermove', handleMove, { passive: false })
+    document.addEventListener('pointerup',   handleUp)
+  }, [])
+
   // ── 說話邏輯 ─────────────────────────────────────────────────────────────
   const handleLoad = useCallback((controls: YukirinControls) => {
     yukirinRef.current = controls
@@ -252,6 +306,7 @@ export default function YukirinWidget() {
 
   return (
     <div
+      ref={widgetRef}
       className={`fixed z-40 select-none touch-none ${isGrabbing ? 'cursor-grabbing' : 'cursor-grab'}`}
       style={
         widgetPos
@@ -265,7 +320,40 @@ export default function YukirinWidget() {
 
           {/* ── Chat Panel 模式 ─────────────────────────── */}
           {chatOpen ? (
-            <YukirinChatPanel onClose={() => setChatOpen(false)} />
+            <div
+              className="relative"
+              style={{ width: panelSize.w, height: panelSize.h }}
+            >
+              <YukirinChatPanel onClose={() => setChatOpen(false)} />
+
+              {/* 右邊緣把手 */}
+              <div
+                className="absolute top-10 bottom-10 right-0 w-2 cursor-ew-resize group"
+                onPointerDown={e => startPanelResize(e, 'e')}
+              >
+                <div className="h-full w-0.5 mx-auto rounded-full bg-white/0 group-hover:bg-[#b8a9e8]/40 transition-colors" />
+              </div>
+
+              {/* 下邊緣把手 */}
+              <div
+                className="absolute left-10 right-10 bottom-0 h-2 cursor-ns-resize group"
+                onPointerDown={e => startPanelResize(e, 's')}
+              >
+                <div className="w-full h-0.5 my-auto rounded-full bg-white/0 group-hover:bg-[#b8a9e8]/40 transition-colors" />
+              </div>
+
+              {/* 右下角把手（主要 resize 入口） */}
+              <div
+                className="absolute bottom-0 right-0 w-5 h-5 cursor-se-resize flex items-end justify-end pb-1 pr-1"
+                onPointerDown={e => startPanelResize(e, 'se')}
+              >
+                <svg width="10" height="10" viewBox="0 0 10 10" fill="rgba(184,169,232,0.5)">
+                  <circle cx="8" cy="8" r="1.2"/>
+                  <circle cx="5" cy="8" r="1.2"/>
+                  <circle cx="8" cy="5" r="1.2"/>
+                </svg>
+              </div>
+            </div>
           ) : (
             <>
               {/* 氣泡 */}
