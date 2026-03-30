@@ -680,13 +680,11 @@ export default function YukirinScene({
       const idleActions = allowOrbit ? [
         'look_left', 'look_right', 'idle',
         'nod', 'tilt_head',
-        'fbx_breathing',
       ] as const : [
         'turn_left', 'turn_right', 'center',
         'wave', 'look_left', 'look_right', 'idle',
         'nod', 'shake_head', 'tilt_head', 'bow',
         'shrug', 'think', 'excited', 'sway', 'dance', 'stretch',
-        'fbx_happy', 'fbx_breathing', 'fbx_sitting',
       ] as const
       const scheduleRandomAction = () => {
         if (!mountedRef.current) return

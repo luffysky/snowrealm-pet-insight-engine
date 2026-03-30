@@ -32,9 +32,9 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
         const rows = await query(
           `SELECT * FROM user_reports WHERE status = 'open' ORDER BY created_at DESC LIMIT 100`
         )
-        return NextResponse.json({ data: rows })
+        return NextResponse.json({ items: rows })
       } catch (err) {
-        if (isPgTableMissing(err)) return NextResponse.json({ data: [] })
+        if (isPgTableMissing(err)) return NextResponse.json({ items: [] })
         throw err
       }
     }
@@ -43,16 +43,16 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       const rows = await query(
         `SELECT * FROM content_moderation_queue WHERE status != 'pending' ORDER BY reviewed_at DESC LIMIT 50`
       )
-      return NextResponse.json({ data: rows })
+      return NextResponse.json({ items: rows })
     }
 
     // default: pending
     const rows = await query(
       `SELECT * FROM content_moderation_queue WHERE status = 'pending' ORDER BY created_at DESC`
     )
-    return NextResponse.json({ data: rows })
+    return NextResponse.json({ items: rows })
   } catch (err) {
-    if (isPgTableMissing(err)) return NextResponse.json({ data: [] })
+    if (isPgTableMissing(err)) return NextResponse.json({ items: [] })
     console.error('[moderation GET]', err)
     return NextResponse.json({ error: '查詢失敗' }, { status: 500 })
   }

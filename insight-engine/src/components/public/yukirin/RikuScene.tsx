@@ -660,13 +660,12 @@ export default function RikuScene({
         })
       }
 
-      // 隨機 idle 動作排程
+      // 隨機 idle 動作排程（不包含 FBX pose，避免覆蓋使用者選擇的姿勢）
       const idleActions = [
         'turn_left', 'turn_right', 'center',
         'wave', 'look_left', 'look_right', 'idle',
         'nod', 'shake_head', 'tilt_head', 'bow',
         'shrug', 'think', 'excited', 'sway', 'dance', 'stretch',
-        'fbx_happy', 'fbx_breathing', 'fbx_sitting',
       ] as const
       const scheduleRandomAction = () => {
         if (!mountedRef.current) return
@@ -704,20 +703,6 @@ export default function RikuScene({
           case 'sway':        playSway(vrm); break
           case 'dance':       playDanceStep(); break
           case 'stretch':     playStretch(vrm); break
-          case 'fbx_happy':
-          case 'fbx_breathing':
-          case 'fbx_sitting': {
-            const clip = fbxClipsRef.current[action]
-            if (clip && mixerRef.current) {
-              const act = mixerRef.current.clipAction(clip)
-              if (currentIdleRef.current && currentIdleRef.current !== act) {
-                currentIdleRef.current.fadeOut(0.3)
-              }
-              act.reset().setLoop(THREE.LoopRepeat, Infinity).fadeIn(0.3).play()
-              currentIdleRef.current = act
-            }
-            break
-          }
           case 'idle':
           default:
             break

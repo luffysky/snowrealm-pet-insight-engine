@@ -520,7 +520,7 @@ export default function YukirinWidget() {
 
                 {/* 右下角 resize 把手 */}
                 <div
-                  className="absolute bottom-1 right-1 z-20 cursor-se-resize opacity-30 hover:opacity-80 transition-opacity"
+                  className="absolute bottom-0 right-0 z-20 w-6 h-6 cursor-se-resize flex items-end justify-end pb-1 pr-1 opacity-40 hover:opacity-90 transition-opacity"
                   onPointerDown={startCharResize}
                   title="拖曳調整大小"
                 >

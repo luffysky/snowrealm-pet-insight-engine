@@ -50,9 +50,9 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       [typeFilter, statusFilter, offset]
     )
 
-    return NextResponse.json({ data: rows, total })
+    return NextResponse.json({ files: rows, total })
   } catch (err) {
-    if ((err as { code?: string })?.code === '42P01') return NextResponse.json({ data: [], total: 0 })
+    if ((err as { code?: string })?.code === '42P01') return NextResponse.json({ files: [], total: 0 })
     console.error('[files GET]', err)
     return NextResponse.json({ error: '查詢失敗' }, { status: 500 })
   }

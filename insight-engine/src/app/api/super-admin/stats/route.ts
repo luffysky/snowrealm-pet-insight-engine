@@ -35,8 +35,8 @@ export async function GET(request: NextRequest) {
       slug: string; name: string; plan: string; created_at: string;
       user_count: string; survey_count: string
     }>(
-      `SELECT t.slug, t.name, t.plan, t.created_at,
-              (SELECT COUNT(*) FROM admin_users u WHERE u.tenant_id = t.slug)::text AS user_count,
+      `SELECT t.slug, t.name, COALESCE(t.plan, 'free') AS plan, t.created_at,
+              (SELECT COUNT(*) FROM tenant_users tu WHERE tu.tenant_id = t.slug)::text AS user_count,
               (SELECT COUNT(*) FROM surveys s WHERE s.tenant_id = t.slug)::text AS survey_count
        FROM tenants t
        ORDER BY t.created_at DESC
