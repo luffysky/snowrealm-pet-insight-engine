@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
   })
 
   if (!result.ok) {
-    return NextResponse.json({ error: 'Z幣不足', balance: result.balance }, { status: 402 })
+    return NextResponse.json({ error: 'Z幣不足', balance: result.newBalance }, { status: 402 })
   }
 
   // 加對話次數（持久）
