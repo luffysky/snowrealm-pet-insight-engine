@@ -90,7 +90,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   })
 
   // 每日登入 Z幣任務（非阻塞）
-  completeTask(user.id, 'daily_login').catch(() => {})
+  completeTask(user.id, 'daily_login', defaultTid).catch(() => {})
 
   // 以用戶擁有的第一個（或最近一個）tenant 作為預設跳轉的 slug
   const response = NextResponse.json({

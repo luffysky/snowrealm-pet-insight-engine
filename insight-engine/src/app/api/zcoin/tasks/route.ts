@@ -47,7 +47,7 @@ export async function POST(req: Request) {
   }
 
   try {
-    const result = await completeTask(ctx.userId, body.taskId)
+    const result = await completeTask(ctx.userId, body.taskId, ctx.tenantId)
     if (!result.success) {
       return NextResponse.json({ error: result.message }, { status: 400 })
     }

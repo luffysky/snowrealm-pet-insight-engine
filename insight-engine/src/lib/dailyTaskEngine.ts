@@ -145,7 +145,8 @@ export async function getDailyTasks(userId: string): Promise<DailyTask[]> {
 /** 完成一個任務，獎勵 Z幣 */
 export async function completeTask(
   userId: string,
-  taskId: string
+  taskId: string,
+  tenantId?: string
 ): Promise<{ success: boolean; earned: number; message: string }> {
   const taskConfig = DAILY_TASKS.find((t) => t.id === taskId)
   if (!taskConfig) {
@@ -170,7 +171,7 @@ export async function completeTask(
   )
 
   // 取得錢包並獎勵 Z幣
-  const wallet = await getOrCreateWallet({ userId })
+  const wallet = await getOrCreateWallet({ userId, tenantId })
 
   await execute(
     `UPDATE zcoin_wallets
