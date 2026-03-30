@@ -1,6 +1,6 @@
 # 所有待辦任務
 
-> 最後更新：2026-03-29
+> 最後更新：2026-03-31
 > 優先級：🔴 緊急 / 🟡 重要 / 🟢 一般 / ⚪ 未來
 
 ---
@@ -8,54 +8,39 @@
 ## 🔴 Bug 修復（阻礙功能正常運作）
 
 ### ~~BUG-1 分流邏輯壞了（19 題全顯示）~~ ✅
-- ~~檔案：`src/hooks/useSurveyFlow.ts`~~
-- ~~問題：選「沒有且暫時不考慮」仍顯示全部 19 題~~
-- ~~修法：替換 `resolveRoutes` + `filterQuestions` 兩個函式~~
-
 ### ~~BUG-2 AI 對話建立問卷報錯 `ai_usage_logs_action_check`~~ ✅
-- ~~SQL 已執行：constraint 已更新，允許 chat/insight/story/sentiment~~
+### ~~BUG-4 3 個 admin API 缺 `requireRole`~~ ✅
+### ~~BUG-5 部署錯誤：`FloatingChat.tsx` 缺少 exports~~ ✅
+### ~~BUG-6 AI 指令設定存到 `site_settings` FK 違反（使用 `platform_settings` 修復）~~ ✅
+### ~~BUG-7 總後台 AI 對話紀錄空的（查錯 `guide_conversations`，已改 `guide_chat_messages`）~~ ✅
+### ~~BUG-8 總後台檔案管理空的（查錯 `file_metadata`，已改 `user_album_photos` + `media_assets`）~~ ✅
+### ~~BUG-9 社群監控相簿空的（`cover_image` 欄位不存在 + JOIN 錯 `admin_users`）~~ ✅
 
 ### BUG-3 OG 分享顯示 coverTitle 而非自訂 OG
 - 診斷：`SELECT og_title FROM surveys WHERE slug = 'maoxingtianxia-mvp-survey'`
 - 確認 `[org]/[slug]/page.tsx` 有 `export const dynamic = 'force-dynamic'`
-
-### ~~BUG-4 3 個 admin API 缺 `requireRole`~~ ✅
-- ~~`ai-sentiment` / `responses/[id]` / `line/test` 均已加 requireRole~~
-
----
-
-## 🔴 Bug 修復（來自 bug_fix.md）
+- 如果 og_title 有值但 LINE 顯示舊的 → LINE 快取，重新貼連結等 24 小時
 
 ### BUG-F1 限時動態：正在回覆時倒數不暫停
-- 問題：在回覆限時動態時，倒數計時器繼續，導致切到下一則無法送出
-- 修法：偵測到 reply input focus 時，暫停倒數計時器；失去 focus 才繼續
-- 涉及檔案：限時動態元件（Stories player）
+- 偵測到 reply input focus 時暫停倒數，失去 focus 才繼續
+- 涉及：Stories player 元件
 
 ### BUG-F2 私訊懸浮視窗無法單一聯絡人
-- 問題：有全域懸浮視窗，但沒辦法把「單一聯絡人」的對話窗變成獨立懸浮視窗
-- 目標：像 FB Messenger 右下角懸浮泡泡，點個別聯絡人可以獨立展開聊天
+- 目標：像 FB Messenger 右下角獨立展開聊天
 
-### ~~BUG-F3 AI 生成問卷副標題用毛行天下的~~ ✅
-- ~~修法：`ai-generate/route.ts` SYSTEM_PROMPT 加入 `narrative` 欄位，要求 AI 依主題生成~~
-- ~~`GeneratedQuestion` interface 加 `narrative` 欄位~~
+### BUG-F4 限時動態文字功能大升級（需整個重做）
+- 用 TipTap，文字元素可在畫布上拖曳定位
 
-### BUG-F4 限時動態文字功能大升級（需要整個重做）
-- 現況：目前用「加入畫布」按鈕，體驗差
-- 目標：像 IG 那樣直接在畫布上打字，點一下可編輯，拖曳改位置
-- 技術：使用 TipTap，文字元素可拖曳定位，縮排調整更直覺
-- 涉及：整個限時動態文字工具的 UI/UX 重做
-
-### ~~BUG-F5 管理員每次都要重新登入~~ ✅
-- ~~修法：cookie + JWT 延長至 30 天，middleware 加 sliding window（剩餘 < 7 天自動續期）~~
-- ~~修改：`auth/login/route.ts`、`src/middleware.ts`~~
+### BUG-10 角色動作視覺問題（wave 動畫手臂卡住）
+- 已縮小幅度（-1.0 → -0.5）、加 active flag 防並行、4s 保底 reset
+- 待部署後確認是否完全解決；若 FBX retargeting 本身有 artifact 需另外排查
 
 ---
 
 ## 🔴 接線工作（後端做好但前端沒接上）
 
 ### WIRE-1 故事報告沒有存 DB
-- 檔案：`src/app/api/admin/ai-story/route.ts`
-- 在 return 前加 `INSERT INTO ai_insight_reports`（`report_type = 'story'`）
+- `src/app/api/admin/ai-story/route.ts`：return 前加 `INSERT INTO ai_insight_reports`（`report_type = 'story'`）
 - DB：`ALTER TABLE ai_insight_reports ADD COLUMN IF NOT EXISTS report_type TEXT DEFAULT 'data'`
 
 ### WIRE-2 洞察報告歷史不區分數據/故事
@@ -80,7 +65,7 @@
 - `listLineConfigs()`：group 從定義讀取，非 key 前綴判斷
 
 ### WIRE-6 洞察報告分享功能（公開連結 + 分享小卡）
-- DB migration：`share_slug`、`is_public`、`share_title`、`share_views` 欄位
+- DB：`ai_insight_reports` 加 `share_slug`、`is_public`、`share_title`、`share_views` 欄位
 - `ai-insight route` 新增 PATCH handler（`share`/`unshare`/`update_title`）
 - 新增 `app/api/report/[slug]/route.ts`（公開 API，不需登入）
 - 新增 `app/report/[slug]/page.tsx`（公開報告頁 + OG Meta + CTA）
@@ -88,6 +73,16 @@
 - 新增 `components/admin/ShareCardModal.tsx`
 - `insight/page.tsx` 加「📤 分享」按鈕 → 開 ShareCardModal
 - 安裝：`npm install html2canvas`
+
+---
+
+## ~~🟡 Agent 系統~~ ✅（已完成）
+
+### ~~Rule Engine 整合 YukirinWidget~~ ✅
+- ~~`usePageTracker` + `ruleEngine.evaluate()` 每 5 秒評估，觸發氣泡 + 動畫~~
+
+### ~~Slash Commands 整合 YukirinChatPanel~~ ✅
+- ~~25 個指令，自動補全下拉、`/` 攔截、`needsLLM` 控制是否繼續呼叫 LLM~~
 
 ---
 
@@ -107,12 +102,15 @@
 
 ### FEAT-4 公開故事牆頁面補完
 - 底部 CTA：「💛 看完他們的故事，也來分享你的？」→ 問卷連結
-- 頂部統計：總故事數
-- 關鍵字標籤雲
+- 頂部統計：總故事數 + 關鍵字標籤雲
 
 ### FEAT-5 貼圖個別圖片上傳
 - `[packId]/stickers/route.ts` 目前仍用 `req.formData()`
-- 需改為 `application/octet-stream` 模式，避免重蹈 ZIP 問題
+- 需改為 `application/octet-stream` 模式
+
+### FEAT-9 開放題情感分析
+- `lib/sentimentAnalysis.ts`：批量情感分析（每 50 筆一批）
+- `insight/page.tsx`：新增「開放題分析」區塊（圓餅圖 + 關鍵字標籤雲）
 
 ---
 
@@ -149,40 +147,28 @@
 - `scripts/seed-templates.ts`（seed 平台預設模板）
 
 ### FEAT-8 AI 主動推送
-- `api/cron/weekly-report`：加 AI 摘要（NPS 趨勢、棄卷率異常、建議問卷）
+- `api/cron/weekly-report`：加 AI 摘要（NPS 趨勢、棄卷率異常）
 - 新增 `api/cron/ai-alerts`：每日檢查 NPS 下降 / 棄卷飆升 / 負面關鍵字 → LINE 預警
-
-### FEAT-9 開放題情感分析
-- `lib/sentimentAnalysis.ts`：批量情感分析（每 50 筆一批）
-- `api/admin/ai-sentiment/route.ts`：已有，需加 `requireRole('viewer')`（見 BUG-4）
-- `insight/page.tsx`：新增「開放題分析」區塊（圓餅圖 + 關鍵字標籤雲）
 
 ---
 
 ## 🟡 P-URGENT 剩餘
 
-### URG-2 服務狀態紅燈
+### URG-2 服務狀態紅燈（panel 頁面）
 - `api/admin/system/route.ts` 第 62-98 行
 - 改為呼叫 `getLineConfig()` 而非直接查 DB（自動 fallback DB → ENV）
-- 確認 panel 頁 PostgreSQL / LINE / OpenAI 全綠
 
 ### URG-5 LINE 設定頁 Token 視覺化
 - 未設定 → 灰色「尚未設定」
-- ENV → 橘色標籤 ✓（已有）
-- DB → 綠色標籤
+- DB → 綠色標籤（ENV 已有橘色）
 - 連線失敗 → 紅叉 + 錯誤訊息
 
 ### URG-6 連結缺組織名稱導致 404
 - 確認 Sidebar 所有導航連結帶上 tenant slug
-- Middleware 若無 slug 自動 redirect 到用戶第一個 tenant
 
 ---
 
 ## 🟢 一般功能
-
-### 訊息系統
-- Comment @mention（留言 @提及用戶，通知對方）
-- 訊息已讀回條（✓✓）對外部用戶也生效（目前只有自己能看到）
 
 ### 客服系統（supportEngine.ts 已建，需接線）
 - `api/admin/support/route.ts`（CRUD + reply）
@@ -190,13 +176,17 @@
 - `line/webhook/official/route.ts`：整合客服關鍵字觸發 + 工單追加
 - `middleware.ts` + `layout.tsx`：加 `'support'`
 
-### 問卷引擎
-- `useSurveyFlow.ts` 分流邏輯修復（見 BUG-1）
-- `seed_branching.js` 加 `ON CONFLICT (survey_id, key) DO NOTHING` 防重複
+### 訊息系統
+- Comment @mention（留言 @提及用戶，通知對方）
+- 訊息已讀回條（✓✓）對外部用戶也生效
 
 ### 系統設定
 - `site-settings` 頁面新增 Bot 文案設定區塊（welcome/intro/default_reply/completion）
 - `tenantBranding.ts` 整合至 Official Bot（替換毛行天下硬編碼文案）
+
+### Agent 系統（事件橋接）
+- Rule Engine `triggerEvent()` 接入其他元件（問卷送出、ZCoin 獲得、通知進來）
+- YukirinChatPanel `switch_character` slash command 接上實際角色切換
 
 ---
 
@@ -204,151 +194,53 @@
 
 > 目前已完成：系列文章、留言區、Emoji 反應、閱讀進度條、分享卡、上/下一篇、麵包屑、瀏覽次數
 
-### BLOG-1 文章目錄（Table of Contents）
-- 自動從文章 h2/h3 標題生成浮動目錄（側邊欄或頂部展開）
-- 點擊標題平滑捲動到對應段落
-- 閱讀進度到達某段落時，目錄對應項目自動 highlight
-- 對長文非常有用
-
-### BLOG-2 閱讀完成提示
-- 當閱讀進度 progress ≥ 95% 時，顯示「🎉 你讀完了！」小提示
-- 可搭配增加反應的 nudge（「覺得這篇如何？」）
-
-### BLOG-3 作者簡介卡
-- 文章底部顯示作者頭像、bio、文章數
-- 引導讀者繼續看其他文章（顯示最新 2-3 篇）
-- 從 `user_blog_settings` 讀取 bio 欄位
-
-### BLOG-4 相關文章推薦
-- 依相同標籤推薦 3 篇，放在留言區上方
-- `SELECT ... WHERE $1 = ANY(tags) AND id != $2 ORDER BY published_at DESC LIMIT 3`
-
-### BLOG-5 標題錨點連結
-- hover h2/h3 時，旁邊出現 `#` 圖示
-- 點擊複製 URL + 跳轉到該段落的錨點連結
-- 需要在 `article dangerouslySetInnerHTML` 的渲染後用 JS 動態加 id 和點擊事件
-
-### BLOG-6 文章訂閱 / 通知
-- 讀者輸入 email 訂閱作者新文章
-- DB：`blog_subscribers (id, author_user_id, email, created_at)`
-- 有新文章 `is_public = true` 時自動發信
-- 作者後台可查看訂閱人數
-
-### BLOG-7 草稿預覽連結（私密分享）
-- `is_public = false` 的文章可生成帶 token 的預覽連結
-- 用來分享給朋友審稿，不公開索引
-- DB：`user_blog_articles` 加 `preview_token TEXT UNIQUE`
-- 頁面：`/blogs/preview/[token]` 不需登入，不計瀏覽次數
-
-### BLOG-8 封面圖 AI 生成
-- 文章沒有封面時，點「✨ AI 生成封面」按鈕
-- 根據文章標題 + 摘要自動產出封面圖（DALL-E 3 或 Cloudflare AI）
-- 生成後上傳到 R2，存入 `cover_image`
-
-### BLOG-9 文章統計頁（後台）
-- 每篇文章的瀏覽趨勢折線圖（需 `blog_views` 日誌表）
-- 反應分布圓餅圖
-- 留言數趨勢
-- 類似 Medium 的 per-article stats 頁面
-- 位置：`insight-admin/social/blog/[id]/stats/page.tsx`
-
-### BLOG-10 留言審核 + 關鍵字過濾
-- `is_approved` 欄位已存在，加後台審核 UI
-- 自訂關鍵字黑名單（`blog_comment_blocklist` 表）
-- 留言包含黑名單關鍵字 → `is_approved = false`
-- 後台通知：有待審留言時 badge 提示
-
-### BLOG-11 部落格首頁版型切換
-- 讀者瀏覽 `/blogs/{userSlug}` 時可切換三種版型：
-  - 卡片牆（預設，目前格式）
-  - 雜誌版（左大圖 + 右側文字列表）
-  - 簡約列表（只顯示標題 + 日期）
-- 作者在 `user_blog_settings` 設定預設版型
-- 讀者可自行切換（存 localStorage）
-
-### BLOG-12 Paywall 付費解鎖
-- 文章可設定「前 N 字免費，後面需訂閱」
-- DB：`user_blog_articles` 加 `is_paywall BOOLEAN`、`paywall_preview_chars INT`
-- 整合 LINE Pay / 藍新金流
-- 訂閱記錄：`blog_subscriptions (reader_email, author_user_id, expires_at)`
-
-### BLOG-13 TipTap AI 輔助（選取文字後操作）
-- 選取一段文字 → 浮動工具列出現 AI 選項：
-  - ✨ 潤稿（改善表達）
-  - 🌐 翻成英文
-  - 📝 擴寫（增加細節）
-  - ✂️ 精簡（縮短）
-- 呼叫 `/api/admin/social/blog/ai-rewrite`
-- 直接在 TipTap 中替換選取文字
-
-### BLOG-14 部落格 RSS Feed
-- 自動產生 RSS 2.0 / Atom feed
-- 路徑：`/blogs/{userSlug}/feed.xml`
-- 只包含 `is_public = true` 的文章
-- 讓讀者可以用 RSS 閱讀器訂閱
-
-### BLOG-15 文章封存 / 分類
-- 在系列文章之外，支援輕量的「分類」標籤
-- 作者可建立自訂分類（如「技術」「生活」「食記」）
-- 部落格首頁可按分類篩選
-- 與現有 `tags` 的差異：分類是作者定義的一級結構，tags 是多選自由標籤
-
-### BLOG-16 深色/淺色模式切換
-- 部落格文章頁支援讀者自行切換深色 / 淺色
-- 目前全是深色（`bg-slate-950`），加一個 toggle 按鈕
-- 淺色模式：白底、黑字、prose 預設色系
-
-### BLOG-17 文章字型大小調整
-- 讀者可調整文章字體大小（小 / 中 / 大）
-- 存 localStorage，下次保持設定
-- 改變 `article` 元素的 `text-sm` / `text-base` / `text-lg` class
-
-### BLOG-18 程式碼區塊語法高亮 + 複製按鈕
-- TipTap CodeBlock 目前沒有語法高亮
-- 整合 `lowlight`（已是 TipTap 官方推薦）
-- 程式碼區塊右上角加「複製」按鈕（`navigator.clipboard.writeText`）
-
-### BLOG-19 文章預覽 OG 卡片測試工具
-- 後台「SEO」頁面加一個「測試 OG 卡片」按鈕
-- 呼叫 Facebook Sharing Debugger API 或直接顯示 og:image 預覽
-- 讓作者確認分享出去的卡片長什麼樣子
-
-### BLOG-20 部落格整體搜尋
-- `/blogs` 首頁加搜尋框，可搜尋所有公開文章的標題 + 摘要
-- PostgreSQL full-text search：`tsvector`（或 simple ILIKE）
-- 支援作者篩選、標籤篩選、日期範圍
+| # | 功能 | 說明 |
+|---|------|------|
+| BLOG-1 | 文章目錄（TOC） | 自動從 h2/h3 生成浮動目錄，點擊平滑捲動 |
+| BLOG-2 | 閱讀完成提示 | progress ≥ 95% 顯示「🎉 你讀完了！」 |
+| BLOG-3 | 作者簡介卡 | 文章底部：頭像、bio、最新 2-3 篇 |
+| BLOG-4 | 相關文章推薦 | 依相同標籤推薦 3 篇 |
+| BLOG-5 | 標題錨點連結 | hover h2/h3 時出現 `#`，點擊複製 URL |
+| BLOG-6 | 文章訂閱通知 | 讀者輸入 email 訂閱新文章 |
+| BLOG-7 | 草稿預覽連結 | 帶 token 的私密分享連結 |
+| BLOG-8 | 封面圖 AI 生成 | DALL-E 3 / Cloudflare AI 生成封面 |
+| BLOG-9 | 文章統計頁 | 後台每篇文章瀏覽趨勢、反應、留言趨勢 |
+| BLOG-10 | 留言審核 + 關鍵字過濾 | `is_approved` + 黑名單表 |
+| BLOG-11 | 部落格首頁版型切換 | 卡片牆 / 雜誌版 / 簡約列表 |
+| BLOG-12 | Paywall 付費解鎖 | 前 N 字免費，整合金流 |
+| BLOG-13 | TipTap AI 輔助 | 選取文字 → 潤稿 / 翻譯 / 擴寫 / 精簡 |
+| BLOG-14 | RSS Feed | `/blogs/{userSlug}/feed.xml` |
+| BLOG-15 | 文章封存 / 分類 | 作者自訂分類（不同於 tags） |
+| BLOG-16 | 深色/淺色模式 | 讀者自行切換 |
+| BLOG-17 | 文章字型大小調整 | 小/中/大，存 localStorage |
+| BLOG-18 | 程式碼語法高亮 + 複製按鈕 | 整合 `lowlight` |
+| BLOG-19 | OG 卡片測試工具 | 後台確認分享出去的 OG 長相 |
+| BLOG-20 | 部落格全站搜尋 | 標題 + 摘要全文搜尋，支援作者/標籤/日期篩選 |
 
 ---
 
 ## ⚪ 未來
 
 ### 自動化觸發引擎
-- DB：`automation_rules`
-- `lib/automationEngine.ts`
-- 觸發時機：回覆數達標、NPS 閾值、關鍵字、排程
+- DB：`automation_rules`；`lib/automationEngine.ts`
+- 觸發：回覆數達標、NPS 閾值、關鍵字、排程
 - 自動化週期問卷（每月自動複製並推播）
 
-### Rule Engine API
-- `api/ai/rules/` + `api/ai/validate/`
-- `lib/ruleEngine.ts`
-- DB：`api_keys`（第三方 API Key 管理）
+### Rule Engine 第三方 API
+- `api/ai/rules/` + `api/ai/validate/`；DB：`api_keys`
 - `middleware.ts`：`/api/ai/*` 走獨立 API Key 認證
 
 ### 行業分析模板
-- `lib/industryTemplates.ts`
-- `insightEngine.ts` 整合行業 Prompt
-- `insight/page.tsx` 新增行業選擇器
+- `lib/industryTemplates.ts`；`insight/page.tsx` 新增行業選擇器
 
 ### 免費試用機制
-- DB：`tenants.trial_started_at`、`trial_expires_at`、`plan`
-- `lib/trialEngine.ts`
-- `insight-admin/upgrade/page.tsx`（升級引導 + 資產清單）
+- DB：`tenants.plan`、`trial_started_at`、`trial_expires_at`
+- `lib/trialEngine.ts`；`insight-admin/upgrade/page.tsx`
 - `middleware.ts`：trial expired → redirect 升級頁
 
 ### LINE 管理員數據查詢 Bot
-- `lib/lineAdminBot.ts`
+- `lib/lineAdminBot.ts`；Flex Message 報告卡片
 - 指令：今日報告、分析 q3、漏斗、匯出
-- Flex Message 報告卡片
 
 ### LINE Bot 填答 Quick Reply
 - `lineBotEngine.ts`：單選題改用 Quick Reply 按鈕
@@ -357,8 +249,6 @@
 ---
 
 ## Sidebar 入口確認清單
-
-> 以下頁面確認存在於 Sidebar + middleware `KNOWN_ADMIN_PAGES`
 
 - [x] Dashboard
 - [x] 問卷管理（surveys）
@@ -371,7 +261,7 @@
 - [x] A/B 比較（ab）
 - [x] AI 洞察報告（insight）
 - [ ] 故事牆管理（story-wall） ← WIRE-3
-- [ ] 客服中心（support） ← URG
+- [ ] 客服中心（support） ← 🟢
 - [x] LINE 推播（broadcast）
 - [x] 通知規則（notification-rules）
 - [x] 訊息模板（templates）
@@ -389,4 +279,4 @@
 - [x] 租戶管理（tenants，僅 super_admin）
 - [x] 帳號設定（account）
 - [ ] 問卷模板（survey-templates） ← FEAT-6
-- [ ] 升級方案（upgrade） ← 未來
+- [ ] 升級方案（upgrade） ← ⚪ 未來
