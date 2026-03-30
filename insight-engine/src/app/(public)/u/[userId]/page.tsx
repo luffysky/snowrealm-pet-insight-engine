@@ -116,13 +116,13 @@ function SidebarLink({ href, icon, label, onClick }: { href: string; icon: React
     <Link
       href={href}
       onClick={onClick}
-      className="flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors group"
+      className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-[#3d3155]/8 active:bg-[#3d3155]/14 transition-colors group"
     >
-      <span className="w-8 h-8 rounded-xl bg-white/5 group-hover:bg-white/10 flex items-center justify-center text-[#8a7ca8] group-hover:text-[#3d3155]/80 transition-colors">
+      <span className="w-8 h-8 rounded-xl bg-[#3d3155]/5 group-hover:bg-[#6b5fa8]/15 flex items-center justify-center text-[#8a7ca8] group-hover:text-[#6b5fa8] transition-colors">
         {icon}
       </span>
-      <span className="flex-1 text-sm text-[#3d3155]/80 group-hover:text-white/90 transition-colors">{label}</span>
-      <ChevronRight className="w-3.5 h-3.5 text-[#b5a8d0] group-hover:text-[#8a7ca8] transition-colors" />
+      <span className="flex-1 text-sm text-[#3d3155]/80 group-hover:text-[#3d3155] transition-colors">{label}</span>
+      <ChevronRight className="w-3.5 h-3.5 text-[#b5a8d0] group-hover:text-[#6b5fa8] transition-colors" />
     </Link>
   )
 }
