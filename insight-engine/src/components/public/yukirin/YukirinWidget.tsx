@@ -3,6 +3,8 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import dynamic from 'next/dynamic'
 import type { YukirinMood } from './YukirinScene'
+import { ruleEngine } from '@/lib/agent/ruleEngine'
+import { usePageTracker } from '@/lib/agent/pageTracker'
 
 const YukirinScene = dynamic(() => import('./YukirinScene'), { ssr: false })
 const RikuScene    = dynamic(() => import('./RikuScene'),    { ssr: false })
@@ -210,6 +212,32 @@ export default function YukirinWidget() {
     setBubbleVisible(true)
     yukirinRef.current?.setMood('relaxed', 400)
   }, [setPerformanceMode])
+
+  // ── Rule Engine 整合 ──────────────────────────────────────────────────────
+  const pageState = usePageTracker({ selectedCharacter: character })
+  const pageStateRef = useRef(pageState)
+  pageStateRef.current = pageState
+
+  // 每 5 秒評估一次規則（零 Token，只在 widget 展開且未進入對話時）
+  useEffect(() => {
+    if (!open || chatOpen) return
+    const timer = setInterval(() => {
+      const result = ruleEngine.evaluate(pageStateRef.current)
+      if (result?.triggered && result.text) {
+        setCurrentLine({ text: result.text, mood: result.mood as YukirinMood })
+        setBubbleActions(undefined)
+        setBubbleVisible(true)
+        if (result.animation) yukirinRef.current?.playAnimation(result.animation)
+        yukirinRef.current?.setMood(result.mood, 400)
+        if (bubbleTimerRef.current) clearTimeout(bubbleTimerRef.current)
+        bubbleTimerRef.current = setTimeout(() => {
+          setBubbleVisible(false)
+          setTimeout(() => yukirinRef.current?.setMood('happy', 600), 800)
+        }, 6000)
+      }
+    }, 5000)
+    return () => clearInterval(timer)
+  }, [open, chatOpen])
 
   // ── 拖曳移動（document-level listener，不依賴 setPointerCapture） ─────────
   const [widgetPos, setWidgetPos] = useState<{ x: number; y: number } | null>(null)

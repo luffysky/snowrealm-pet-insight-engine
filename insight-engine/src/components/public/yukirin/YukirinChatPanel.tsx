@@ -6,6 +6,13 @@ import dynamic from 'next/dynamic'
 import type { YukirinControls, YukirinMood } from './YukirinScene'
 import type { GuideAction, GuideMessage } from '@/lib/guideEngine'
 import { getFallbackResponse } from '@/lib/guideFallbacks'
+import {
+  handleSlashCommand,
+  isSlashCommand,
+  getCommandSuggestions,
+  type SlashCommand,
+} from '@/lib/agent/slashCommands'
+import type { UserState } from '@/lib/agent/ruleEngine'
 
 const YukirinScene = dynamic(() => import('./YukirinScene'), { ssr: false })
 
@@ -178,6 +185,9 @@ export default function YukirinChatPanel({ onClose }: YukirinChatPanelProps) {
   const [turnsInfo, setTurnsInfo] = useState<TurnsInfo | null>(null)
   const [showBuyPanel, setShowBuyPanel] = useState(false)
 
+  // 斜線指令自動完成
+  const [cmdSuggestions, setCmdSuggestions] = useState<SlashCommand[]>([])
+
   // 捲到最新訊息
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -232,14 +242,68 @@ export default function YukirinChatPanel({ onClose }: YukirinChatPanelProps) {
     }
   }, [router])
 
+  /** 組合一個最小 UserState 供斜線指令使用 */
+  const buildSlashState = useCallback((): UserState => ({
+    userId: '', nickname: '', isAdmin: false,
+    selectedCharacter: 'yukirin',
+    currentPage: pathname ?? '/',
+    timeOnPage: 0, scrollPosition: 0, scrollSpeed: 'idle',
+    isTyping: true, lastClickTarget: '', pageVisitCount: 1,
+    currentSurveyId: null, currentQuestionIndex: 0, totalQuestions: 0,
+    isGuideOpen: true, currentSessionRounds: messages.length,
+    visitCount: 0, surveysCompleted: 0,
+    zcoinBalance: turnsInfo?.zcoinBalance ?? 0,
+    streakDays: 0, daysSinceLastVisit: 0,
+    currentHour: new Date().getHours(),
+    dayOfWeek: new Date().getDay(),
+    isWeekend: [0, 6].includes(new Date().getDay()),
+  }), [pathname, messages.length, turnsInfo])
+
   const sendMessage = useCallback(async (text: string) => {
     if (!text.trim() || isLoading) return
 
     const userMsg: ChatMessage = { id: Date.now().toString(), role: 'user', text }
     setMessages(prev => appendMessage(prev, userMsg))
     setInput('')
+    setCmdSuggestions([])
     // 清空後立即 focus，避免手機鍵盤縮回去
     requestAnimationFrame(() => inputRef.current?.focus())
+
+    // ── 斜線指令：零 Token 即時回應 ────────────────────────────────────────
+    if (isSlashCommand(text)) {
+      const slashResult = handleSlashCommand(text, buildSlashState())
+      if (slashResult) {
+        const responseText = slashResult.yukirin?.text ?? '好！'
+        const mood = (slashResult.yukirin?.mood ?? 'happy') as YukirinMood
+        const animation = slashResult.yukirin?.animation ?? null
+
+        yukirinRef.current?.setMood(mood, 300)
+        if (animation) yukirinRef.current?.playAnimation(animation)
+
+        if (!slashResult.needsLLM) {
+          setMessages(prev => appendMessage(prev, {
+            id: (Date.now() + 1).toString(),
+            role: 'assistant',
+            text: responseText,
+            mood,
+          }))
+          // 執行 action（導頁等）
+          if (slashResult.action?.type === 'navigate') router.push(slashResult.action.target)
+          setQuickReplies(DEFAULT_QUICK_REPLIES)
+          return
+        }
+
+        // needsLLM = true：顯示思考中提示，繼續走 LLM 流程
+        setMessages(prev => appendMessage(prev, {
+          id: (Date.now() + 1).toString(),
+          role: 'assistant',
+          text: responseText,
+          mood,
+        }))
+      }
+    }
+    // ────────────────────────────────────────────────────────────────────────
+
     setIsLoading(true)
     setStreamingText('')
     setQuickReplies([])
@@ -439,7 +503,7 @@ export default function YukirinChatPanel({ onClose }: YukirinChatPanelProps) {
       // AI 回覆完畢後重新 focus 輸入框
       requestAnimationFrame(() => inputRef.current?.focus())
     }
-  }, [isLoading, messages, pathname, executeAction])
+  }, [isLoading, messages, pathname, executeAction, buildSlashState, router])
 
   const handleSubmit = useCallback((e: React.FormEvent) => {
     e.preventDefault()
@@ -620,32 +684,54 @@ export default function YukirinChatPanel({ onClose }: YukirinChatPanelProps) {
           onClose={() => setShowBuyPanel(false)}
         />
       ) : (
-        <form
-          onSubmit={handleSubmit}
-          className="flex items-center gap-2 px-3 pb-3 pt-1 border-t border-white/8"
-          onPointerDown={e => e.stopPropagation()}
-        >
-          <input
-            ref={inputRef}
-            autoFocus
-            value={input}
-            onChange={e => setInput(e.target.value)}
-            placeholder={isInputDisabled && !isLoading ? '次數已用完，請購買或明天再來' : '跟雪凜說點什麼...'}
-            disabled={isInputDisabled}
-            className="flex-1 bg-white/8 border border-white/10 rounded-full px-3 py-1.5 text-xs text-white/80 placeholder-white/25 outline-none focus:border-[#b8a9e8]/40 transition-colors disabled:opacity-50"
-            style={{ fontSize: 12 }}
-          />
-          <button
-            type="submit"
-            disabled={!input.trim() || isInputDisabled}
-            className="w-7 h-7 rounded-full flex items-center justify-center transition-all disabled:opacity-30 flex-shrink-0"
-            style={{ background: 'linear-gradient(135deg, #b8a9e8, #f5b8b5)' }}
+        <div onPointerDown={e => e.stopPropagation()}>
+          {/* 斜線指令自動完成下拉 */}
+          {cmdSuggestions.length > 0 && (
+            <div className="mx-3 mb-1 rounded-xl border border-white/10 overflow-hidden"
+              style={{ background: 'rgba(15,9,30,0.97)' }}
+            >
+              {cmdSuggestions.slice(0, 6).map(cmd => (
+                <button
+                  key={cmd.command}
+                  onClick={() => { setInput(cmd.command + ' '); setCmdSuggestions([]); inputRef.current?.focus() }}
+                  className="w-full flex items-center gap-2 px-3 py-1.5 text-left hover:bg-white/8 transition-colors"
+                >
+                  <span className="text-[10px] font-mono text-[#b8a9e8]">{cmd.command}</span>
+                  <span className="text-[10px] text-white/35 truncate">{cmd.description}</span>
+                </button>
+              ))}
+            </div>
+          )}
+          <form
+            onSubmit={handleSubmit}
+            className="flex items-center gap-2 px-3 pb-3 pt-1 border-t border-white/8"
           >
-            <svg width="12" height="12" viewBox="0 0 12 12" fill="white">
-              <path d="M1 6h10M7 2l4 4-4 4" stroke="white" strokeWidth="1.5" strokeLinecap="round" fill="none"/>
-            </svg>
-          </button>
-        </form>
+            <input
+              ref={inputRef}
+              autoFocus
+              value={input}
+              onChange={e => {
+                const v = e.target.value
+                setInput(v)
+                setCmdSuggestions(v.startsWith('/') ? getCommandSuggestions(v, false) : [])
+              }}
+              placeholder={isInputDisabled && !isLoading ? '次數已用完，請購買或明天再來' : '跟雪凜說點什麼... 或輸入 /'}
+              disabled={isInputDisabled}
+              className="flex-1 bg-white/8 border border-white/10 rounded-full px-3 py-1.5 text-xs text-white/80 placeholder-white/25 outline-none focus:border-[#b8a9e8]/40 transition-colors disabled:opacity-50"
+              style={{ fontSize: 12 }}
+            />
+            <button
+              type="submit"
+              disabled={!input.trim() || isInputDisabled}
+              className="w-7 h-7 rounded-full flex items-center justify-center transition-all disabled:opacity-30 flex-shrink-0"
+              style={{ background: 'linear-gradient(135deg, #b8a9e8, #f5b8b5)' }}
+            >
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="white">
+                <path d="M1 6h10M7 2l4 4-4 4" stroke="white" strokeWidth="1.5" strokeLinecap="round" fill="none"/>
+              </svg>
+            </button>
+          </form>
+        </div>
       )}
     </div>
   )

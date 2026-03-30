@@ -1,5 +1,13 @@
 'use client'
 
+export const FLOATING_CHAT_ENABLED_KEY = 'floating-chat-enabled'
+
+export function setFloatingChatEnabled(enabled: boolean) {
+  if (typeof window === 'undefined') return
+  localStorage.setItem(FLOATING_CHAT_ENABLED_KEY, String(enabled))
+  window.dispatchEvent(new CustomEvent('floating-chat-toggle', { detail: { enabled } }))
+}
+
 import { useEffect, useState, useRef, useCallback } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { MessageCircle, X, Send, ChevronRight, Minus, Smile, Paperclip, Loader2 } from 'lucide-react'

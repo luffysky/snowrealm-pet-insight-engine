@@ -17,7 +17,7 @@ import {
   PromptSettings,
 } from '@/lib/guideEngine'
 
-const PROMPT_SETTINGS_TENANT_ID = '__yukirin_prompts__'
+const PLATFORM_SETTINGS_KEY = 'yukirin_prompts'
 
 let cachedPromptSettings: PromptSettings | null = null
 let cacheExpiry = 0
@@ -28,12 +28,12 @@ async function loadPromptSettings(): Promise<PromptSettings | null> {
   if (cachedPromptSettings !== null && now < cacheExpiry) return cachedPromptSettings
 
   try {
-    const row = await queryOne<{ extra_meta: string }>(
-      `SELECT extra_meta FROM site_settings WHERE tenant_id = $1`,
-      [PROMPT_SETTINGS_TENANT_ID]
+    const row = await queryOne<{ value: string }>(
+      `SELECT value FROM platform_settings WHERE key = $1`,
+      [PLATFORM_SETTINGS_KEY]
     )
-    if (row?.extra_meta) {
-      const parsed = typeof row.extra_meta === 'string' ? JSON.parse(row.extra_meta) : row.extra_meta
+    if (row?.value) {
+      const parsed = typeof row.value === 'string' ? JSON.parse(row.value) : row.value
       cachedPromptSettings = parsed as PromptSettings
       cacheExpiry = now + 60_000
       return cachedPromptSettings

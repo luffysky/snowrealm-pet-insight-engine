@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { queryOne, query } from '@/lib/db'
 import { verifyToken } from '@/lib/jwt'
 
-const SETTINGS_TENANT_ID = '__yukirin_prompts__'
+const PLATFORM_SETTINGS_KEY = 'yukirin_prompts'
 
 async function verifySuperAdmin(request: NextRequest) {
   const token = request.cookies.get('admin_session')?.value
@@ -64,19 +64,14 @@ export async function GET(request: NextRequest) {
   if (!admin) return NextResponse.json({ error: '權限不足' }, { status: 403 })
 
   try {
-    const row = await queryOne<{ extra_meta: string }>(
-      `SELECT extra_meta FROM site_settings WHERE tenant_id = $1`,
-      [SETTINGS_TENANT_ID]
+    const row = await queryOne<{ value: string }>(
+      `SELECT value FROM platform_settings WHERE key = $1`,
+      [PLATFORM_SETTINGS_KEY]
     )
 
-    if (!row?.extra_meta) {
-      return NextResponse.json(DEFAULTS)
-    }
+    if (!row?.value) return NextResponse.json(DEFAULTS)
 
-    const saved = typeof row.extra_meta === 'string'
-      ? JSON.parse(row.extra_meta)
-      : row.extra_meta
-
+    const saved = typeof row.value === 'string' ? JSON.parse(row.value) : row.value
     return NextResponse.json({ ...DEFAULTS, ...saved })
   } catch (err) {
     console.error('[AI Prompt GET]', err)
@@ -97,10 +92,10 @@ export async function PUT(request: NextRequest) {
     }
 
     await query(
-      `INSERT INTO site_settings (tenant_id, site_title, site_description, extra_meta, updated_at)
-       VALUES ($1, 'yukirin_prompts', '', $2, now())
-       ON CONFLICT (tenant_id) DO UPDATE SET extra_meta = $2, updated_at = now()`,
-      [SETTINGS_TENANT_ID, JSON.stringify(settings)]
+      `INSERT INTO platform_settings (key, value, updated_at)
+       VALUES ($1, $2, now())
+       ON CONFLICT (key) DO UPDATE SET value = $2, updated_at = now()`,
+      [PLATFORM_SETTINGS_KEY, JSON.stringify(settings)]
     )
 
     return NextResponse.json({ success: true })
