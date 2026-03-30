@@ -45,11 +45,11 @@ function BuyTurnsPanel({
   const [loading, setLoading] = useState<string | null>(null)
   const [error, setError] = useState('')
 
-  const packs = [
+  const packs: { key: 's' | 'm' | 'l'; zcoins: number; turns: number; label: string; badge?: string }[] = [
     { key: 's', zcoins: 5,  turns: 20,  label: '20 次' },
     { key: 'm', zcoins: 10, turns: 50,  label: '50 次' },
     { key: 'l', zcoins: 20, turns: 120, label: '120 次', badge: '最划算' },
-  ] as const
+  ]
 
   const handleBuy = async (pack: 's' | 'm' | 'l') => {
     if (!isLoggedIn) { setError('請先登入帳號才能購買～'); return }
