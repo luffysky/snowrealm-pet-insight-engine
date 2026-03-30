@@ -14,11 +14,11 @@
   --mint:           #b5e8d5;
   --gold:           #f0d88a;
 
-  /* 玻璃面板 */
-  --glass-bg:       rgba(255,255,255,0.18);
-  --glass-bg-light: rgba(255,255,255,0.42);
-  --glass-border:   rgba(255,255,255,0.3);
-  --glass-shadow:   0 8px 32px rgba(100,80,180,0.1);
+  /* 玻璃面板（legacy — 新代碼請用 .lg-* class） */
+  --glass-bg:       rgba(248,245,255,0.12);
+  --glass-bg-light: rgba(255,255,255,0.18);
+  --glass-border:   rgba(184,169,232,0.22);
+  --glass-shadow:   0 12px 40px rgba(140,100,220,0.10);
 
   /* 文字 */
   --text-bright: rgba(240,235,255,0.9);
@@ -2533,6 +2533,359 @@ button:hover .option-emoji-bounce {
 .tiptap-editor li { margin-bottom: 0.2rem; }
 .tiptap-editor a { color: rgba(251,191,36,0.8); text-decoration: underline; }
 .tiptap-editor p.is-editor-empty:first-child::before { content: attr(data-placeholder); color: rgba(255,255,255,0.2); pointer-events: none; float: left; height: 0; }
+
+/* ════════════════════════════════════════════════════════════
+   💎 LIQUID GLASS SYSTEM — 液態玻璃設計系統 v2
+   使用方式：直接加 class 到任何容器元素
+   主題：void（極深）/ dark（深色）/ lavender（薰衣草）/
+         light（淺色）/ warm（暖桃）/ ice（冰藍）/ aurora（極光）
+   Sharp 版本：邊框有漸層犀利感，適合卡片/Modal
+   ════════════════════════════════════════════════════════════ */
+
+/* ── 共用折射動畫（Shimmer highlight sweep） ── */
+@keyframes lg-shimmer {
+  0%   { transform: translateX(-100%) skewX(-12deg); }
+  100% { transform: translateX(220%) skewX(-12deg); }
+}
+
+/* ── Void：極深黑，幾乎全透，深色頁面首選 ── */
+.lg-void {
+  background: rgba(2, 4, 14, 0.35);
+  backdrop-filter: blur(28px) saturate(200%) brightness(0.85);
+  -webkit-backdrop-filter: blur(28px) saturate(200%) brightness(0.85);
+  border: 1px solid rgba(255,255,255,0.06);
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,0.03) inset,
+    0 24px 64px rgba(0,0,0,0.55),
+    0 1px 0 rgba(255,255,255,0.07) inset;
+}
+.lg-void-sharp {
+  background: rgba(2, 4, 14, 0.35);
+  backdrop-filter: blur(28px) saturate(200%) brightness(0.85);
+  -webkit-backdrop-filter: blur(28px) saturate(200%) brightness(0.85);
+  border: 1px solid transparent;
+  border-radius: 20px;
+  background-clip: padding-box;
+  box-shadow:
+    0 24px 64px rgba(0,0,0,0.55),
+    0 1px 0 rgba(255,255,255,0.1) inset,
+    0 -1px 0 rgba(0,0,0,0.3) inset;
+  position: relative;
+}
+.lg-void-sharp::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(
+    145deg,
+    rgba(255,255,255,0.18) 0%,
+    rgba(255,255,255,0.06) 40%,
+    rgba(255,255,255,0.02) 60%,
+    rgba(120,80,255,0.12) 100%
+  );
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+/* ── Dark：深色通用，messages / super-admin / 深色卡片 ── */
+.lg-dark {
+  background: rgba(10, 12, 28, 0.42);
+  backdrop-filter: blur(24px) saturate(180%) brightness(0.9);
+  -webkit-backdrop-filter: blur(24px) saturate(180%) brightness(0.9);
+  border: 1px solid rgba(255,255,255,0.08);
+  box-shadow:
+    0 1px 0 rgba(255,255,255,0.09) inset,
+    0 16px 48px rgba(0,0,0,0.45);
+}
+.lg-dark-sharp {
+  background: rgba(10, 12, 28, 0.42);
+  backdrop-filter: blur(24px) saturate(180%) brightness(0.9);
+  -webkit-backdrop-filter: blur(24px) saturate(180%) brightness(0.9);
+  border: 1px solid transparent;
+  border-radius: 20px;
+  background-clip: padding-box;
+  box-shadow:
+    0 16px 48px rgba(0,0,0,0.45),
+    0 1px 0 rgba(255,255,255,0.12) inset;
+  position: relative;
+}
+.lg-dark-sharp::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(
+    145deg,
+    rgba(255,255,255,0.22) 0%,
+    rgba(255,255,255,0.07) 35%,
+    rgba(255,255,255,0.02) 65%,
+    rgba(100,80,220,0.15) 100%
+  );
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+/* ── Lavender：薰衣草，admin 後台 / 公開頁淺色主色 ── */
+.lg-lavender {
+  background: rgba(248, 245, 255, 0.12);
+  backdrop-filter: blur(20px) saturate(160%) brightness(1.05);
+  -webkit-backdrop-filter: blur(20px) saturate(160%) brightness(1.05);
+  border: 1px solid rgba(184,169,232,0.22);
+  box-shadow:
+    0 1px 0 rgba(255,255,255,0.55) inset,
+    0 12px 40px rgba(140,100,220,0.08);
+}
+.lg-lavender-sharp {
+  background: rgba(248, 245, 255, 0.12);
+  backdrop-filter: blur(20px) saturate(160%) brightness(1.05);
+  -webkit-backdrop-filter: blur(20px) saturate(160%) brightness(1.05);
+  border: 1px solid transparent;
+  border-radius: 20px;
+  background-clip: padding-box;
+  box-shadow:
+    0 12px 40px rgba(140,100,220,0.10),
+    0 1px 0 rgba(255,255,255,0.7) inset,
+    0 -1px 0 rgba(140,100,220,0.08) inset;
+  position: relative;
+}
+.lg-lavender-sharp::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(
+    145deg,
+    rgba(255,255,255,0.85) 0%,
+    rgba(200,185,240,0.35) 30%,
+    rgba(184,169,232,0.15) 60%,
+    rgba(245,184,181,0.25) 100%
+  );
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+/* ── Light：淺色最通用，白天模式頁面 ── */
+.lg-light {
+  background: rgba(255, 255, 255, 0.18);
+  backdrop-filter: blur(18px) saturate(140%) brightness(1.08);
+  -webkit-backdrop-filter: blur(18px) saturate(140%) brightness(1.08);
+  border: 1px solid rgba(255,255,255,0.45);
+  box-shadow:
+    0 1px 0 rgba(255,255,255,0.9) inset,
+    0 8px 32px rgba(100,80,180,0.07);
+}
+.lg-light-sharp {
+  background: rgba(255, 255, 255, 0.18);
+  backdrop-filter: blur(18px) saturate(140%) brightness(1.08);
+  -webkit-backdrop-filter: blur(18px) saturate(140%) brightness(1.08);
+  border: 1px solid transparent;
+  border-radius: 20px;
+  background-clip: padding-box;
+  box-shadow:
+    0 8px 32px rgba(100,80,180,0.08),
+    0 1px 0 rgba(255,255,255,0.95) inset,
+    0 -1px 0 rgba(180,160,220,0.1) inset;
+  position: relative;
+}
+.lg-light-sharp::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(
+    145deg,
+    rgba(255,255,255,1) 0%,
+    rgba(220,210,245,0.5) 35%,
+    rgba(200,185,230,0.2) 65%,
+    rgba(245,184,181,0.4) 100%
+  );
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+/* ── Warm：暖桃，完成頁 / 成就 / 正向情境 ── */
+.lg-warm {
+  background: rgba(255, 240, 235, 0.14);
+  backdrop-filter: blur(20px) saturate(150%) brightness(1.06);
+  -webkit-backdrop-filter: blur(20px) saturate(150%) brightness(1.06);
+  border: 1px solid rgba(245,184,181,0.28);
+  box-shadow:
+    0 1px 0 rgba(255,255,255,0.65) inset,
+    0 12px 36px rgba(220,100,80,0.07);
+}
+.lg-warm-sharp {
+  background: rgba(255, 240, 235, 0.14);
+  backdrop-filter: blur(20px) saturate(150%) brightness(1.06);
+  -webkit-backdrop-filter: blur(20px) saturate(150%) brightness(1.06);
+  border: 1px solid transparent;
+  border-radius: 20px;
+  background-clip: padding-box;
+  box-shadow:
+    0 12px 36px rgba(220,100,80,0.08),
+    0 1px 0 rgba(255,255,255,0.75) inset;
+  position: relative;
+}
+.lg-warm-sharp::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(
+    145deg,
+    rgba(255,255,255,0.95) 0%,
+    rgba(255,210,200,0.55) 35%,
+    rgba(245,184,181,0.25) 65%,
+    rgba(240,180,100,0.3) 100%
+  );
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+/* ── Ice：冰藍，數據分析 / 科技感頁面 ── */
+.lg-ice {
+  background: rgba(230, 248, 255, 0.12);
+  backdrop-filter: blur(22px) saturate(170%) brightness(1.04);
+  -webkit-backdrop-filter: blur(22px) saturate(170%) brightness(1.04);
+  border: 1px solid rgba(168,216,234,0.3);
+  box-shadow:
+    0 1px 0 rgba(255,255,255,0.6) inset,
+    0 12px 40px rgba(0,140,200,0.07);
+}
+.lg-ice-sharp {
+  background: rgba(230, 248, 255, 0.12);
+  backdrop-filter: blur(22px) saturate(170%) brightness(1.04);
+  -webkit-backdrop-filter: blur(22px) saturate(170%) brightness(1.04);
+  border: 1px solid transparent;
+  border-radius: 20px;
+  background-clip: padding-box;
+  box-shadow:
+    0 12px 40px rgba(0,140,200,0.08),
+    0 1px 0 rgba(255,255,255,0.7) inset;
+  position: relative;
+}
+.lg-ice-sharp::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(
+    145deg,
+    rgba(255,255,255,0.9) 0%,
+    rgba(180,225,245,0.5) 35%,
+    rgba(100,180,220,0.2) 65%,
+    rgba(80,140,200,0.25) 100%
+  );
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+/* ── Aurora：極光，登入頁 / 特殊場景 ── */
+.lg-aurora {
+  background: rgba(15, 8, 40, 0.38);
+  backdrop-filter: blur(30px) saturate(220%) brightness(0.88) hue-rotate(5deg);
+  -webkit-backdrop-filter: blur(30px) saturate(220%) brightness(0.88) hue-rotate(5deg);
+  border: 1px solid rgba(150,100,255,0.15);
+  box-shadow:
+    0 0 40px rgba(120,60,255,0.12),
+    0 1px 0 rgba(180,140,255,0.2) inset,
+    0 24px 64px rgba(0,0,0,0.5);
+}
+.lg-aurora-sharp {
+  background: rgba(15, 8, 40, 0.38);
+  backdrop-filter: blur(30px) saturate(220%) brightness(0.88) hue-rotate(5deg);
+  -webkit-backdrop-filter: blur(30px) saturate(220%) brightness(0.88) hue-rotate(5deg);
+  border: 1px solid transparent;
+  border-radius: 20px;
+  background-clip: padding-box;
+  box-shadow:
+    0 0 40px rgba(120,60,255,0.12),
+    0 24px 64px rgba(0,0,0,0.5),
+    0 1px 0 rgba(180,140,255,0.25) inset;
+  position: relative;
+}
+.lg-aurora-sharp::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(
+    145deg,
+    rgba(200,160,255,0.45) 0%,
+    rgba(100,200,255,0.2) 30%,
+    rgba(80,240,180,0.12) 55%,
+    rgba(180,100,255,0.3) 100%
+  );
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+/* ── 折射光掃過效果（加在 sharp 版本上，hover 觸發） ── */
+.lg-shimmer {
+  overflow: hidden;
+}
+.lg-shimmer::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 45%;
+  height: 100%;
+  background: linear-gradient(
+    105deg,
+    transparent 30%,
+    rgba(255,255,255,0.08) 50%,
+    transparent 70%
+  );
+  transform: translateX(-100%) skewX(-12deg);
+  pointer-events: none;
+  transition: none;
+}
+.lg-shimmer:hover::after {
+  animation: lg-shimmer 0.65s ease forwards;
+}
+
+/* ── 尺寸修飾（radius 覆蓋） ── */
+.lg-sm  { border-radius: 12px; }
+.lg-md  { border-radius: 16px; }
+.lg-lg  { border-radius: 20px; }
+.lg-xl  { border-radius: 28px; }
+.lg-2xl { border-radius: 36px; }
+
+/* ── Glow 修飾（加在任何 lg-* 上） ── */
+.lg-glow-violet { box-shadow: 0 0 24px rgba(140,100,255,0.18), 0 12px 40px rgba(0,0,0,0.3) !important; }
+.lg-glow-pink   { box-shadow: 0 0 24px rgba(240,100,180,0.18), 0 12px 40px rgba(0,0,0,0.3) !important; }
+.lg-glow-sky    { box-shadow: 0 0 24px rgba(56,189,248,0.18),  0 12px 40px rgba(0,0,0,0.3) !important; }
+.lg-glow-gold   { box-shadow: 0 0 24px rgba(240,180,60,0.18),  0 12px 40px rgba(0,0,0,0.3) !important; }
+.lg-glow-mint   { box-shadow: 0 0 24px rgba(80,220,160,0.18),  0 12px 40px rgba(0,0,0,0.3) !important; }
 
 /* ── 隱藏 scrollbar（水平捲動卡片用）── */
 .scrollbar-none {
