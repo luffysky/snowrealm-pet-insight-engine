@@ -17,6 +17,7 @@ interface GrantLog {
   reason: string
   affectedCount: number
   createdAt: string
+  usernames?: string[]  // 指定用戶時的用戶名列表
 }
 
 export default function SuperAdminZcoinPage() {
@@ -119,6 +120,9 @@ export default function SuperAdminZcoinPage() {
           reason: reason || (targetMode === 'all' ? 'super_admin_bulk_grant' : 'super_admin_grant'),
           affectedCount: data.affectedCount ?? selectedUsers.length,
           createdAt: new Date().toISOString(),
+          usernames: targetMode === 'specific'
+            ? selectedUsers.map(u => u.display_name || u.username || u.id.slice(0, 8))
+            : undefined,
         }
         setLogs(prev => [newLog, ...prev])
         setGrantMsg({ type: 'ok', text: `✅ 已成功發放 ${amt} Z幣 給 ${data.affectedCount} 位用戶` })
@@ -246,7 +250,7 @@ export default function SuperAdminZcoinPage() {
                 {selectedUsers.length > 0 && (
                   <div className="flex flex-wrap gap-1.5">
                     {selectedUsers.map(u => (
-                      <span key={u.id} className="inline-flex items-center gap-1 px-2 py-0.5 bg-yellow-500/15 border border-yellow-500/30 text-yellow-300 text-xs rounded-full">
+                      <span key={u.id} className="inline-flex items-center gap-1 px-2 py-0.5 bg-black/40 backdrop-blur-md border border-yellow-500/30 text-yellow-300 text-xs rounded-full shadow-sm shadow-yellow-900/20">
                         {u.display_name || u.username || u.id.slice(0, 8)}
                         <button onClick={() => toggleUser(u)} className="text-yellow-400/60 hover:text-yellow-300 ml-0.5">×</button>
                       </span>
@@ -288,12 +292,23 @@ export default function SuperAdminZcoinPage() {
               {logs.map(log => (
                 <div key={log.id} className="px-5 py-4">
                   <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <p className="text-sm text-white font-semibold">+{log.amount} Z幣</p>
-                      <p className="text-xs text-white/40 mt-0.5">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm text-white font-semibold">
+                        <span className="inline-block px-1.5 py-0.5 rounded-md bg-black/40 backdrop-blur-sm border border-yellow-500/20 text-yellow-400">+{log.amount} Z幣</span>
+                      </p>
+                      <p className="text-xs text-white/40 mt-1">
                         {log.targetType === 'all' ? '🌍 全部用戶' : `🎯 指定 ${log.affectedCount} 位`}
                         {' · '}{log.reason}
                       </p>
+                      {log.usernames && log.usernames.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mt-1.5">
+                          {log.usernames.map((name, i) => (
+                            <span key={i} className="inline-block px-1.5 py-0.5 rounded bg-black/30 backdrop-blur-sm border border-white/10 text-white/50 text-[10px]">
+                              {name}
+                            </span>
+                          ))}
+                        </div>
+                      )}
                     </div>
                     <div className="text-right shrink-0">
                       <p className="text-xs text-emerald-400 font-semibold">{log.affectedCount} 人</p>
@@ -315,12 +330,14 @@ export default function SuperAdminZcoinPage() {
             <h3 className="text-base font-bold text-white mb-2">確認發放</h3>
             <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-xl p-4 mb-5 space-y-1">
               <p className="text-sm text-white">
-                <span className="text-yellow-400 font-bold">+{amount} Z幣</span>
+                <span className="inline-block px-2 py-0.5 rounded-lg bg-black/50 backdrop-blur-md border border-yellow-500/25 text-yellow-400 font-bold">+{amount} Z幣</span>
                 {targetMode === 'all' ? ' 給全部用戶' : ` 給 ${selectedUsers.length} 位用戶`}
               </p>
               {reason && <p className="text-xs text-white/50">備註：{reason}</p>}
               {targetMode === 'all' && (
-                <p className="text-xs text-amber-400/80">⚠️ 此操作將影響所有平台用戶，請確認金額正確</p>
+                <p className="text-xs">
+                  <span className="inline-block px-2 py-0.5 rounded-lg bg-black/40 backdrop-blur-md border border-amber-500/20 text-amber-400/90">⚠️ 此操作將影響所有平台用戶，請確認金額正確</span>
+                </p>
               )}
             </div>
             <div className="flex gap-2">

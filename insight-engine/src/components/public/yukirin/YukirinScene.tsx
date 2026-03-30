@@ -247,9 +247,10 @@ export default function YukirinScene({
   })
   const orbitPointersRef = useRef(new Map<number, { x: number; y: number }>())
 
-  const mixerRef       = useRef<THREE.AnimationMixer | null>(null)
-  const fbxClipsRef    = useRef<Record<string, THREE.AnimationClip>>({})
-  const currentIdleRef = useRef<THREE.AnimationAction | null>(null)
+  const mixerRef          = useRef<THREE.AnimationMixer | null>(null)
+  const fbxClipsRef       = useRef<Record<string, THREE.AnimationClip>>({})
+  const currentIdleRef    = useRef<THREE.AnimationAction | null>(null)
+  const pendingFbxAnimRef = useRef<string>('fbx_breathing') // FBX 還未載入時暫存請求
   const allowOrbitRef  = useRef(allowOrbit)
   allowOrbitRef.current = allowOrbit
 
@@ -608,10 +609,13 @@ export default function YukirinScene({
             .catch(() => { /* 載入失敗跳過 */ })
         )
       ).then(() => {
-        // 預設播放呼吸 idle（循環）
-        const defaultClip = fbxClipsRef.current['fbx_breathing'] ?? fbxClipsRef.current['fbx_idle']
-        if (defaultClip) {
-          currentIdleRef.current = mixer.clipAction(defaultClip)
+        // FBX 全部載入完畢，播放外部請求的姿勢（或預設呼吸）
+        const target = pendingFbxAnimRef.current
+        const clip = fbxClipsRef.current[target]
+          ?? fbxClipsRef.current['fbx_breathing']
+          ?? fbxClipsRef.current['fbx_idle']
+        if (clip) {
+          currentIdleRef.current = mixer.clipAction(clip)
           currentIdleRef.current.setLoop(THREE.LoopRepeat, Infinity)
           currentIdleRef.current.play()
         }
@@ -648,7 +652,12 @@ export default function YukirinScene({
               case 'fbx_happy2':
               case 'fbx_sitting': {
                 const clip = fbxClipsRef.current[name]
-                if (clip && mixerRef.current) {
+                if (!clip) {
+                  // FBX 還沒載入完，先存起來等 Promise.all.then() 播放
+                  pendingFbxAnimRef.current = name
+                  break
+                }
+                if (mixerRef.current) {
                   const action = mixerRef.current.clipAction(clip)
                   if (currentIdleRef.current && currentIdleRef.current !== action) {
                     currentIdleRef.current.fadeOut(0.3)

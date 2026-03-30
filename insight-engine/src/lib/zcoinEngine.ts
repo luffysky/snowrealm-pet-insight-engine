@@ -49,11 +49,12 @@ export async function getOrCreateWallet(params: {
   const tenantId = params.tenantId ?? 'default'
 
   // 查詢已有錢包
+  // user_id 有 UNIQUE 約束，直接查不需要 tenant_id 過濾；line_user_id 才需要 tenant_id 區分
   let wallet: WalletRow | null = null
   if (params.userId) {
     wallet = await queryOne<WalletRow>(
-      `SELECT * FROM zcoin_wallets WHERE user_id = $1 AND tenant_id = $2`,
-      [params.userId, tenantId]
+      `SELECT * FROM zcoin_wallets WHERE user_id = $1`,
+      [params.userId]
     )
   } else if (params.lineUserId) {
     wallet = await queryOne<WalletRow>(
@@ -68,6 +69,7 @@ export async function getOrCreateWallet(params: {
   const created = await queryOne<WalletRow>(
     `INSERT INTO zcoin_wallets (user_id, line_user_id, tenant_id)
      VALUES ($1, $2, $3)
+     ON CONFLICT (user_id) DO UPDATE SET updated_at = NOW()
      RETURNING *`,
     [params.userId ?? null, params.lineUserId ?? null, tenantId]
   )

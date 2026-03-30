@@ -242,9 +242,10 @@ export default function RikuScene({
   })
   const orbitPointersRef = useRef(new Map<number, { x: number; y: number }>())
 
-  const mixerRef       = useRef<THREE.AnimationMixer | null>(null)
-  const fbxClipsRef    = useRef<Record<string, THREE.AnimationClip>>({})
-  const currentIdleRef = useRef<THREE.AnimationAction | null>(null)
+  const mixerRef          = useRef<THREE.AnimationMixer | null>(null)
+  const fbxClipsRef       = useRef<Record<string, THREE.AnimationClip>>({})
+  const currentIdleRef    = useRef<THREE.AnimationAction | null>(null)
+  const pendingFbxAnimRef = useRef<string>('fbx_breathing')
 
   // 點擊互動：隨機切換表情
   const CLICK_REACTIONS: RikuMood[] = ['neutral', 'relaxed', 'happy', 'thinking', 'surprised']
@@ -595,9 +596,12 @@ export default function RikuScene({
             .catch(() => { /* 載入失敗跳過 */ })
         )
       ).then(() => {
-        const defaultClip = fbxClipsRef.current['fbx_breathing'] ?? fbxClipsRef.current['fbx_idle']
-        if (defaultClip) {
-          currentIdleRef.current = mixer.clipAction(defaultClip)
+        const target = pendingFbxAnimRef.current
+        const clip = fbxClipsRef.current[target]
+          ?? fbxClipsRef.current['fbx_breathing']
+          ?? fbxClipsRef.current['fbx_idle']
+        if (clip) {
+          currentIdleRef.current = mixer.clipAction(clip)
           currentIdleRef.current.setLoop(THREE.LoopRepeat, Infinity)
           currentIdleRef.current.play()
         }
@@ -634,7 +638,11 @@ export default function RikuScene({
               case 'fbx_happy2':
               case 'fbx_sitting': {
                 const clip = fbxClipsRef.current[name]
-                if (clip && mixerRef.current) {
+                if (!clip) {
+                  pendingFbxAnimRef.current = name
+                  break
+                }
+                if (mixerRef.current) {
                   const action = mixerRef.current.clipAction(clip)
                   if (currentIdleRef.current && currentIdleRef.current !== action) {
                     currentIdleRef.current.fadeOut(0.3)

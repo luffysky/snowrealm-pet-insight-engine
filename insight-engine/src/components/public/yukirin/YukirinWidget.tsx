@@ -330,11 +330,9 @@ export default function YukirinWidget() {
   // ── 說話邏輯 ─────────────────────────────────────────────────────────────
   const handleLoad = useCallback((controls: AnyControls) => {
     yukirinRef.current = controls
-    // 恢復上次保存的姿勢
+    // 告知 Scene 要播哪個姿勢（若 FBX 還沒載完，Scene 內部會 queue 起來等 FBX 就緒再播）
     const savedPose = localStorage.getItem('yukirin-pose') ?? 'fbx_breathing'
-    if (savedPose !== 'fbx_breathing') {
-      setTimeout(() => controls.playAnimation(savedPose), 800)
-    }
+    controls.playAnimation(savedPose)
   }, [])
 
   const showBubble = useCallback(() => {
