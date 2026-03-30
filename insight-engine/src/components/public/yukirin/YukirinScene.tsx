@@ -192,25 +192,202 @@ export default function YukirinScene({
   const CLICK_REACTIONS: YukirinMood[] = ['surprised', 'wink', 'excited', 'happy', 'relaxed']
   const clickReactionIdxRef = useRef(0)
 
-  // 揮手動畫
+  // ── 動作動畫庫 ────────────────────────────────────────────────────────────
+
+  // 揮手
   const playArmWave = useCallback((vrm: VRM) => {
     const upperArm = vrm.humanoid.getNormalizedBoneNode('rightUpperArm')
     const lowerArm = vrm.humanoid.getNormalizedBoneNode('rightLowerArm')
     if (!upperArm) return
     let t = 0
-    const wave = () => {
+    const anim = () => {
       t += 0.07
       upperArm.rotation.z = -1.0 + Math.sin(t * 3) * 0.3
       upperArm.rotation.x = -0.1
       if (lowerArm) lowerArm.rotation.z = 0.15 + Math.sin(t * 3 + 0.5) * 0.15
-      if (t < Math.PI * 2.5) {
-        requestAnimationFrame(wave)
-      } else {
-        upperArm.rotation.set(0, 0, 0)
-        if (lowerArm) lowerArm.rotation.set(0, 0, 0)
+      if (t < Math.PI * 2.5) requestAnimationFrame(anim)
+      else { upperArm.rotation.set(0, 0, 0); if (lowerArm) lowerArm.rotation.set(0, 0, 0) }
+    }
+    requestAnimationFrame(anim)
+  }, [])
+
+  // 點頭
+  const playNod = useCallback((vrm: VRM) => {
+    const head = vrm.humanoid.getNormalizedBoneNode('head')
+    if (!head) return
+    let t = 0
+    const anim = () => {
+      t += 0.1
+      head.rotation.x = Math.sin(t * 3) * 0.22 * Math.max(0, 1 - t / (Math.PI * 2))
+      if (t < Math.PI * 2) requestAnimationFrame(anim)
+      else head.rotation.x = 0
+    }
+    requestAnimationFrame(anim)
+  }, [])
+
+  // 搖頭
+  const playShakeHead = useCallback((vrm: VRM) => {
+    const head = vrm.humanoid.getNormalizedBoneNode('head')
+    if (!head) return
+    let t = 0
+    const anim = () => {
+      t += 0.09
+      head.rotation.y = Math.sin(t * 3.5) * 0.28 * Math.max(0, 1 - t / (Math.PI * 2.2))
+      if (t < Math.PI * 2.2) requestAnimationFrame(anim)
+      else head.rotation.y = 0
+    }
+    requestAnimationFrame(anim)
+  }, [])
+
+  // 歪頭（可愛）
+  const playTiltHead = useCallback((vrm: VRM) => {
+    const head = vrm.humanoid.getNormalizedBoneNode('head')
+    const neck = vrm.humanoid.getNormalizedBoneNode('neck')
+    if (!head) return
+    const dir = Math.random() > 0.5 ? 1 : -1
+    let t = 0
+    const anim = () => {
+      t += 0.04
+      const tilt = Math.sin(Math.min(t, Math.PI)) * 0.28 * dir
+      head.rotation.z = tilt
+      if (neck) neck.rotation.z = tilt * 0.35
+      if (t < Math.PI * 3) requestAnimationFrame(anim)
+      else { head.rotation.z = 0; if (neck) neck.rotation.z = 0 }
+    }
+    requestAnimationFrame(anim)
+  }, [])
+
+  // 鞠躬
+  const playBow = useCallback((vrm: VRM) => {
+    const spine = vrm.humanoid.getNormalizedBoneNode('spine')
+    const chest = vrm.humanoid.getNormalizedBoneNode('chest')
+    const head  = vrm.humanoid.getNormalizedBoneNode('head')
+    if (!spine) return
+    let t = 0
+    const anim = () => {
+      t += 0.04
+      const lean = Math.sin(Math.min(t, Math.PI)) * 0.45
+      spine.rotation.x = lean
+      if (chest) chest.rotation.x = lean * 0.4
+      if (head) head.rotation.x = -lean * 0.3
+      if (t < Math.PI * 2) requestAnimationFrame(anim)
+      else {
+        spine.rotation.x = 0
+        if (chest) chest.rotation.x = 0
+        if (head) head.rotation.x = 0
       }
     }
-    requestAnimationFrame(wave)
+    requestAnimationFrame(anim)
+  }, [])
+
+  // 聳肩
+  const playShrug = useCallback((vrm: VRM) => {
+    const leftArm  = vrm.humanoid.getNormalizedBoneNode('leftUpperArm')
+    const rightArm = vrm.humanoid.getNormalizedBoneNode('rightUpperArm')
+    if (!leftArm || !rightArm) return
+    let t = 0
+    const anim = () => {
+      t += 0.06
+      const lift = Math.sin(Math.min(t * 1.4, Math.PI)) * 0.38
+      leftArm.rotation.z  =  lift
+      rightArm.rotation.z = -lift
+      if (t < Math.PI * 1.6) requestAnimationFrame(anim)
+      else { leftArm.rotation.z = 0; rightArm.rotation.z = 0 }
+    }
+    requestAnimationFrame(anim)
+  }, [])
+
+  // 思考手勢（右手到下巴附近）
+  const playThinkPose = useCallback((vrm: VRM) => {
+    const rUpper = vrm.humanoid.getNormalizedBoneNode('rightUpperArm')
+    const rLower = vrm.humanoid.getNormalizedBoneNode('rightLowerArm')
+    const head   = vrm.humanoid.getNormalizedBoneNode('head')
+    if (!rUpper) return
+    let t = 0
+    const anim = () => {
+      t += 0.04
+      const p = Math.min(t / (Math.PI * 0.5), 1)
+      const ease = p < 0.5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2
+      rUpper.rotation.x = -0.7 * ease
+      rUpper.rotation.z = -0.45 * ease
+      if (rLower) rLower.rotation.z = 0.55 * ease
+      if (head) head.rotation.z = 0.07 * ease
+      if (t < Math.PI * 3.5) requestAnimationFrame(anim)
+      else {
+        rUpper.rotation.set(0, 0, 0)
+        if (rLower) rLower.rotation.set(0, 0, 0)
+        if (head) head.rotation.z = 0
+      }
+    }
+    requestAnimationFrame(anim)
+  }, [])
+
+  // 興奮抖動（上身小顫動）
+  const playExcitedBounce = useCallback((vrm: VRM) => {
+    const spine = vrm.humanoid.getNormalizedBoneNode('spine')
+    if (!spine) return
+    let t = 0
+    const anim = () => {
+      t += 0.2
+      spine.rotation.x = Math.abs(Math.sin(t * 5)) * 0.025 * Math.max(0, 1 - t / (Math.PI * 2.5))
+      if (t < Math.PI * 2.5) requestAnimationFrame(anim)
+      else spine.rotation.x = 0
+    }
+    requestAnimationFrame(anim)
+  }, [])
+
+  // 左右搖擺（hips）
+  const playSway = useCallback((vrm: VRM) => {
+    const hips  = vrm.humanoid.getNormalizedBoneNode('hips')
+    const spine = vrm.humanoid.getNormalizedBoneNode('spine')
+    if (!hips) return
+    let t = 0
+    const anim = () => {
+      t += 0.045
+      const s = Math.sin(t * 2) * 0.07 * Math.max(0, 1 - t / (Math.PI * 3))
+      hips.rotation.z  =  s
+      if (spine) spine.rotation.z = -s * 0.5
+      if (t < Math.PI * 3) requestAnimationFrame(anim)
+      else { hips.rotation.z = 0; if (spine) spine.rotation.z = 0 }
+    }
+    requestAnimationFrame(anim)
+  }, [])
+
+  // 舞步擺動（靠 targetBodyYRot 驅動，安全不衝突）
+  const playDanceStep = useCallback(() => {
+    const seq = [0.5, -0.5, 0.3, -0.3, 0]
+    seq.forEach((v, i) => {
+      setTimeout(() => { targetBodyYRotRef.current = v }, i * 300)
+    })
+  }, [])
+
+  // 雙手上舉伸展
+  const playStretch = useCallback((vrm: VRM) => {
+    const lUpper = vrm.humanoid.getNormalizedBoneNode('leftUpperArm')
+    const rUpper = vrm.humanoid.getNormalizedBoneNode('rightUpperArm')
+    const lLower = vrm.humanoid.getNormalizedBoneNode('leftLowerArm')
+    const rLower = vrm.humanoid.getNormalizedBoneNode('rightLowerArm')
+    const spine  = vrm.humanoid.getNormalizedBoneNode('spine')
+    if (!lUpper || !rUpper) return
+    let t = 0
+    const anim = () => {
+      t += 0.04
+      const ext = Math.sin(Math.min(t * 0.7, Math.PI))
+      lUpper.rotation.z =  ext * 1.1
+      rUpper.rotation.z = -ext * 1.1
+      lUpper.rotation.x = rUpper.rotation.x = -ext * 0.25
+      if (lLower) lLower.rotation.x = -ext * 0.15
+      if (rLower) rLower.rotation.x = -ext * 0.15
+      if (spine) spine.rotation.x = -ext * 0.06
+      if (t < Math.PI * 2.8) requestAnimationFrame(anim)
+      else {
+        lUpper.rotation.set(0, 0, 0); rUpper.rotation.set(0, 0, 0)
+        if (lLower) lLower.rotation.set(0, 0, 0)
+        if (rLower) rLower.rotation.set(0, 0, 0)
+        if (spine) spine.rotation.x = 0
+      }
+    }
+    requestAnimationFrame(anim)
   }, [])
 
   // 平滑過渡表情
@@ -322,12 +499,31 @@ export default function YukirinScene({
       if (onLoad) {
         onLoad({
           setMood: (m, dur) => transitionExpression(vrm, m, dur),
-          playAnimation: (_name) => { /* Mixamo 動畫在下一版本加入 */ },
+          playAnimation: (name) => {
+            switch (name) {
+              case 'wave':        playArmWave(vrm); break
+              case 'nod':         playNod(vrm); break
+              case 'shake_head':  playShakeHead(vrm); break
+              case 'tilt_head':   playTiltHead(vrm); break
+              case 'bow':         playBow(vrm); break
+              case 'shrug':       playShrug(vrm); break
+              case 'think':       playThinkPose(vrm); break
+              case 'excited':     playExcitedBounce(vrm); break
+              case 'sway':        playSway(vrm); break
+              case 'dance':       playDanceStep(); break
+              case 'stretch':     playStretch(vrm); break
+            }
+          },
         })
       }
 
       // 隨機 idle 動作排程
-      const idleActions = ['turn_left', 'turn_right', 'center', 'wave', 'look_left', 'look_right', 'idle'] as const
+      const idleActions = [
+        'turn_left', 'turn_right', 'center',
+        'wave', 'look_left', 'look_right', 'idle',
+        'nod', 'shake_head', 'tilt_head', 'bow',
+        'shrug', 'think', 'excited', 'sway', 'dance', 'stretch',
+      ] as const
       const scheduleRandomAction = () => {
         if (!mountedRef.current) return
         const action = idleActions[Math.floor(Math.random() * idleActions.length)]
@@ -354,6 +550,16 @@ export default function YukirinScene({
             mouseRef.current = { x: 0.9, y: mouseRef.current.y }
             setTimeout(() => { mouseRef.current = { x: 0, y: 0 } }, 2500)
             break
+          case 'nod':         playNod(vrm); break
+          case 'shake_head':  playShakeHead(vrm); break
+          case 'tilt_head':   playTiltHead(vrm); break
+          case 'bow':         playBow(vrm); break
+          case 'shrug':       playShrug(vrm); break
+          case 'think':       playThinkPose(vrm); break
+          case 'excited':     playExcitedBounce(vrm); break
+          case 'sway':        playSway(vrm); break
+          case 'dance':       playDanceStep(); break
+          case 'stretch':     playStretch(vrm); break
           case 'idle':
           default:
             break
@@ -665,7 +871,9 @@ export default function YukirinScene({
       renderer.dispose()
       container.removeChild(renderer.domElement)
     }
-  }, [cameraMode, mood, showBackground, allowOrbit, quality, onLoad, transitionExpression, playArmWave])
+  }, [cameraMode, mood, showBackground, allowOrbit, quality, onLoad, transitionExpression,
+    playArmWave, playNod, playShakeHead, playTiltHead, playBow, playShrug,
+    playThinkPose, playExcitedBounce, playSway, playDanceStep, playStretch])
 
   return (
     <div
