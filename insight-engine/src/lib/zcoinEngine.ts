@@ -25,7 +25,7 @@ export const ZCOIN_SPEND = {
 } as const
 
 type EarnReason = 'survey_complete' | 'share' | 'invite' | 'daily_login' | 'milestone' | 'recharge'
-type SpendReason = 'unlock_template' | 'ai_usage' | 'decoration' | 'special_theme'
+type SpendReason = 'unlock_template' | 'ai_usage' | 'decoration' | 'special_theme' | 'guide_chat'
 type TxReason = EarnReason | SpendReason
 
 interface WalletRow extends Record<string, unknown> {

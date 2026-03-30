@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
   const result = await spendZcoin({
     userId,
     amount: packDef.zcoins,
-    reason: `雪凜對話次數：${packDef.label}`,
+    reason: 'guide_chat',
   })
 
   if (!result.ok) {

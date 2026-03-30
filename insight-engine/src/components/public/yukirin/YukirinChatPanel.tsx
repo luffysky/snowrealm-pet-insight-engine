@@ -122,6 +122,17 @@ function BuyTurnsPanel({
   )
 }
 
+const MAX_MESSAGES = 100
+
+/** 加入新訊息，超過 MAX_MESSAGES 時循環覆蓋最舊的（保留第 0 筆初始問候） */
+function appendMessage(prev: ChatMessage[], msg: ChatMessage): ChatMessage[] {
+  if (prev.length >= MAX_MESSAGES) {
+    // 保留 index 0（初始問候），移除最舊的 user/assistant 那筆
+    return [...prev.slice(1), msg]
+  }
+  return [...prev, msg]
+}
+
 // ── 主元件 ───────────────────────────────────────────────────────────────────
 export default function YukirinChatPanel({ onClose }: YukirinChatPanelProps) {
   const router = useRouter()
@@ -193,7 +204,7 @@ export default function YukirinChatPanel({ onClose }: YukirinChatPanelProps) {
     if (!text.trim() || isLoading) return
 
     const userMsg: ChatMessage = { id: Date.now().toString(), role: 'user', text }
-    setMessages(prev => [...prev, userMsg])
+    setMessages(prev => appendMessage(prev, userMsg))
     setInput('')
     setIsLoading(true)
     setStreamingText('')
@@ -226,12 +237,12 @@ export default function YukirinChatPanel({ onClose }: YukirinChatPanelProps) {
           : { isUnlimited: false, freeRemaining: 0, purchasedCredits: 0, zcoinBalance: null, isLoggedIn: data.isLoggedIn }
         )
         yukirinRef.current?.setMood('sad', 300)
-        setMessages(prev => [...prev, {
+        setMessages(prev => appendMessage(prev, {
           id: (Date.now() + 1).toString(),
           role: 'assistant',
           text: '欸嘿，今天的次數用完了 😴 用 Z幣 換更多對話吧～',
           mood: 'sad',
-        }])
+        }))
         setShowBuyPanel(true)
         return
       }
@@ -241,12 +252,12 @@ export default function YukirinChatPanel({ onClose }: YukirinChatPanelProps) {
         const fallback = getFallbackResponse(text)
         yukirinRef.current?.setMood(fallback.mood, 300)
         setStreamingText('')
-        setMessages(prev => [...prev, {
+        setMessages(prev => appendMessage(prev, {
           id: (Date.now() + 1).toString(),
           role: 'assistant',
           text: fallback.text,
           mood: fallback.mood,
-        }])
+        }))
         setQuickReplies(fallback.quickReplies ?? DEFAULT_QUICK_REPLIES)
         return
       }
@@ -322,7 +333,7 @@ export default function YukirinChatPanel({ onClose }: YukirinChatPanelProps) {
         text: accText || '欸嘿，我想了一下沒想出來 😅',
         mood: finalMood,
       }
-      setMessages(prev => [...prev, assistantMsg])
+      setMessages(prev => appendMessage(prev, assistantMsg))
 
       if (finalAction) executeAction(finalAction)
       setQuickReplies(finalQuickReplies.length > 0 ? finalQuickReplies : DEFAULT_QUICK_REPLIES)
@@ -332,12 +343,12 @@ export default function YukirinChatPanel({ onClose }: YukirinChatPanelProps) {
       setStreamingText('')
       const fallback = getFallbackResponse(text)
       yukirinRef.current?.setMood(fallback.mood, 300)
-      setMessages(prev => [...prev, {
+      setMessages(prev => appendMessage(prev, {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
         text: fallback.text,
         mood: fallback.mood,
-      }])
+      }))
       setQuickReplies(fallback.quickReplies ?? DEFAULT_QUICK_REPLIES)
     } finally {
       setIsLoading(false)
@@ -361,12 +372,12 @@ export default function YukirinChatPanel({ onClose }: YukirinChatPanelProps) {
     } : null)
     setShowBuyPanel(false)
     yukirinRef.current?.setMood('excited', 300)
-    setMessages(prev => [...prev, {
+    setMessages(prev => appendMessage(prev, {
       id: (Date.now() + 2).toString(),
       role: 'assistant',
       text: `欸嘿！成功換到 ${addedTurns} 次對話了 🎉 繼續聊吧～`,
       mood: 'excited',
-    }])
+    }))
     setQuickReplies(DEFAULT_QUICK_REPLIES)
   }, [])
 
