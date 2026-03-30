@@ -8,6 +8,8 @@ import {
   selectLLMProvider,
   buildSystemPrompt,
   parseGuideResponse,
+  shouldTriggerCoupleInteraction,
+  buildCoupleInteractionPrompt,
   GuideContext,
   GuideMessage,
   UserMemory,
@@ -68,6 +70,10 @@ interface ChatRequest {
   message: string
   context?: GuideContext
   history?: GuideMessage[]
+  /** 本 session 已觸發情侶互動次數（前端維護） */
+  coupleCount?: number
+  /** 上次觸發情侶互動的 timestamp（前端維護） */
+  lastCoupleAt?: number
 }
 
 function getUserKey(req: NextRequest, userId: string | null): string {
@@ -313,6 +319,33 @@ export async function POST(req: NextRequest) {
           purchasedRemaining: isUnlimited ? null : quotaResult.purchasedRemaining,
         })
 
+        // ── 情侶互動觸發檢查 ──────────────────────────────────────────────
+        const coupleCount = body.coupleCount ?? 0
+        const lastCoupleAt = body.lastCoupleAt ?? 0
+        const character = context.userMemory?.selectedCharacter ?? 'yukirin'
+
+        if (shouldTriggerCoupleInteraction(intent, lastCoupleAt, coupleCount, false)) {
+          try {
+            const couplePrompt = buildCoupleInteractionPrompt(character, parsed.text, message, intent)
+            const coupleRaw = await callOpenAISimple(aiKey.apiKey, aiKey.model, couplePrompt)
+            const coupleJson = coupleRaw.match(/\{[\s\S]*\}/)?.[0]
+            if (coupleJson) {
+              const couple = JSON.parse(coupleJson) as {
+                partnerLine?: string; partnerMood?: string
+                activeLine?: string; activeMood?: string
+              }
+              send({
+                type: 'couple_popup',
+                partner: character === 'yukirin' ? 'riku' : 'yukirin',
+                partnerLine: couple.partnerLine ?? '',
+                partnerMood: couple.partnerMood ?? 'neutral',
+                activeLine: couple.activeLine ?? '',
+                activeMood: couple.activeMood ?? 'happy',
+              })
+            }
+          } catch { /* 情侶互動非核心，失敗不影響主流程 */ }
+        }
+
       } catch (err) {
         console.error('[guide/chat] Error:', err)
         send({
@@ -337,6 +370,26 @@ export async function POST(req: NextRequest) {
       'Connection': 'keep-alive',
     },
   })
+}
+
+/** 非串流的短文字 AI 呼叫（用於情侶互動等次要功能） */
+async function callOpenAISimple(apiKey: string, model: string, prompt: string): Promise<string> {
+  const res = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model,
+      messages: [{ role: 'user', content: prompt }],
+      max_tokens: 150,
+      temperature: 0.9,
+    }),
+  })
+  if (!res.ok) throw new Error(`OpenAI couple error ${res.status}`)
+  const data = await res.json() as { choices?: { message?: { content?: string } }[] }
+  return data.choices?.[0]?.message?.content ?? ''
 }
 
 async function callOpenAIStream(

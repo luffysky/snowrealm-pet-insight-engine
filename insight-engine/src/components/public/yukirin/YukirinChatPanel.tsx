@@ -16,6 +16,9 @@ interface ChatMessage {
   role: 'user' | 'assistant'
   text: string
   mood?: YukirinMood
+  /** 情侶插話：顯示為不同顏色的對話泡泡 */
+  isPartner?: boolean
+  partnerName?: string
 }
 
 interface TurnsInfo {
@@ -133,12 +136,13 @@ function appendMessage(prev: ChatMessage[], msg: ChatMessage): ChatMessage[] {
 }
 
 async function saveMessages(msgs: ChatMessage[]) {
-  if (msgs.length === 0) return
+  const filtered = msgs.filter(m => !m.isPartner)
+  if (filtered.length === 0) return
   try {
     await fetch('/api/guide/history', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ messages: msgs.map(m => ({ role: m.role, text: m.text, mood: m.mood })) }),
+      body: JSON.stringify({ messages: filtered.map(m => ({ role: m.role, text: m.text, mood: m.mood })) }),
     })
   } catch { /* non-critical */ }
 }
@@ -152,6 +156,10 @@ export default function YukirinChatPanel({ onClose }: YukirinChatPanelProps) {
   const abortRef = useRef<AbortController | null>(null)
 
   const inputRef = useRef<HTMLInputElement>(null)
+
+  // 情侶互動 session 狀態（不需要重渲染，用 ref）
+  const coupleCountRef = useRef(0)
+  const lastCoupleAtRef = useRef(0)
 
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
@@ -236,10 +244,11 @@ export default function YukirinChatPanel({ onClose }: YukirinChatPanelProps) {
     setStreamingText('')
     setQuickReplies([])
 
-    const history: GuideMessage[] = messages.slice(-8).map(m => ({
-      role: m.role,
-      content: m.text,
-    }))
+    // 排除情侶插話，避免污染 AI 對話歷史
+    const history: GuideMessage[] = messages
+      .filter(m => !m.isPartner)
+      .slice(-8)
+      .map(m => ({ role: m.role, content: m.text }))
 
     abortRef.current = new AbortController()
 
@@ -255,6 +264,8 @@ export default function YukirinChatPanel({ onClose }: YukirinChatPanelProps) {
             currentMood: yukirinRef.current?.getCurrentMood(),
           },
           history,
+          coupleCount: coupleCountRef.current,
+          lastCoupleAt: lastCoupleAtRef.current,
         }),
         signal: abortRef.current.signal,
       })
@@ -323,6 +334,12 @@ export default function YukirinChatPanel({ onClose }: YukirinChatPanelProps) {
               isUnlimited?: boolean
               freeRemaining?: number | null
               purchasedRemaining?: number | null
+              // 情侶互動
+              partner?: string
+              partnerLine?: string
+              partnerMood?: string
+              activeLine?: string
+              activeMood?: string
             }
 
             if (evt.type === 'mood' && evt.mood) {
@@ -357,6 +374,37 @@ export default function YukirinChatPanel({ onClose }: YukirinChatPanelProps) {
                 } : null)
               }
             }
+            // ── 情侶互動插話 ──────────────────────────────────────────────
+            if (evt.type === 'couple_popup' && evt.partnerLine) {
+              const partnerName = evt.partner === 'riku' ? '凜空' : '雪凜'
+              // 更新 session 狀態
+              coupleCountRef.current += 1
+              lastCoupleAtRef.current = Date.now()
+              // 插入夥伴的台詞
+              setMessages(prev => appendMessage(prev, {
+                id: `cp-${Date.now()}`,
+                role: 'assistant',
+                text: evt.partnerLine!,
+                mood: (evt.partnerMood ?? 'neutral') as YukirinMood,
+                isPartner: true,
+                partnerName,
+              }))
+              // 1.5 秒後插入主角回應
+              if (evt.activeLine) {
+                const activeLineText = evt.activeLine
+                const activeMoodVal = (evt.activeMood ?? 'happy') as YukirinMood
+                setTimeout(() => {
+                  yukirinRef.current?.setMood(activeMoodVal, 300)
+                  setMessages(prev => appendMessage(prev, {
+                    id: `ca-${Date.now()}`,
+                    role: 'assistant',
+                    text: activeLineText,
+                    mood: activeMoodVal,
+                  }))
+                }, 1500)
+              }
+            }
+
           } catch { /* skip */ }
         }
       }
@@ -482,20 +530,33 @@ export default function YukirinChatPanel({ onClose }: YukirinChatPanelProps) {
       >
         {messages.map(msg => (
           <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-            <div
-              className={`text-xs leading-relaxed px-3 py-2 rounded-2xl max-w-[80%] ${
-                msg.role === 'assistant'
-                  ? 'text-white/85 border border-[#b8a9e8]/20 rounded-bl-sm'
-                  : 'text-white/85 border border-white/15 rounded-br-sm'
-              }`}
-              style={
-                msg.role === 'assistant'
-                  ? { background: 'rgba(184,169,232,0.10)' }
-                  : { background: 'linear-gradient(135deg, rgba(184,169,232,0.2), rgba(245,184,181,0.15))' }
-              }
-            >
-              {msg.text}
-            </div>
+            {/* 情侶插話：紅色泡泡 */}
+            {msg.isPartner ? (
+              <div className="max-w-[85%]">
+                <div className="text-[9px] text-red-400/60 mb-0.5 pl-1">👀 {msg.partnerName} 插話</div>
+                <div
+                  className="text-xs leading-relaxed px-3 py-2 rounded-2xl rounded-bl-sm border border-red-400/20 text-white/80"
+                  style={{ background: 'rgba(220,80,80,0.10)' }}
+                >
+                  {msg.text}
+                </div>
+              </div>
+            ) : (
+              <div
+                className={`text-xs leading-relaxed px-3 py-2 rounded-2xl max-w-[80%] ${
+                  msg.role === 'assistant'
+                    ? 'text-white/85 border border-[#b8a9e8]/20 rounded-bl-sm'
+                    : 'text-white/85 border border-white/15 rounded-br-sm'
+                }`}
+                style={
+                  msg.role === 'assistant'
+                    ? { background: 'rgba(184,169,232,0.10)' }
+                    : { background: 'linear-gradient(135deg, rgba(184,169,232,0.2), rgba(245,184,181,0.15))' }
+                }
+              >
+                {msg.text}
+              </div>
+            )}
           </div>
         ))}
 
