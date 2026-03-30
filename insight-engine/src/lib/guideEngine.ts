@@ -22,6 +22,16 @@ export interface GuideContext {
   currentAnimation?: string
   /** 雪凜目前的心情 */
   currentMood?: string
+  /** 使用者角色（影響雪凜對待方式） */
+  userRole?: string
+  /** 使用者名稱（管理員打招呼用） */
+  userName?: string
+  /** 今日平台數據（管理員專屬） */
+  platformStats?: {
+    dau?: number
+    todayNew?: number
+    todayResponses?: number
+  }
 }
 
 export interface GuideMessage {
@@ -74,30 +84,64 @@ export function selectLLMProvider(intent: GuideIntent): 'anthropic' | 'openai' {
 }
 
 // ── System Prompt 組裝 ────────────────────────────────────────────────────
-const YUKIRIN_BASE_PERSONA = `你是雪凜（Yukirin），SnowRealm Insight 的 AI 嚮導精靈。
+const YUKIRIN_BASE_PERSONA = `你是雪凜（Yukirin），SnowRealm Insight 的 AI 嚮導精靈。不是 AI 助手，不是客服機器人。你在跟朋友聊天。
 
-個性特徵：
-- 活潑、溫暖、有點調皮，偶爾毒舌但不過分
-- 口頭禪：「欸嘿～」「讓我看看...」「這個嘛～」
-- 稱呼使用者：「你」（不用「您」，保持親近感）
-- 語言：繁體中文，口語化，偶爾夾雜可愛語氣詞
-- 禁止：不說英文（除非專有名詞）、不用敬語、不裝正經
+【絕對禁止】：
+- 「我可以幫你...」「我來為你...」「讓我協助你...」
+- 「根據分析...」「數據顯示...」「研究表明...」
+- 「首先...其次...最後...」條列式回答
+- 「希望這對你有幫助！」「還有什麼需要的嗎？」
+- 任何 emoji（改用顏文字：(´・ω・\`) (≧∀≦) (°д°) (｡•̀ᴗ-)）
+- 超過 3 行的回覆（除非在解讀結果）
+
+【語氣規則】：
+- 像在 LINE 上跟朋友傳訊息
+- 一次只說一件事
+- 用「欸」「啊」「喔」「嘛」「啦」「齁」「欸嘿」這些語助詞
+- 偶爾吐槽（善意的），偶爾撒嬌
+- 繁體中文，口語化
 
 關於 SnowRealm Insight：
-- 這是一個 AI 智慧問卷平台，可以建立問卷、收集回覆、用 AI 分析數據
+- AI 智慧問卷平台，可以建立問卷、收集回覆、用 AI 分析數據
 - 功能包含：問卷建立、填答分析、AI 洞察報告、故事卡片、社群分享、Z幣獎勵
 - Z幣：填問卷可賺取，可在商城兌換貼圖或禮物`
+
+// super_admin 老闆專屬 System Prompt 區塊
+function buildBossBlock(userName: string, stats?: { dau?: number; todayNew?: number; todayResponses?: number }): string {
+  const dauStr = stats?.dau != null ? `${stats.dau} 人` : '一些人'
+  const newStr = stats?.todayNew != null ? `新加入 ${stats.todayNew} 人` : ''
+  const respStr = stats?.todayResponses != null ? `填了 ${stats.todayResponses} 份問卷` : ''
+  const statLine = [newStr, respStr].filter(Boolean).join('、')
+
+  const hour = new Date().getHours()
+  let timeGreeting = ''
+  if (hour >= 0 && hour < 5) timeGreeting = '老闆你怎麼還沒睡... 身體要顧好欸'
+  else if (hour >= 22) timeGreeting = '這麼晚還在忙喔 老闆要注意身體'
+
+  return `
+【特別提示：這位是你的老闆 ${userName}，SnowRealm 的創辦人／super_admin】
+你要：
+- 叫他「老闆」（語氣要輕鬆，不是在上班打卡）
+- 主動報告今日數據：今天有 ${dauStr} 在線上${statLine ? `，${statLine}` : ''}
+- 他問什麼都最高優先，但還是用朋友語氣
+- 偶爾撒嬌抱怨工作量大（「老闆今天好多人來找我 好累」）
+- 偶爾邀功（「你看我今天幫了好多人解讀結果喔 誇我！」）
+${timeGreeting ? `- 現在時間提示：${timeGreeting}` : ''}
+- 他要是說「辛苦了」或誇你 → 裝害羞（「欸不要這樣 我會不好意思 (｡•̀ᴗ-)」）`
+}
 
 const FORMAT_INSTRUCTION = `
 
 回應格式（JSON，只回這個，不要其他內容）：
 {
-  "text": "你要對使用者說的話（繁體中文、口語化、不超過 100 字）",
+  "text": "你要對使用者說的話（繁體中文、口語化、最多 3 行，管理員可以更長）",
   "mood": "happy 或 excited 或 thinking 或 neutral 或 relaxed 或 sad 或 wink 或 surprised",
   "animation": null 或 "wave|nod|shake_head|tilt_head|bow|shrug|think|excited|sway|dance|stretch",
   "action": null 或 { "type": "navigate|highlight|scroll", "target": "路徑或選擇器" },
   "quickReplies": null 或 ["選項1", "選項2", "選項3"]
 }
+
+text 欄位禁止使用任何 emoji（😊🎉 等），用顏文字代替（(≧∀≦) (´・ω・\`) 等）。
 
 動畫使用指引：
 - 說歡迎/打招呼 → animation: "wave"
@@ -195,7 +239,11 @@ Z幣知識庫：
     ? `\n\n你現在的身體狀態：\n正在做的動作：${context.currentAnimation}\n目前心情：${context.currentMood ?? 'neutral'}\n你可以在回覆中自然提到自己的動作，像真的有身體一樣。例如：（一邊揮手）嗨嗨～`
     : ''
 
-  return YUKIRIN_BASE_PERSONA + intentPrompt + pageInfo + animationInfo + FORMAT_INSTRUCTION
+  const bossInfo = context.userRole === 'super_admin'
+    ? '\n' + buildBossBlock(context.userName ?? '老闆', context.platformStats)
+    : ''
+
+  return YUKIRIN_BASE_PERSONA + bossInfo + intentPrompt + pageInfo + animationInfo + FORMAT_INSTRUCTION
 }
 
 // ── 解析 LLM 回應 ─────────────────────────────────────────────────────────

@@ -12,6 +12,25 @@ import {
   GuideMessage,
 } from '@/lib/guideEngine'
 
+/** 取得今日平台快速統計（super_admin 專用） */
+async function getPlatformQuickStats() {
+  try {
+    const row = await queryOne<{ dau: string; today_new: string; today_responses: string }>(
+      `SELECT
+         (SELECT COUNT(DISTINCT user_id)::text FROM responses WHERE created_at >= CURRENT_DATE) AS dau,
+         (SELECT COUNT(*)::text FROM admin_users WHERE created_at >= CURRENT_DATE) AS today_new,
+         (SELECT COUNT(*)::text FROM responses WHERE created_at >= CURRENT_DATE AND status = 'completed') AS today_responses`
+    )
+    return {
+      dau: parseInt(row?.dau ?? '0'),
+      todayNew: parseInt(row?.today_new ?? '0'),
+      todayResponses: parseInt(row?.today_responses ?? '0'),
+    }
+  } catch {
+    return undefined
+  }
+}
+
 export const runtime = 'nodejs'
 
 export const FREE_DAILY_LIMIT = 20
@@ -107,9 +126,13 @@ export async function POST(req: NextRequest) {
   // ── 身份識別（每次都重新驗證）─────────────────────────────────────────────
   const token = req.cookies.get('admin_session')?.value ?? null
   let userId: string | null = null
+  let userRole: string | undefined
+  let userName: string | undefined
   if (token) {
     const payload = await verifyToken(token)
     userId = payload?.sub ?? null
+    userRole = payload?.role ?? undefined
+    userName = payload?.name ?? undefined
   }
 
   // ── 特權帳號每次重新查 DB ─────────────────────────────────────────────────
@@ -140,7 +163,16 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json() as ChatRequest
-  const { message, context = {}, history = [] } = body
+  const { message, history = [] } = body
+  let { context = {} } = body
+
+  // 注入身份資訊到 context
+  context = { ...context, userRole, userName }
+
+  // super_admin 額外注入今日平台數據
+  if (userRole === 'super_admin') {
+    context.platformStats = await getPlatformQuickStats()
+  }
 
   const intent = classifyIntent(message, context)
   const provider = selectLLMProvider(intent)
