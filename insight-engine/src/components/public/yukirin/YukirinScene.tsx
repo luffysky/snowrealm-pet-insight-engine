@@ -251,6 +251,7 @@ export default function YukirinScene({
   const fbxClipsRef       = useRef<Record<string, THREE.AnimationClip>>({})
   const currentIdleRef    = useRef<THREE.AnimationAction | null>(null)
   const pendingFbxAnimRef = useRef<string>('fbx_breathing') // FBX 還未載入時暫存請求
+  const userSelectedPoseRef = useRef<string | null>(null) // 使用者主動選的姿勢，setMood 不覆蓋
   const allowOrbitRef  = useRef(allowOrbit)
   allowOrbitRef.current = allowOrbit
 
@@ -456,11 +457,14 @@ export default function YukirinScene({
     requestAnimationFrame(anim)
   }, [])
 
-  /** 根據心情切換 FBX idle 動畫 */
+  /** 根據心情切換 FBX idle 動畫（若使用者已手動選姿勢則不覆蓋） */
   const switchIdleByMood = useCallback((newMood: YukirinMood) => {
     const mixer = mixerRef.current
     if (!mixer) return
     const clips = fbxClipsRef.current
+
+    // 使用者主動選了姿勢 → 只換表情，不動 FBX 動畫
+    if (userSelectedPoseRef.current) return
 
     // orbit / fullBody 模式只用站立 breathing，避免坐姿讓腿飄空
     const clipName = allowOrbitRef.current ? 'fbx_breathing' :
@@ -651,6 +655,8 @@ export default function YukirinScene({
               case 'fbx_happy':
               case 'fbx_happy2':
               case 'fbx_sitting': {
+                // 使用者主動選的姿勢，記住它，setMood 不再覆蓋
+                userSelectedPoseRef.current = name
                 const clip = fbxClipsRef.current[name]
                 if (!clip) {
                   // FBX 還沒載入完，先存起來等 Promise.all.then() 播放
@@ -668,8 +674,10 @@ export default function YukirinScene({
                 break
               }
             }
-            // 動作播放完畢後重置為 idle（3 秒後）
-            setTimeout(() => { currentAnimationRef.current = 'idle' }, 3000)
+            // FBX pose 是持續循環，不重置；其他過渡動作 3 秒後回 idle
+            if (!name.startsWith('fbx_')) {
+              setTimeout(() => { currentAnimationRef.current = 'idle' }, 3000)
+            }
           },
           getCurrentAnimation: () => currentAnimationRef.current,
           getCurrentMood: () => currentMoodRef.current,
