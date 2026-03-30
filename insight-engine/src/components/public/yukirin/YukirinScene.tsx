@@ -5,7 +5,7 @@ import * as THREE from 'three'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import { VRMLoaderPlugin, VRM, VRMUtils } from '@pixiv/three-vrm'
 
-export type YukirinMood = 'happy' | 'surprised' | 'relaxed' | 'neutral' | 'wink' | 'excited' | 'thinking' | 'sad'
+export type YukirinMood = 'happy' | 'surprised' | 'relaxed' | 'neutral' | 'wink' | 'excited' | 'thinking' | 'sad' | 'shy' | 'angry'
 
 // 效能分級
 type QualityTier = 'high' | 'mid' | 'low'
@@ -146,6 +146,8 @@ const MOOD_EXPRESSION: Record<YukirinMood, string> = {
   excited:   'happy',
   thinking:  'neutral',
   sad:       'sad',
+  shy:       'relaxed',
+  angry:     'angry',
 }
 
 export default function YukirinScene({
