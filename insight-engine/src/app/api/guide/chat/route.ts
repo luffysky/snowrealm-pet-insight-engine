@@ -10,7 +10,36 @@ import {
   parseGuideResponse,
   GuideContext,
   GuideMessage,
+  UserMemory,
+  CharacterType,
 } from '@/lib/guideEngine'
+
+/** 從 DB 讀取使用者記憶（角色選擇、暱稱、造訪次數等） */
+async function loadUserMemory(userId: string | null, ip: string): Promise<UserMemory> {
+  try {
+    const key = userId ? `user:${userId}` : `ip:${ip}`
+    const row = await queryOne<{
+      nickname: string | null
+      visit_count: number
+      interests: string | null
+      last_topic: string | null
+      selected_character: string | null
+    }>(
+      `SELECT nickname, visit_count, interests, last_topic, selected_character
+       FROM guide_user_memory WHERE user_key = $1`,
+      [key]
+    )
+    return {
+      nickname: row?.nickname ?? undefined,
+      visitCount: row?.visit_count ?? 1,
+      interests: row?.interests ? row.interests.split(',') : undefined,
+      lastTopic: row?.last_topic ?? undefined,
+      selectedCharacter: (row?.selected_character as CharacterType) ?? 'yukirin',
+    }
+  } catch {
+    return { visitCount: 1, selectedCharacter: 'yukirin' }
+  }
+}
 
 /** 取得今日平台快速統計（super_admin 專用） */
 async function getPlatformQuickStats() {
@@ -166,8 +195,15 @@ export async function POST(req: NextRequest) {
   const { message, history = [] } = body
   let { context = {} } = body
 
-  // 注入身份資訊到 context
-  context = { ...context, userRole, userName }
+  // 讀取使用者記憶（角色選擇、暱稱、造訪次數等）
+  const ip =
+    req.headers.get('x-forwarded-for')?.split(',')[0].trim() ??
+    req.headers.get('x-real-ip') ??
+    'unknown'
+  const userMemory = await loadUserMemory(userId, ip)
+
+  // 注入身份資訊 + 使用者記憶到 context
+  context = { ...context, userRole, userName, userMemory }
 
   // super_admin 額外注入今日平台數據
   if (userRole === 'super_admin') {

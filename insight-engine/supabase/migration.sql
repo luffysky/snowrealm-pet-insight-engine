@@ -351,3 +351,21 @@ CREATE INDEX IF NOT EXISTS idx_line_users_platform ON line_users(platform_user_i
 
 -- 回應記錄 — 追蹤問卷後追
 ALTER TABLE responses ADD COLUMN IF NOT EXISTS followup_sent BOOLEAN DEFAULT FALSE;
+
+-- ============================================================
+-- 角色人設 v1.0 — 使用者嚮導記憶（2026-03-30）
+-- ============================================================
+
+-- 使用者嚮導記憶（雪凜 × 凜空 角色選擇 + 個人記憶）
+CREATE TABLE IF NOT EXISTS guide_user_memory (
+  user_key TEXT PRIMARY KEY,             -- 'user:{userId}' 或 'ip:{ip}'
+  selected_character TEXT NOT NULL DEFAULT 'yukirin', -- 'yukirin' | 'riku'
+  nickname TEXT,                         -- 使用者設定的暱稱
+  visit_count INT NOT NULL DEFAULT 1,    -- 累計造訪次數
+  interests TEXT,                        -- 興趣標籤（逗號分隔）
+  last_topic TEXT,                       -- 上次聊天主題
+  couple_interaction_disabled BOOLEAN DEFAULT FALSE, -- 使用者關閉情侶互動
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_guide_memory_updated ON guide_user_memory(updated_at DESC);
