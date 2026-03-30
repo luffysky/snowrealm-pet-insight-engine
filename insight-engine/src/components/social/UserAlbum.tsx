@@ -415,39 +415,39 @@ function AlbumDetail({
     <div className="space-y-3">
       {/* Header */}
       <div className="flex items-center gap-3">
-        <button onClick={onBack} className="text-white/50 hover:text-white transition-colors p-1 -ml-1">
+        <button onClick={onBack} className="text-[#6b5fa8] hover:text-[#3d3155] transition-colors p-1 -ml-1">
           <ChevronLeft className="w-5 h-5" />
         </button>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <h2 className="text-sm font-semibold text-white/80 truncate">{album.name}</h2>
-            {!album.isPublic && <Lock className="w-3 h-3 text-white/30 shrink-0" />}
+            <h2 className="text-sm font-semibold text-[#3d3155] truncate">{album.name}</h2>
+            {!album.isPublic && <Lock className="w-3 h-3 text-[#8a7ca8]/60 shrink-0" />}
           </div>
-          <p className="text-xs text-white/30">{visiblePhotos.length} 張照片</p>
+          <p className="text-xs text-[#8a7ca8]">{visiblePhotos.length} 張照片</p>
         </div>
         {isOwner && (
           <div className="flex items-center gap-2">
             {selectionMode ? (
-              <button onClick={() => { setSelectionMode(false); setSelected(new Set()) }} className="text-xs text-white/40 hover:text-white/70 px-3 py-1.5 border border-white/10 rounded-xl transition-colors">
+              <button onClick={() => { setSelectionMode(false); setSelected(new Set()) }} className="text-xs text-[#8a7ca8] hover:text-[#3d3155] px-3 py-1.5 border border-[#b8a9e8]/30 rounded-xl transition-colors">
                 取消
               </button>
             ) : (
               <>
                 {album.id !== 'all' && (
-                  <button onClick={() => setEditAlbum(true)} className="p-1.5 text-white/30 hover:text-white/60 transition-colors">
+                  <button onClick={() => setEditAlbum(true)} className="p-1.5 text-[#8a7ca8] hover:text-[#3d3155] transition-colors">
                     <Pencil className="w-4 h-4" />
                   </button>
                 )}
                 <button
                   onClick={() => setSelectionMode(true)}
-                  className="text-xs text-white/40 hover:text-white/70 px-3 py-1.5 border border-white/10 rounded-xl transition-colors"
+                  className="text-xs text-[#8a7ca8] hover:text-[#3d3155] px-3 py-1.5 border border-[#b8a9e8]/30 rounded-xl transition-colors"
                 >
                   選取
                 </button>
                 <button
                   onClick={() => fileRef.current?.click()}
                   disabled={uploading}
-                  className="flex items-center gap-1 px-3 py-1.5 bg-white/5 border border-white/10 rounded-xl text-white/40 hover:text-white/70 text-xs transition-colors disabled:opacity-40"
+                  className="flex items-center gap-1 px-3 py-1.5 bg-[#e8e0ff]/50 border border-[#b8a9e8]/30 rounded-xl text-[#6b5fa8] hover:text-[#3d3155] text-xs transition-colors disabled:opacity-40"
                 >
                   <input
                     ref={fileRef}
@@ -473,7 +473,7 @@ function AlbumDetail({
       {loading ? (
         <div className="flex justify-center py-10"><Loader2 className="w-6 h-6 text-white/20 animate-spin" /></div>
       ) : visiblePhotos.length === 0 ? (
-        <div className="text-center py-12 text-white/20">
+        <div className="text-center py-12 text-[#8a7ca8]/60">
           <Camera className="w-10 h-10 mx-auto mb-3 opacity-30" />
           <p className="text-sm">還沒有照片</p>
           {isOwner && <p className="text-xs mt-1">點上方「新增」按鈕加入照片</p>}
@@ -713,11 +713,11 @@ export function UserAlbum({ userId, isOwner }: UserAlbumProps) {
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <h2 className="text-sm font-semibold text-white/40 uppercase tracking-wider">相簿</h2>
+        <h2 className="text-sm font-semibold text-[#8a7ca8] uppercase tracking-wider">相簿</h2>
         {isOwner && (
           <button
             onClick={() => setCreateModal(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/5 border border-white/10 text-white/40 hover:text-white/70 hover:bg-white/10 text-xs transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#e8e0ff]/50 border border-[#b8a9e8]/30 text-[#6b5fa8] hover:text-[#3d3155] hover:bg-[#d8ceff]/50 text-xs transition-colors"
           >
             <Plus className="w-3.5 h-3.5" /> 建立相簿
           </button>
@@ -727,7 +727,7 @@ export function UserAlbum({ userId, isOwner }: UserAlbumProps) {
       {loading ? (
         <div className="flex justify-center py-6"><Loader2 className="w-5 h-5 text-white/20 animate-spin" /></div>
       ) : albums.length === 0 && totalPhotoCount === 0 ? (
-        <div className="text-center py-10 text-white/20">
+        <div className="text-center py-10 text-[#8a7ca8]/60">
           <BookImage className="w-10 h-10 mx-auto mb-3 opacity-30" />
           <p className="text-sm">還沒有照片</p>
           {isOwner && <p className="text-xs mt-1">返回「所有照片」上傳你的第一張照片</p>}
@@ -740,12 +740,12 @@ export function UserAlbum({ userId, isOwner }: UserAlbumProps) {
               className="relative cursor-pointer"
               onClick={() => setActiveAlbum({ ...ALL_PHOTOS_ALBUM, photoCount: totalPhotoCount })}
             >
-              <div className="aspect-square rounded-2xl overflow-hidden bg-white/5 border border-white/8 flex items-center justify-center">
-                <Camera className="w-8 h-8 text-white/15" />
+              <div className="aspect-square rounded-2xl overflow-hidden bg-[#e8e0ff]/40 border border-[#b8a9e8]/20 flex items-center justify-center">
+                <Camera className="w-8 h-8 text-[#b8a9e8]/60" />
               </div>
               <div className="mt-1.5 px-0.5">
-                <p className="text-sm text-white/70 font-medium truncate">所有照片</p>
-                <p className="text-xs text-white/25">{totalPhotoCount} 張</p>
+                <p className="text-sm text-[#3d3155] font-medium truncate">所有照片</p>
+                <p className="text-xs text-[#8a7ca8]">{totalPhotoCount} 張</p>
               </div>
             </div>
           )}
@@ -766,22 +766,22 @@ export function UserAlbum({ userId, isOwner }: UserAlbumProps) {
               }}
             >
               {/* Cover */}
-              <div className="aspect-square rounded-2xl overflow-hidden bg-white/5 border border-white/8">
+              <div className="aspect-square rounded-2xl overflow-hidden bg-[#e8e0ff]/40 border border-[#b8a9e8]/20">
                 {album.coverUrl ? (
                   <img src={album.coverUrl} alt={album.name} className="w-full h-full object-cover" />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center">
-                    <FolderOpen className="w-8 h-8 text-white/15" />
+                    <FolderOpen className="w-8 h-8 text-[#b8a9e8]/60" />
                   </div>
                 )}
               </div>
               {/* Info */}
               <div className="mt-1.5 px-0.5">
                 <div className="flex items-center gap-1">
-                  <p className="text-sm text-white/70 font-medium truncate">{album.name}</p>
-                  {!album.isPublic && <Lock className="w-3 h-3 text-white/30 shrink-0" />}
+                  <p className="text-sm text-[#3d3155] font-medium truncate">{album.name}</p>
+                  {!album.isPublic && <Lock className="w-3 h-3 text-[#8a7ca8]/60 shrink-0" />}
                 </div>
-                <p className="text-xs text-white/25">{album.photoCount} 張</p>
+                <p className="text-xs text-[#8a7ca8]">{album.photoCount} 張</p>
               </div>
             </div>
           ))}

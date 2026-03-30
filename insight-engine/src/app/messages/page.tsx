@@ -1692,6 +1692,9 @@ export default function MessagesPage() {
                     onContextMenu={e => !isEditing && handleContextMenu(e, msg)}
                     style={{
                       touchAction: 'pan-y',
+                      WebkitTouchCallout: 'none',
+                      WebkitUserSelect: 'none',
+                      userSelect: 'none',
                       ...(naked || isRecalled ? {} : msg.isMine ? {
                         background: activeTheme.myBg,
                         color: activeTheme.myText,

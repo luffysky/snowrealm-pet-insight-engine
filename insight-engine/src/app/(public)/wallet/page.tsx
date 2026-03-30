@@ -68,10 +68,10 @@ export default function WalletPage() {
 
       {/* 餘額卡片 */}
       <div className="lg-lavender-sharp rounded-2xl p-6 mb-6 text-center bg-gradient-to-br from-amber-600/15 to-amber-400/5">
-        <p className="text-sm text-amber-200/60 mb-1">目前餘額</p>
-        <p className="text-5xl font-bold text-amber-300">{balance?.balance ?? 0}</p>
-        <p className="text-xs text-amber-200/40 mt-1">Z幣</p>
-        <div className="flex justify-center gap-6 mt-4 text-xs text-amber-200/50">
+        <p className="text-sm text-[#6b5fa8] mb-1">目前餘額</p>
+        <p className="text-5xl font-bold text-[#3d3155]">{balance?.balance ?? 0}</p>
+        <p className="text-xs text-[#8a7ca8] mt-1">Z幣</p>
+        <div className="flex justify-center gap-6 mt-4 text-xs text-[#8a7ca8]">
           <span>累計賺取 {balance?.totalEarned ?? 0}</span>
           <span>累計花費 {balance?.totalSpent ?? 0}</span>
         </div>
@@ -90,7 +90,7 @@ export default function WalletPage() {
           ].map(([emoji, label, amt]) => (
             <div key={label} className="flex items-center justify-between text-[#8a7ca8]">
               <span>{emoji} {label}</span>
-              <span className="text-amber-300 font-medium">{amt}</span>
+              <span className="text-amber-700 font-medium">{amt}</span>
             </div>
           ))}
         </div>

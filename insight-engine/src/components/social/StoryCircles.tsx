@@ -100,8 +100,8 @@ export function StoryCircles() {
             onClick={() => router.push('/story/create')}
             className="w-14 h-14"
           >
-            <div className="w-14 h-14 rounded-full bg-white/10 flex items-center justify-center overflow-hidden">
-              <Plus className="w-5 h-5 text-white/60" />
+            <div className="w-14 h-14 rounded-full bg-[#3d3155]/45 flex items-center justify-center overflow-hidden border border-white/20">
+              <Plus className="w-5 h-5 text-white/80" />
             </div>
           </button>
         )}

@@ -210,7 +210,7 @@ function PostPreviewCard({ post, meId }: { post: SocialPost; meId: string | null
             <span className="ml-auto text-[10px] px-1.5 py-0.5 bg-blue-500/15 text-blue-400 rounded-full font-medium">文章</span>
           )}
         </div>
-        {post.title && <h3 className="font-bold text-white/90 text-base line-clamp-2">{post.title}</h3>}
+        {post.title && <h3 className="font-bold text-[#3d3155] text-base line-clamp-2">{post.title}</h3>}
         <p className="text-sm text-[#6b5fa8] leading-relaxed line-clamp-3">{stripHtml(post.content)}</p>
         {post.tags.length > 0 && (
           <div className="flex flex-wrap gap-1">
@@ -236,12 +236,12 @@ function PostPreviewCard({ post, meId }: { post: SocialPost; meId: string | null
           </div>
           <div className="flex items-center gap-1">
             <button onClick={e => { e.stopPropagation(); setShowShareCard(true) }}
-              className="p-1.5 rounded-lg text-[#8a7ca8]/60 hover:text-[#6b5fa8] hover:bg-white/5 transition-colors"
+              className="p-1.5 rounded-lg text-[#8a7ca8] hover:text-[#6b5fa8] hover:bg-white/5 transition-colors"
             >
               <Share2 className="w-3.5 h-3.5" />
             </button>
             <button onClick={toggleBookmark} disabled={bookmarking}
-              className={`p-1.5 rounded-lg transition-colors ${bookmarked ? 'text-amber-400 hover:text-amber-300' : 'text-[#8a7ca8]/60 hover:text-amber-400 hover:bg-white/5'}`}
+              className={`p-1.5 rounded-lg transition-colors ${bookmarked ? 'text-amber-500 hover:text-amber-400' : 'text-[#8a7ca8] hover:text-amber-500 hover:bg-white/5'}`}
             >
               <Bookmark className={`w-3.5 h-3.5 ${bookmarked ? 'fill-current' : ''}`} />
             </button>
@@ -270,7 +270,7 @@ function SurveyCard({ survey }: { survey: ExploreSurvey }) {
         {survey.tenantName && (
           <span className="text-[10px] text-[#8a7ca8]/75 uppercase tracking-wider">{survey.tenantName}</span>
         )}
-        <h3 className="text-sm font-semibold text-white/85 line-clamp-2 leading-snug">{label}</h3>
+        <h3 className="text-sm font-semibold text-[#3d3155] line-clamp-2 leading-snug">{label}</h3>
         {survey.subtitle && (
           <p className="text-xs text-[#8a7ca8] line-clamp-2 leading-relaxed">{survey.subtitle}</p>
         )}
@@ -457,7 +457,7 @@ function ArticlesPageInner() {
       </div>
 
       {/* Tabs */}
-      <div className="sticky top-0 z-20 bg-transparent/90 backdrop-blur-xl border-b border-white/8">
+      <div className="sticky top-0 z-20 bg-slate-950/75 backdrop-blur-xl border-b border-white/8">
         <div className="max-w-4xl mx-auto px-4">
           <div className="flex gap-1 py-2 overflow-x-auto scrollbar-none">
             {TABS.map(t => (

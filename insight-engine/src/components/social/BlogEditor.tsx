@@ -295,11 +295,11 @@ export function BlogEditor({ articleId, onSaved, onCancel }: Props) {
       )}
 
       {/* Tab bar */}
-      <div className="shrink-0 flex gap-1 px-4 pt-3 border-b border-white/6">
+      <div className="shrink-0 flex gap-1 px-4 pt-3 border-b border-white/8 bg-slate-900/80">
         {(['write', 'series', 'seo'] as const).map(tab => (
           <button key={tab} onClick={() => setActiveTab(tab)}
             className={`px-4 py-2 text-xs font-medium border-b-2 -mb-px transition-colors ${
-              activeTab === tab ? 'text-amber-400 border-amber-400' : 'text-white/35 border-transparent hover:text-white/60'
+              activeTab === tab ? 'text-amber-400 border-amber-400' : 'text-white/50 border-transparent hover:text-white/80'
             }`}
           >
             {tab === 'write' ? '✍️ 撰寫' : tab === 'series' ? '📚 系列' : '🔍 SEO'}

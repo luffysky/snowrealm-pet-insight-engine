@@ -511,11 +511,11 @@ export default function UserProfilePage() {
             {/* Name + nickname */}
             {nickname && !isMe ? (
               <div>
-                <h1 className="text-xl font-bold text-white">{nickname}</h1>
+                <h1 className="text-xl font-bold text-[#3d3155]">{nickname}</h1>
                 <p className="text-sm text-[#8a7ca8]/80">{profile.name}</p>
               </div>
             ) : (
-              <h1 className="text-xl font-bold text-white">{profile.name}</h1>
+              <h1 className="text-xl font-bold text-[#3d3155]">{profile.name}</h1>
             )}
 
             {/* Nickname edit (only for other users when logged in) */}
@@ -570,15 +570,15 @@ export default function UserProfilePage() {
             {/* Stats */}
             <div className="flex items-center gap-6 text-sm mt-3">
               <div className="text-center">
-                <p className="text-white font-semibold">{profile.posts.length}</p>
+                <p className="text-[#3d3155] font-semibold">{profile.posts.length}</p>
                 <p className="text-[#8a7ca8]/80 text-xs">貼文</p>
               </div>
               <button onClick={() => setFollowModal('followers')} className="text-center hover:opacity-70 transition-opacity">
-                <p className="text-white font-semibold">{profile.followers}</p>
+                <p className="text-[#3d3155] font-semibold">{profile.followers}</p>
                 <p className="text-[#8a7ca8]/80 text-xs">粉絲</p>
               </button>
               <button onClick={() => setFollowModal('following')} className="text-center hover:opacity-70 transition-opacity">
-                <p className="text-white font-semibold">{profile.following}</p>
+                <p className="text-[#3d3155] font-semibold">{profile.following}</p>
                 <p className="text-[#8a7ca8]/80 text-xs">追蹤中</p>
               </button>
             </div>
