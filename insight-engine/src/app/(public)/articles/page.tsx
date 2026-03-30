@@ -318,7 +318,7 @@ function CreatorCard({ user, meId }: { user: ExploreUser; meId: string | null })
         </div>
       </Link>
       <div className="flex-1 min-w-0">
-        <Link href={`/u/${user.id}`} className="text-sm font-medium text-[#3d3155] hover:text-white truncate block transition-colors">
+        <Link href={`/u/${user.id}`} className="text-sm font-medium text-[#3d3155] hover:text-[#6b5fa8] truncate block transition-colors">
           {user.displayName ?? '用戶'}
         </Link>
         <p className="text-[10px] text-[#8a7ca8]/75">{user.followerCount} 粉絲 · {user.postCount} 貼文</p>
@@ -487,7 +487,7 @@ function ArticlesPageInner() {
                   value={search}
                   onChange={e => { setSearch(e.target.value); if (!e.target.value) applyTagFilter('') }}
                   placeholder="搜尋貼文、標籤..."
-                  className="w-full pl-9 pr-4 py-2.5 glass-input rounded-xl text-sm text-white placeholder-white/30"
+                  className="w-full pl-9 pr-4 py-2.5 glass-input rounded-xl text-sm text-[var(--sc-fg)] placeholder-[var(--sc-fg-faint)]"
                 />
               </div>
               <div className="flex gap-2">

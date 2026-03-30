@@ -54,10 +54,42 @@
   /* Scrollbar */
   --sb-thumb: rgba(14,165,233,0.25);
   --sb-thumb-hover: rgba(14,165,233,0.45);
+
+  /* ── Social card 語意色票（淺色卡片）── */
+  --sc-fg:           #1e293b;          /* 主要文字 */
+  --sc-fg-muted:     #64748b;          /* 次要文字、按鈕 */
+  --sc-fg-faint:     #94a3b8;          /* 時間戳、佔位符 */
+  --sc-fg-accent:    #f59e0b;          /* amber 強調（GIF 按鈕 hover 等） */
+  --sc-hover-bg:     rgba(15,23,42,0.06);   /* hover 背景 */
+  --sc-active-bg:    rgba(15,23,42,0.10);   /* active 背景 */
+  --sc-bubble-bg:    #f8fafc;          /* 留言氣泡背景 */
+  --sc-input-bg:     rgba(0,0,0,0.04); /* 輸入框背景 */
+  --sc-input-border: rgba(0,0,0,0.10); /* 輸入框邊框 */
+  --sc-badge-bg:     #e2e8f0;          /* 數量徽章背景 */
+  --sc-sep:          rgba(0,0,0,0.08); /* 分隔線 */
+  --sc-send-bg:      rgba(245,158,11,0.12); /* 發送按鈕背景 */
+  --sc-send-fg:      #92400e;          /* 發送按鈕文字 */
+  --sc-send-hover:   rgba(245,158,11,0.22);
 }
 
 /* 深色模式：加 .dark class 到 <html> */
 html.dark {
+  /* Social card 深色模式覆蓋 */
+  --sc-fg:           rgba(255,255,255,0.85);
+  --sc-fg-muted:     rgba(255,255,255,0.45);
+  --sc-fg-faint:     rgba(255,255,255,0.25);
+  --sc-fg-accent:    #fbbf24;
+  --sc-hover-bg:     rgba(255,255,255,0.08);
+  --sc-active-bg:    rgba(255,255,255,0.14);
+  --sc-bubble-bg:    rgba(255,255,255,0.04);
+  --sc-input-bg:     rgba(255,255,255,0.05);
+  --sc-input-border: rgba(255,255,255,0.10);
+  --sc-badge-bg:     rgba(255,255,255,0.12);
+  --sc-sep:          rgba(255,255,255,0.08);
+  --sc-send-bg:      rgba(245,158,11,0.20);
+  --sc-send-fg:      #fbbf24;
+  --sc-send-hover:   rgba(245,158,11,0.32);
+
   --pub-bg:         #020617;
   --pub-bg2:        #0f172a;
   --pub-surface:    rgba(15,23,42,0.85);

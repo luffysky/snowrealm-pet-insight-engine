@@ -69,14 +69,23 @@ function CommentInput({ postId, parentId, onSubmitted, onCancel, placeholder, au
           onKeyDown={e => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) submit() }}
           placeholder={placeholder ?? '寫留言...'}
           rows={2}
-          className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-xl text-sm text-white placeholder-white/30 outline-none focus:border-amber-400/30 resize-none"
+          className="w-full px-3 py-2 rounded-xl text-sm outline-none resize-none transition-colors"
+          style={{
+            background: 'var(--sc-input-bg)',
+            border: '1px solid var(--sc-input-border)',
+            color: 'var(--sc-fg)',
+          }}
         />
       </div>
       {gifUrl && (
         <div className="relative inline-block">
           <img src={gifUrl} alt="GIF" className="h-24 rounded-lg" />
-          <button onClick={() => setGifUrl(null)} className="absolute -top-1 -right-1 w-5 h-5 bg-slate-800 border border-white/20 rounded-full flex items-center justify-center">
-            <X className="w-3 h-3 text-white/60" />
+          <button
+            onClick={() => setGifUrl(null)}
+            className="absolute -top-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center"
+            style={{ background: 'var(--sc-bubble-bg)', border: '1px solid var(--sc-input-border)' }}
+          >
+            <X className="w-3 h-3" style={{ color: 'var(--sc-fg-muted)' }} />
           </button>
         </div>
       )}
@@ -90,8 +99,12 @@ function CommentInput({ postId, parentId, onSubmitted, onCancel, placeholder, au
             ))}
           </div>
           <div className="relative">
-            <button onClick={() => setShowGif(s => !s)}
-              className="ml-1 px-2 py-1 text-xs text-white/40 hover:text-amber-300 hover:bg-white/5 rounded-lg transition-colors font-medium"
+            <button
+              onClick={() => setShowGif(s => !s)}
+              className="ml-1 px-2 py-1 text-xs rounded-lg transition-colors font-medium"
+              style={{ color: 'var(--sc-fg-muted)' }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = 'var(--sc-fg-accent)'; (e.currentTarget as HTMLElement).style.background = 'var(--sc-hover-bg)' }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'var(--sc-fg-muted)'; (e.currentTarget as HTMLElement).style.background = '' }}
             >
               GIF
             </button>
@@ -104,12 +117,19 @@ function CommentInput({ postId, parentId, onSubmitted, onCancel, placeholder, au
         </div>
         <div className="flex items-center gap-2">
           {onCancel && (
-            <button onClick={onCancel} className="text-xs text-white/30 hover:text-white/60 transition-colors">取消</button>
+            <button
+              onClick={onCancel}
+              className="text-xs transition-colors"
+              style={{ color: 'var(--sc-fg-faint)' }}
+            >
+              取消
+            </button>
           )}
           <button
             onClick={submit}
             disabled={sending || (!content.trim() && !gifUrl)}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 rounded-xl text-xs font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            style={{ background: 'var(--sc-send-bg)', color: 'var(--sc-send-fg)' }}
           >
             {sending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
             發送
@@ -151,7 +171,8 @@ function ReplyLikeButton({ reply, currentUserId }: { reply: SocialComment; curre
   return (
     <button
       onClick={handleLike}
-      className={`flex items-center gap-1 text-[10px] font-medium transition-colors ${liked ? 'text-rose-400' : 'text-white/25 hover:text-rose-400'}`}
+      className={`flex items-center gap-1 text-[10px] font-medium transition-colors ${liked ? 'text-rose-400' : 'hover:text-rose-400'}`}
+      style={liked ? {} : { color: 'var(--sc-fg-faint)' }}
     >
       <Heart className={`w-2.5 h-2.5 ${liked ? 'fill-rose-400' : ''}`} />
       {count > 0 && <span>{count}</span>}
@@ -219,42 +240,61 @@ function CommentItem({
   return (
     <div className="space-y-2">
       <div className="flex gap-2.5">
-        <div className="shrink-0 w-7 h-7 rounded-full bg-gradient-to-br from-amber-500/30 to-purple-500/30 flex items-center justify-center text-xs font-semibold text-white/80 overflow-hidden">
+        {/* Avatar */}
+        <div className="shrink-0 w-7 h-7 rounded-full bg-gradient-to-br from-amber-500/30 to-purple-500/30 flex items-center justify-center text-xs font-semibold overflow-hidden" style={{ color: 'var(--sc-fg-muted)' }}>
           {comment.authorAvatar
             ? <img src={comment.authorAvatar} alt="" className="w-full h-full object-cover" />
             : initials}
         </div>
         <div className="flex-1 min-w-0">
-          <div className="bg-white/4 rounded-xl px-3 py-2">
+          {/* Bubble */}
+          <div className="rounded-xl px-3 py-2" style={{ background: 'var(--sc-bubble-bg)' }}>
             <div className="flex items-center gap-2 mb-0.5">
-              <Link href={`/u/${comment.userId}`} className="text-xs font-semibold text-white/70 hover:text-white transition-colors">
+              <Link
+                href={`/u/${comment.userId}`}
+                className="text-xs font-semibold transition-colors hover:underline"
+                style={{ color: 'var(--sc-fg)' }}
+              >
                 {comment.authorName ?? '用戶'}
               </Link>
               {currentUserId && currentUserId !== comment.userId && (
                 <FollowButton targetUserId={comment.userId} initialFollowing={false} compact />
               )}
             </div>
-            <p className="text-sm text-white/80 break-words whitespace-pre-wrap">{comment.content.trim()}</p>
+            <p className="text-sm break-words whitespace-pre-wrap" style={{ color: 'var(--sc-fg)' }}>
+              {comment.content.trim()}
+            </p>
             {comment.gifUrl && (
               <img src={comment.gifUrl} alt="GIF" className="mt-1.5 h-20 rounded-lg" />
             )}
           </div>
+          {/* Action row */}
           <div className="flex items-center gap-3 mt-1 px-1">
-            <span className="text-[11px] text-white/25">
+            <span className="text-[11px]" style={{ color: 'var(--sc-fg-faint)' }}>
               {new Date(comment.createdAt).toLocaleDateString('zh-TW', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
             </span>
             <button
               onClick={handleLike}
-              className={`flex items-center gap-1 text-[11px] font-medium transition-colors ${liked ? 'text-rose-400' : 'text-white/30 hover:text-rose-400'}`}
+              className={`flex items-center gap-1 text-[11px] font-medium transition-colors ${liked ? 'text-rose-400' : 'hover:text-rose-400'}`}
+              style={liked ? {} : { color: 'var(--sc-fg-faint)' }}
             >
               <Heart className={`w-3 h-3 ${liked ? 'fill-rose-400' : ''}`} />
               {likesCount > 0 && <span>{likesCount}</span>}
             </button>
-            <button onClick={() => setReplying(s => !s)} className="text-[11px] text-white/30 hover:text-amber-300 transition-colors font-medium">
+            <button
+              onClick={() => setReplying(s => !s)}
+              className="text-[11px] font-medium transition-colors hover:text-amber-500"
+              style={{ color: 'var(--sc-fg-faint)' }}
+            >
               回覆
             </button>
             {isOwner && (
-              <button onClick={handleDelete} disabled={deleting} className="text-[11px] text-white/20 hover:text-red-400 transition-colors">
+              <button
+                onClick={handleDelete}
+                disabled={deleting}
+                className="text-[11px] transition-colors hover:text-red-500"
+                style={{ color: 'var(--sc-fg-faint)' }}
+              >
                 {deleting ? '刪除中...' : '刪除'}
               </button>
             )}
@@ -277,34 +317,42 @@ function CommentItem({
 
       {comment.replies && comment.replies.length > 0 && (
         <div className="pl-9 space-y-2">
-          <button onClick={() => setShowReplies(s => !s)}
-            className="flex items-center gap-1 text-xs text-white/30 hover:text-white/60 transition-colors"
+          <button
+            onClick={() => setShowReplies(s => !s)}
+            className="flex items-center gap-1 text-xs transition-colors hover:underline"
+            style={{ color: 'var(--sc-fg-faint)' }}
           >
             {showReplies ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
             {comment.replies.length} 則回覆
           </button>
           {showReplies && comment.replies.map(reply => (
             <div key={reply.id} className="flex gap-2">
-              <div className="shrink-0 w-6 h-6 rounded-full bg-gradient-to-br from-blue-500/30 to-purple-500/30 flex items-center justify-center text-[10px] font-semibold text-white/70 overflow-hidden">
+              <div className="shrink-0 w-6 h-6 rounded-full bg-gradient-to-br from-blue-500/30 to-purple-500/30 flex items-center justify-center text-[10px] font-semibold overflow-hidden" style={{ color: 'var(--sc-fg-muted)' }}>
                 {reply.authorAvatar
                   ? <img src={reply.authorAvatar} alt="" className="w-full h-full object-cover" />
                   : (reply.authorName ?? '?').slice(0, 2).toUpperCase()}
               </div>
               <div className="flex-1">
-                <div className="bg-white/4 rounded-xl px-3 py-2">
+                <div className="rounded-xl px-3 py-2" style={{ background: 'var(--sc-bubble-bg)' }}>
                   <div className="flex items-center gap-2 mb-0.5">
-                    <Link href={`/u/${reply.userId}`} className="text-[11px] font-semibold text-white/60 hover:text-white transition-colors">
+                    <Link
+                      href={`/u/${reply.userId}`}
+                      className="text-[11px] font-semibold transition-colors hover:underline"
+                      style={{ color: 'var(--sc-fg)' }}
+                    >
                       {reply.authorName ?? '用戶'}
                     </Link>
                     {currentUserId && currentUserId !== reply.userId && (
                       <FollowButton targetUserId={reply.userId} initialFollowing={false} compact />
                     )}
                   </div>
-                  <p className="text-sm text-white/80 break-words whitespace-pre-wrap">{reply.content.trim()}</p>
+                  <p className="text-sm break-words whitespace-pre-wrap" style={{ color: 'var(--sc-fg)' }}>
+                    {reply.content.trim()}
+                  </p>
                   {reply.gifUrl && <img src={reply.gifUrl} alt="GIF" className="mt-1.5 h-16 rounded-lg" />}
                 </div>
                 <div className="flex items-center gap-3 mt-0.5 px-1">
-                  <span className="text-[10px] text-white/20">
+                  <span className="text-[10px]" style={{ color: 'var(--sc-fg-faint)' }}>
                     {new Date(reply.createdAt).toLocaleDateString('zh-TW', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                   </span>
                   <ReplyLikeButton reply={reply} currentUserId={currentUserId} />
@@ -344,10 +392,12 @@ export function CommentSection({ postId, currentUserId, className = '', onCommen
       <CommentInput postId={postId} onSubmitted={() => { loadComments(); onCommentAdded?.() }} />
       {loading ? (
         <div className="flex justify-center py-4">
-          <Loader2 className="w-5 h-5 text-white/20 animate-spin" />
+          <Loader2 className="w-5 h-5 animate-spin" style={{ color: 'var(--sc-fg-faint)' }} />
         </div>
       ) : comments.length === 0 ? (
-        <p className="text-center text-white/20 text-sm py-4">還沒有留言，來搶首留！</p>
+        <p className="text-center text-sm py-4" style={{ color: 'var(--sc-fg-faint)' }}>
+          還沒有留言，來搶首留！
+        </p>
       ) : (
         <div className="space-y-4">
           {comments.map(c => (

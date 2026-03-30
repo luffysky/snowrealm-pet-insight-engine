@@ -51,7 +51,6 @@ export function InteractionBar({
   const [copied, setCopied] = useState(false)
   const [isBookmarked, setIsBookmarked] = useState(initialIsBookmarked)
 
-  // Sync commentsCount when parent updates it (e.g. after comment submitted)
   useEffect(() => { setCommentsCount(initialComments) }, [initialComments])
   const hoverRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   const longRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
@@ -120,17 +119,20 @@ export function InteractionBar({
     }
   }, [postId, isBookmarked, onBookmarkChange])
 
+  // 共用 idle 按鈕樣式（使用 CSS 變數，適配淺/深色背景）
+  const idleBtn = 'text-[var(--sc-fg-muted)] hover:bg-[var(--sc-hover-bg)] hover:text-[var(--sc-fg)]'
+
   if (compact) {
     return (
       <div className={`flex items-center gap-3 ${className}`}>
         <button onClick={() => handleReaction('like')} disabled={isPending}
-          className={`flex items-center gap-1 text-xs transition-colors ${myReaction ? 'text-red-400' : 'text-white/30 hover:text-red-400'}`}
+          className={`flex items-center gap-1 text-xs transition-colors ${myReaction ? 'text-red-400' : 'text-[var(--sc-fg-muted)] hover:text-red-400'}`}
         >
           <Heart className={`w-3.5 h-3.5 ${myReaction ? 'fill-red-400' : ''}`} />
           {likesCount > 0 && <span>{likesCount}</span>}
         </button>
         <button onClick={onCommentClick}
-          className="flex items-center gap-1 text-xs text-white/30 hover:text-blue-400 transition-colors"
+          className="flex items-center gap-1 text-xs text-[var(--sc-fg-muted)] hover:text-blue-400 transition-colors"
         >
           <MessageSquare className="w-3.5 h-3.5" />
           {commentsCount > 0 && <span>{commentsCount}</span>}
@@ -172,7 +174,7 @@ export function InteractionBar({
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-medium transition-colors ${
               myReaction
                 ? `${currentReaction?.color ?? 'text-blue-400'} bg-blue-500/10 hover:bg-blue-500/20`
-                : 'text-white/40 hover:bg-white/5 hover:text-white/70'
+                : idleBtn
             }`}
           >
             {isPending ? (
@@ -183,18 +185,18 @@ export function InteractionBar({
               <><ThumbsUp className="w-4 h-4" /><span>讚</span></>
             )}
             {likesCount > 0 && (
-              <span className="text-xs bg-white/10 px-1.5 rounded-full ml-0.5">{likesCount}</span>
+              <span className="text-xs bg-[var(--sc-badge-bg)] px-1.5 rounded-full ml-0.5">{likesCount}</span>
             )}
           </button>
         </div>
 
         <button onClick={onCommentClick}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-medium text-white/40 hover:bg-white/5 hover:text-white/70 transition-colors"
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-medium transition-colors ${idleBtn}`}
         >
           <MessageSquare className="w-4 h-4" />
           <span>留言</span>
           {initialComments > 0 && (
-            <span className="text-xs bg-white/10 px-1.5 rounded-full">{initialComments}</span>
+            <span className="text-xs bg-[var(--sc-badge-bg)] px-1.5 rounded-full">{initialComments}</span>
           )}
         </button>
       </div>
@@ -202,17 +204,17 @@ export function InteractionBar({
       <div className="flex items-center gap-0.5">
         <button onClick={handleBookmark}
           className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-medium transition-colors ${
-            isBookmarked ? 'text-amber-400 bg-amber-500/10 hover:bg-amber-500/20' : 'text-white/40 hover:bg-white/5 hover:text-white/70'
+            isBookmarked ? 'text-amber-500 bg-amber-500/10 hover:bg-amber-500/20' : idleBtn
           }`}
         >
-          <Bookmark className={`w-4 h-4 ${isBookmarked ? 'fill-amber-400' : ''}`} />
+          <Bookmark className={`w-4 h-4 ${isBookmarked ? 'fill-amber-500' : ''}`} />
           <span>{isBookmarked ? '已收藏' : '收藏'}</span>
         </button>
 
         <button onClick={handleShare}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-medium text-white/40 hover:bg-white/5 hover:text-white/70 transition-colors"
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-medium transition-colors ${idleBtn}`}
         >
-          {copied ? <Check className="w-4 h-4 text-emerald-400" /> : <Share2 className="w-4 h-4" />}
+          {copied ? <Check className="w-4 h-4 text-emerald-500" /> : <Share2 className="w-4 h-4" />}
           <span>{copied ? '已複製' : '分享'}</span>
         </button>
       </div>
