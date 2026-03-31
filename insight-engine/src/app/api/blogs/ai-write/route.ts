@@ -3,6 +3,7 @@ import { verifyToken } from '@/lib/jwt'
 import { isUserPlatformUnlimited } from '@/lib/platformUnlimited'
 import { spendZcoin, getBalance } from '@/lib/zcoinEngine'
 import { getActiveAiKey, getPlatformKey, logAiUsage } from '@/lib/aiService'
+import { queryOne } from '@/lib/db'
 
 export const runtime = 'nodejs'
 
@@ -27,7 +28,10 @@ interface AiWriteResult {
   suggestedSlug: string
 }
 
-/** GET /api/blogs/ai-write — 偵測用戶是否有自己的 AI Key */
+/**
+ * GET /api/blogs/ai-write — 偵測用戶是否有正在使用中的 AI Key
+ * 必須同時滿足：is_active = true AND is_primary = true（代表用戶有在用這把 key）
+ */
 export async function GET(req: NextRequest) {
   const token = req.cookies.get('admin_session')?.value
   const payload = token ? await verifyToken(token) : null
@@ -35,15 +39,21 @@ export async function GET(req: NextRequest) {
   if (!userId) return NextResponse.json({ hasOwnKey: false, isUnlimited: false })
 
   const tenantId = payload?.tenants?.[0]?.tid ?? 'default'
-  const [ownKey, isUnlimited] = await Promise.all([
-    getActiveAiKey(tenantId),
+  const [primaryRow, isUnlimited] = await Promise.all([
+    queryOne<{ provider: string; default_model: string | null }>(
+      `SELECT provider, default_model
+       FROM ai_provider_configs
+       WHERE tenant_id = $1 AND is_active = true AND is_primary = true
+       LIMIT 1`,
+      [tenantId]
+    ),
     isUserPlatformUnlimited(userId),
   ])
 
   return NextResponse.json({
-    hasOwnKey: !!ownKey,
-    ownKeyProvider: ownKey?.provider ?? null,
-    ownKeyModel: ownKey?.model ?? null,
+    hasOwnKey: !!primaryRow,
+    ownKeyProvider: primaryRow?.provider ?? null,
+    ownKeyModel: primaryRow?.default_model ?? null,
     isUnlimited,
   })
 }
