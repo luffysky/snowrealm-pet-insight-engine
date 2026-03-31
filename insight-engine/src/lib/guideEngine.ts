@@ -80,6 +80,7 @@ export interface GuideResponse {
 
 export type GuideAction =
   | { type: 'navigate'; target: string }
+  | { type: 'navigate_admin'; target: string }
   | { type: 'highlight'; target: string }
   | { type: 'scroll'; target: string }
   | { type: 'open_modal'; target: string }
