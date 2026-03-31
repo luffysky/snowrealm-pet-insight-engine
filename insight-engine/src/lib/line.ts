@@ -1,80 +1,150 @@
+/**
+ * LINE 推播核心模組
+ *
+ * Bot 分工：
+ *   Insight Bot  → 管理員通知（pushLineMessage）
+ *   Official Bot → 用戶通知（pushToUser / broadcastMessage）
+ */
+
 import { query as dbQuery } from '@/lib/db'
-import { getStyle, buildFlexBubble } from '@/lib/lineStyles'
 import { getLineConfig } from '@/lib/lineConfig'
 
-const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL ?? ''
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL ?? 'https://insight.snowrealm.pet'
 
-type LineMessage = { type: string; [key: string]: unknown }
+export type LineMessage = { type: string; [key: string]: unknown }
 
-/** 從 DB 取得所有啟用的管理員 LINE user ID，合併 env 的 */
+// ━━━━━━━━━━━━━━━━━ 管理員 ID ━━━━━━━━━━━━━━━━━
+
+/**
+ * 取得所有啟用中的管理員 LINE user ID
+ * 合併 ENV ADMIN_USER_ID + DB line_admins，trim + Set 去重
+ */
 async function getAllAdminIds(): Promise<string[]> {
-  const legacyId = await getLineConfig('ADMIN_USER_ID') ?? ''
-  const envIds = legacyId ? [legacyId] : []
+  const envId = (await getLineConfig('ADMIN_USER_ID') ?? '').trim()
+  const envIds = envId ? [envId] : []
   try {
     const rows = await dbQuery<{ line_user_id: string }>(
       `SELECT line_user_id FROM line_admins WHERE active = true`
     )
-    const dbIds = rows.map((r) => r.line_user_id)
+    const dbIds = rows.map((r) => r.line_user_id.trim()).filter(Boolean)
     return [...new Set([...envIds, ...dbIds])]
   } catch {
     return envIds
   }
 }
 
+// ━━━━━━━━━━━━━━━━━ Insight Bot 推播（管理員）━━━━━━━━━━━━━━━━━
+
 /**
- * 透過 LINE Messaging API 推播訊息給所有管理員
- * 自動合併 env + DB 的管理員清單
+ * 透過 Insight Bot 推播訊息給所有管理員
  * 不阻塞主流程 — 錯誤只 log 不 throw
  */
 export async function pushLineMessage(messages: LineMessage[]): Promise<void> {
-  const CHANNEL_ACCESS_TOKEN = await getLineConfig('INSIGHT_CHANNEL_ACCESS_TOKEN') ?? ''
-  if (!CHANNEL_ACCESS_TOKEN) {
-    console.warn('[LINE] Missing INSIGHT_CHANNEL_ACCESS_TOKEN')
+  const token = await getLineConfig('INSIGHT_CHANNEL_ACCESS_TOKEN') ?? ''
+  if (!token) {
+    console.warn('[LINE Insight] Missing INSIGHT_CHANNEL_ACCESS_TOKEN')
     return
   }
 
   const adminIds = await getAllAdminIds()
   if (adminIds.length === 0) {
-    console.warn('[LINE] No admin IDs configured')
+    console.warn('[LINE Insight] No admin IDs configured')
     return
   }
 
-  try {
-    const results = await Promise.allSettled(
-      adminIds.map(async (userId) => {
-        const res = await fetch('https://api.line.me/v2/bot/message/push', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${CHANNEL_ACCESS_TOKEN}`,
-          },
-          body: JSON.stringify({ to: userId, messages }),
-          signal: AbortSignal.timeout(10000),
-        })
-
+  const results = await Promise.allSettled(
+    adminIds.map((userId) =>
+      fetch('https://api.line.me/v2/bot/message/push', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ to: userId, messages }),
+        signal: AbortSignal.timeout(10000),
+      }).then(async (res) => {
         if (!res.ok) {
           const body = await res.text()
-          console.error(`[LINE] Push failed (${res.status}) for ${userId}:`, body)
+          console.error(`[LINE Insight] Push failed (${res.status}) for ${userId}:`, body)
         }
       })
     )
+  )
 
-    const rejected = results.filter((r) => r.status === 'rejected')
-    if (rejected.length > 0) {
-      console.error(`[LINE] Push error count: ${rejected.length}`)
-    }
-  } catch (err) {
-    console.error('[LINE] Push error:', err)
-  }
+  const failed = results.filter((r) => r.status === 'rejected')
+  if (failed.length > 0) console.error('[LINE Insight] Push errors:', failed.length)
 }
 
-/** 簡單文字推播（向下相容） */
+/** 簡單文字推播給管理員（向下相容） */
 export async function pushText(text: string): Promise<void> {
   return pushLineMessage([{ type: 'text', text }])
 }
 
+// ━━━━━━━━━━━━━━━━━ Flex Message 構建 ━━━━━━━━━━━━━━━━━
+
+function now(): string {
+  return new Date().toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' })
+}
+
+function buildRow(label: string, value: string) {
+  return {
+    type: 'box', layout: 'horizontal', spacing: 'sm',
+    contents: [
+      { type: 'text', text: label, size: 'sm', color: '#888888', flex: 2 },
+      { type: 'text', text: value, size: 'sm', color: '#1a1a1a', flex: 5, wrap: true },
+    ],
+  }
+}
+
+function buildFlex(opts: {
+  altText: string
+  headerColor: string
+  headerText: string
+  rows: { label: string; value: string }[]
+  footerLabel: string
+  footerUrl: string
+}): LineMessage {
+  return {
+    type: 'flex',
+    altText: opts.altText,
+    contents: {
+      type: 'bubble',
+      size: 'kilo',
+      header: {
+        type: 'box', layout: 'vertical',
+        backgroundColor: opts.headerColor,
+        paddingAll: '14px',
+        contents: [
+          { type: 'text', text: opts.headerText, color: '#ffffff', weight: 'bold', size: 'md' },
+        ],
+      },
+      body: {
+        type: 'box', layout: 'vertical',
+        spacing: 'sm', paddingAll: '14px',
+        contents: [
+          ...opts.rows.map((r) => buildRow(r.label, r.value)),
+          { type: 'separator', margin: 'sm' },
+          buildRow('時間', now()),
+        ],
+      },
+      footer: {
+        type: 'box', layout: 'vertical', paddingAll: '10px',
+        contents: [
+          {
+            type: 'button', style: 'link', height: 'sm',
+            action: { type: 'uri', label: opts.footerLabel, uri: opts.footerUrl },
+          },
+        ],
+      },
+    },
+  }
+}
+
+// ━━━━━━━━━━━━━━━━━ 管理員通知（事件類型）━━━━━━━━━━━━━━━━━
+
 /**
- * 問卷送出時推播 Flex Message 通知（從 DB 讀取樣式）
+ * 問卷送出通知（Insight Bot → 管理員）
+ * 每次提交呼叫一次，不重複。
  */
 export function notifySurveySubmitted(params: {
   responseId: string
@@ -82,53 +152,51 @@ export function notifySurveySubmitted(params: {
   answersCount: number
 }): void {
   ;(async () => {
-    const style = await getStyle('survey_submitted')
-    if (!style) return
-
-    const footerUrl = style.footer_url.replace('{{response_id}}', params.responseId)
-    const msg = buildFlexBubble({
-      style,
-      bodyRows: [
+    const msg = buildFlex({
+      altText: `📊 新填答 — ${params.surveySlug}`,
+      headerColor: '#059669',
+      headerText: '📊 新填答通知',
+      rows: [
         { label: '問卷', value: params.surveySlug },
-        { label: '回答數', value: `${params.answersCount} 題` },
+        { label: '回答', value: `${params.answersCount} 題` },
         { label: 'ID', value: params.responseId.slice(0, 8) + '...' },
       ],
-      footerUrl,
-      altText: `${style.header_emoji} ${style.header_text} — ${params.surveySlug}`,
+      footerLabel: '查看回覆 →',
+      footerUrl: `${BASE_URL}/insight-admin/responses/${params.responseId}`,
     })
-
     await pushLineMessage([msg])
   })().catch(() => {})
 }
 
 /**
- * 加入封測名單時推播 Flex Message 通知（從 DB 讀取樣式）
+ * 封測名單加入通知（Insight Bot → 管理員）
  */
 export function notifyWaitlistJoined(params: {
   email: string
   nickname?: string
 }): void {
   ;(async () => {
-    const style = await getStyle('waitlist_joined')
-    if (!style) return
-
-    const bodyRows = [
+    const rows: { label: string; value: string }[] = [
       { label: 'Email', value: params.email },
-      ...(params.nickname ? [{ label: '暱稱', value: params.nickname }] : []),
     ]
+    if (params.nickname) rows.push({ label: '暱稱', value: params.nickname })
 
-    const msg = buildFlexBubble({
-      style,
-      bodyRows,
-      altText: `${style.header_emoji} ${style.header_text} — ${params.email}`,
+    const msg = buildFlex({
+      altText: `🎉 新封測申請 — ${params.email}`,
+      headerColor: '#f97316',
+      headerText: '🎉 新封測申請',
+      rows,
+      footerLabel: '查看名單 →',
+      footerUrl: `${BASE_URL}/insight-admin/waitlist`,
     })
-
     await pushLineMessage([msg])
   })().catch(() => {})
 }
 
+// ━━━━━━━━━━━━━━━━━ Official Bot 推播（用戶）━━━━━━━━━━━━━━━━━
+
 /**
- * 使用官方帳號廣播訊息給所有好友
+ * 透過 Official Bot 廣播給所有好友
  */
 export async function broadcastMessage(messages: LineMessage[]): Promise<{ ok: boolean; error?: string }> {
   const token = await getLineConfig('OFFICIAL_CHANNEL_ACCESS_TOKEN') ?? ''
@@ -137,14 +205,10 @@ export async function broadcastMessage(messages: LineMessage[]): Promise<{ ok: b
   try {
     const res = await fetch('https://api.line.me/v2/bot/message/broadcast', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
       body: JSON.stringify({ messages }),
       signal: AbortSignal.timeout(15000),
     })
-
     if (!res.ok) {
       const body = await res.text()
       return { ok: false, error: `${res.status}: ${body}` }
@@ -156,7 +220,7 @@ export async function broadcastMessage(messages: LineMessage[]): Promise<{ ok: b
 }
 
 /**
- * 使用官方帳號推播給特定使用者
+ * 透過 Official Bot 推播給指定用戶
  */
 export async function pushToUser(userId: string, messages: LineMessage[]): Promise<{ ok: boolean; error?: string }> {
   const token = await getLineConfig('OFFICIAL_CHANNEL_ACCESS_TOKEN') ?? ''
@@ -165,14 +229,10 @@ export async function pushToUser(userId: string, messages: LineMessage[]): Promi
   try {
     const res = await fetch('https://api.line.me/v2/bot/message/push', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
       body: JSON.stringify({ to: userId, messages }),
       signal: AbortSignal.timeout(10000),
     })
-
     if (!res.ok) {
       const body = await res.text()
       return { ok: false, error: `${res.status}: ${body}` }

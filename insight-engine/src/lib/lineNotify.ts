@@ -6,6 +6,7 @@
 
 import { getLineConfig } from '@/lib/lineConfig'
 import { queryOne } from '@/lib/db'
+import { pushLineMessage } from '@/lib/line'
 
 const PUSH_URL = 'https://api.line.me/v2/bot/message/push'
 
@@ -97,40 +98,16 @@ function buildFlexMessage(card: FlexCard) {
   }
 }
 
-// ━━━━━━━━━━━━━━━━━ 推送 ━━━━━━━━━━━━━━━━━
+// ━━━━━━━━━━━━━━━━━ 推送（統一走 line.ts pushLineMessage）━━━━━━━━━━━━━━━━━
 
-async function pushToAdmin(message: Record<string, unknown>): Promise<void> {
-  try {
-    const adminUserId = await getLineConfig('ADMIN_USER_ID')
-    if (!adminUserId) {
-      console.log('[LINE Push] ADMIN_USER_ID 未設定，跳過通知')
-      return
-    }
-
-    let token = await getLineConfig('INSIGHT_CHANNEL_ACCESS_TOKEN')
-    if (!token) token = await getLineConfig('OFFICIAL_CHANNEL_ACCESS_TOKEN')
-    if (!token) {
-      console.log('[LINE Push] 無可用的 Channel Access Token，跳過通知')
-      return
-    }
-
-    fetch(PUSH_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({
-        to: adminUserId,
-        messages: [message],
-      }),
-      signal: AbortSignal.timeout(10000),
-    }).catch((err) => {
-      console.error('[LINE Push] 發送失敗:', err)
-    })
-  } catch (err) {
-    console.error('[LINE Push] 初始化失敗:', err)
-  }
+/**
+ * 推播給所有管理員（Insight Bot）
+ * 統一使用 line.ts 的 pushLineMessage，確保 ENV+DB 管理員 ID 去重一致
+ */
+function pushToAdmin(message: Record<string, unknown>): void {
+  pushLineMessage([message]).catch((err) => {
+    console.error('[lineNotify pushToAdmin] 失敗:', err)
+  })
 }
 
 // ━━━━━━━━━━━━━━━━━ 公開 API ━━━━━━━━━━━━━━━━━
@@ -224,19 +201,13 @@ export async function notifyReport(info: {
 }): Promise<void> {
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://insight.snowrealm.pet'
   const rows: { label: string; value: string }[] = [
-    { label: '舉報人', value: info.reporterName },
+    { label: '檢舉人', value: info.reporterName },
     { label: '目標類型', value: TARGET_LABELS[info.targetType] ?? info.targetType },
     { label: '原因', value: REASON_LABELS[info.reason] ?? info.reason },
   ]
   if (info.targetAuthorName) rows.push({ label: '被舉報人', value: info.targetAuthorName })
   if (info.targetContent) rows.push({ label: '內容摘要', value: info.targetContent.slice(0, 80) })
   if (info.description) rows.push({ label: '補充說明', value: info.description.slice(0, 100) })
-
-  const adminUserId = await getLineConfig('ADMIN_USER_ID')
-  if (!adminUserId) return
-  let token = await getLineConfig('INSIGHT_CHANNEL_ACCESS_TOKEN')
-  if (!token) token = await getLineConfig('OFFICIAL_CHANNEL_ACCESS_TOKEN')
-  if (!token) return
 
   const message = {
     type: 'flex',
@@ -274,12 +245,7 @@ export async function notifyReport(info: {
     },
   }
 
-  fetch(PUSH_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-    body: JSON.stringify({ to: adminUserId, messages: [message] }),
-    signal: AbortSignal.timeout(10000),
-  }).catch(err => console.error('[notifyReport] LINE push failed:', err))
+  pushLineMessage([message]).catch(err => console.error('[notifyReport] LINE push failed:', err))
 }
 
 /** 新貼文/新用戶活動通知（可選，由呼叫端控制是否推送） */
@@ -289,12 +255,6 @@ export async function notifyActivity(info: {
   summary: string
   link?: string
 }): Promise<void> {
-  const adminUserId = await getLineConfig('ADMIN_USER_ID')
-  if (!adminUserId) return
-  let token = await getLineConfig('INSIGHT_CHANNEL_ACCESS_TOKEN')
-  if (!token) token = await getLineConfig('OFFICIAL_CHANNEL_ACCESS_TOKEN')
-  if (!token) return
-
   const emoji = info.type === 'new_post' ? '📝' : '👤'
   const label = info.type === 'new_post' ? '新貼文發布' : '新用戶加入'
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://insight.snowrealm.pet'
@@ -309,16 +269,10 @@ export async function notifyActivity(info: {
       ...(info.link ? [{ label: '連結', value: info.link }] : []),
     ],
   })
-  // Override footer link for social monitor
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   ;(message as any).contents.footer.contents[0].action.uri = `${baseUrl}/snowrealm-insight-ctrl/social`
 
-  fetch(PUSH_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-    body: JSON.stringify({ to: adminUserId, messages: [message] }),
-    signal: AbortSignal.timeout(10000),
-  }).catch(err => console.error('[notifyActivity] LINE push failed:', err))
+  pushLineMessage([message]).catch(err => console.error('[notifyActivity] LINE push failed:', err))
 }
 
 // ━━━━━━━━━━━━━━━━━ Rich Menu ━━━━━━━━━━━━━━━━━

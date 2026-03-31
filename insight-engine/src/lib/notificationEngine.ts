@@ -59,7 +59,9 @@ export async function evaluateNotificationRules(ctx: TriggerContext): Promise<vo
 function checkCondition(rule: NotificationRule, ctx: TriggerContext): boolean {
   switch (rule.condition_type) {
     case 'completion':
-      return true // 只要完成就觸發
+      // line_push_admin + completion 已由 notifySurveySubmitted 統一處理，避免重複推播
+      if (rule.action_type === 'line_push_admin') return false
+      return true
 
     case 'tag_match': {
       const { tag_key, tag_value, operator = 'eq' } = rule.condition_config
