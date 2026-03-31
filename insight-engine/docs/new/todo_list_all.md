@@ -1695,6 +1695,97 @@ switchUserRichMenu(lineUserId: string) → official bot（填完問卷後）
 
 ---
 
+### LINE-9 Super Admin 身份強化 + 未來團隊管理設計
+
+**目標**：總後台登入只認你的 LINE 帳號（精確比對 User ID），
+同時設計好未來擴充團隊的權限架構。
+
+#### 現況問題
+
+目前 callback 流程：LINE OAuth → 查 DB `WHERE role='super_admin' LIMIT 1` → 任何人登入都能進去（只要 DB 裡有 super_admin 帳號），User ID 比對是缺失的。
+
+**修改**：`src/app/api/auth/line/super-admin/callback/route.ts`
+```typescript
+// 現在（不安全）：
+const allowedUserId = process.env.SUPER_ADMIN_LINE_USER_ID || process.env.LINE_YOUR_USER_ID
+// allowedUserId 根本沒被用來比對！
+
+// 修復：
+if (allowedUserId && lineProfile.userId !== allowedUserId) {
+  return NextResponse.redirect(`${baseUrl}/super-login?error=not_authorized`)
+}
+```
+
+#### 團隊角色設計
+
+```
+super_admin     你本人，唯一，LINE User ID 綁死
+platform_admin  核心團隊（未來），可看大部分後台，不能看特權功能
+tenant_admin    各租戶管理員（現有 admin 角色）
+editor          編輯人員
+viewer          唯讀
+```
+
+#### 特權功能 Flag（社群監控等只有你能看）
+
+**DB Migration**：
+```sql
+CREATE TABLE IF NOT EXISTS feature_access (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES admin_users(id) ON DELETE CASCADE,
+  feature TEXT NOT NULL,
+  -- feature 清單：
+  --   'social_monitor'     社群監控（爬蟲結果）
+  --   'crawler_dashboard'  爬蟲控制台
+  --   'finance'            財務/訂單/收益
+  --   'platform_config'    系統設定
+  --   'ai_cost'            AI 成本明細
+  granted_at TIMESTAMPTZ DEFAULT NOW(),
+  granted_by UUID REFERENCES admin_users(id),
+  PRIMARY KEY (user_id, feature)  -- 改為複合主鍵
+);
+
+-- 建立時給 super_admin 所有權限
+INSERT INTO feature_access (user_id, feature)
+SELECT id, unnest(ARRAY[
+  'social_monitor','crawler_dashboard','finance',
+  'platform_config','ai_cost'
+])
+FROM admin_users WHERE role = 'super_admin'
+ON CONFLICT DO NOTHING;
+```
+
+**後端工具函式**（`src/lib/tenant.ts` 新增）：
+```typescript
+// 檢查特權功能權限
+requireFeature(feature: string): 
+  → 查 feature_access 表
+  → 無權限回傳 403
+  → 只有有紀錄的 user_id 才過得去
+```
+
+**套用到社群監控**（`/api/admin/social-monitor/*`）：
+```typescript
+const check = await requireFeature('social_monitor')
+if (check instanceof NextResponse) return check
+```
+
+**前端**：Sidebar 的社群監控入口只在有 `social_monitor` 權限時顯示，
+不是靠 role 判斷，靠 `feature_access` 表。
+
+#### 修改檔案清單
+
+| 檔案 | 修改內容 |
+|------|---------|
+| `src/app/api/auth/line/super-admin/callback/route.ts` | 加入 `allowedUserId` 精確比對 |
+| `src/lib/tenant.ts` | 新增 `requireFeature(feature)` |
+| `src/app/(admin)/layout.tsx` | Sidebar 特權項目依 `feature_access` 顯示/隱藏 |
+| `src/app/api/auth/me/route.ts` | 回傳 `features: string[]`（讓前端知道有哪些權限） |
+
+**DB Migration**：`supabase/migration_phase_feature_access.sql`
+
+---
+
 ### LINE-8 完整測試清單（做完再繼續其他 Phase）
 
 ```
