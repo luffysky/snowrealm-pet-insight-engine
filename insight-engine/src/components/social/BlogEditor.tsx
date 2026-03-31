@@ -88,6 +88,14 @@ export function BlogEditor({ articleId, onSaved, onCancel }: Props) {
   const [aiPrompt, setAiPrompt] = useState('')
   const [aiMode, setAiMode] = useState<'full' | 'outline' | 'refine'>('full')
   const [aiTier, setAiTier] = useState<'sonnet' | 'haiku'>('sonnet')
+  const [aiKeyPref, setAiKeyPref] = useState<'own' | 'platform'>('platform')
+  const [aiKeyInfo, setAiKeyInfo] = useState<{
+    hasOwnKey: boolean
+    ownKeyProvider: string | null
+    ownKeyModel: string | null
+    isUnlimited: boolean
+    loaded: boolean
+  }>({ hasOwnKey: false, ownKeyProvider: null, ownKeyModel: null, isUnlimited: false, loaded: false })
   const [aiWriting, setAiWriting] = useState(false)
   const [aiHistory, setAiHistory] = useState<{ role: 'user' | 'ai'; text: string; applied?: boolean }[]>([])
   const aiChatEndRef = useRef<HTMLDivElement>(null)
@@ -96,6 +104,19 @@ export function BlogEditor({ articleId, onSaved, onCancel }: Props) {
     sonnet: { full: 200, outline: 50, refine: 100 },
     haiku:  { full: 80,  outline: 20, refine: 40  },
   } as const
+
+  // Load AI key info when panel opens
+  useEffect(() => {
+    if (!aiPanelOpen || aiKeyInfo.loaded) return
+    fetch('/api/blogs/ai-write')
+      .then(r => r.json())
+      .then((data: { hasOwnKey: boolean; ownKeyProvider: string | null; ownKeyModel: string | null; isUnlimited: boolean }) => {
+        setAiKeyInfo({ ...data, loaded: true })
+        // Default: own key if available, else platform
+        if (data.hasOwnKey && !data.isUnlimited) setAiKeyPref('own')
+      })
+      .catch(() => setAiKeyInfo(prev => ({ ...prev, loaded: true })))
+  }, [aiPanelOpen, aiKeyInfo.loaded])
 
   // Check for Yukirin blog draft in localStorage (only for new articles)
   useEffect(() => {
@@ -216,7 +237,8 @@ export function BlogEditor({ articleId, onSaved, onCancel }: Props) {
   const handleAiWrite = async () => {
     if (!aiPrompt.trim()) return
     const userMsg = aiPrompt.trim()
-    const cost = AI_COSTS[aiTier][aiMode]
+    const usingOwnKey = aiKeyPref === 'own' && aiKeyInfo.hasOwnKey
+    const cost = usingOwnKey || aiKeyInfo.isUnlimited ? 0 : AI_COSTS[aiTier][aiMode]
     setAiHistory(h => [...h, { role: 'user', text: userMsg }])
     setAiPrompt('')
     setAiWriting(true)
@@ -230,6 +252,7 @@ export function BlogEditor({ articleId, onSaved, onCancel }: Props) {
           existingContent: form.content || undefined,
           mode: aiMode,
           tier: aiTier,
+          keyPreference: aiKeyPref,
         }),
       })
       if (!res.ok) {
@@ -253,8 +276,10 @@ export function BlogEditor({ articleId, onSaved, onCancel }: Props) {
         seoDesc: data.seoDesc || f.seoDesc,
         slug: (!f.id && !f.slug && data.suggestedSlug) ? data.suggestedSlug : f.slug,
       }))
+      const actualCost = data.cost ?? cost
       const balanceHint = data.newBalance != null ? `（剩餘 ${data.newBalance} Z幣）` : ''
-      const preview = `✅ 已填入所有欄位！扣除 ${data.cost ?? cost} Z幣${balanceHint}\n\n標題：${data.title}\n標籤：${data.tags.join('、')}\n摘要：${data.summary.slice(0, 60)}...`
+      const costLine = actualCost === 0 ? '免費生成' : `扣除 ${actualCost} Z幣${balanceHint}`
+      const preview = `✅ 已填入所有欄位！${costLine}\n\n標題：${data.title}\n標籤：${data.tags.join('、')}\n摘要：${data.summary.slice(0, 60)}...`
       setAiHistory(h => [...h, { role: 'ai', text: preview, applied: true }])
     } catch {
       setAiHistory(h => [...h, { role: 'ai', text: '❌ 網路錯誤，請重試' }])
@@ -421,50 +446,95 @@ export function BlogEditor({ articleId, onSaved, onCancel }: Props) {
         <div className="shrink-0 border-b border-violet-500/20 bg-violet-950/20">
           {/* Mode selector + chat history */}
           <div className="px-4 pt-3 pb-2">
+            {/* Header row */}
             <div className="flex items-center gap-2 mb-2">
               <Bot className="w-3.5 h-3.5 text-violet-400 shrink-0" />
               <span className="text-xs font-medium text-violet-300">AI 寫作助手</span>
+              {/* Cost hint */}
               <span className="text-[10px] text-white/30 ml-1">
-                — {AI_COSTS[aiTier][aiMode]} Z幣
+                {aiKeyInfo.isUnlimited
+                  ? '— 🌟 平台禮遇免費'
+                  : aiKeyPref === 'own' && aiKeyInfo.hasOwnKey
+                    ? '— 使用自己的 Key（免費）'
+                    : `— ${AI_COSTS[aiTier][aiMode]} Z幣`
+                }
               </span>
-              <div className="ml-auto flex items-center gap-2">
-                {/* Tier selector */}
-                <div className="flex gap-0.5 border border-white/10 rounded-lg overflow-hidden">
+              {/* Mode selector */}
+              <div className="ml-auto flex gap-1">
+                {(['full', 'outline', 'refine'] as const).map(m => (
                   <button
-                    onClick={() => setAiTier('sonnet')}
-                    className={`px-2 py-0.5 text-[10px] font-medium transition-colors ${
-                      aiTier === 'sonnet' ? 'bg-violet-500/40 text-violet-200' : 'text-white/30 hover:text-white/60'
+                    key={m}
+                    onClick={() => setAiMode(m)}
+                    className={`px-2 py-0.5 rounded text-[10px] font-medium transition-colors ${
+                      aiMode === m ? 'bg-violet-500/30 text-violet-300' : 'text-white/30 hover:text-white/60'
                     }`}
-                    title="Sonnet — 品質更高"
                   >
-                    ⚡Sonnet
+                    {m === 'full' ? '完整文章' : m === 'outline' ? '大綱' : '潤稿'}
                   </button>
-                  <button
-                    onClick={() => setAiTier('haiku')}
-                    className={`px-2 py-0.5 text-[10px] font-medium transition-colors ${
-                      aiTier === 'haiku' ? 'bg-slate-500/40 text-slate-300' : 'text-white/30 hover:text-white/60'
-                    }`}
-                    title="Haiku — Z幣較少"
-                  >
-                    Haiku
-                  </button>
-                </div>
-                {/* Mode selector */}
-                <div className="flex gap-1">
-                  {(['full', 'outline', 'refine'] as const).map(m => (
-                    <button
-                      key={m}
-                      onClick={() => setAiMode(m)}
-                      className={`px-2 py-0.5 rounded text-[10px] font-medium transition-colors ${
-                        aiMode === m ? 'bg-violet-500/30 text-violet-300' : 'text-white/30 hover:text-white/60'
-                      }`}
-                    >
-                      {m === 'full' ? '完整文章' : m === 'outline' ? '大綱' : '潤稿'}
-                    </button>
-                  ))}
-                </div>
+                ))}
               </div>
             </div>
+
+            {/* Key source / tier selection (only for non-unlimited users) */}
+            {!aiKeyInfo.isUnlimited && aiKeyInfo.loaded && (
+              <div className="mb-2">
+                {aiKeyInfo.hasOwnKey ? (
+                  /* User has own key → show toggle */
+                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-emerald-500/8 border border-emerald-500/20">
+                    <span className="text-[10px] text-emerald-400 shrink-0">✨ 檢測到您有自己的 AI Key</span>
+                    <span className="text-[10px] text-white/30">
+                      {aiKeyInfo.ownKeyProvider} {aiKeyInfo.ownKeyModel ? `· ${aiKeyInfo.ownKeyModel}` : ''}
+                    </span>
+                    <div className="ml-auto flex gap-0.5 border border-white/10 rounded-lg overflow-hidden">
+                      <button
+                        onClick={() => setAiKeyPref('own')}
+                        className={`px-2 py-0.5 text-[10px] font-medium transition-colors ${
+                          aiKeyPref === 'own' ? 'bg-emerald-500/30 text-emerald-300' : 'text-white/30 hover:text-white/60'
+                        }`}
+                      >
+                        自己的（免費）
+                      </button>
+                      <button
+                        onClick={() => setAiKeyPref('platform')}
+                        className={`px-2 py-0.5 text-[10px] font-medium transition-colors ${
+                          aiKeyPref === 'platform' ? 'bg-violet-500/30 text-violet-300' : 'text-white/30 hover:text-white/60'
+                        }`}
+                      >
+                        平台 Sonnet
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  /* No own key → show tier selector for platform key */
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] text-white/30">模型：</span>
+                    <div className="flex gap-0.5 border border-white/10 rounded-lg overflow-hidden">
+                      <button
+                        onClick={() => setAiTier('sonnet')}
+                        className={`px-2 py-0.5 text-[10px] font-medium transition-colors ${
+                          aiTier === 'sonnet' ? 'bg-violet-500/40 text-violet-200' : 'text-white/30 hover:text-white/60'
+                        }`}
+                        title="Sonnet — 品質更高"
+                      >
+                        ⚡Sonnet
+                      </button>
+                      <button
+                        onClick={() => setAiTier('haiku')}
+                        className={`px-2 py-0.5 text-[10px] font-medium transition-colors ${
+                          aiTier === 'haiku' ? 'bg-slate-500/40 text-slate-300' : 'text-white/30 hover:text-white/60'
+                        }`}
+                        title="Haiku — Z幣較少"
+                      >
+                        Haiku
+                      </button>
+                    </div>
+                    <span className="text-[10px] text-white/25">
+                      {AI_COSTS[aiTier][aiMode]} Z幣
+                    </span>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Chat history (max 3 items, scrollable) */}
             {aiHistory.length > 0 && (

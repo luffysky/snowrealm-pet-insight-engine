@@ -27,10 +27,32 @@ interface AiWriteResult {
   suggestedSlug: string
 }
 
+/** GET /api/blogs/ai-write — 偵測用戶是否有自己的 AI Key */
+export async function GET(req: NextRequest) {
+  const token = req.cookies.get('admin_session')?.value
+  const payload = token ? await verifyToken(token) : null
+  const userId = payload?.sub ?? null
+  if (!userId) return NextResponse.json({ hasOwnKey: false, isUnlimited: false })
+
+  const tenantId = payload?.tenants?.[0]?.tid ?? 'default'
+  const [ownKey, isUnlimited] = await Promise.all([
+    getActiveAiKey(tenantId),
+    isUserPlatformUnlimited(userId),
+  ])
+
+  return NextResponse.json({
+    hasOwnKey: !!ownKey,
+    ownKeyProvider: ownKey?.provider ?? null,
+    ownKeyModel: ownKey?.model ?? null,
+    isUnlimited,
+  })
+}
+
 /**
  * POST /api/blogs/ai-write
  * 公開（需登入）端點，雪凜 AI 寫作流程用
- * 消耗 200 Z幣（平台特權免費）
+ * keyPreference='own'  → 使用用戶自己的 key，免費
+ * keyPreference='platform' → 使用平台 key，扣 Z幣
  */
 export async function POST(req: NextRequest) {
   // 直接從 cookie 驗 JWT（不走 middleware headers）
@@ -50,20 +72,42 @@ export async function POST(req: NextRequest) {
     existingContent?: string
     mode?: 'full' | 'outline' | 'refine'
     tier?: 'sonnet' | 'haiku'
+    keyPreference?: 'own' | 'platform'
   }
 
   const mode = body.mode ?? 'full'
   const tier = body.tier ?? 'sonnet'
-  const zcoinCost = ZCOIN_COSTS[tier][mode]
+  const tenantId = payload?.tenants?.[0]?.tid ?? 'default'
 
-  // 非特權用戶檢查 Z幣
-  if (!isUnlimited) {
+  // 決定使用哪個 key
+  const ownKey = await getActiveAiKey(tenantId)
+  const platformKey = getPlatformKey()
+  const keyPreference = body.keyPreference ?? (ownKey ? 'own' : 'platform')
+
+  let aiKey: ReturnType<typeof getPlatformKey>
+  let usingOwnKey: boolean
+
+  if (keyPreference === 'own') {
+    if (!ownKey) return NextResponse.json({ error: '您尚未設定自己的 AI Key，請至 AI 設定頁面配置' }, { status: 400 })
+    aiKey = ownKey
+    usingOwnKey = true
+  } else {
+    if (!platformKey) return NextResponse.json({ error: '尚未設定 AI Key，請至 AI 設定頁面配置' }, { status: 400 })
+    aiKey = platformKey
+    usingOwnKey = false
+  }
+
+  // 使用平台 key 才需要 Z幣（自己的 key 免費；平台禮遇也免費）
+  const zcoinCost = usingOwnKey ? 0 : ZCOIN_COSTS[tier][mode]
+
+  if (!usingOwnKey && !isUnlimited) {
     const balance = await getBalance({ userId })
     if (balance < zcoinCost) {
       return NextResponse.json({
         error: `Z幣不足（需要 ${zcoinCost} Z幣，你有 ${balance} Z幣）`,
         balance,
         cost: zcoinCost,
+        hasOwnKey: !!ownKey,
       }, { status: 402 })
     }
   }
@@ -72,19 +116,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: '請描述你想寫的文章' }, { status: 400 })
   }
 
-  // 取得 AI Key（優先用戶自己設定的，fallback 到平台 key）
-  const tenantId = payload?.tenants?.[0]?.tid ?? 'default'
-  const aiKey = await getActiveAiKey(tenantId) ?? getPlatformKey()
-  if (!aiKey) {
-    return NextResponse.json({ error: '尚未設定 AI Key，請至 AI 設定頁面配置' }, { status: 400 })
-  }
-
-  // tier 決定使用模型（用戶自訂 key 仍優先，但若是平台 key 則按 tier 選）
-  const resolvedModel = aiKey.keySource === 'platform_key'
-    ? (aiKey.provider === 'anthropic'
+  // tier 決定平台 key 的模型；自訂 key 使用用戶設定的模型
+  const resolvedModel = usingOwnKey
+    ? (aiKey!.model ?? (aiKey!.provider === 'anthropic' ? SONNET_MODEL : OPENAI_SONNET_MODEL))
+    : (aiKey!.provider === 'anthropic'
         ? (tier === 'haiku' ? HAIKU_MODEL : SONNET_MODEL)
         : (tier === 'haiku' ? OPENAI_HAIKU_MODEL : OPENAI_SONNET_MODEL))
-    : (aiKey.model ?? (aiKey.provider === 'anthropic' ? SONNET_MODEL : OPENAI_SONNET_MODEL))
 
   const systemPrompt = `你是一位有個性的繁體中文部落格作者。你的文章讀起來像真人在說話，不像 AI 寫的。
 
@@ -204,12 +241,12 @@ export async function POST(req: NextRequest) {
     await logAiUsage({
       tenantId,
       action: 'generate',
-      keySource: aiKey.keySource,
-      provider: aiKey.provider,
+      keySource: aiKey!.keySource,
+      provider: aiKey!.provider,
       model: resolvedModel,
       promptTokens,
       completionTokens,
-      isFree: aiKey.keySource === 'platform_key' || isUnlimited,
+      isFree: usingOwnKey || isUnlimited,
     })
 
     // 提取 JSON
@@ -225,9 +262,9 @@ export async function POST(req: NextRequest) {
       .replace(/^-|-$/g, '')
       .slice(0, 60)
 
-    // 成功後扣 Z幣
+    // 成功後扣 Z幣（只有使用平台 key 且非特權用戶才扣）
     let newBalance: number | null = null
-    if (!isUnlimited) {
+    if (!usingOwnKey && !isUnlimited && zcoinCost > 0) {
       const result2 = await spendZcoin({ userId, amount: zcoinCost, reason: 'ai_usage' })
       newBalance = result2.newBalance ?? null
     }
