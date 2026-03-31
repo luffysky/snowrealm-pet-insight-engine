@@ -10,6 +10,7 @@ import type { UserState } from './ruleEngine'
 
 export interface PageTrackerOptions {
   isAdmin?: boolean
+  isOwner?: boolean
   userId?: string
   nickname?: string
   selectedCharacter?: 'yukirin' | 'riku'
@@ -136,6 +137,7 @@ export function usePageTracker(opts: PageTrackerOptions = {}): UserState {
     userId: opts.userId ?? '',
     nickname: opts.nickname ?? '',
     isAdmin: opts.isAdmin ?? false,
+    isOwner: opts.isOwner ?? false,
     selectedCharacter: opts.selectedCharacter ?? 'yukirin',
 
     currentPage: pathname ?? '/',

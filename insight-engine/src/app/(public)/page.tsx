@@ -253,7 +253,7 @@ export default function HomePage() {
         <section className="mt-14 md:mt-18">
           <div className="mb-5 flex items-end justify-between gap-3">
             <div>
-              <p className="text-xs font-semibold tracking-[0.18em] text-[#b8a9e8]">最近大家在問自己的幾件事</p>
+              <p className="text-xs font-semibold tracking-[0.18em] text-[#6b5fa8]">最近大家在問自己的幾件事</p>
               <h2 className="mt-1.5 text-xl font-black text-[#3d3155] sm:text-2xl md:text-3xl">你想先從哪一個開始？</h2>
             </div>
             <Link href="/explore" className="hidden rounded-full border border-[#b8a9e8]/30 bg-[#b8a9e8]/10 px-4 py-2 text-sm text-[#6b5fa8] transition hover:bg-[#b8a9e8]/20 md:block">
@@ -292,7 +292,7 @@ export default function HomePage() {
         <section className="mt-12 grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
           {/* 故事牆 */}
           <div className="rounded-[28px] border border-[#b8a9e8]/25 bg-white/25 p-6 shadow-[0_8px_32px_rgba(184,169,232,0.1)] backdrop-blur-xl">
-            <p className="text-xs font-semibold tracking-[0.18em] text-[#b8a9e8]">填完之後，他們這樣說</p>
+            <p className="text-xs font-semibold tracking-[0.18em] text-[#6b5fa8]">填完之後，他們這樣說</p>
             <h2 className="mt-2 text-xl font-black text-[#3d3155] md:text-2xl">有些答案，填完才知道</h2>
             <div className="mt-5 space-y-3">
               {storyWall.map((item) => (
@@ -310,7 +310,7 @@ export default function HomePage() {
 
           {/* Story Card CTA */}
           <div className="rounded-[28px] border border-[#f5b8b5]/30 bg-gradient-to-br from-[#ffeef5]/60 to-[#eee8ff]/60 p-6 shadow-[0_8px_32px_rgba(245,184,181,0.12)] backdrop-blur-xl">
-            <p className="text-xs font-semibold tracking-[0.18em] text-[#b8a9e8]">每一份問卷，都會給你一張卡片</p>
+            <p className="text-xs font-semibold tracking-[0.18em] text-[#6b5fa8]">每一份問卷，都會給你一張卡片</p>
             <h2 className="mt-2 text-xl font-black text-[#3d3155] md:text-2xl">不只是測驗，是你的一小片故事</h2>
             <p className="mt-4 text-sm leading-7 text-[#8a7ca8]">
               填完之後，我們會用你的回答生成一張專屬的故事卡片。
