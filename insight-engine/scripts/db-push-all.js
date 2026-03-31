@@ -112,6 +112,7 @@ const MIGRATION_FILES = [
   'migrations/20260331_super_admin_platform.sql',
   'migrations/20260331_zcoin_wallet_unique.sql',
   'migrations/20260401_blog_subscribers.sql',
+  'migrations/20260401_ai_base_url.sql',
 ]
 
 function pgSslOption() {
