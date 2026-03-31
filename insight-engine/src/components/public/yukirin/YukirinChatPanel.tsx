@@ -333,6 +333,7 @@ export default function YukirinChatPanel({ onClose, character = 'yukirin', onSwi
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           message: text,
+          character: character ?? 'yukirin',
           context: {
             currentPage: pathname ?? '/',
             currentAnimation: yukirinRef.current?.getCurrentAnimation?.(),

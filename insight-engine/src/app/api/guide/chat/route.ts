@@ -96,6 +96,7 @@ export const FREE_DAILY_LIMIT = 20
 
 interface ChatRequest {
   message: string
+  character?: CharacterType
   context?: GuideContext
   history?: GuideMessage[]
   /** 本 session 已觸發情侶互動次數（前端維護） */
@@ -226,7 +227,7 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json() as ChatRequest
-  const { message, history = [] } = body
+  const { message, character, history = [] } = body
   let { context = {} } = body
 
   // 讀取使用者記憶（角色選擇、暱稱、造訪次數等）
@@ -240,6 +241,8 @@ export async function POST(req: NextRequest) {
   // 載入總後台自訂 prompt 設定
   const promptSettings = await loadPromptSettings()
 
+  // 前端傳入的 character 優先覆蓋 DB 記憶（即時切換不需等 DB 更新）
+  if (character) userMemory.selectedCharacter = character
   context = { ...context, userRole, userName, userMemory, promptSettings: promptSettings ?? undefined }
 
   // super_admin 額外注入今日平台數據
