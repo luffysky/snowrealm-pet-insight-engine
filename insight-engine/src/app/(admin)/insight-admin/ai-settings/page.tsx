@@ -11,6 +11,7 @@ interface AiConfig {
   isActive: boolean
   hasKey: boolean
   maskedKey: string | null
+  baseUrl?: string
   createdAt: string
 }
 
@@ -24,9 +25,12 @@ interface UsageStats {
 }
 
 const PROVIDERS = [
-  { value: 'openai', label: 'OpenAI', icon: '🤖', models: ['gpt-4o-mini', 'gpt-4o', 'gpt-4.1', 'gpt-4.1-mini', 'gpt-4.1-nano', 'o4-mini', 'o3'] },
-  { value: 'anthropic', label: 'Anthropic', icon: '🧠', models: ['claude-haiku-4-5-20251001', 'claude-sonnet-4-6', 'claude-opus-4-6', 'claude-3-5-haiku-20241022', 'claude-3-5-sonnet-20241022'] },
-  { value: 'google', label: 'Google AI', icon: '🔷', models: ['gemini-2.0-flash', 'gemini-2.0-flash-lite', 'gemini-2.5-flash-preview-05-20', 'gemini-2.5-pro-preview-06-05'] },
+  { value: 'openai', label: 'OpenAI', icon: '🤖', models: ['gpt-4o-mini', 'gpt-4o', 'gpt-4.1', 'gpt-4.1-mini', 'gpt-4.1-nano', 'o4-mini', 'o3'], needsBaseUrl: false },
+  { value: 'anthropic', label: 'Anthropic', icon: '🧠', models: ['claude-haiku-4-5-20251001', 'claude-sonnet-4-6', 'claude-opus-4-6', 'claude-3-5-haiku-20241022', 'claude-3-5-sonnet-20241022'], needsBaseUrl: false },
+  { value: 'google', label: 'Google AI', icon: '🔷', models: ['gemini-2.0-flash', 'gemini-2.0-flash-lite', 'gemini-2.5-flash-preview-05-20', 'gemini-2.5-pro-preview-06-05'], needsBaseUrl: false },
+  { value: 'ollama', label: 'Ollama（本地）', icon: '🦙', models: ['llama3.2', 'llama3.1', 'qwen2.5', 'gemma3', 'mistral', 'phi4', 'deepseek-r1'], needsBaseUrl: true, defaultBaseUrl: 'http://localhost:11434/v1' },
+  { value: 'qwen', label: 'Qwen（阿里雲）', icon: '🌟', models: ['qwen-plus', 'qwen-turbo', 'qwen-max', 'qwen2.5-72b-instruct', 'qwen2.5-14b-instruct'], needsBaseUrl: true, defaultBaseUrl: 'https://dashscope.aliyuncs.com/compatible-mode/v1' },
+  { value: 'custom', label: '自訂 API（OpenAI 相容）', icon: '⚙️', models: [], needsBaseUrl: true, defaultBaseUrl: '' },
 ]
 
 type SetupStep = 'list' | 'provider' | 'apikey' | 'model' | 'done'
@@ -41,6 +45,8 @@ export default function AiSettingsPage() {
   const [selectedProvider, setSelectedProvider] = useState('')
   const [apiKeyInput, setApiKeyInput] = useState('')
   const [selectedModel, setSelectedModel] = useState('')
+  const [baseUrlInput, setBaseUrlInput] = useState('')
+  const [customModelInput, setCustomModelInput] = useState('')
   const [isPrimary, setIsPrimary] = useState(false)
   const [saving, setSaving] = useState(false)
   const [verifying, setVerifying] = useState<string | null>(null)
@@ -77,11 +83,15 @@ export default function AiSettingsPage() {
     setSelectedProvider('')
     setApiKeyInput('')
     setSelectedModel('')
+    setBaseUrlInput('')
+    setCustomModelInput('')
     setIsPrimary(false)
   }
 
   const handleSave = async () => {
     setSaving(true)
+    const providerInfo = PROVIDERS.find((p) => p.value === selectedProvider)
+    const finalModel = selectedModel || customModelInput
     try {
       const res = await fetch('/api/admin/ai-settings', {
         method: 'POST',
@@ -89,9 +99,10 @@ export default function AiSettingsPage() {
         body: JSON.stringify({
           provider: selectedProvider,
           apiKey: apiKeyInput,
-          defaultModel: selectedModel,
-          displayName: PROVIDERS.find((p) => p.value === selectedProvider)?.label ?? selectedProvider,
+          defaultModel: finalModel,
+          displayName: providerInfo?.label ?? selectedProvider,
           isPrimary,
+          baseUrl: providerInfo?.needsBaseUrl ? (baseUrlInput || providerInfo.defaultBaseUrl) : undefined,
         }),
       })
       if (res.ok) {
@@ -259,7 +270,8 @@ export default function AiSettingsPage() {
                 key={p.value}
                 onClick={() => {
                   setSelectedProvider(p.value)
-                  setSelectedModel(p.models[0])
+                  setSelectedModel(p.models[0] ?? '')
+                  setBaseUrlInput(p.defaultBaseUrl ?? '')
                   setSetupStep('apikey')
                 }}
                 className={`p-4 rounded-xl border text-left transition-all cursor-pointer ${
@@ -289,19 +301,47 @@ export default function AiSettingsPage() {
             🔒 API Key 會以 AES-256-GCM 加密儲存，前端永遠不會看到明文。
           </div>
           <div className="space-y-3">
+            {/* Base URL（Ollama / Qwen / Custom 才顯示） */}
+            {providerInfo?.needsBaseUrl && (
+              <div>
+                <label className="block text-sm text-[#8a7ca8] mb-1">
+                  Base URL
+                  {selectedProvider === 'ollama' && <span className="text-xs text-slate-400 ml-2">Ollama 本地服務地址</span>}
+                  {selectedProvider === 'qwen' && <span className="text-xs text-slate-400 ml-2">阿里雲 DashScope 相容端點</span>}
+                </label>
+                <input
+                  type="text"
+                  value={baseUrlInput}
+                  onChange={(e) => setBaseUrlInput(e.target.value)}
+                  placeholder={providerInfo.defaultBaseUrl || 'https://your-api-endpoint/v1'}
+                  className="w-full px-3 py-2 bg-white/60 border border-[#b8a9e8]/30 rounded-lg text-[#3d3155] text-sm focus:border-[#b8a9e8]/30 focus:outline-none font-mono"
+                />
+                {selectedProvider === 'ollama' && (
+                  <p className="text-xs text-slate-400 mt-1">確認 Ollama 已啟動：<code className="bg-white/20 px-1 rounded">ollama serve</code></p>
+                )}
+              </div>
+            )}
             <div>
-              <label className="block text-sm text-[#8a7ca8] mb-1">API Key</label>
+              <label className="block text-sm text-[#8a7ca8] mb-1">
+                API Key
+                {selectedProvider === 'ollama' && <span className="text-xs text-slate-400 ml-2">（Ollama 本地可填任意字串）</span>}
+              </label>
               <input
                 type="password"
                 value={apiKeyInput}
                 onChange={(e) => setApiKeyInput(e.target.value)}
-                placeholder={selectedProvider === 'openai' ? 'sk-proj-...' : 'sk-ant-...'}
+                placeholder={
+                  selectedProvider === 'openai' ? 'sk-proj-...' :
+                  selectedProvider === 'anthropic' ? 'sk-ant-...' :
+                  selectedProvider === 'ollama' ? 'ollama' :
+                  selectedProvider === 'qwen' ? 'sk-...' : 'API Key'
+                }
                 className="w-full px-3 py-2 bg-white/60 border border-[#b8a9e8]/30 rounded-lg text-[#3d3155] text-sm focus:border-[#b8a9e8]/30 focus:outline-none"
               />
             </div>
             <button
               onClick={() => setSetupStep('model')}
-              disabled={!apiKeyInput.trim()}
+              disabled={!apiKeyInput.trim() || (providerInfo?.needsBaseUrl === true && !baseUrlInput.trim())}
               className="px-4 py-2 bg-gradient-to-r from-[#b8a9e8] to-[#f5b8b5] hover:opacity-90 disabled:bg-[#b8a9e8]/10 disabled:text-[#6b5fa8] text-white rounded-lg text-sm font-medium transition-colors cursor-pointer"
             >
               下一步 →
@@ -319,15 +359,30 @@ export default function AiSettingsPage() {
           <div className="space-y-3">
             <div>
               <label className="block text-sm text-[#8a7ca8] mb-1">預設模型</label>
-              <select
-                value={selectedModel}
-                onChange={(e) => setSelectedModel(e.target.value)}
-                className="w-full px-3 py-2 bg-white/60 border border-[#b8a9e8]/30 rounded-lg text-[#3d3155] text-sm focus:border-[#b8a9e8]/30 focus:outline-none"
-              >
-                {providerInfo.models.map((m) => (
-                  <option key={m} value={m}>{m}</option>
-                ))}
-              </select>
+              {providerInfo.models.length > 0 ? (
+                <select
+                  value={selectedModel}
+                  onChange={(e) => setSelectedModel(e.target.value)}
+                  className="w-full px-3 py-2 bg-white/60 border border-[#b8a9e8]/30 rounded-lg text-[#3d3155] text-sm focus:border-[#b8a9e8]/30 focus:outline-none"
+                >
+                  {providerInfo.models.map((m) => (
+                    <option key={m} value={m}>{m}</option>
+                  ))}
+                </select>
+              ) : (
+                <input
+                  type="text"
+                  value={customModelInput}
+                  onChange={(e) => setCustomModelInput(e.target.value)}
+                  placeholder="輸入模型名稱（如 llama3.2、mistral）"
+                  className="w-full px-3 py-2 bg-white/60 border border-[#b8a9e8]/30 rounded-lg text-[#3d3155] text-sm focus:border-[#b8a9e8]/30 focus:outline-none"
+                />
+              )}
+              {selectedProvider === 'ollama' && (
+                <p className="text-xs text-slate-400 mt-1">
+                  先執行 <code className="bg-white/20 px-1 rounded">ollama pull llama3.2</code> 下載模型
+                </p>
+              )}
             </div>
             <label className="flex items-center gap-2 text-sm text-slate-300 cursor-pointer">
               <input

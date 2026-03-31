@@ -1,5 +1,6 @@
 import { query, queryOne } from '@/lib/db'
 import type { AiKeyResult } from '@/lib/aiService'
+import { callAiProvider } from '@/lib/aiCall'
 
 // ===== 型別 =====
 
@@ -80,77 +81,6 @@ const STORY_SYSTEM_PROMPT = `你是一位擅長從數據中提煉人文故事的
 - keyDataPoints 必須有數字支撐
 - shareableOneLiner 要有感情，不要只是數字`
 
-async function callOpenAI(
-  apiKey: string,
-  model: string,
-  userContent: string
-): Promise<{ content: string; promptTokens: number; completionTokens: number }> {
-  const res = await fetch('https://api.openai.com/v1/chat/completions', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
-    body: JSON.stringify({
-      model,
-      messages: [
-        { role: 'system', content: STORY_SYSTEM_PROMPT },
-        { role: 'user', content: userContent },
-      ],
-      temperature: 0.7,
-      max_tokens: 2500,
-    }),
-  })
-
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({})) as { error?: { message?: string } }
-    throw new Error(err.error?.message ?? `OpenAI API 回傳 ${res.status}`)
-  }
-
-  const data = await res.json() as {
-    choices?: { message?: { content?: string } }[]
-    usage?: { prompt_tokens?: number; completion_tokens?: number }
-  }
-  return {
-    content: data.choices?.[0]?.message?.content ?? '',
-    promptTokens: data.usage?.prompt_tokens ?? 0,
-    completionTokens: data.usage?.completion_tokens ?? 0,
-  }
-}
-
-async function callAnthropic(
-  apiKey: string,
-  model: string,
-  userContent: string
-): Promise<{ content: string; promptTokens: number; completionTokens: number }> {
-  const res = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': apiKey,
-      'anthropic-version': '2023-06-01',
-    },
-    body: JSON.stringify({
-      model,
-      system: STORY_SYSTEM_PROMPT,
-      messages: [{ role: 'user', content: userContent }],
-      temperature: 0.7,
-      max_tokens: 2500,
-    }),
-  })
-
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({})) as { error?: { message?: string } }
-    throw new Error(err.error?.message ?? `Anthropic API 回傳 ${res.status}`)
-  }
-
-  const data = await res.json() as {
-    content?: { text?: string }[]
-    usage?: { input_tokens?: number; output_tokens?: number }
-  }
-  return {
-    content: data.content?.[0]?.text ?? '',
-    promptTokens: data.usage?.input_tokens ?? 0,
-    completionTokens: data.usage?.output_tokens ?? 0,
-  }
-}
 
 // ===== 輸出驗證 =====
 
@@ -230,10 +160,7 @@ export async function generateStoryInsight(
   const openTextSamples = await getOpenTextSamples(surveyId, tenantId)
   const promptContent = await buildStoryPromptContent(surveyId, tenantId, openTextSamples)
 
-  const result =
-    aiKey.provider === 'anthropic'
-      ? await callAnthropic(aiKey.apiKey, aiKey.model, promptContent)
-      : await callOpenAI(aiKey.apiKey, aiKey.model, promptContent)
+  const result = await callAiProvider(aiKey, STORY_SYSTEM_PROMPT, promptContent, { temperature: 0.7, maxTokens: 2500 })
 
   const report = parseStoryReport(result.content)
 

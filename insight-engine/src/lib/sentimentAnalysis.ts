@@ -4,6 +4,7 @@
  */
 
 import { query } from '@/lib/db'
+import { callOpenAiCompatible, callAnthropicApi } from '@/lib/aiCall'
 
 // ===== 型別 =====
 
@@ -80,62 +81,6 @@ function buildSentimentPrompt(texts: string[]): string {
 ${list}`
 }
 
-async function callOpenAiSentiment(
-  apiKey: string,
-  model: string,
-  prompt: string
-): Promise<string> {
-  const res = await fetch('https://api.openai.com/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify({
-      model,
-      messages: [{ role: 'user', content: prompt }],
-      temperature: 0.3,
-      max_tokens: 500,
-    }),
-  })
-
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({})) as { error?: { message?: string } }
-    throw new Error(err.error?.message ?? `OpenAI API 回傳 ${res.status}`)
-  }
-
-  const data = await res.json() as { choices?: Array<{ message?: { content?: string } }> }
-  return data.choices?.[0]?.message?.content ?? ''
-}
-
-async function callAnthropicSentiment(
-  apiKey: string,
-  model: string,
-  prompt: string
-): Promise<string> {
-  const res = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': apiKey,
-      'anthropic-version': '2023-06-01',
-    },
-    body: JSON.stringify({
-      model,
-      messages: [{ role: 'user', content: prompt }],
-      temperature: 0.3,
-      max_tokens: 500,
-    }),
-  })
-
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({})) as { error?: { message?: string } }
-    throw new Error(err.error?.message ?? `Anthropic API 回傳 ${res.status}`)
-  }
-
-  const data = await res.json() as { content?: Array<{ text?: string }> }
-  return data.content?.[0]?.text ?? ''
-}
 
 function parseSentimentResponse(raw: string): SentimentResult {
   let jsonStr = raw.trim()
@@ -205,9 +150,15 @@ export async function analyzeOpenTextSentiment(
       let raw: string
 
       if (aiKey.provider === 'anthropic') {
-        raw = await callAnthropicSentiment(aiKey.apiKey, aiKey.model, prompt)
+        const result = await callAnthropicApi(aiKey.apiKey, aiKey.model, '', prompt, { maxTokens: 500 })
+        raw = result.content
       } else {
-        raw = await callOpenAiSentiment(aiKey.apiKey, aiKey.model, prompt)
+        const result = await callOpenAiCompatible(
+          aiKey.apiKey, aiKey.model,
+          [{ role: 'user', content: prompt }],
+          { baseUrl: (aiKey as { baseUrl?: string }).baseUrl, temperature: 0.3, maxTokens: 500 }
+        )
+        raw = result.content
       }
 
       return parseSentimentResponse(raw)

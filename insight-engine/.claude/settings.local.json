@@ -213,7 +213,14 @@
       "Bash(head -80 \"D:/SnowRealmRebirth/snowrealm-insight-engine/insight-engine/src/app/\\(super-admin\\)/snowrealm-insight-ctrl/social/page.tsx\")",
       "Bash(head -80 \"D:/SnowRealmRebirth/snowrealm-insight-engine/insight-engine/src/app/\\(super-admin\\)/snowrealm-insight-ctrl/files/page.tsx\")",
       "Bash(head -60 \"D:/SnowRealmRebirth/snowrealm-insight-engine/insight-engine/src/app/\\(super-admin\\)/snowrealm-insight-ctrl/conversations/page.tsx\")",
-      "Bash(__NEW_LINE_dfb256564f0d21f0__ echo:*)"
+      "Bash(__NEW_LINE_dfb256564f0d21f0__ echo:*)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Bash(gh api:*)",
+      "Bash(curl:*)",
+      "Bash(python3:*)",
+      "Bash(python:*)",
+      "Bash(\"D:\\\\SnowRealmRebirth\\\\snowrealm-insight-engine\\\\insight-engine\\\\docs\\\\new\\\\todo_list_all.md\":*)",
+      "Bash(ls -la \"D:\\\\SnowRealmRebirth\\\\snowrealm-insight-engine\\\\insight-engine\\\\src\\\\app\\\\\\(admin\\)\\\\insight-admin\\\\support\")"
     ]
   }
 }

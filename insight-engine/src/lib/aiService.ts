@@ -15,6 +15,8 @@ export interface AiKeyResult {
   model: string
   apiKey: string
   keySource: 'platform_key' | 'own_key'
+  /** 自訂 API endpoint（Ollama / Qwen / custom），預設為 OpenAI */
+  baseUrl?: string
 }
 
 /** 取得可用的 AI API Key（優先使用使用者自己的 key，否則用平台 key） */
@@ -26,8 +28,9 @@ export async function getActiveAiKey(tenantId = 'default'): Promise<AiKeyResult 
     encrypted_api_key: string
     encryption_iv: string
     encryption_tag: string
+    base_url: string | null
   }>(
-    `SELECT provider, default_model, encrypted_api_key, encryption_iv, encryption_tag
+    `SELECT provider, default_model, encrypted_api_key, encryption_iv, encryption_tag, base_url
      FROM ai_provider_configs
      WHERE tenant_id = $1 AND is_active = true
      ORDER BY is_primary DESC, created_at ASC
@@ -48,6 +51,7 @@ export async function getActiveAiKey(tenantId = 'default'): Promise<AiKeyResult 
     model: row.default_model,
     apiKey,
     keySource: 'own_key',
+    baseUrl: row.base_url ?? undefined,
   }
 }
 

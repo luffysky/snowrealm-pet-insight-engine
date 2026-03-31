@@ -43,6 +43,7 @@ interface TurnsInfo {
   purchasedCredits: number | null
   zcoinBalance: number | null
   isLoggedIn?: boolean
+  isAdmin?: boolean
 }
 
 interface YukirinChatPanelProps {
@@ -255,8 +256,8 @@ export default function YukirinChatPanel({ onClose, character = 'yukirin', onSwi
 
   /** 組合一個最小 UserState 供斜線指令使用 */
   const buildSlashState = useCallback((): UserState => ({
-    userId: '', nickname: '', isAdmin: false,
-    selectedCharacter: 'yukirin',
+    userId: '', nickname: '', isAdmin: turnsInfo?.isAdmin ?? false,
+    selectedCharacter: character ?? 'yukirin',
     currentPage: pathname ?? '/',
     timeOnPage: 0, scrollPosition: 0, scrollSpeed: 'idle',
     isTyping: true, lastClickTarget: '', pageVisitCount: 1,
@@ -292,14 +293,22 @@ export default function YukirinChatPanel({ onClose, character = 'yukirin', onSwi
         if (animation) yukirinRef.current?.playAnimation(animation)
 
         if (!slashResult.needsLLM) {
+          // 特殊 action：show_command_list — 直接在對話裡顯示指令清單
+          const cmdListText = slashResult.action?.type === 'show_command_list'
+            ? '\n\n📋 **基本**\n/問卷 /結果 /Z幣 /商城 /成就 /每日任務\n\n🎮 **互動**\n/揮手 /拍頭 /抱抱 /跳舞 /戳 /嚇 /加油 /睡覺 /坐下 /站起來\n\n💫 **角色**\n/切換角色 /告白 /叫另一半 /放閃\n\n🔧 **工具**\n/設定 /幫助 /週報' + (turnsInfo?.isAdmin ? '\n\n👑 **管理員**\n/stats /cost /alerts' : '')
+            : null
+
           setMessages(prev => appendMessage(prev, {
             id: (Date.now() + 1).toString(),
             role: 'assistant',
-            text: responseText,
+            text: cmdListText ? responseText + cmdListText : responseText,
             mood,
           }))
-          // 執行 action（導頁等）
+          // 執行 action
           if (slashResult.action?.type === 'navigate') router.push(slashResult.action.target)
+          if (slashResult.action?.type === 'switch_character' && onSwitchCharacter) {
+            onSwitchCharacter(slashResult.action.target as 'yukirin' | 'riku')
+          }
           setQuickReplies(DEFAULT_QUICK_REPLIES)
           return
         }
@@ -730,7 +739,7 @@ export default function YukirinChatPanel({ onClose, character = 'yukirin', onSwi
             <div className="mx-3 mb-1 rounded-xl border border-white/10 overflow-hidden"
               style={{ background: 'rgba(15,9,30,0.97)' }}
             >
-              {cmdSuggestions.slice(0, 6).map(cmd => (
+              {cmdSuggestions.slice(0, 8).map(cmd => (
                 <button
                   key={cmd.command}
                   onClick={() => { setInput(cmd.command + ' '); setCmdSuggestions([]); inputRef.current?.focus() }}
@@ -753,7 +762,7 @@ export default function YukirinChatPanel({ onClose, character = 'yukirin', onSwi
               onChange={e => {
                 const v = e.target.value
                 setInput(v)
-                setCmdSuggestions(v.startsWith('/') ? getCommandSuggestions(v, false) : [])
+                setCmdSuggestions(v.startsWith('/') ? getCommandSuggestions(v, turnsInfo?.isAdmin ?? false) : [])
               }}
               placeholder={isInputDisabled && !isLoading ? '次數已用完，請購買或明天再來' : '跟雪凜說點什麼... 或輸入 /'}
               disabled={isInputDisabled}

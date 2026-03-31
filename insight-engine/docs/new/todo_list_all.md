@@ -1,6 +1,6 @@
 # SnowRealm Insight Engine — 全任務清單（Phase 重排版）
 
-> 最後更新：2026-03-31（雪凜 chat 修復 + 定價方案 + 新 Phase 規劃）
+> 最後更新：2026-04-01（Ollama/Qwen AI 支援 + Slash Command 修復 + FEAT-AGENT 規格）
 > ~~刪除線~~ = 已完成 ✅
 > 每項任務包含：新增檔案 + DB Migration + 修改檔案
 
@@ -2316,5 +2316,198 @@ src/lib/yukirin/modules/taskModule.ts（新增或確認）
   — CSS: translateX(100%) → translateX(60%)（只露出 40%）
   — 氣泡顯示台詞
   — 3 秒後 translateX(100%) 退場
+```
+
+---
+
+## Phase 10 — 雪凜自主 Agent（如 Claude Code / OpenClaw）✨
+
+> 讓雪凜/凜空成為真正的自主 AI Agent：使用者在對話框直接下任務，
+> AI 自己規劃、呼叫工具、執行、回報結果。不限於網站內部操作。
+
+---
+
+### FEAT-AGENT-1 Function Calling 核心框架
+
+> 目前 YukirinChatPanel 是純文字對話，沒有工具呼叫機制。
+> 需加入 Claude / OpenAI Function Calling，讓 AI 能請求執行特定工具。
+
+**概念流程**：
+```
+用戶：「幫我搜尋最新的 AI 問卷研究並整理成摘要」
+  ↓
+guide/chat/route.ts 帶入工具定義 → Claude tool_use
+  ↓
+Claude 回傳：{ type: 'tool_use', name: 'web_search', input: { query: '...' } }
+  ↓
+Server 執行工具 → 回傳結果
+  ↓
+Claude 整合結果 → 生成最終回覆
+  ↓
+雪凜：「找到 5 篇，幫你整理了...」
+```
+
+**架構設計**：
+```
+src/lib/yukirin/agentTools.ts       — 工具定義（toolName + schema + 執行函式）
+src/lib/yukirin/agentExecutor.ts    — Tool Call Loop（處理多輪工具呼叫直到 stop）
+src/app/api/guide/chat/route.ts     — 整合 agentExecutor（tools 模式 vs 純對話模式）
+```
+
+**工具定義格式（Anthropic Tool Use）**：
+```typescript
+export const AGENT_TOOLS = [
+  {
+    name: 'web_search',
+    description: '搜尋網路上的資訊',
+    input_schema: {
+      type: 'object',
+      properties: {
+        query: { type: 'string', description: '搜尋關鍵字' },
+        count: { type: 'number', description: '結果數量，預設 5' },
+      },
+      required: ['query'],
+    },
+  },
+  // ... 其他工具
+]
+```
+
+**DB Migration**：
+```sql
+-- 記錄 Agent 任務執行歷程（除錯 + 審計用）
+CREATE TABLE IF NOT EXISTS agent_task_logs (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_key TEXT NOT NULL,
+  session_id TEXT,
+  user_request TEXT NOT NULL,
+  tools_called JSONB DEFAULT '[]',     -- [{ name, input, output, duration_ms }]
+  final_response TEXT,
+  status TEXT DEFAULT 'completed',     -- 'completed' | 'failed' | 'cancelled'
+  total_tokens INT DEFAULT 0,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+```
+
+---
+
+### FEAT-AGENT-2 工具清單
+
+| 工具名 | 能力 | 技術 | 說明 |
+|--------|------|------|------|
+| `web_search` | 搜尋網路 | Bing Search API / Perplexity API | 回傳摘要 + 連結 |
+| `fetch_url` | 閱讀特定網頁 | Server-side fetch + Mozilla Readability 擷取正文 | 最多 10000 字截斷 |
+| `summarize_text` | 摘要長文 | 遞迴呼叫 Claude 自身 | chunks → 分段摘要 → 合併 |
+| `create_survey` | 在網站內建立問卷 | 呼叫 `/api/admin/surveys` + `/api/admin/ai-generate` | 需 admin 登入 |
+| `get_survey_stats` | 查詢問卷數據 | 呼叫 stats API | 不需特殊權限 |
+| `schedule_reminder` | 設定定時提醒 | 寫入 `scheduled_tasks` | LINE Push 或站內通知 |
+| `send_line_message` | 發 LINE 訊息給自己 | LINE Push Message API | 限制只能發給登入用戶自己 |
+| `read_file_url` | 讀取 PDF / 文件連結 | Server-side fetch + pdf-parse | 轉換成文字 |
+| `write_blog_draft` | 建立部落格草稿 | 呼叫 blog CRUD API | 需 admin 登入 |
+| `analyze_sentiment` | 情感分析 | 內部 sentimentAnalysis.ts | 針對問卷開放題 |
+
+**安裝**：
+```bash
+npm install @mozilla/readability jsdom   # web page text extraction
+npm install pdf-parse                    # PDF 解析
+```
+
+---
+
+### FEAT-AGENT-3 自主巡邏（Patrol Mode）
+
+> 使用者可設定「固定巡邏任務」，雪凜每天/每週自動執行並回報
+
+**使用情境**：
+- 「每天早上 9 點幫我查 Hacker News 前 5 篇，整理成摘要推播到 LINE」
+- 「每週一分析上週問卷的新增留言情感，寄摘要給我」
+- 「監控 insight.snowrealm.pet 上的最新部落格文章，有新文章就通知我」
+
+**架構**：
+```
+src/lib/yukirin/patrolEngine.ts         — 巡邏任務定義 + 執行
+src/app/api/tasks/patrol/route.ts       — GET 列出 / POST 新增 / DELETE 取消巡邏任務
+src/app/api/cron/patrol/route.ts        — Zeabur Cron 每小時執行應執行的巡邏
+```
+
+**DB Migration**：
+```sql
+CREATE TABLE IF NOT EXISTS patrol_tasks (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_key TEXT NOT NULL,
+  name TEXT NOT NULL,                    -- 「每日 HN 摘要」
+  description TEXT,                      -- 使用者設定的任務說明
+  cron_expression TEXT NOT NULL,         -- '0 9 * * *'（每天 9 點）
+  tool_chain JSONB NOT NULL,             -- [{ tool, input }] 要執行的工具序列
+  output_channel TEXT DEFAULT 'chat',    -- 'chat' | 'line' | 'email'
+  is_active BOOLEAN DEFAULT true,
+  last_run_at TIMESTAMPTZ,
+  next_run_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+```
+
+---
+
+### FEAT-AGENT-4 Agent 對話 UI 強化
+
+> 在 YukirinChatPanel 加入 Agent 模式的 UI 呈現
+
+**新增元件**：
+```
+src/components/public/yukirin/AgentStatusBar.tsx
+  — 顯示「🔍 正在搜尋...」「📄 正在讀取頁面...」「✅ 完成」
+  — 工具呼叫過程的即時進度條
+
+src/components/public/yukirin/ToolResultCard.tsx
+  — 搜尋結果卡片：標題 + 摘要 + 連結
+  — 文章摘要卡片：原文 URL + 摘要文字 + 字數
+```
+
+**修改**：
+```
+src/app/api/guide/chat/route.ts
+  — 偵測 user message 是否含任務意圖（開頭「幫我」「搜尋」「整理」「監控」）
+  — 有任務意圖 → 啟用 agentExecutor（帶入工具）
+  — 無任務意圖 → 一般對話（不帶工具，省 token）
+
+src/components/public/yukirin/YukirinChatPanel.tsx
+  — Server-Sent Events 新增 type: 'tool_start' / type: 'tool_end'
+  — 顯示 AgentStatusBar + ToolResultCard
+```
+
+**Token 成本控制**：
+- 工具呼叫只在明確任務意圖時啟用（intent detection）
+- web_search 每次搜尋約 $0.01（Bing API）
+- 每個工具鏈最多 5 步，防止無限循環
+- 每日 agent 任務上限 20 次（免費）/ 100 次（Pro）
+
+---
+
+### FEAT-AGENT-5 對話框快速觸發
+
+> 讓使用者可以方便地觸發 Agent 任務
+
+**新增 Slash Commands**（加到 slashCommands.ts）：
+```
+/搜尋 <關鍵字>     — 即時網路搜尋
+/讀取 <URL>        — 閱讀指定網頁並摘要
+/巡邏設定          — 開啟巡邏任務管理（navigate to /settings#patrol）
+/今日摘要          — 執行今天的所有巡邏任務 + 即時回報
+/任務列表          — 列出目前所有巡邏任務
+```
+
+**例子**（使用者實際輸入）：
+```
+/搜尋 AI survey platform 2026
+→ 雪凜：「找到 5 個結果！讓我整理一下...」
+→ [卡片] AI Survey Tools Comparison 2026 - TechReview
+   摘要：最新調查顯示...
+→ 雪凜：「整體來看，最多人關注的是...」
+
+/讀取 https://techcrunch.com/2026/04/01/ai-agent-trend
+→ 雪凜：「讀完了，幫你摘要重點...」
+→ [卡片] TechCrunch / 2600 字
+   摘要：這篇文章分析了...
 ```
 

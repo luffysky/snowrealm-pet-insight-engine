@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getActiveAiKey, getPlatformKey, checkFreeQuota, logAiUsage, AiAction } from '@/lib/aiService'
 import { requireRole } from '@/lib/tenant'
+import { callAiProvider } from '@/lib/aiCall'
 
 interface GenerateMetaRequest {
   topic: string
@@ -34,74 +35,6 @@ const SYSTEM_PROMPT = `你是專業的問卷文案企劃。根據使用者提供
   "ogDescription": "分享描述文字"
 }`
 
-async function callOpenAI(
-  apiKey: string,
-  model: string,
-  userPrompt: string
-): Promise<{ content: string; promptTokens: number; completionTokens: number }> {
-  const res = await fetch('https://api.openai.com/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify({
-      model,
-      messages: [
-        { role: 'system', content: SYSTEM_PROMPT },
-        { role: 'user', content: userPrompt },
-      ],
-      temperature: 0.7,
-      max_tokens: 1500,
-    }),
-  })
-
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}))
-    throw new Error(err.error?.message ?? `OpenAI API 回傳 ${res.status}`)
-  }
-
-  const data = await res.json()
-  return {
-    content: data.choices?.[0]?.message?.content ?? '',
-    promptTokens: data.usage?.prompt_tokens ?? 0,
-    completionTokens: data.usage?.completion_tokens ?? 0,
-  }
-}
-
-async function callAnthropic(
-  apiKey: string,
-  model: string,
-  userPrompt: string
-): Promise<{ content: string; promptTokens: number; completionTokens: number }> {
-  const res = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': apiKey,
-      'anthropic-version': '2023-06-01',
-    },
-    body: JSON.stringify({
-      model,
-      system: SYSTEM_PROMPT,
-      messages: [{ role: 'user', content: userPrompt }],
-      temperature: 0.7,
-      max_tokens: 1500,
-    }),
-  })
-
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}))
-    throw new Error(err.error?.message ?? `Anthropic API 回傳 ${res.status}`)
-  }
-
-  const data = await res.json()
-  return {
-    content: data.content?.[0]?.text ?? '',
-    promptTokens: data.usage?.input_tokens ?? 0,
-    completionTokens: data.usage?.output_tokens ?? 0,
-  }
-}
 
 function parseGeneratedMeta(raw: string) {
   let jsonStr = raw.trim()
@@ -157,11 +90,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
     let result: { content: string; promptTokens: number; completionTokens: number }
 
-    if (aiKey.provider === 'anthropic') {
-      result = await callAnthropic(aiKey.apiKey, aiKey.model, userPrompt)
-    } else {
-      result = await callOpenAI(aiKey.apiKey, aiKey.model, userPrompt)
-    }
+    result = await callAiProvider(aiKey, SYSTEM_PROMPT, userPrompt, { maxTokens: 1500 })
 
     const metaSettings = parseGeneratedMeta(result.content)
 

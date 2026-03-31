@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getActiveAiKey, getPlatformKey, logAiUsage } from '@/lib/aiService'
 import { requireRole } from '@/lib/tenant'
 import { SURVEY_CHAT_SYSTEM_PROMPT } from '@/lib/aiSurveyPrompt'
+import { callAnthropicApi } from '@/lib/aiCall'
 
 interface ChatMessage {
   role: 'user' | 'assistant'
@@ -12,23 +13,19 @@ interface ChatRequest {
   messages: ChatMessage[]
 }
 
-async function callOpenAI(
+async function callOpenAiChat(
   apiKey: string,
   model: string,
-  messages: ChatMessage[]
+  messages: ChatMessage[],
+  baseUrl?: string
 ): Promise<{ content: string; promptTokens: number; completionTokens: number }> {
-  const res = await fetch('https://api.openai.com/v1/chat/completions', {
+  const base = (baseUrl ?? 'https://api.openai.com/v1').replace(/\/$/, '')
+  const res = await fetch(`${base}/chat/completions`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${apiKey}`,
-    },
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
     body: JSON.stringify({
       model,
-      messages: [
-        { role: 'system', content: SURVEY_CHAT_SYSTEM_PROMPT },
-        ...messages,
-      ],
+      messages: [{ role: 'system', content: SURVEY_CHAT_SYSTEM_PROMPT }, ...messages],
       temperature: 0.7,
       max_tokens: 4000,
     }),
@@ -36,7 +33,7 @@ async function callOpenAI(
 
   if (!res.ok) {
     const err = await res.json().catch(() => ({}))
-    throw new Error((err as { error?: { message?: string } }).error?.message ?? `OpenAI API 回傳 ${res.status}`)
+    throw new Error((err as { error?: { message?: string } }).error?.message ?? `AI API 回傳 ${res.status}`)
   }
 
   const data = await res.json() as {
@@ -47,43 +44,6 @@ async function callOpenAI(
     content: data.choices?.[0]?.message?.content ?? '',
     promptTokens: data.usage?.prompt_tokens ?? 0,
     completionTokens: data.usage?.completion_tokens ?? 0,
-  }
-}
-
-async function callAnthropic(
-  apiKey: string,
-  model: string,
-  messages: ChatMessage[]
-): Promise<{ content: string; promptTokens: number; completionTokens: number }> {
-  const res = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': apiKey,
-      'anthropic-version': '2023-06-01',
-    },
-    body: JSON.stringify({
-      model,
-      system: SURVEY_CHAT_SYSTEM_PROMPT,
-      messages,
-      temperature: 0.7,
-      max_tokens: 4000,
-    }),
-  })
-
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}))
-    throw new Error((err as { error?: { message?: string } }).error?.message ?? `Anthropic API 回傳 ${res.status}`)
-  }
-
-  const data = await res.json() as {
-    content?: { text?: string }[]
-    usage?: { input_tokens?: number; output_tokens?: number }
-  }
-  return {
-    content: data.content?.[0]?.text ?? '',
-    promptTokens: data.usage?.input_tokens ?? 0,
-    completionTokens: data.usage?.output_tokens ?? 0,
   }
 }
 
@@ -116,10 +76,11 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     let result: { content: string; promptTokens: number; completionTokens: number }
 
     if (aiKey.provider === 'anthropic') {
-      result = await callAnthropic(aiKey.apiKey, aiKey.model, messages)
+      // Anthropic 多輪：把 messages 的最後一條 user 訊息作為 userContent，其餘作為上下文附加
+      const userContent = messages.map(m => `${m.role === 'user' ? '用戶' : '助手'}: ${m.content}`).join('\n\n')
+      result = await callAnthropicApi(aiKey.apiKey, aiKey.model, SURVEY_CHAT_SYSTEM_PROMPT, userContent, { maxTokens: 4000 })
     } else {
-      // openai, google(兼容), custom 都走 OpenAI-compatible
-      result = await callOpenAI(aiKey.apiKey, aiKey.model, messages)
+      result = await callOpenAiChat(aiKey.apiKey, aiKey.model, messages, aiKey.baseUrl)
     }
 
     await logAiUsage({

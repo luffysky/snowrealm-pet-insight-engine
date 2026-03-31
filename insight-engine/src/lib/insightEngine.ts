@@ -5,6 +5,7 @@ import {
   getUtmAnalytics,
 } from '@/lib/stats'
 import type { AiKeyResult } from '@/lib/aiService'
+import { callAiProvider } from '@/lib/aiCall'
 import type { DashboardStats, TagDistribution, UtmAnalytics } from '@/types'
 import type { FunnelStep } from '@/lib/stats'
 
@@ -143,82 +144,7 @@ async function callAiForInsight(
   aiKey: AiKeyResult,
   summary: string
 ): Promise<{ content: string; promptTokens: number; completionTokens: number }> {
-  if (aiKey.provider === 'anthropic') {
-    return callAnthropic(aiKey.apiKey, aiKey.model, summary)
-  }
-  return callOpenAI(aiKey.apiKey, aiKey.model, summary)
-}
-
-async function callOpenAI(
-  apiKey: string,
-  model: string,
-  summary: string
-): Promise<{ content: string; promptTokens: number; completionTokens: number }> {
-  const res = await fetch('https://api.openai.com/v1/chat/completions', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
-    body: JSON.stringify({
-      model,
-      messages: [
-        { role: 'system', content: INSIGHT_SYSTEM_PROMPT },
-        { role: 'user', content: summary },
-      ],
-      temperature: 0.5,
-      max_tokens: 2000,
-    }),
-  })
-
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({})) as { error?: { message?: string } }
-    throw new Error(err.error?.message ?? `OpenAI API 回傳 ${res.status}`)
-  }
-
-  const data = await res.json() as {
-    choices?: { message?: { content?: string } }[]
-    usage?: { prompt_tokens?: number; completion_tokens?: number }
-  }
-  return {
-    content: data.choices?.[0]?.message?.content ?? '',
-    promptTokens: data.usage?.prompt_tokens ?? 0,
-    completionTokens: data.usage?.completion_tokens ?? 0,
-  }
-}
-
-async function callAnthropic(
-  apiKey: string,
-  model: string,
-  summary: string
-): Promise<{ content: string; promptTokens: number; completionTokens: number }> {
-  const res = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': apiKey,
-      'anthropic-version': '2023-06-01',
-    },
-    body: JSON.stringify({
-      model,
-      system: INSIGHT_SYSTEM_PROMPT,
-      messages: [{ role: 'user', content: summary }],
-      temperature: 0.5,
-      max_tokens: 2000,
-    }),
-  })
-
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({})) as { error?: { message?: string } }
-    throw new Error(err.error?.message ?? `Anthropic API 回傳 ${res.status}`)
-  }
-
-  const data = await res.json() as {
-    content?: { text?: string }[]
-    usage?: { input_tokens?: number; output_tokens?: number }
-  }
-  return {
-    content: data.content?.[0]?.text ?? '',
-    promptTokens: data.usage?.input_tokens ?? 0,
-    completionTokens: data.usage?.output_tokens ?? 0,
-  }
+  return callAiProvider(aiKey, INSIGHT_SYSTEM_PROMPT, summary, { temperature: 0.5, maxTokens: 2000 })
 }
 
 function parseInsightReport(raw: string): InsightReport {

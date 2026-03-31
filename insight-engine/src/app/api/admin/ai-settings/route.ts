@@ -19,9 +19,10 @@ export async function GET(): Promise<NextResponse> {
     has_key: boolean
     created_at: string
     updated_at: string
+    base_url: string | null
   }>(
     `SELECT id, provider, display_name, default_model,
-            is_primary, is_active, created_at, updated_at,
+            is_primary, is_active, created_at, updated_at, base_url,
             (encrypted_api_key IS NOT NULL AND encrypted_api_key != '') AS has_key
      FROM ai_provider_configs
      WHERE tenant_id = $1
@@ -37,6 +38,7 @@ export async function GET(): Promise<NextResponse> {
     isActive: r.is_active,
     hasKey: r.has_key,
     maskedKey: r.has_key ? '••••••••' : null,
+    baseUrl: r.base_url ?? undefined,
     createdAt: r.created_at,
     updatedAt: r.updated_at,
   }))
@@ -50,12 +52,13 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   if (roleCheck instanceof NextResponse) return roleCheck
   const { tenantId } = roleCheck
   const body = await request.json()
-  const { provider, displayName, apiKey, defaultModel, isPrimary } = body as {
+  const { provider, displayName, apiKey, defaultModel, isPrimary, baseUrl } = body as {
     provider?: string
     displayName?: string
     apiKey?: string
     defaultModel?: string
     isPrimary?: boolean
+    baseUrl?: string
   }
 
   if (!provider || !apiKey) {
@@ -63,9 +66,15 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   }
 
   // 驗證 provider
-  const validProviders = ['openai', 'anthropic', 'google', 'custom']
+  const validProviders = ['openai', 'anthropic', 'google', 'ollama', 'qwen', 'custom']
   if (!validProviders.includes(provider)) {
     return NextResponse.json({ error: '不支援的 provider' }, { status: 400 })
+  }
+
+  // 需要 baseUrl 的 provider 驗證
+  const requiresBaseUrl = ['ollama', 'custom']
+  if (requiresBaseUrl.includes(provider) && !baseUrl) {
+    return NextResponse.json({ error: `${provider} 需要填寫 Base URL` }, { status: 400 })
   }
 
   // 加密 API Key
@@ -93,9 +102,10 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
          encryption_tag = $4,
          default_model = COALESCE($5, default_model),
          is_primary = $6,
+         base_url = $7,
          updated_at = NOW()
-       WHERE id = $7`,
-      [displayName, encrypted, iv, tag, defaultModel, isPrimary ?? false, existing.id]
+       WHERE id = $8`,
+      [displayName, encrypted, iv, tag, defaultModel, isPrimary ?? false, baseUrl ?? null, existing.id]
     )
     return NextResponse.json({ success: true, id: existing.id, action: 'updated' })
   }
@@ -103,9 +113,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   const id = randomUUID()
   await execute(
     `INSERT INTO ai_provider_configs
-       (id, tenant_id, provider, display_name, encrypted_api_key, encryption_iv, encryption_tag, default_model, is_primary, is_active)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, true)`,
-    [id, tenantId, provider, displayName ?? provider, encrypted, iv, tag, defaultModel ?? 'gpt-4o-mini', isPrimary ?? false]
+       (id, tenant_id, provider, display_name, encrypted_api_key, encryption_iv, encryption_tag, default_model, is_primary, is_active, base_url)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, true, $10)`,
+    [id, tenantId, provider, displayName ?? provider, encrypted, iv, tag, defaultModel ?? 'gpt-4o-mini', isPrimary ?? false, baseUrl ?? null]
   )
 
   return NextResponse.json({ success: true, id, action: 'created' })
@@ -155,8 +165,9 @@ export async function PATCH(request: NextRequest): Promise<NextResponse> {
       encrypted_api_key: string
       encryption_iv: string
       encryption_tag: string
+      base_url: string | null
     }>(
-      `SELECT provider, encrypted_api_key, encryption_iv, encryption_tag
+      `SELECT provider, encrypted_api_key, encryption_iv, encryption_tag, base_url
        FROM ai_provider_configs WHERE id = $1 AND tenant_id = $2`,
       [id, tenantId]
     )
@@ -176,12 +187,25 @@ export async function PATCH(request: NextRequest): Promise<NextResponse> {
     let error: string | null = null
 
     try {
-      if (row.provider === 'openai') {
-        const res = await fetch('https://api.openai.com/v1/models', {
+      if (row.provider === 'openai' || row.provider === 'google' || row.provider === 'qwen') {
+        const base = (row.base_url ?? 'https://api.openai.com/v1').replace(/\/$/, '')
+        const res = await fetch(`${base}/models`, {
           headers: { Authorization: `Bearer ${plainKey}` },
         })
         valid = res.ok
-        if (!valid) error = `OpenAI 回傳 ${res.status}`
+        if (!valid) error = `${row.provider} 回傳 ${res.status}`
+      } else if (row.provider === 'ollama' || row.provider === 'custom') {
+        // 呼叫自訂 endpoint 的 /models 端點，或直接用 chat completions 測試
+        const base = (row.base_url ?? 'http://localhost:11434/v1').replace(/\/$/, '')
+        try {
+          const res = await fetch(`${base}/models`, {
+            headers: { Authorization: `Bearer ${plainKey || 'ollama'}` },
+          })
+          valid = res.ok
+          if (!valid) error = `${row.provider} 回傳 ${res.status}（請確認服務正在運行）`
+        } catch {
+          error = `無法連接到 ${base}，請確認服務正在運行`
+        }
       } else if (row.provider === 'anthropic') {
         const res = await fetch('https://api.anthropic.com/v1/messages', {
           method: 'POST',

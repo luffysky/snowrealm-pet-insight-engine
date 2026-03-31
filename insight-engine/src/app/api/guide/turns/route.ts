@@ -19,15 +19,17 @@ function getUserKey(req: NextRequest, userId: string | null): string {
 export async function GET(req: NextRequest) {
   const token = req.cookies.get('admin_session')?.value ?? null
   let userId: string | null = null
+  let payload: Awaited<ReturnType<typeof verifyToken>> = null
   if (token) {
-    const payload = await verifyToken(token)
+    payload = await verifyToken(token)
     userId = payload?.sub ?? null
   }
 
   // 每次都查 DB 確認特權狀態
   const isUnlimited = await isUserPlatformUnlimited(userId)
+  const isAdmin = !!(payload?.role && ['super_admin', 'admin'].includes(payload.role))
   if (isUnlimited) {
-    return NextResponse.json({ isUnlimited: true, freeRemaining: null, purchasedCredits: null, zcoinBalance: null })
+    return NextResponse.json({ isUnlimited: true, freeRemaining: null, purchasedCredits: null, zcoinBalance: null, isAdmin })
   }
 
   const userKey = getUserKey(req, userId)
@@ -57,6 +59,7 @@ export async function GET(req: NextRequest) {
       purchasedCredits,
       zcoinBalance,
       isLoggedIn: !!userId,
+      isAdmin,
     })
   } catch {
     return NextResponse.json({
@@ -65,6 +68,7 @@ export async function GET(req: NextRequest) {
       purchasedCredits: 0,
       zcoinBalance: 0,
       isLoggedIn: !!userId,
+      isAdmin,
     })
   }
 }

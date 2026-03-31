@@ -1,6 +1,6 @@
 # 所有待辦任務
 
-> 最後更新：2026-03-31（掃描確認 + FEAT-9 完成）
+> 最後更新：2026-04-01（新增 ShareCard v2 + 帳號邀請修復）
 > 優先級：🔴 緊急 / 🟡 重要 / 🟢 一般 / ⚪ 未來
 
 ---
@@ -245,6 +245,227 @@
 ### LINE Bot 填答 Quick Reply
 - `lineBotEngine.ts`：單選題改用 Quick Reply 按鈕
 - Session 過期自動 abandon（`api/cron/cleanup-sessions`）
+
+---
+
+## 🔴 ShareCard v2（重要 UI 功能）
+
+> 規格文件：`docs/new/ShareCard-v2-Spec.md`
+> 目的：問卷完成 / 洞察報告 / 故事頁分享，支援匯出 PNG（modern-screenshot）+ WebM（MediaRecorder）
+
+### SHARE-1 安裝依賴
+
+```bash
+npm install modern-screenshot
+```
+
+（取代舊的 `html2canvas`，效能更好、支援 CSS 動畫截圖）
+
+### SHARE-2 目錄結構
+
+```
+src/components/share-cards/
+├── index.ts                     # 統一 export
+├── types.ts                     # ShareCardData, CardType, CardTheme 型別
+├── cards/
+│   ├── EmotionalCard.tsx        # 情感卡：「你和 X% 的人一樣重視...」
+│   ├── IdentityCard.tsx         # 身份卡：「你是 [角色名]」+ 群體標籤
+│   ├── AuthorityCard.tsx        # 數據卡：主要數字 + 排名 + 洞察
+│   └── ProfessionalCard.tsx     # 專業卡：條列式分析 + 建議行動
+├── utils/
+│   ├── exportPng.ts             # modern-screenshot → PNG 下載
+│   └── exportMp4.ts             # MediaRecorder → WebM/MP4 下載
+└── ShareCardSelector.tsx        # 4種卡片切換 UI + 匯出按鈕
+```
+
+### SHARE-3 卡片規格
+
+| 屬性 | 值 |
+|------|---|
+| 顯示尺寸 | 360 × 640px |
+| 匯出解析度 | 1080 × 1920px（scale: 3） |
+| 動畫方式 | CSS keyframes（非 Framer Motion，截圖相容） |
+| 凍結截圖 | `.freeze-state` class 暫停動畫再截圖 |
+| 圖片格式 | PNG（靜態）/ WebM（動態，降級為 MP4） |
+
+**EmotionalCard**（情感卡）：
+- 主題背景漸層（跟問卷 theme 連動，9 種主題）
+- 大標題：`shareableOneLiner`
+- 中段：`pullQuotes[0]`（金句引言）
+- 底部：群體比較數字 + 品牌 logo
+- 動畫：文字由下往上淡入（stagger 0.15s）
+
+**IdentityCard**（身份卡）：
+- 插畫 emoji 組合（根據行業/主題自動選，見 `shareCardIllustrations.ts`）
+- 角色名稱（`identityLabel`，如「毛孩守護者 🐾」）
+- 個人化事實列表（3 條）
+- 底部：「500 位填答者中的 1 位」
+- 動畫：emoji 依序 bounce in
+
+**AuthorityCard**（數據卡）：
+- 大數字（`keyDataPoints[0]`，如「72%」）
+- 副文字說明
+- 條形進度條（animating 0→72%）
+- 關鍵發現 2-3 條（`highlights`）
+- 動畫：數字 count up + 進度條展開
+
+**ProfessionalCard**（專業卡）：
+- 問卷標題 + AI 報告標籤
+- 摘要段落（`summary` 前 80 字）
+- 建議行動 3 條（`recommendations`）
+- 底部 QR Code placeholder（連結到公開報告頁）
+- 動畫：卡片由右側 slide in
+
+### SHARE-4 整合頁面
+
+| 頁面 | 入口 | 卡片類型 |
+|------|------|---------|
+| `/done`（問卷完成頁） | 完成後自動出現 | EmotionalCard + IdentityCard |
+| `/story/[responseId]`（個人故事頁） | 「分享故事」按鈕 | EmotionalCard（故事版） |
+| `/insight`（洞察報告後台） | 「📤 分享報告」| AuthorityCard + ProfessionalCard |
+| `/report/[slug]`（公開報告頁） | 頁面右上角分享 | AuthorityCard |
+
+### SHARE-5 匯出按鈕 UI
+
+```
+[💾 下載 PNG]  [🎬 下載動畫]  [📋 複製連結]  [💬 分享到 LINE]
+```
+
+- 下載前先加 `.freeze-state` → 截圖 → 移除 `.freeze-state`
+- LINE 分享：`https://social-plugins.line.me/lineit/share?url={encodeURIComponent(shareUrl)}`
+- IG 分享：複製圖片到剪貼簿 + toast「圖片已複製，請前往 IG 貼上」
+
+### SHARE-6 AI 文案生成
+
+呼叫 `/api/admin/ai-generate-share-copy` → POST `{ responseId, cardType }`:
+- 從 `answers` 取填答資料
+- 從 `user_tags` 取標籤
+- 從統計取群體比較數據
+- 用 gpt-4o-mini 生成 `shareableOneLiner`、`identityLabel`、`pullQuotes`
+- 成本：~$0.001/張
+
+### SHARE-7 `shareCardIllustrations.ts`
+
+```typescript
+const ILLUSTRATIONS: Record<string, string[]> = {
+  default:    ['📊', '✨', '💡'],
+  pet:        ['🐾', '✨', '🌿'],
+  restaurant: ['🍽️', '☕', '🌮'],
+  ecommerce:  ['🛍️', '📦', '💳'],
+  education:  ['📚', '🎓', '✏️'],
+  saas:       ['💻', '⚡', '🚀'],
+  health:     ['💚', '🏥', '🌱'],
+  // 9 種主題
+  game:    ['🎮', '🏆', '⭐'],
+  cyber:   ['🤖', '⚡', '🌐'],
+  ancient: ['🏯', '🌸', '📜'],
+  sakura:  ['🌸', '🎀', '💮'],
+  ocean:   ['🌊', '🐠', '🐚'],
+  forest:  ['🌲', '🍃', '🦊'],
+  candy:   ['🍬', '🎨', '🌈'],
+  noir:    ['🖤', '🌙', '✨'],
+}
+```
+
+---
+
+## 🟡 Phase CSS — 全站 CSS 變數替換工程
+
+> 目標：所有文字顏色、背景色、邊框色從 Tailwind hardcode → CSS 變數
+> 原則：分段替換，每段可獨立部署，不影響其他區塊
+> 優先級：先做最常見的、最影響主題切換的
+
+### CSS-PHASE-0 基礎建設（先做，其他都靠它）
+
+- [ ] `globals.css`：建立完整 design token 變數系統
+
+```css
+:root {
+  /* 文字 */
+  --color-text-primary:   #f1f5f9;   /* 主文字 */
+  --color-text-secondary: #94a3b8;   /* 次要文字 */
+  --color-text-muted:     #64748b;   /* 灰文 */
+  --color-text-disabled:  #475569;   /* 不可用 */
+  --color-text-inverse:   #0f172a;   /* 淺色背景上的深色文字 */
+  --color-text-accent:    #38bdf8;   /* 強調色（主題可 override） */
+  --color-text-success:   #4ade80;
+  --color-text-warning:   #fbbf24;
+  --color-text-danger:    #f87171;
+  --color-text-info:      #60a5fa;
+
+  /* 背景 */
+  --color-bg-base:        #0f172a;   /* 頁面底色 */
+  --color-bg-card:        rgba(30, 41, 59, 0.7);
+  --color-bg-hover:       rgba(255, 255, 255, 0.05);
+  --color-bg-active:      rgba(255, 255, 255, 0.1);
+  --color-bg-input:       rgba(15, 23, 42, 0.8);
+  --color-bg-badge:       rgba(56, 189, 248, 0.1);
+
+  /* 邊框 */
+  --color-border:         rgba(255, 255, 255, 0.1);
+  --color-border-strong:  rgba(255, 255, 255, 0.2);
+  --color-border-accent:  rgba(56, 189, 248, 0.3);
+
+  /* 狀態色 */
+  --color-success:  #22c55e;
+  --color-warning:  #f59e0b;
+  --color-danger:   #ef4444;
+  --color-info:     #3b82f6;
+}
+```
+
+- [ ] 建立 Tailwind 擴充設定，讓 `text-[--color-text-primary]` 可直接用
+
+### CSS-PHASE-1 共用元件（影響最廣）
+
+優先替換被最多頁面引用的元件：
+
+- [ ] `components/admin/Sidebar.tsx` — 所有文字顏色
+- [ ] `components/admin/AdminHeader.tsx`
+- [ ] 表格（`<table>`, `<tr>`, `<td>`, `<th>`）重複出現的 `text-white/60`、`text-gray-*`
+- [ ] `components/admin/StatCard.tsx`（如有）
+- [ ] 按鈕 variant（primary/secondary/danger/ghost）— 統一用變數
+
+### CSS-PHASE-2 後台頁面（按流量排）
+
+- [ ] `insight-admin/page.tsx`（Dashboard）
+- [ ] `surveys/page.tsx`
+- [ ] `responses/page.tsx`
+- [ ] `insight/page.tsx`
+- [ ] `team/page.tsx`
+- [ ] `line-settings/page.tsx`
+- [ ] `account/page.tsx`（剛改過，一起補）
+
+### CSS-PHASE-3 公開頁面
+
+- [ ] `app/(public)/[org]/[slug]/page.tsx`（問卷填寫）
+- [ ] `app/(public)/done/`（完成頁）
+- [ ] `app/login/page.tsx`
+- [ ] `app/register/page.tsx`
+
+### CSS-PHASE-4 ShareCard + 特殊元件
+
+- [ ] ShareCard v2 所有卡片元件直接用變數，不寫 hardcode
+- [ ] `StoryCard.tsx`
+- [ ] `StoryWall.tsx`
+- [ ] Badge 系列（`badge-partner` 已完成 ✅）
+
+### CSS-PHASE-5 總後台
+
+- [ ] `app/(super-admin)/snowrealm-insight-ctrl/` 下所有頁面
+
+### 替換規則（每次 PR 對照）
+
+| 舊寫法 | 新寫法 |
+|--------|--------|
+| `text-white` | `text-[--color-text-primary]` 或 `text-white/90` → 視情況 |
+| `text-gray-400` | `text-[--color-text-secondary]` |
+| `text-gray-500` | `text-[--color-text-muted]` |
+| `text-white/50` | `text-[--color-text-muted]` |
+| `text-emerald-400` | 保留（主題強調色，等 Phase 4 統一） |
+| `text-sky-400` | `text-[--color-text-accent]` |
+| `bg-white/5` | `bg-[--color-bg-hover]` |
+| `border-white/10` | `border-[--color-border]` |
 
 ---
 
