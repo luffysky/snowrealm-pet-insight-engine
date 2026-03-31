@@ -33,7 +33,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     .digest('base64')
 
   if (hash !== signature) {
-    console.warn('[LINE Insight Webhook] Signature mismatch')
+    console.warn('[LINE Insight Webhook] Signature mismatch — secret首4碼:', CHANNEL_SECRET.slice(0, 4), '長度:', CHANNEL_SECRET.length)
     return NextResponse.json({ error: 'Invalid signature' }, { status: 403 })
   }
 

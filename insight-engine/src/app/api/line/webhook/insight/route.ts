@@ -15,7 +15,11 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   const CHANNEL_SECRET = process.env.LINE_INSIGHT_EXT_CHANNEL_SECRET ?? ''
   const CHANNEL_ACCESS_TOKEN = process.env.LINE_INSIGHT_EXT_CHANNEL_ACCESS_TOKEN ?? ''
 
+  // Secret 未設定時：LINE Verify 請求（空 events）先放行回 200，避免 500
   if (!CHANNEL_SECRET) {
+    const rawBody = await request.text()
+    const body = JSON.parse(rawBody || '{}')
+    if ((body.events ?? []).length === 0) return NextResponse.json({ ok: true })
     console.error('[Insight Ext Webhook] LINE_INSIGHT_EXT_CHANNEL_SECRET 未設定')
     return NextResponse.json({ error: 'not configured' }, { status: 500 })
   }
