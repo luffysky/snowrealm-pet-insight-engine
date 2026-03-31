@@ -324,6 +324,25 @@ export async function notifyActivity(info: {
 // ━━━━━━━━━━━━━━━━━ Rich Menu ━━━━━━━━━━━━━━━━━
 
 /**
+ * 新好友加入時設定預設 Rich Menu（選單 A）
+ * Key: DEFAULT_RICH_MENU_ID
+ */
+export async function setDefaultRichMenu(lineUserId: string, tenantId?: string): Promise<void> {
+  try {
+    const token = await getLineConfig('OFFICIAL_CHANNEL_ACCESS_TOKEN', tenantId)
+    const menuId = await getLineConfig('DEFAULT_RICH_MENU_ID', tenantId)
+    if (!token || !menuId) return
+
+    await fetch(`https://api.line.me/v2/bot/user/${lineUserId}/richmenu/${menuId}`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
+    })
+  } catch (err) {
+    console.error('[setDefaultRichMenu] Failed:', err)
+  }
+}
+
+/**
  * 切換 LINE 用戶的 Rich Menu（填完問卷後）
  * Rich Menu ID 從 line_configs 讀取
  * Key: POST_SURVEY_RICH_MENU_ID（存於 site_settings 或 ENV POST_SURVEY_RICH_MENU_ID）

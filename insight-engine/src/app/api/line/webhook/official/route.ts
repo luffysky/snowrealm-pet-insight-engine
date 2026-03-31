@@ -17,6 +17,7 @@ import {
   startSupportTicket,
   appendSupportMessage,
 } from '@/lib/supportEngine'
+import { setDefaultRichMenu } from '@/lib/lineNotify'
 import { getPlatformKey } from '@/lib/aiService'
 import {
   classifyIntent,
@@ -89,6 +90,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
           [userId, displayName]
         )
       }
+
+      // 設定預設 Rich Menu（選單 A）
+      if (userId) await setDefaultRichMenu(userId)
 
       const followBranding = await getTenantBranding(DEFAULT_TENANT)
       await replyMessage(replyToken, [
