@@ -1046,7 +1046,7 @@ export default function YukirinChatPanel({ onClose, character = 'yukirin', onSwi
               {cmdSuggestions.slice(0, 8).map(cmd => (
                 <button
                   key={cmd.command}
-                  onClick={() => { setInput(cmd.command + ' '); setCmdSuggestions([]); inputRef.current?.focus() }}
+                  onClick={() => { setCmdSuggestions([]); sendMessage(cmd.command) }}
                   className="w-full flex items-center gap-2 px-3 py-1.5 text-left hover:bg-white/8 transition-colors"
                 >
                   <span className="text-[10px] font-mono text-[#b8a9e8]">{cmd.command}</span>
