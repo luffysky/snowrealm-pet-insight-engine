@@ -28,8 +28,10 @@ export async function GET(req: NextRequest) {
   // 每次都查 DB 確認特權狀態
   const isUnlimited = await isUserPlatformUnlimited(userId)
   const isAdmin = !!(payload?.role && ['super_admin', 'admin'].includes(payload.role))
+  // isOwner = platform_unlimited（比 role 更可靠，不受 tenant role 影響）
+  const isOwner = isUnlimited
   if (isUnlimited) {
-    return NextResponse.json({ isUnlimited: true, freeRemaining: null, purchasedCredits: null, zcoinBalance: null, isAdmin })
+    return NextResponse.json({ isUnlimited: true, freeRemaining: null, purchasedCredits: null, zcoinBalance: null, isAdmin, isOwner })
   }
 
   const userKey = getUserKey(req, userId)
@@ -60,6 +62,7 @@ export async function GET(req: NextRequest) {
       zcoinBalance,
       isLoggedIn: !!userId,
       isAdmin,
+      isOwner,
     })
   } catch {
     return NextResponse.json({
@@ -69,6 +72,7 @@ export async function GET(req: NextRequest) {
       zcoinBalance: 0,
       isLoggedIn: !!userId,
       isAdmin,
+      isOwner,
     })
   }
 }

@@ -7,6 +7,7 @@ export interface UserState {
   userId: string
   nickname: string
   isAdmin: boolean
+  isOwner: boolean
   selectedCharacter: 'yukirin' | 'riku'
 
   // 頁面狀態

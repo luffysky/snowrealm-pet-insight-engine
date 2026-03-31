@@ -1474,6 +1474,9 @@ src/app/(admin)/layout.tsx
 🔲 [未來] LINE Phase 6 完整重整
     → LINE-0 現況盤點
     → LINE-1~8 逐一完成
+    → LINE-MSG-1 圖文訊息（Imagemap message）
+    → LINE-MSG-2 多頁訊息（Carousel / Flex carousel container）
+    → LINE-MSG-3 優惠券（Coupon Flex Message，含折扣碼 + 效期 + QR）
 ```
 
 ---

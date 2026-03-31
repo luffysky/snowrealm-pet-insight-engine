@@ -46,6 +46,7 @@ interface TurnsInfo {
   zcoinBalance: number | null
   isLoggedIn?: boolean
   isAdmin?: boolean
+  isOwner?: boolean
 }
 
 interface YukirinChatPanelProps {
@@ -255,6 +256,13 @@ export default function YukirinChatPanel({ onClose, character = 'yukirin', onSwi
       case 'navigate':
         router.push(action.target)
         break
+      case 'navigate_admin': {
+        // 從 pathname 提取租戶 slug 再組合後台路徑
+        const m = pathname?.match(/^\/insight-admin\/([^/]+)/)
+        const slug = m?.[1]
+        router.push(slug ? `/insight-admin/${slug}/${action.target}` : `/insight-admin/${action.target}`)
+        break
+      }
       case 'scroll': {
         const el = document.querySelector(action.target)
         el?.scrollIntoView({ behavior: 'smooth', block: 'center' })
@@ -273,11 +281,11 @@ export default function YukirinChatPanel({ onClose, character = 'yukirin', onSwi
         router.push(`/survey/${action.surveyId}`)
         break
     }
-  }, [router])
+  }, [router, pathname])
 
   /** 組合一個最小 UserState 供斜線指令使用 */
   const buildSlashState = useCallback((): UserState => ({
-    userId: '', nickname: '', isAdmin: turnsInfo?.isAdmin ?? false,
+    userId: '', nickname: '', isAdmin: turnsInfo?.isAdmin ?? false, isOwner: turnsInfo?.isOwner ?? false,
     selectedCharacter: character ?? 'yukirin',
     currentPage: pathname ?? '/',
     timeOnPage: 0, scrollPosition: 0, scrollSpeed: 'idle',
@@ -546,7 +554,7 @@ export default function YukirinChatPanel({ onClose, character = 'yukirin', onSwi
         if (!slashResult.needsLLM) {
           // 特殊 action：show_command_list — 直接在對話裡顯示指令清單
           const cmdListText = slashResult.action?.type === 'show_command_list'
-            ? '\n\n📋 **基本**\n/問卷 /結果 /Z幣 /商城 /成就 /每日任務\n\n🎮 **互動**\n/揮手 /拍頭 /抱抱 /跳舞 /戳 /嚇 /加油 /睡覺 /坐下 /站起來\n\n💫 **角色**\n/切換角色 /告白 /叫另一半 /放閃\n\n🔧 **工具**\n/設定 /幫助 /週報 /創作文章' + (turnsInfo?.isAdmin ? '\n\n👑 **管理員**\n/stats /cost /alerts' : '')
+            ? '\n\n📋 **基本**\n/問卷 /結果 /Z幣 /商城 /成就 /每日任務\n\n🎮 **互動**\n/揮手 /拍頭 /抱抱 /跳舞 /戳 /嚇 /加油 /睡覺 /坐下 /站起來\n\n💫 **角色**\n/切換角色 /告白 /叫另一半 /放閃\n\n🔧 **工具**\n/設定 /幫助 /週報 /創作文章' + (turnsInfo?.isAdmin ? '\n\n👑 **管理員**\n/stats /cost /alerts' : '') + (turnsInfo?.isOwner ? '\n\n🔑 **老闆專屬（只有你看得到）**\n📊 **數據**：/全平台 /財報 /今日報告 /AI成本 /問卷總覽 /週趨勢\n👥 **管理**：/租戶 /用戶 /發Z幣 /禮遇 /模擬登入\n🖥️ **系統**：/系統狀態 /部署 /錯誤日誌\n📣 **內容**：/公告 /文章管理\n⚙️ **設定**：/提示詞 /清記憶\n✨ **彩蛋**：/老闆模式' : '')
             : null
 
           // 特殊 action：blog_write_mode — 進入部落格創作模式
@@ -810,7 +818,14 @@ export default function YukirinChatPanel({ onClose, character = 'yukirin', onSwi
   const handleQuickReply = useCallback((text: string) => {
     // 特殊快速回覆：前往部落格編輯器
     if (text === '前往部落格編輯器') {
-      router.push('/insight-admin/blog')
+      // 從 pathname 提取租戶 slug，例如 /insight-admin/snowrealm-pet/surveys → snowrealm-pet
+      const match = pathname?.match(/^\/insight-admin\/([^/]+)/)
+      const tenantSlug = match?.[1]
+      if (tenantSlug) {
+        router.push(`/insight-admin/${tenantSlug}/blog`)
+      } else {
+        router.push('/insight-admin/blog')
+      }
       return
     }
     // 再寫一篇 → 重新進入 blog write mode
@@ -1144,7 +1159,7 @@ export default function YukirinChatPanel({ onClose, character = 'yukirin', onSwi
               onChange={e => {
                 const v = e.target.value
                 setInput(v)
-                setCmdSuggestions(v.startsWith('/') ? getCommandSuggestions(v, turnsInfo?.isAdmin ?? false) : [])
+                setCmdSuggestions(v.startsWith('/') ? getCommandSuggestions(v, turnsInfo?.isAdmin ?? false, turnsInfo?.isOwner ?? false) : [])
               }}
               placeholder={isInputDisabled && !isLoading ? '次數已用完，請購買或明天再來' : '跟雪凜說點什麼... 或輸入 /'}
               disabled={isInputDisabled}

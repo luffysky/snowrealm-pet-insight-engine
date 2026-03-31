@@ -48,6 +48,8 @@ export interface GuideContext {
   currentMood?: string
   /** 使用者角色（影響嚮導對待方式） */
   userRole?: string
+  /** 是否為平台老闆（platform_unlimited = true，比 userRole 更可靠） */
+  isOwner?: boolean
   /** 使用者名稱（管理員打招呼用） */
   userName?: string
   /** 今日平台數據（管理員專屬） */
@@ -335,10 +337,11 @@ mood 用 thinking，引導完用 happy。`
   }
 
   let bossBlock = ''
-  if (context.userRole === 'super_admin') {
+  const isBoss = context.isOwner || context.userRole === 'super_admin'
+  if (isBoss) {
     if (ps?.adminExtraPrompt?.trim()) {
       const title = ps.adminTitle || '老闆'
-      bossBlock = `\n【${title}模式：這位是 ${context.userName ?? title}，SnowRealm 的創辦人 / super_admin】\n${ps.adminExtraPrompt}`
+      bossBlock = `\n【${title}模式：這位是 ${context.userName ?? title}，SnowRealm 的創辦人 / 平台老闆】\n${ps.adminExtraPrompt}`
     } else {
       bossBlock = '\n' + buildYukirinBossBlock(context.userName ?? '老闆', context.platformStats)
     }
@@ -449,7 +452,8 @@ mood 用 thinking。`
       break
   }
 
-  const bossBlock = context.userRole === 'super_admin'
+  const isBoss = context.isOwner || context.userRole === 'super_admin'
+  const bossBlock = isBoss
     ? '\n' + buildRikuBossBlock(context.userName ?? '老闆', context.platformStats)
     : ''
 
