@@ -1,6 +1,6 @@
 # SnowRealm Insight Engine — 全任務清單（Phase 重排版）
 
-> 最後更新：2026-03-31
+> 最後更新：2026-03-31（雪凜 chat 修復 + 定價方案 + 新 Phase 規劃）
 > ~~刪除線~~ = 已完成 ✅
 > 每項任務包含：新增檔案 + DB Migration + 修改檔案
 
@@ -17,6 +17,9 @@
 | 補完 | `api-keys/page.tsx`、`orders/export/route.ts` |
 | 安全 | requireRole 補完、藍新簽章驗證、Super Admin 路由攔截 |
 | Phase 1~3 | Story Card / Story Insight / Story Wall / Rule Engine / AI 洞察報告 |
+| VRM 修復 | Mixamo 骨骼 retarget（loadMixamoAnimation.ts）、YukirinScene + RikuScene 修正 |
+| 雪凜聊天 | YukirinWidget 顯眼聊天按鈕 + YukirinChatPanel 支援角色切換（character prop） |
+| 文件 | Pricing-Plan.md（C端月費/年費/LTD + B端定價規劃） |
 
 ---
 
@@ -1453,25 +1456,24 @@ src/app/(admin)/layout.tsx
 ## 🔴 今日任務（2026-03-31）
 
 ```
-[1] URG-6 Sidebar 連結缺 tenant slug 導致 404
-    → 掃 layout.tsx + 測試 middleware rewrite
+✅ [完成] YukirinWidget + YukirinChatPanel：
+    - 角色 3D 視窗下方新增顯眼「跟雪凜聊天」按鈕（漸層紫色，全寬）
+    - YukirinChatPanel 接受 character + onSwitchCharacter props
+    - ChatPanel 內頂部顯示角色名稱 + 切換按鈕（🌸 / ❄️）
+    - 支援在聊天中切換顯示 YukirinScene / RikuScene
 
-[2] 客服系統接線
-    → DB migration（support_tickets / support_messages / support_templates）
-    → api/admin/support/ 各 route
-    → insight-admin/support/page.tsx
-    → layout.tsx + middleware.ts
+✅ [完成] Pricing-Plan.md 寫入 docs/new/
+    - C端：Free / Pro NT$149/月 / Pro+ NT$299/月 + 年費 + LTD
+    - B端：Starter/Pro/Scale/Enterprise
+    - LTD：限前 500 名創辦人席，不是永久開放
+    - Z幣與訂閱的關係說明
 
-[3] FEAT-7a 平台公告通知系統
-    → DB migration（platform_notifications / notification_reads）
-    → api/super-admin/notifications/
-    → snowrealm-insight-ctrl/notifications/page.tsx
-    → layout.tsx NAV_ITEMS 更新
+🔲 [下一步] 部落格功能
+    → 使用者部落格 BLOG-1~20
 
-[4] 若有時間：FEAT-6 問卷模板系統
-    → DB migration（survey_templates）
-    → api/admin/survey-templates/
-    → insight-admin/survey-templates/page.tsx
+🔲 [未來] LINE Phase 6 完整重整
+    → LINE-0 現況盤點
+    → LINE-1~8 逐一完成
 ```
 
 ---
@@ -2045,3 +2047,274 @@ CREATE INDEX IF NOT EXISTS idx_rag_embedding ON rag_documents
 headers = {"X-Crawler-Token": os.getenv("CRAWLER_TOKEN")}
 await httpx.post("https://insight.snowrealm.pet/api/internal/...", headers=headers)
 ```
+
+---
+
+## Phase 8 — 定價 × 收費系統 💰
+
+> 依據 docs/new/Pricing-Plan.md
+> 先建 C端（雪凜 Pro），等用戶再推 B端
+
+---
+
+### PAY-C1 C端訂閱方案後端
+
+**DB Migration**
+```sql
+ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS subscription_plan TEXT DEFAULT 'free';
+  -- 'free' | 'pro' | 'pro_plus' | 'lifetime_pro' | 'lifetime_pro_plus'
+ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS subscription_expires_at TIMESTAMPTZ;
+ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS subscription_started_at TIMESTAMPTZ;
+ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS monthly_zcoin_quota INT DEFAULT 0;
+ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS monthly_zcoin_used INT DEFAULT 0;
+ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS monthly_zcoin_reset_at TIMESTAMPTZ;
+
+CREATE TABLE IF NOT EXISTS ltd_slots (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  plan_type TEXT NOT NULL,               -- 'lifetime_pro' | 'lifetime_pro_plus'
+  max_slots INT NOT NULL,
+  used_slots INT NOT NULL DEFAULT 0,
+  is_active BOOLEAN DEFAULT true,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Seed 限量席位
+INSERT INTO ltd_slots (plan_type, max_slots) VALUES
+  ('lifetime_pro', 500),
+  ('lifetime_pro_plus', 200)
+ON CONFLICT DO NOTHING;
+```
+
+**新增檔案**
+```
+src/lib/subscription/subscriptionEngine.ts
+  — getUserPlan(userId): Promise<SubscriptionPlan>
+  — checkFeatureAccess(userId, feature): Promise<boolean>
+  — PLAN_FEATURES: Record<string, string[]>（各方案功能清單）
+  — getRemainingLtdSlots(planType): Promise<number>
+
+src/app/api/subscription/plan/route.ts
+  - GET  — 取得當前用戶方案 + 剩餘 LTD 席位
+
+src/app/api/subscription/upgrade/route.ts
+  - POST { plan, paymentMethod } — 發起升級（跳轉付款頁）
+  — 計算 LTD 是否還有席位
+  — 建立 payment_orders → 跳轉 LINE Pay / 藍新
+
+src/app/(public)/pricing/page.tsx（已存在，需更新）
+  — 顯示真實剩餘 LTD 席位數
+  — 月費/年費/終身 三欄對比
+  — 「🌟 創辦人特別席 剩 XXX 名」倒數感
+```
+
+---
+
+### PAY-C2 Z幣月配額發放
+
+**新增檔案**
+```
+src/app/api/cron/monthly-quota/route.ts
+  - GET — 每月1日 00:00 執行（Zeabur Cron）
+    — 查所有 subscription_plan = 'pro' / 'pro_plus' 的用戶
+    — earnZcoin(userId, 'monthly_quota', amount)
+    — 更新 monthly_zcoin_used = 0, monthly_zcoin_reset_at = 下月1日
+```
+
+---
+
+### PAY-C3 Pro 功能 Gate
+
+**修改檔案**
+```
+src/app/api/guide/chat/route.ts
+  — 檢查 isPro → Premium AI 次數 5/天 → 無限（Pro+）
+  — Free: 20 turns/day Standard only
+  — Pro: 50 turns/day + 5 Premium/day
+  — Pro+: unlimited turns + unlimited Premium
+
+src/app/api/tts/route.ts（若存在）
+  — Free: TTS 關閉
+  — Pro+: TTS 開啟
+
+src/lib/subscription/subscriptionEngine.ts
+  — 所有功能 gate 統一從這裡判斷
+```
+
+---
+
+## Phase 9 — 雪凜進階規格 ✨
+
+> 依據以下 spec 檔案（請先深度閱讀再實作）：
+> - docs/new/AI-Agent-RuleEngine-Spec.md（規則引擎 100+ 條）
+> - docs/new/Character-Design-Spec.md（雙角色人設）
+> - docs/new/memory.md（用戶記憶 + 管理員識別）
+> - docs/new/roll.md（動作自我感知）
+> - docs/new/yukirin_act.md（情侶互動系統）
+> - docs/new/Yukirin-Agent-Upgrade-Spec.md（主動代理）
+> - docs/new/Yukirin-AI-Guide-Spec.md（雙LLM路由）
+> - docs/new/Yukirin-Audio-System-Spec.md（音訊系統）
+> - docs/new/Yukirin-Unified-AI-Spec.md（17項AI統一服務）
+> - docs/new/Yukirin-VRoid-ThreeJS-Guide.md（VRoid建模指引）
+
+---
+
+### AGENT-1 規則引擎擴充（AI-Agent-RuleEngine-Spec）
+
+> 現有 ruleEngine.ts 已有基礎，需按 spec 擴充至 100+ 條規則
+
+**已完成**（可確認）：
+- ✅ 基礎 RuleEngine + UserState 結構
+- ✅ pageTracker.ts 追蹤頁面狀態
+- ✅ slashCommands.ts 斜線指令
+
+**待補充**：
+```
+src/lib/agent/ruleEngine.ts
+  — 補充 PAGE_RULES（首頁/問卷/結果/社群/商城/個人頁/設定）
+  — 補充 IDLE_RULES（30s/2min/5min/10min 閒置行為）
+  — 補充 TIME_RULES（早/午/晚/深夜 時段問候）
+  — 補充 EVENT_RULES（登入/完成問卷/購買/獲得成就/連續登入）
+  — 補充 COUPLE_TRIGGERS（情侶互動觸發條件，10% + 場景加成）
+  — presenceMode 切換邏輯（mini/chat/companion/free）
+  — Free Mode：3D 角色在畫面上自由走動
+```
+
+**新增**：
+```
+src/lib/agent/freeMode.ts
+  — FreeMode：角色在 viewport 內隨機走動
+  — 碰到邊界會轉向
+  — 偶爾停下說台詞
+  — 點擊可以抱起（跟著游標走 3 秒）
+```
+
+---
+
+### AGENT-2 記憶系統（memory.md）
+
+> 大部分結構已在 YUKIRIN-6 的 guide_user_profiles 表涵蓋
+
+**確認現有實作**：
+- ✅ `guide_user_profiles` 表（DB migration 已完成）
+- ✅ `guide_user_memory` 表（已在 DB）
+
+**待補充**：
+```
+src/lib/yukirin/memoryManager.ts
+  — extractNickname(text): string | null
+    偵測「我叫___」「你可以叫我___」
+  — detectAdminIdentity(userId, text): boolean
+    偵測 "Luffysky"（開發者名稱）→ 切換為開發者模式
+  — injectMemoryToPrompt(profile): string
+    把 nickname / pets / interests → 注入 system prompt
+  — summarizeIfNeeded(userKey, messages): void
+    超過 20 輪 → 非阻塞 GPT-4o-mini 摘要 → 更新 survey_history_summary
+
+修改：src/app/api/guide/chat/route.ts
+  — 呼叫 memoryManager.extractNickname 後更新 guide_user_profiles
+  — System prompt 注入 getMemoryContext(userKey)
+```
+
+---
+
+### AGENT-3 動作自我感知（roll.md）
+
+```
+修改：src/lib/yukirin/animationManager.ts
+  — AnimationState: { current, mood, isSpeaking, idleSince }
+  — 用 Zustand 或 useRef 管理（不影響渲染效能）
+  — 每次 playAnimation 更新 AnimationState
+
+修改：src/app/api/guide/chat/route.ts
+  — context.currentAnimation + context.currentMood 帶入 system prompt
+  — 「雪凜正在 XXX 動作中，請根據這個情境回覆」
+  — LLM 回應解析 animation 欄位 → 前端觸發對應動畫
+```
+
+---
+
+### AGENT-4 主動代理排程（Yukirin-Agent-Upgrade-Spec）
+
+> DB 表 scheduled_tasks 已在 DB migration 建立
+
+**確認**：
+```sql
+SELECT * FROM scheduled_tasks LIMIT 1;
+```
+
+**新增檔案**：
+```
+src/app/api/cron/scheduler/route.ts
+  — GET — Zeabur Cron 每 60 秒呼叫
+    — 查 scheduled_tasks WHERE execute_at <= NOW() AND status = 'pending'
+    — 執行任務（LINE Push / AI 摘要 / 提醒）
+    — 更新 status = 'done' + 記錄 cron_logs
+
+src/app/api/tasks/schedule/route.ts
+  — POST { type, executeAt, message, channel } — 使用者從聊天中建立提醒
+  — parseScheduleFromText("明天早上 9 點") → ISO datetime
+
+src/app/api/tasks/user/route.ts
+  — GET — 列出用戶的待辦任務
+
+src/app/api/tasks/[id]/route.ts
+  — DELETE — 取消任務
+```
+
+**修改**：
+```
+src/lib/yukirin/modules/taskModule.ts（新增或確認）
+  — handleReminderRequest(text, userId): scheduleTask response
+  — 自然語言解析時間（中文日期 → UTC）
+```
+
+---
+
+### AGENT-5 首次選角體驗（Character-Design-Spec）
+
+```
+新增：src/components/character/CharacterSelect.tsx
+  — 全螢幕遮罩（backdrop-blur）
+  — 左邊：雪凜揮手動畫（3D scene）
+  — 右邊：凜空揮手動畫（3D scene）
+  — 各自有語音 / 台詞氣泡
+  — 點選後：
+    1. POST /api/guide/select-character { character }
+    2. 儲存到 guide_user_profiles.chosen_character
+    3. 關閉遮罩，進入主要 widget
+
+新增：src/app/api/guide/select-character/route.ts
+  — POST { character: 'yukirin' | 'riku' } — 儲存選擇
+
+修改：src/app/layout.tsx
+  — 偵測是否有 chosen_character 記錄 → 無則顯示 CharacterSelect
+  — 首次訪問才觸發（localStorage 標記）
+```
+
+---
+
+### AGENT-6 情侶互動視覺化（yukirin_act.md / ROLL-1~3）
+
+> 相關 lib 已有基礎實作，補完視覺部分
+
+```
+確認 / 修改：src/lib/yukirin/partnerInterrupt.ts
+  — shouldInterrupt(context): boolean
+    * 10% base，特定場景 boosted
+    * 5 分鐘冷卻
+    * 每 session 最多 3 次
+
+修改：src/components/public/yukirin/YukirinWidget.tsx
+  — 加 PartnerPeek component（從螢幕邊緣探出）
+  — partnerInterrupt 觸發時：
+    * 從螢幕右邊 or 下邊 slide-in 凜空的上半身
+    * 3 秒後 slide-out
+    * 同時在 chat 中插入 isPartner 訊息（已有！）
+
+新增：src/components/public/yukirin/PartnerPeek.tsx
+  — absolute positioned，fixed 定位
+  — CSS: translateX(100%) → translateX(60%)（只露出 40%）
+  — 氣泡顯示台詞
+  — 3 秒後 translateX(100%) 退場
+```
+

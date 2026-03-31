@@ -6,6 +6,14 @@ import dynamic from 'next/dynamic'
 import type { YukirinControls, YukirinMood } from './YukirinScene'
 import type { GuideAction, GuideMessage } from '@/lib/guideEngine'
 import { getFallbackResponse } from '@/lib/guideFallbacks'
+
+// 兩個角色的共同操作介面（mood 接受 string 避免型別衝突）
+type AnySceneControls = {
+  setMood: (mood: string, durationMs?: number) => void
+  playAnimation: (name: string) => void
+  getCurrentAnimation?: () => string
+  getCurrentMood?: () => string
+}
 import {
   handleSlashCommand,
   isSlashCommand,
@@ -15,6 +23,7 @@ import {
 import type { UserState } from '@/lib/agent/ruleEngine'
 
 const YukirinScene = dynamic(() => import('./YukirinScene'), { ssr: false })
+const RikuScene    = dynamic(() => import('./RikuScene'),    { ssr: false })  // 凜空場景
 
 const DEFAULT_QUICK_REPLIES = ['帶我逛逛', '功能怎麼用', '找我聊天']
 
@@ -38,6 +47,8 @@ interface TurnsInfo {
 
 interface YukirinChatPanelProps {
   onClose: () => void
+  character?: 'yukirin' | 'riku'
+  onSwitchCharacter?: (char: 'yukirin' | 'riku') => void
 }
 
 // ── 購買次數面板 ──────────────────────────────────────────────────────────────
@@ -155,10 +166,10 @@ async function saveMessages(msgs: ChatMessage[]) {
 }
 
 // ── 主元件 ───────────────────────────────────────────────────────────────────
-export default function YukirinChatPanel({ onClose }: YukirinChatPanelProps) {
+export default function YukirinChatPanel({ onClose, character = 'yukirin', onSwitchCharacter }: YukirinChatPanelProps) {
   const router = useRouter()
   const pathname = usePathname()
-  const yukirinRef = useRef<YukirinControls | null>(null)
+  const yukirinRef = useRef<AnySceneControls | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const abortRef = useRef<AbortController | null>(null)
 
@@ -213,7 +224,7 @@ export default function YukirinChatPanel({ onClose }: YukirinChatPanelProps) {
       .catch(() => {})
   }, [])
 
-  const handleLoad = useCallback((controls: YukirinControls) => {
+  const handleLoad = useCallback((controls: AnySceneControls) => {
     yukirinRef.current = controls
   }, [])
 
@@ -324,8 +335,8 @@ export default function YukirinChatPanel({ onClose }: YukirinChatPanelProps) {
           message: text,
           context: {
             currentPage: pathname ?? '/',
-            currentAnimation: yukirinRef.current?.getCurrentAnimation(),
-            currentMood: yukirinRef.current?.getCurrentMood(),
+            currentAnimation: yukirinRef.current?.getCurrentAnimation?.(),
+            currentMood: yukirinRef.current?.getCurrentMood?.(),
           },
           history,
           coupleCount: coupleCountRef.current,
@@ -553,27 +564,55 @@ export default function YukirinChatPanel({ onClose }: YukirinChatPanelProps) {
       className="flex flex-col rounded-2xl overflow-hidden shadow-[0_16px_48px_rgba(0,0,0,0.4)] border border-white/10 w-full h-full"
       style={{ background: 'rgba(15,9,30,0.92)', backdropFilter: 'blur(20px)' }}
     >
-      {/* ── 雪凜 3D 頭像區 ─────────────────────────────────── */}
+      {/* ── 角色 3D 頭像區 ─────────────────────────────────── */}
       <div className="relative flex-shrink-0" style={{ height: 130 }}>
         <div className="absolute inset-0">
-          <YukirinScene
-            cameraMode="upperBody"
-            mood="happy"
-            showBackground={false}
-            onLoad={handleLoad}
-            className="w-full h-full"
-          />
+          {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+          {character === 'riku' ? (
+            <RikuScene
+              cameraMode="upperBody"
+              mood="happy"
+              showBackground={false}
+              onLoad={handleLoad as (c: any) => void}
+              className="w-full h-full"
+            />
+          ) : (
+            <YukirinScene
+              cameraMode="upperBody"
+              mood="happy"
+              showBackground={false}
+              onLoad={handleLoad as (c: any) => void}
+              className="w-full h-full"
+            />
+          )}
         </div>
         <div className="absolute top-0 left-0 right-0 flex items-center justify-between px-3 pt-2.5 cursor-grab active:cursor-grabbing">
-          <div className="flex items-center gap-1.5 pointer-events-none">
+          <div className="flex items-center gap-1 pointer-events-none">
             <svg width="8" height="10" viewBox="0 0 8 10" fill="rgba(255,255,255,0.2)">
               <circle cx="2" cy="2" r="1"/><circle cx="6" cy="2" r="1"/>
               <circle cx="2" cy="5" r="1"/><circle cx="6" cy="5" r="1"/>
               <circle cx="2" cy="8" r="1"/><circle cx="6" cy="8" r="1"/>
             </svg>
-            <span className="text-white/90 text-xs font-semibold drop-shadow">雪凜</span>
+            <span className="text-white/90 text-xs font-semibold drop-shadow">
+              {character === 'riku' ? '凜空' : '雪凜'}
+            </span>
             <span className="text-white/40 text-[10px]">AI 嚮導</span>
           </div>
+          {/* 角色切換（面板內） */}
+          {onSwitchCharacter && (
+            <div className="flex items-center gap-0.5 pointer-events-auto">
+              <button
+                onClick={() => onSwitchCharacter('yukirin')}
+                onPointerDown={e => e.stopPropagation()}
+                className={`text-[9px] px-1.5 py-0.5 rounded-full transition-colors ${character === 'yukirin' ? 'bg-[#b8a9e8]/40 text-white' : 'text-white/30 hover:text-white/70'}`}
+              >🌸</button>
+              <button
+                onClick={() => onSwitchCharacter('riku')}
+                onPointerDown={e => e.stopPropagation()}
+                className={`text-[9px] px-1.5 py-0.5 rounded-full transition-colors ${character === 'riku' ? 'bg-[#a8d0e8]/40 text-white' : 'text-white/30 hover:text-white/70'}`}
+              >❄️</button>
+            </div>
+          )}
           <button
             onClick={onClose}
             onPointerDown={e => e.stopPropagation()}

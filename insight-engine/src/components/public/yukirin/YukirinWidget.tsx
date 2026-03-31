@@ -435,7 +435,11 @@ export default function YukirinWidget() {
               className="relative"
               style={{ width: panelSize.w, height: panelSize.h }}
             >
-              <YukirinChatPanel onClose={() => setChatOpen(false)} />
+              <YukirinChatPanel
+                onClose={() => setChatOpen(false)}
+                character={character}
+                onSwitchCharacter={switchCharacter}
+              />
 
               {/* 右邊緣把手 */}
               <div
@@ -560,8 +564,20 @@ export default function YukirinWidget() {
                 </div>
               </div>
 
-              {/* ── 角色切換 + 姿勢選擇 ────────────────────────────────── */}
+              {/* ── 角色切換 + 姿勢選擇 + 聊天入口 ──────────────────── */}
               <div className="mt-2 space-y-1.5" style={{ width: charSize.w }} onPointerDown={e => e.stopPropagation()}>
+                {/* 聊天按鈕（主要入口，最顯眼） */}
+                <button
+                  onClick={(e) => { e.stopPropagation(); if (!isDraggingRef.current) setChatOpen(true) }}
+                  className="w-full flex items-center justify-center gap-1 h-[22px] rounded-full text-[9px] font-semibold cursor-pointer transition-all active:scale-95 shadow-sm"
+                  style={{ background: 'linear-gradient(135deg, rgba(184,169,232,0.85), rgba(245,184,181,0.75))', color: '#3d3155', border: '1px solid rgba(184,169,232,0.5)' }}
+                >
+                  <svg width="9" height="9" viewBox="0 0 10 10" fill="currentColor">
+                    <path d="M1 1h8a1 1 0 011 1v5a1 1 0 01-1 1H3L1 10V2a1 1 0 011-1z"/>
+                  </svg>
+                  跟{character === 'riku' ? '凜空' : '雪凜'}聊天
+                </button>
+
                 {/* 角色切換 */}
                 <div className="flex items-center bg-white/60 backdrop-blur-sm border border-[#b8a9e8]/30 rounded-full h-[18px] overflow-hidden shadow-sm">
                   <button
