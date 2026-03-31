@@ -111,6 +111,7 @@ const MIGRATION_FILES = [
   'migrations/20260330_friend_qr.sql',
   'migrations/20260331_super_admin_platform.sql',
   'migrations/20260331_zcoin_wallet_unique.sql',
+  'migrations/20260401_blog_subscribers.sql',
 ]
 
 function pgSslOption() {

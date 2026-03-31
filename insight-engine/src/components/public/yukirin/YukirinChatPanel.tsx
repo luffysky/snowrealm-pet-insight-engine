@@ -32,6 +32,8 @@ interface ChatMessage {
   role: 'user' | 'assistant'
   text: string
   mood?: YukirinMood
+  /** 圖片預覽（base64 data URL） */
+  imagePreview?: string
   /** 情侶插話：顯示為不同顏色的對話泡泡 */
   isPartner?: boolean
   partnerName?: string
@@ -175,6 +177,7 @@ export default function YukirinChatPanel({ onClose, character = 'yukirin', onSwi
   const abortRef = useRef<AbortController | null>(null)
 
   const inputRef = useRef<HTMLInputElement>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   // 情侶互動 session 狀態（不需要重渲染，用 ref）
   const coupleCountRef = useRef(0)
@@ -203,6 +206,20 @@ export default function YukirinChatPanel({ onClose, character = 'yukirin', onSwi
   // 部落格創作模式
   const [blogWriteMode, setBlogWriteMode] = useState(false)
   const [blogWriting, setBlogWriting] = useState(false)
+  // ref 解決 useCallback stale closure 問題
+  const blogWriteModeRef = useRef(false)
+
+  // 圖片上傳 & 語音輸入
+  const [uploadedImage, setUploadedImage] = useState<{ file: File; preview: string } | null>(null)
+  const [isAnalyzing, setIsAnalyzing] = useState(false)
+  const [isRecording, setIsRecording] = useState(false)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const recognitionRef = useRef<any>(null)
+
+  // 同步 blogWriteMode 到 ref（解決 useCallback stale closure）
+  useEffect(() => {
+    blogWriteModeRef.current = blogWriteMode
+  }, [blogWriteMode])
 
   // 捲到最新訊息
   useEffect(() => {
@@ -275,6 +292,122 @@ export default function YukirinChatPanel({ onClose, character = 'yukirin', onSwi
     isWeekend: [0, 6].includes(new Date().getDay()),
   }), [pathname, messages.length, turnsInfo])
 
+  // ── 圖片選擇處理 ─────────────────────────────────────────────────────────────
+  const handleImageSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (!file.type.startsWith('image/')) {
+      alert('請選擇圖片檔案')
+      return
+    }
+    const reader = new FileReader()
+    reader.onload = () => {
+      setUploadedImage({ file, preview: reader.result as string })
+    }
+    reader.readAsDataURL(file)
+    // 清空 input 讓同一張圖片可再選
+    e.target.value = ''
+  }, [])
+
+  // 送出圖片分析
+  const handleSendImage = useCallback(async () => {
+    if (!uploadedImage || isAnalyzing) return
+    setIsAnalyzing(true)
+
+    // 加入使用者的圖片泡泡
+    const imgMsg: ChatMessage = {
+      id: Date.now().toString(),
+      role: 'user',
+      text: input.trim() ? input : '（傳送圖片）',
+      imagePreview: uploadedImage.preview,
+    }
+    setMessages(prev => appendMessage(prev, imgMsg))
+    setInput('')
+    setUploadedImage(null)
+
+    // 思考中動畫
+    yukirinRef.current?.setMood('thinking', 300)
+    yukirinRef.current?.playAnimation('think')
+
+    try {
+      const fd = new FormData()
+      fd.append('image', uploadedImage.file)
+      fd.append('character', character ?? 'yukirin')
+      if (imgMsg.text !== '（傳送圖片）') fd.append('question', imgMsg.text)
+
+      const res = await fetch('/api/guide/analyze-image', { method: 'POST', body: fd })
+      const data = await res.json() as { text?: string; error?: string; newBalance?: number; cost?: number }
+
+      if (!res.ok) {
+        const errText = res.status === 401
+          ? (character === 'riku' ? '...請先登入。' : '欸等等，你要先登入才能傳圖片喔！')
+          : res.status === 402
+          ? (character === 'riku' ? `...Z幣不足，需要 ${data.cost ?? 20} 個。` : `哎呀，Z幣不夠啦 QQ 圖片分析需要 ${data.cost ?? 20} Z幣～`)
+          : (data.error ?? '分析失敗了...')
+        setMessages(prev => appendMessage(prev, {
+          id: (Date.now() + 1).toString(), role: 'assistant', text: errText, mood: 'sad',
+        }))
+        return
+      }
+
+      yukirinRef.current?.setMood('happy', 300)
+      setMessages(prev => appendMessage(prev, {
+        id: (Date.now() + 1).toString(), role: 'assistant', text: data.text ?? '...', mood: 'happy',
+      }))
+
+      // 更新 Z幣 餘額顯示
+      if (data.newBalance !== undefined && data.newBalance !== null) {
+        setTurnsInfo(prev => prev ? { ...prev, zcoinBalance: data.newBalance! } : null)
+      }
+    } catch {
+      setMessages(prev => appendMessage(prev, {
+        id: (Date.now() + 1).toString(), role: 'assistant', text: '哎呀網路問題 QQ 圖片沒送到', mood: 'sad',
+      }))
+    } finally {
+      setIsAnalyzing(false)
+    }
+  }, [uploadedImage, isAnalyzing, input, character])
+
+  // ── 語音輸入 ─────────────────────────────────────────────────────────────────
+  const toggleVoiceInput = useCallback(() => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const win = window as any
+    const SpeechRecognitionAPI = typeof window !== 'undefined' && (win.SpeechRecognition || win.webkitSpeechRecognition)
+
+    if (!SpeechRecognitionAPI) {
+      setMessages(prev => appendMessage(prev, {
+        id: Date.now().toString(), role: 'assistant',
+        text: character === 'riku' ? '...這個瀏覽器不支援語音。' : '欸，你的瀏覽器不支援語音輸入耶 QQ 換個瀏覽器試試？',
+        mood: 'sad',
+      }))
+      return
+    }
+
+    if (isRecording) {
+      recognitionRef.current?.stop()
+      setIsRecording(false)
+      return
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const recognition = new SpeechRecognitionAPI() as any
+    recognition.lang = 'zh-TW'
+    recognition.continuous = false
+    recognition.interimResults = false
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    recognition.onresult = (e: any) => {
+      const transcript = e.results[0]?.[0]?.transcript ?? ''
+      if (transcript) setInput((prev: string) => prev + transcript)
+    }
+    recognition.onend = () => setIsRecording(false)
+    recognition.onerror = () => setIsRecording(false)
+
+    recognitionRef.current = recognition
+    recognition.start()
+    setIsRecording(true)
+  }, [isRecording, character])
+
   const sendMessage = useCallback(async (text: string) => {
     if (!text.trim() || isLoading) return
 
@@ -286,7 +419,7 @@ export default function YukirinChatPanel({ onClose, character = 'yukirin', onSwi
     requestAnimationFrame(() => inputRef.current?.focus())
 
     // ── 部落格創作模式：攔截使用者輸入，呼叫 AI write API ─────────────────
-    if (blogWriteMode && !isSlashCommand(text)) {
+    if (blogWriteModeRef.current && !isSlashCommand(text)) {
       setBlogWriting(true)
       setIsLoading(true)
 
@@ -817,19 +950,28 @@ export default function YukirinChatPanel({ onClose, character = 'yukirin', onSwi
                 </div>
               </div>
             ) : (
-              <div
-                className={`text-xs leading-relaxed px-3 py-2 rounded-2xl max-w-[80%] ${
-                  msg.role === 'assistant'
-                    ? 'text-white/85 border border-[#b8a9e8]/20 rounded-bl-sm'
-                    : 'text-white/85 border border-white/15 rounded-br-sm'
-                }`}
-                style={
-                  msg.role === 'assistant'
-                    ? { background: 'rgba(184,169,232,0.10)' }
-                    : { background: 'linear-gradient(135deg, rgba(184,169,232,0.2), rgba(245,184,181,0.15))' }
-                }
-              >
-                {msg.text}
+              <div className={`max-w-[80%] ${msg.role === 'assistant' ? '' : 'flex flex-col items-end gap-1'}`}>
+                {msg.imagePreview && (
+                  <img
+                    src={msg.imagePreview}
+                    alt="傳送的圖片"
+                    className="rounded-xl max-w-[160px] max-h-[120px] object-cover border border-white/15 mb-1"
+                  />
+                )}
+                <div
+                  className={`text-xs leading-relaxed px-3 py-2 rounded-2xl ${
+                    msg.role === 'assistant'
+                      ? 'text-white/85 border border-[#b8a9e8]/20 rounded-bl-sm'
+                      : 'text-white/85 border border-white/15 rounded-br-sm'
+                  }`}
+                  style={
+                    msg.role === 'assistant'
+                      ? { background: 'rgba(184,169,232,0.10)' }
+                      : { background: 'linear-gradient(135deg, rgba(184,169,232,0.2), rgba(245,184,181,0.15))' }
+                  }
+                >
+                  {msg.text}
+                </div>
               </div>
             )}
           </div>
@@ -913,10 +1055,79 @@ export default function YukirinChatPanel({ onClose, character = 'yukirin', onSwi
               ))}
             </div>
           )}
+          {/* 圖片預覽條 */}
+          {uploadedImage && (
+            <div className="px-3 pb-1.5 flex items-center gap-2">
+              <div className="relative">
+                <img
+                  src={uploadedImage.preview}
+                  alt="預覽"
+                  className="w-12 h-12 rounded-lg object-cover border border-white/15"
+                />
+                <button
+                  onClick={() => setUploadedImage(null)}
+                  className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-black/70 text-white/70 text-[9px] flex items-center justify-center hover:bg-black"
+                >✕</button>
+              </div>
+              <span className="text-[10px] text-white/40 flex-1">
+                {turnsInfo?.isUnlimited ? '（平台特權，免費分析）' : `分析圖片 -${20} Z幣`}
+              </span>
+              <button
+                onClick={handleSendImage}
+                disabled={isAnalyzing}
+                className="text-[10px] px-2.5 py-1 rounded-full text-white font-medium transition-all disabled:opacity-50"
+                style={{ background: 'linear-gradient(135deg, #b8a9e8, #f5b8b5)' }}
+              >
+                {isAnalyzing ? '分析中...' : '送出 →'}
+              </button>
+            </div>
+          )}
+
           <form
             onSubmit={handleSubmit}
-            className="flex items-center gap-2 px-3 pb-3 pt-1 border-t border-white/8"
+            className="flex items-center gap-1.5 px-3 pb-3 pt-1 border-t border-white/8"
           >
+            {/* 圖片上傳 */}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleImageSelect}
+            />
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isInputDisabled || !!uploadedImage}
+              title="傳送圖片（20 Z幣）"
+              className="w-7 h-7 rounded-full flex items-center justify-center text-white/30 hover:text-white/60 hover:bg-white/8 transition-colors disabled:opacity-30 flex-shrink-0"
+            >
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round">
+                <rect x="1" y="2.5" width="12" height="9" rx="1.5"/>
+                <circle cx="4.5" cy="5.5" r="1"/>
+                <path d="M1 10l3-3 2 2 3-3 4 4"/>
+              </svg>
+            </button>
+
+            {/* 語音輸入 */}
+            <button
+              type="button"
+              onClick={toggleVoiceInput}
+              disabled={isInputDisabled}
+              title={isRecording ? '停止錄音' : '語音輸入（免費）'}
+              className={`w-7 h-7 rounded-full flex items-center justify-center transition-colors flex-shrink-0 ${
+                isRecording
+                  ? 'bg-red-500/30 text-red-400 animate-pulse'
+                  : 'text-white/30 hover:text-white/60 hover:bg-white/8 disabled:opacity-30'
+              }`}
+            >
+              <svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round">
+                <rect x="4" y="1" width="5" height="7" rx="2.5"/>
+                <path d="M1.5 6.5a5 5 0 0010 0"/>
+                <line x1="6.5" y1="11.5" x2="6.5" y2="13"/>
+              </svg>
+            </button>
+
             <input
               ref={inputRef}
               autoFocus
