@@ -461,26 +461,31 @@ export default function YukirinChatPanel({ onClose, character = 'yukirin', onSwi
       }))
 
       try {
-        const res = await fetch('/api/admin/social/blog/ai-write', {
+        const res = await fetch('/api/blogs/ai-write', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ prompt: text, mode: 'full' }),
         })
+        const resData = await res.json() as {
+          title?: string; content?: string; summary?: string
+          tags?: string[]; seoTitle?: string; seoDesc?: string; suggestedSlug?: string
+          newBalance?: number | null; model?: string; error?: string; balance?: number; cost?: number
+        }
         if (!res.ok) {
-          const err = await res.json() as { error?: string }
-          const errMsg = character === 'riku'
-            ? `...失敗了。${err.error ?? '錯誤'}`
-            : `哎呀出錯了 QQ ${err.error ?? '請稍後再試'}`
+          let errMsg = resData.error ?? '請稍後再試'
+          if (res.status === 401) errMsg = '請先登入才能使用 AI 寫作功能'
+          if (res.status === 402) errMsg = `Z幣不足！需要 ${resData.cost ?? 200} Z幣，你目前有 ${resData.balance ?? 0} Z幣`
           setMessages(prev => appendMessage(prev, {
             id: (Date.now() + 1).toString(),
             role: 'assistant',
-            text: errMsg,
+            text: character === 'riku' ? `...失敗了。${errMsg}` : `哎呀出錯了 QQ ${errMsg}`,
             mood: 'sad',
           }))
         } else {
-          const data = await res.json() as {
+          const data = resData as {
             title: string; content: string; summary: string
             tags: string[]; seoTitle: string; seoDesc: string; suggestedSlug: string
+            newBalance?: number | null
           }
           // 存到 localStorage，讓部落格編輯器讀取
           if (typeof window !== 'undefined') {
@@ -507,6 +512,10 @@ export default function YukirinChatPanel({ onClose, character = 'yukirin', onSwi
             mood: 'happy',
           }))
           setBlogWriteMode(false)
+          // 更新 Z幣餘額
+          if (data.newBalance !== undefined && data.newBalance !== null) {
+            setTurnsInfo(prev => prev ? { ...prev, zcoinBalance: data.newBalance! } : null)
+          }
           setQuickReplies(['前往部落格編輯器', '再寫一篇'])
         }
       } catch {
