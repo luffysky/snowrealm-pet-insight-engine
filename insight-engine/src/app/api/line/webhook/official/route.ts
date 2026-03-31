@@ -29,8 +29,8 @@ import { buildYukirinFlexMessage } from '@/lib/proactive/pushEngine'
 import { executeSkillFromChat } from '@/lib/skills/skillEngine'
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://insight.snowrealm.pet'
-/** 主問卷 / Rich Menu「填問卷」對應的租戶 slug；預設毛行天下租戶（勿用不存在的 `default` 以免問卷路徑 404） */
-const DEFAULT_TENANT = process.env.DEFAULT_TENANT_SLUG || 'maoxingtianxia'
+/** 主問卷 / Rich Menu「填問卷」對應的租戶 slug；需設定 DEFAULT_TENANT_SLUG 環境變數 */
+const DEFAULT_TENANT = process.env.DEFAULT_TENANT_SLUG || 'default'
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://snowrealm.pet'
 const IG_URL = process.env.NEXT_PUBLIC_IG_URL || ''

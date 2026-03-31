@@ -71,13 +71,15 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     )
 
     if (!user) {
-      // 嘗試用 email 前綴匹配 username
+      // 用完整 email 或 email 前綴比對（支援不同的 username 格式）
       const emailPrefix = googleUser.email.split('@')[0]
       user = await queryOne<{
         id: string; tenant_id: string; role: string; display_name: string
       }>(
-        `SELECT id, tenant_id, role, display_name FROM admin_users WHERE username = $1`,
-        [emailPrefix],
+        `SELECT id, tenant_id, role, display_name FROM admin_users
+         WHERE email = $1 OR username = $1 OR username = $2
+         ORDER BY created_at ASC LIMIT 1`,
+        [googleUser.email, emailPrefix],
       )
 
       if (user) {

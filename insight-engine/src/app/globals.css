@@ -35,6 +35,11 @@
   /* 背景漸層 */
   --gradient-bg: linear-gradient(150deg, #f3eeff 0%, #ffeef5 35%, #eef5ff 65%, #fff5ee 100%);
   --gradient-primary: linear-gradient(135deg, #b8a9e8, #f5b8b5);
+
+  /* 平台禮遇徽章（可被主題覆蓋）*/
+  --badge-partner-bg:     rgba(245, 158, 11, 0.13);  /* amber-500/13 */
+  --badge-partner-text:   #b45309;                   /* amber-700（深色，淺背景也清晰）*/
+  --badge-partner-border: rgba(245, 158, 11, 0.35);
 }
 
 /* ── Public UI 淺色/深色模式 CSS 變數 ── */
@@ -72,8 +77,18 @@
   --sc-send-hover:   rgba(245,158,11,0.22);
 }
 
+/* 平台禮遇徽章 */
+.badge-partner {
+  background-color: var(--badge-partner-bg);
+  color:            var(--badge-partner-text);
+  border-color:     var(--badge-partner-border);
+}
+
 /* 深色模式：加 .dark class 到 <html> */
 html.dark {
+  /* 深色背景下平台禮遇用亮一點的色 */
+  --badge-partner-text:   #fbbf24;  /* amber-400 */
+
   /* Social card 深色模式覆蓋 */
   --sc-fg:           rgba(255,255,255,0.85);
   --sc-fg-muted:     rgba(255,255,255,0.45);

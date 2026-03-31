@@ -83,8 +83,8 @@ export async function POST(request: NextRequest) {
   const insertEmail = isLineInvite ? `line_invite_${token.slice(0, 8)}@invite.local` : email
 
   await query(
-    `INSERT INTO admin_invites (token, email, tenant_id, role, line_user_id, display_name, expires_at)
-     VALUES ($1, $2, $3, $4, '', '', NOW() + INTERVAL '7 days')`,
+    `INSERT INTO admin_invites (token, email, tenant_id, role, expires_at)
+     VALUES ($1, $2, $3, $4, NOW() + INTERVAL '7 days')`,
     [token, insertEmail, tenantId, role],
   )
 

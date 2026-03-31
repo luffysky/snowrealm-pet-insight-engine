@@ -1,12 +1,31 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { Suspense } from 'react'
 import Link from 'next/link'
 import dynamic from 'next/dynamic'
 
 const YukirinScene = dynamic(() => import('@/components/public/yukirin/YukirinScene'), { ssr: false })
+
+function InAppBrowserBanner() {
+  const [copied, setCopied] = useState(false)
+  const copy = () => {
+    navigator.clipboard.writeText(window.location.href).then(() => {
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2500)
+    })
+  }
+  return (
+    <div className="mb-4 rounded-xl border border-amber-400/40 bg-amber-400/10 px-4 py-3 text-sm text-amber-200">
+      <p className="font-medium mb-1">⚠️ 請在瀏覽器中開啟此頁面</p>
+      <p className="text-xs text-amber-200/70 mb-2">在 Instagram / Facebook 內建瀏覽器中登入可能無法正常儲存，建議複製連結後用 Safari 或 Chrome 開啟。</p>
+      <button onClick={copy} className="px-3 py-1.5 bg-amber-400/20 hover:bg-amber-400/30 rounded-lg text-xs font-medium transition-colors cursor-pointer">
+        {copied ? '✓ 已複製連結' : '複製連結'}
+      </button>
+    </div>
+  )
+}
 
 function EyeIcon({ open }: { open: boolean }) {
   return open ? (
@@ -29,7 +48,13 @@ function LoginForm() {
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [isInApp, setIsInApp] = useState(false)
   const searchParams = useSearchParams()
+
+  useEffect(() => {
+    const ua = navigator.userAgent
+    setIsInApp(/Instagram|FBAN|FBAV|FB_IAB|MicroMessenger|Line\//.test(ua))
+  }, [])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -71,6 +96,7 @@ function LoginForm() {
       </div>
 
       <div className="relative w-full max-w-md">
+        {isInApp && <InAppBrowserBanner />}
         {/* 迷你雪凜 */}
         <div className="mx-auto mb-4 h-32 w-32 overflow-hidden rounded-full border-2 border-[#b8a9e8]/30 bg-gradient-to-br from-[#eee8ff]/60 to-[#ffeef5]/60 shadow-[0_8px_32px_rgba(184,169,232,0.3)]">
           <YukirinScene cameraMode="face" mood="happy" showBackground={false} className="h-full w-full" />

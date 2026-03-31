@@ -14,7 +14,7 @@ export interface TenantContext {
 export async function getTenantContext(): Promise<TenantContext> {
   const h = await headers()
   return {
-    tenantId: h.get('x-tenant-id') ?? 'maoxingtianxia',
+    tenantId: h.get('x-tenant-id') ?? 'default',
     userId: h.get('x-user-id') ?? '',
     role: (h.get('x-user-role') ?? 'viewer') as Role,
     userName: decodeURIComponent(h.get('x-user-name') ?? ''),

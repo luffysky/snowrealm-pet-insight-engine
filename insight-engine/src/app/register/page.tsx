@@ -5,11 +5,40 @@ import { useSearchParams } from 'next/navigation'
 
 type Step = 'form' | 'verify'
 
+function useInAppBrowser() {
+  const [isInApp, setIsInApp] = useState(false)
+  useEffect(() => {
+    const ua = navigator.userAgent
+    setIsInApp(/Instagram|FBAN|FBAV|FB_IAB|MicroMessenger|Line\//.test(ua))
+  }, [])
+  return isInApp
+}
+
+function InAppBrowserBanner() {
+  const [copied, setCopied] = useState(false)
+  const copy = () => {
+    navigator.clipboard.writeText(window.location.href).then(() => {
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2500)
+    })
+  }
+  return (
+    <div className="mb-4 rounded-xl border border-amber-400/40 bg-amber-400/10 px-4 py-3 text-sm text-amber-200">
+      <p className="font-medium mb-1">⚠️ 請在瀏覽器中開啟此頁面</p>
+      <p className="text-xs text-amber-200/70 mb-2">在 Instagram / Facebook 內建瀏覽器中登入或註冊可能無法正常儲存，建議複製連結後用 Safari 或 Chrome 開啟。</p>
+      <button onClick={copy} className="px-3 py-1.5 bg-amber-400/20 hover:bg-amber-400/30 rounded-lg text-xs font-medium transition-colors cursor-pointer">
+        {copied ? '✓ 已複製連結' : '複製連結'}
+      </button>
+    </div>
+  )
+}
+
 function RegisterForm() {
   const searchParams = useSearchParams()
   const inviteToken = searchParams.get('invite')
   const referralCode = searchParams.get('ref')
   const redirectTo = searchParams.get('redirect')
+  const isInApp = useInAppBrowser()
 
   const [step, setStep] = useState<Step>('form')
   const [email, setEmail] = useState('')
@@ -25,6 +54,7 @@ function RegisterForm() {
   const [code, setCode] = useState('')
   const [codeId, setCodeId] = useState('')
   const [error, setError] = useState('')
+  const [errorCode, setErrorCode] = useState('')
   const [loading, setLoading] = useState(false)
   const [cooldown, setCooldown] = useState(0)
 
@@ -138,6 +168,7 @@ function RegisterForm() {
         return
       } else {
         setError(data.error || '註冊失敗')
+        setErrorCode(data.code || '')
       }
     } catch {
       setError('網路錯誤，請稍後再試')
@@ -151,6 +182,7 @@ function RegisterForm() {
   return (
     <div className="min-h-screen flex items-center justify-center px-4 py-8" style={{ background: 'linear-gradient(150deg, #f3eeff 0%, #ffeef5 35%, #eef5ff 65%, #fff5ee 100%)', fontFamily: 'var(--font-zen-maru), var(--font-noto-tc), sans-serif' }}>
       <div className="w-full max-w-sm">
+        {isInApp && <InAppBrowserBanner />}
         <div className="lg-lavender-sharp lg-xl relative p-8 space-y-6">
           <div className="text-center">
             <h1 className="text-xl font-black text-[#3d3155]">✨ SnowRealm Insight</h1>
@@ -256,7 +288,19 @@ function RegisterForm() {
                 </div>
               </div>
 
-              {error && <p className="text-sm text-red-400 text-center">{error}</p>}
+              {error && (
+                <div className="rounded-xl border border-red-400/30 bg-red-50/50 px-4 py-3 text-sm text-red-500 text-center space-y-2">
+                  <p>{error}</p>
+                  {(errorCode === 'EMAIL_EXISTS' || errorCode === 'PHONE_EXISTS') && inviteToken && (
+                    <a
+                      href={`/login?invite=${inviteToken}`}
+                      className="inline-block mt-1 px-4 py-2 bg-[#b8a9e8] hover:bg-[#a090d8] text-white rounded-full text-xs font-medium transition-colors"
+                    >
+                      前往登入以接受邀請 →
+                    </a>
+                  )}
+                </div>
+              )}
 
               <button onClick={handleSendCode} disabled={loading}
                 className="w-full py-3 rounded-full bg-gradient-to-r from-[#b8a9e8] to-[#f5b8b5] text-white font-semibold shadow-[0_8px_24px_rgba(184,169,232,0.4)] transition hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-60">

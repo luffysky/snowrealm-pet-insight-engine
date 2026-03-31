@@ -95,14 +95,28 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     // 標記驗證碼已使用
     await query(`UPDATE email_verification_codes SET verified = true WHERE id = $1`, [codeId])
 
-    // ── 重複檢查 ──
+    // ── 重複檢查（若持有邀請碼則改走登入流程）──
     if (email) {
-      const existing = await queryOne(`SELECT id FROM admin_users WHERE email = $1`, [email])
-      if (existing) return NextResponse.json({ error: '此 Email 已註冊，請直接登入' }, { status: 409 })
+      const existing = await queryOne<{ id: string } & Record<string, unknown>>(
+        `SELECT id FROM admin_users WHERE email = $1`, [email]
+      )
+      if (existing) {
+        return NextResponse.json(
+          { error: '此 Email 已有帳號，請用現有帳號登入以接受邀請', code: 'EMAIL_EXISTS' },
+          { status: 409 }
+        )
+      }
     }
     if (phoneE164) {
-      const existing = await queryOne(`SELECT id FROM admin_users WHERE phone = $1`, [phoneE164])
-      if (existing) return NextResponse.json({ error: '此手機號碼已註冊，請直接登入' }, { status: 409 })
+      const existing = await queryOne<{ id: string } & Record<string, unknown>>(
+        `SELECT id FROM admin_users WHERE phone = $1`, [phoneE164]
+      )
+      if (existing) {
+        return NextResponse.json(
+          { error: '此手機號碼已有帳號，請用現有帳號登入以接受邀請', code: 'PHONE_EXISTS' },
+          { status: 409 }
+        )
+      }
     }
     // ── 檢查邀請碼 ──
     let inviteData: { id: string; tenant_id: string; role: string } | null = null
@@ -152,15 +166,15 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     // ── 建立 admin 帳號 ──
     const pwHash = await hashPassword(password)
     const username = email || phoneE164
+    const finalRole = inviteData ? inviteData.role : 'admin'
     const newUser = await queryOne<{ id: string }>(
       `INSERT INTO admin_users (username, password_hash, display_name, email, phone, role, tenant_id)
-       VALUES ($1, $2, $3, $4, $5, 'admin', $6)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)
        RETURNING id`,
-      [username, pwHash, displayName, email || null, phoneE164 || null, finalTenantId],
+      [username, pwHash, displayName, email || null, phoneE164 || null, finalRole, finalTenantId],
     )
 
     // ── 建立租戶與使用者的關聯 (tenant_users) ──
-    const finalRole = inviteData ? inviteData.role : 'admin'
     await query(
       `INSERT INTO tenant_users (tenant_id, user_id, role) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING`,
       [finalTenantId, newUser?.id, finalRole]
