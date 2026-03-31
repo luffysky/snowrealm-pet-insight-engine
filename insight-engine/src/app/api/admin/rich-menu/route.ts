@@ -87,7 +87,12 @@ async function resolveUrl(template: string, tenantId: string): Promise<string> {
     .replace('{IG_URL}', igUrl)
 }
 
-function generateMenuImage(buttons: MenuButton[], width: number, height: number): Promise<Buffer> {
+async function generateMenuImage(
+  buttons: MenuButton[],
+  width: number,
+  height: number,
+  backgroundImageBase64?: string,
+): Promise<Buffer> {
   const colW = Math.floor(width / 3)
   const rowH = Math.floor(height / 2)
   const rects: string[] = []
@@ -103,9 +108,17 @@ function generateMenuImage(buttons: MenuButton[], width: number, height: number)
       const w = col === 2 ? width - colW * 2 : colW
       const h = row === 1 ? height - rowH : rowH
 
-      rects.push(`<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${btn.bg}" />`)
-      if (col > 0) rects.push(`<line x1="${col * colW}" y1="${y}" x2="${col * colW}" y2="${y + h}" stroke="#0f172a" stroke-width="3" />`)
-      if (row > 0) rects.push(`<line x1="${x}" y1="${rowH}" x2="${x + w}" y2="${rowH}" stroke="#0f172a" stroke-width="3" />`)
+      if (backgroundImageBase64) {
+        // 自訂背景圖模式：每格加半透明暗底讓文字可讀 + 白色分隔線
+        rects.push(`<rect x="${x + 3}" y="${y + 3}" width="${w - 6}" height="${h - 6}" fill="rgba(0,0,0,0.42)" rx="6" />`)
+        if (col > 0) rects.push(`<line x1="${col * colW}" y1="${y}" x2="${col * colW}" y2="${y + h}" stroke="rgba(255,255,255,0.35)" stroke-width="4" />`)
+        if (row > 0) rects.push(`<line x1="${x}" y1="${rowH}" x2="${x + w}" y2="${rowH}" stroke="rgba(255,255,255,0.35)" stroke-width="4" />`)
+      } else {
+        // 純色模式
+        rects.push(`<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${btn.bg}" />`)
+        if (col > 0) rects.push(`<line x1="${col * colW}" y1="${y}" x2="${col * colW}" y2="${y + h}" stroke="#0f172a" stroke-width="3" />`)
+        if (row > 0) rects.push(`<line x1="${x}" y1="${rowH}" x2="${x + w}" y2="${rowH}" stroke="#0f172a" stroke-width="3" />`)
+      }
 
       const cx = x + w / 2
       const cy = y + h / 2
@@ -115,6 +128,18 @@ function generateMenuImage(buttons: MenuButton[], width: number, height: number)
   }
 
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">${rects.join('')}${texts.join('')}</svg>`
+  const overlayBuf = await sharp(Buffer.from(svg)).png().toBuffer()
+
+  if (backgroundImageBase64) {
+    // 把上傳的圖片 resize 到指定尺寸，再合成文字 overlay
+    const bgBuf = Buffer.from(backgroundImageBase64, 'base64')
+    return sharp(bgBuf)
+      .resize(width, height, { fit: 'cover', position: 'centre' })
+      .composite([{ input: overlayBuf, blend: 'over' }])
+      .png()
+      .toBuffer()
+  }
+
   return sharp(Buffer.from(svg)).png().toBuffer()
 }
 
@@ -191,6 +216,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     chatBarText?: string
     /** 自訂選單名稱（LINE 後台顯示） */
     menuName?: string
+    /** 自訂背景圖（base64，前端 canvas 縮圖後傳入） */
+    backgroundImage?: string
   }
 
   /** 列表／設預設／刪除 所操作的 Bot（與建立時 channel 一致） */
@@ -265,7 +292,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         }
         const { richMenuId: newId } = await createRes.json() as { richMenuId: string }
 
-        const imgBuf = await generateMenuImage(resolvedButtons, 2500, 1686)
+        const imgBuf = await generateMenuImage(resolvedButtons, 2500, 1686, body.backgroundImage)
         // fetch BodyInit 不接受 Node Buffer（Zeabur/TS 嚴格編譯會報錯）
         const uploadRes = await fetch(`https://api-data.line.me/v2/bot/richmenu/${newId}/content`, {
           method: 'POST',

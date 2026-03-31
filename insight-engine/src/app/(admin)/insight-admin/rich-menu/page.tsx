@@ -271,6 +271,10 @@ export default function RichMenuPage() {
   const [editorChatBar, setEditorChatBar] = useState('')
   const [editorButtons, setEditorButtons] = useState<MenuButton[]>([])
 
+  const [bgMode, setBgMode] = useState<'color' | 'image'>('color')
+  const [bgImageBase64, setBgImageBase64] = useState<string | null>(null)
+  const [bgImagePreview, setBgImagePreview] = useState<string | null>(null)
+
   const [confirmAction, setConfirmAction] = useState<{
     title: string
     message: string
@@ -381,6 +385,7 @@ export default function RichMenuPage() {
           menuName: editorMenuName.trim() || undefined,
           chatBarText: editorChatBar.trim() || undefined,
           buttons: editorButtons,
+          backgroundImage: bgMode === 'image' ? bgImageBase64 : undefined,
         }),
       })
       const data = await res.json()
@@ -399,6 +404,29 @@ export default function RichMenuPage() {
 
   function updateButton(i: number, patch: Partial<MenuButton>) {
     setEditorButtons((prev) => prev.map((b, j) => (j === i ? { ...b, ...patch } : b)))
+  }
+
+  function handleBgImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    // 用 canvas 縮圖到最大 1200px 寬，再轉 base64，避免傳太大
+    const img = new Image()
+    const url = URL.createObjectURL(file)
+    img.onload = () => {
+      const maxW = 1200
+      const scale = img.width > maxW ? maxW / img.width : 1
+      const canvas = document.createElement('canvas')
+      canvas.width = Math.round(img.width * scale)
+      canvas.height = Math.round(img.height * scale)
+      const ctx = canvas.getContext('2d')!
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.88)
+      setBgImagePreview(dataUrl)
+      setBgImageBase64(dataUrl.split(',')[1])
+      URL.revokeObjectURL(url)
+    }
+    img.src = url
   }
 
   async function copyCli() {
@@ -528,6 +556,57 @@ export default function RichMenuPage() {
           </div>
         </div>
 
+        {/* 背景模式切換 */}
+        <div className="flex items-center gap-3 p-3 rounded-lg bg-white/30 border border-[#b8a9e8]/20">
+          <span className="text-xs text-[#3d3155]/70 shrink-0">選單背景</span>
+          <div className="flex rounded-lg overflow-hidden border border-[#b8a9e8]/30">
+            <button
+              type="button"
+              onClick={() => setBgMode('color')}
+              className={`px-3 py-1.5 text-xs transition-colors ${bgMode === 'color' ? 'bg-[#b8a9e8] text-white' : 'bg-white/40 text-[#3d3155]/60 hover:bg-white/60'}`}
+            >
+              🎨 按鈕底色
+            </button>
+            <button
+              type="button"
+              onClick={() => setBgMode('image')}
+              className={`px-3 py-1.5 text-xs transition-colors ${bgMode === 'image' ? 'bg-[#b8a9e8] text-white' : 'bg-white/40 text-[#3d3155]/60 hover:bg-white/60'}`}
+            >
+              🖼️ 自訂背景圖
+            </button>
+          </div>
+          {bgMode === 'image' && (
+            <span className="text-[10px] text-[#8a7ca8]">按鈕區塊會自動加半透明暗底讓文字可讀</span>
+          )}
+        </div>
+
+        {/* 自訂背景圖上傳區 */}
+        {bgMode === 'image' && (
+          <div className="p-3 rounded-lg bg-white/30 border border-[#b8a9e8]/20 space-y-2">
+            <label className={labelCls}>上傳背景圖（建議 3:2 比例，會自動 crop 成 2500×1686）</label>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleBgImageUpload}
+              className="block w-full text-xs text-[#3d3155]/70 file:mr-2 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:bg-[#b8a9e8]/20 file:text-[#5a4878] hover:file:bg-[#b8a9e8]/30 cursor-pointer"
+            />
+            {bgImagePreview && (
+              <div className="mt-2">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={bgImagePreview}
+                  alt="背景預覽"
+                  className="w-full max-h-40 object-cover rounded-lg border border-[#b8a9e8]/20"
+                />
+                <p className="text-[10px] text-[#8a7ca8] mt-1">預覽（實際選單比例 3:2，圖片會自動裁切置中）</p>
+              </div>
+            )}
+            {!bgImagePreview && (
+              <p className="text-[10px] text-[#3d3155]/40">尚未上傳圖片</p>
+            )}
+          </div>
+        )}
+
         <div className="space-y-3">
           {editorButtons.map((btn, i) => (
             <div
@@ -563,11 +642,13 @@ export default function RichMenuPage() {
                   <option value="message">傳送文字 (message)</option>
                 </select>
               </div>
-              <div className="md:col-span-4">
-                <label className={labelCls}>底色</label>
-                <RichMenuColorPicker value={btn.bg} onChange={(bg) => updateButton(i, { bg })} />
-              </div>
-              <div className="md:col-span-3">
+              {bgMode === 'color' && (
+                <div className="md:col-span-4">
+                  <label className={labelCls}>底色</label>
+                  <RichMenuColorPicker value={btn.bg} onChange={(bg) => updateButton(i, { bg })} />
+                </div>
+              )}
+              <div className={bgMode === 'color' ? 'md:col-span-3' : 'md:col-span-7'}>
                 <label className={labelCls}>
                   {btn.actionType === 'uri' ? '網址或佔位符' : '訊息內容'}
                 </label>
