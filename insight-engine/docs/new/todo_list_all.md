@@ -1487,3 +1487,470 @@ src/app/(admin)/layout.tsx
 - [ ] 問卷模板（survey-templates）← Phase 1
 - [ ] AI 嚮導設定（ai-guide）← Phase 2
 - [ ] 升級方案（upgrade）← Phase 4
+
+---
+
+## Phase 6 — LINE 全面重整 🔧
+
+> **優先做這個再繼續前面 Phase**
+> 目前問題：三個 webhook route 不確定哪個活著、Rich Menu 未設定、
+> Token 散落 ENV+DB 兩處、推播邏輯互相蓋掉、自動回覆文案硬編碼毛行天下
+
+---
+
+### LINE-0 現況盤點（做之前先確認）
+
+**三個 Webhook Route 現況**：
+
+| Route | Bot | 用途 | 狀態 |
+|-------|-----|------|------|
+| `/api/line/webhook` | Insight Bot `@762wxvfb` | 管理員口令註冊 + 數據查詢 | ❓ 需確認 |
+| `/api/line/webhook/official` | Official Bot `@474iwlht` | 用戶自動回覆 + 填答引導 | ❓ 需確認 |
+| `/api/line/webhook/insight-engine` | ❓ | 用途不明 | ❓ 可能廢棄 |
+
+**確認清單（需登入 LINE Developers Console）**：
+- [ ] Insight Bot Channel → Messaging API → Webhook URL 設的是哪個？
+- [ ] Official Bot Channel → Webhook URL 設的是哪個？
+- [ ] `insight-engine` route 是否有 Bot 在用？沒有則刪除
+
+---
+
+### LINE-1 Webhook 整理 + 確認可用
+
+**目標**：只保留兩個乾淨的 webhook，每個對應一個 Bot
+
+```
+Insight Bot  → /api/line/webhook          （管理員）
+Official Bot → /api/line/webhook/official  （用戶）
+```
+
+**修改檔案**：
+
+| 檔案 | 動作 |
+|------|------|
+| `src/app/api/line/webhook/insight-engine/route.ts` | 確認用途 → 沒用就刪除 |
+| `src/app/api/line/webhook/route.ts` | 確認 signature 驗證正常 |
+| `src/app/api/line/webhook/official/route.ts` | 確認 signature 驗證正常 |
+
+**LINE Developers Console 設定**：
+```
+Insight Bot：
+  Webhook URL: https://insight.snowrealm.pet/api/line/webhook
+  Use webhook: ON
+  Auto-reply: OFF（改由程式控制）
+
+Official Bot：
+  Webhook URL: https://insight.snowrealm.pet/api/line/webhook/official
+  Use webhook: ON
+  Auto-reply: OFF
+  Greeting message: OFF（改由 follow event 控制）
+```
+
+---
+
+### LINE-2 Token 統一管理 — 全部進後台 LINE 設定頁
+
+**目標**：所有 LINE Token 從後台 `line-settings` 頁面統一設定，
+不再散落在 `.env` 的多個不同變數名。
+
+**目前 ENV 變數混亂**（需對齊）：
+
+| 現在 ENV Key | lineConfig.ts 定義 | 狀態 |
+|-------------|-------------------|------|
+| `LINE_CHANNEL_ACCESS_TOKEN` | — | ❌ 舊變數，沒被對應 |
+| `LINE_INSIGHT_CHANNEL_ACCESS_TOKEN` | `INSIGHT_CHANNEL_ACCESS_TOKEN` | ✅ |
+| `LINE_OFFICIAL_CHANNEL_ACCESS_TOKEN` | `OFFICIAL_CHANNEL_ACCESS_TOKEN` | ✅ |
+| `LINE_YOUR_USER_ID` | `ADMIN_USER_ID` | ✅ |
+| `LINE_LOGIN_CHANNEL_ID/SECRET` | `LINE_LOGIN_CHANNEL_ID/SECRET` | ✅ |
+
+**動作**：
+- [ ] 把 `LINE_CHANNEL_ACCESS_TOKEN`（舊）從所有程式碼移除，改用正確的 key
+- [ ] 確認 `.env.local` 裡所有 LINE 變數名稱與 `lineConfig.ts` 的 `envKey` 完全一致
+- [ ] 在 Zeabur 環境變數也對齊
+
+---
+
+### LINE-3 Official Bot 自動回覆重寫
+
+**目標**：清理 `official/route.ts` 的自動回覆邏輯，移除毛行天下硬編碼，
+改從 `tenantBranding.ts` 讀取，支援多租戶。
+
+**現在的問題**：
+- `DEFAULT_TENANT = 'maoxingtianxia'` 硬編碼
+- 歡迎訊息、介紹文案、預設回覆混雜在 route.ts 裡
+- `guideEngine`、`skillEngine`、`proactive/pushEngine` 都在同一個 route 裡調用，邏輯過長
+
+**重整後結構**：
+```typescript
+// official/route.ts 只做三件事：
+// 1. 驗 signature
+// 2. 解析 event type（message / follow / unfollow / postback）
+// 3. 分派給對應 handler
+
+handleFollow(userId)       → 歡迎訊息 + 設預設 Rich Menu
+handleTextMessage(text, userId) → 交給 messageRouter
+handlePostback(data, userId)    → Rich Menu 按鈕事件
+handleUnfollow(userId)     → 記錄封鎖
+```
+
+**`messageRouter` 優先順序**：
+```
+1. 「離開」/ 「結束」  → abandonSession
+2. 「填問卷」/ 「開始」→ startSurveySession
+3. 活躍填答 session   → processUserAnswer
+4. 「客服」/ 「問題」  → startSupportTicket
+5. 活躍客服工單       → appendSupportMessage
+6. AI Guide 開啟中    → guideEngine
+7. 關鍵字自動回覆      → tenantBranding 文案
+8. 預設              → 預設回覆（tenantBranding）
+```
+
+**修改檔案**：
+- `src/app/api/line/webhook/official/route.ts` — 大幅精簡，邏輯分派
+- `src/lib/tenantBranding.ts` — 確認 `welcomeMsg`、`defaultReply` 等欄位有值
+
+---
+
+### LINE-4 Rich Menu 完整設定
+
+**目標**：在 LINE Official Account Manager 建好 Rich Menu，
+ID 填入後台 `line-settings`，程式自動切換。
+
+**需要建立的 Rich Menu**：
+
+| 名稱 | 觸發時機 | 按鈕配置 |
+|------|---------|---------|
+| 預設選單（新好友） | follow event | 填問卷 / 官網 / 聯絡客服 |
+| 填完問卷選單 | 問卷完成後 | 查看結果 / 再填一次 / 分享 |
+
+**流程**：
+```
+1. LINE Official Account Manager → Rich Menu → 建立兩個選單 → 拿到 richmenu-xxx ID
+2. 後台 line-settings 頁面 → Rich Menu 設定區 → 填入兩個 ID
+3. 確認 lineNotify.ts 的 switchUserRichMenu() 從 DB 讀取（已有，確認運作）
+4. 確認 follow event handler 有呼叫 setDefaultRichMenu(userId)
+```
+
+**新增函式**（`src/lib/lineNotify.ts`）：
+```typescript
+// 設定用戶的預設 Rich Menu（新好友 follow 時呼叫）
+setDefaultRichMenu(lineUserId: string, tenantId?: string): Promise<void>
+```
+
+---
+
+### LINE-5 推播系統整理
+
+**目標**：統一所有推播入口，避免 token 用錯、Bot 搞混
+
+**現在問題**：`lineNotify.ts` 裡有多個推播函式各自 `getLineConfig`，
+沒有統一的 `pushToUser(userId, message, botType)` 介面。
+
+**重整後介面**：
+```typescript
+// src/lib/lineNotify.ts
+
+// 統一推播入口
+pushMessage(to: string, messages: LineMessage[], bot: 'insight' | 'official'): Promise<void>
+
+// 常用包裝
+pushToAdmin(message: string)           → insight bot → ADMIN_USER_ID
+pushToUser(lineUserId: string, msg)    → official bot → 單一用戶
+broadcastToAll(messages: LineMessage[])→ official bot → 全部好友
+multicastToUsers(ids: string[], msg)   → official bot → 指定用戶（分批 500）
+
+// Rich Menu
+setDefaultRichMenu(lineUserId: string) → official bot
+switchUserRichMenu(lineUserId: string) → official bot（填完問卷後）
+```
+
+---
+
+### LINE-6 LINE Login OAuth 確認
+
+**目標**：確認 LINE Login 登入流程正常（用於後台登入 + LIFF 綁定）
+
+**確認清單**：
+- [ ] LINE Developers → LINE Login Channel → Callback URL 設定正確
+  - `https://insight.snowrealm.pet/api/auth/line/callback`
+- [ ] `src/app/api/auth/line/route.ts` 用的是 `LINE_LOGIN_CHANNEL_ID`（不是 Messaging API 的 Channel）
+- [ ] LIFF → LIFF ID 填入後台 line-settings
+- [ ] `src/app/(public)/liff/page.tsx` 讀到正確的 LIFF ID
+
+---
+
+### LINE-7 Insight Bot（管理員 Bot）整理
+
+**目標**：確認管理員 Bot 功能正常（口令註冊 + 數據查詢）
+
+**現有功能（確認是否運作）**：
+- [ ] 管理員傳口令 → 收到邀請連結
+- [ ] 管理員傳「今日報告」→ 收到數據摘要 Flex Message
+- [ ] 管理員傳「漏斗」→ 收到漏斗分析
+- [ ] 管理員傳「匯出」→ 收到下載連結
+
+**修改檔案**：
+- `src/app/api/line/webhook/route.ts` — 確認 `handleAdminCommand` 有正確回應
+- `src/lib/lineAdminBot.ts` — 確認各指令 handler 正常
+
+---
+
+### LINE-8 完整測試清單（做完再繼續其他 Phase）
+
+```
+□ 新好友加入 Official Bot → 收到歡迎訊息 + 看到預設 Rich Menu
+□ 傳「填問卷」→ 開始 LINE 填答流程
+□ 選擇選項 → 正確推進下一題（分流正確）
+□ 填完問卷 → 收到完成訊息 + Rich Menu 切換成填完版
+□ 傳「客服」→ 建立工單 + 管理員 Insight Bot 收到通知
+□ 管理員在後台客服頁面回覆 → Official Bot 推送給用戶
+□ 管理員傳「今日報告」給 Insight Bot → 收到數據
+□ 後台 line-settings → 所有 Token 顯示正確來源（DB/ENV）
+□ 後台 line-settings → Rich Menu ID 欄位可填寫 + 儲存
+□ 後台 broadcast 頁面 → 發送推播 → 好友收到
+□ LINE Login 按鈕 → OAuth 流程正常 → 登入成功
+```
+
+---
+
+## Phase 7 — Python 爬蟲 + LLM + LINE 整合服務 🐍
+
+> **依賴 Phase 6 完成**（LINE 整理好再做爬蟲整合）
+> 獨立 Python 專案：`D:/SnowRealmRebirth/snowrealm-crawler/`
+> 語言：Python 3.11 + FastAPI + APScheduler
+> 部署：Zeabur 獨立服務（與 Next.js 平行）
+
+---
+
+### CRAWL-1 FastAPI 骨架 + Cloudflare Token 鎖
+
+**目標**：建立爬蟲服務主體，所有請求必須帶 `X-Crawler-Token` header，
+Cloudflare Firewall Rule 同一個 token → 白名單放行自家爬蟲、擋掉其他 bot。
+
+**新增檔案**：
+```
+snowrealm-crawler/
+├── app/
+│   ├── main.py                  # FastAPI 入口 + token 驗證 middleware
+│   ├── routers/
+│   │   ├── crawl.py             # POST /crawl/run, GET /crawl/status/{id}
+│   │   ├── analyze.py           # POST /analyze/survey, POST /analyze/segment
+│   │   └── line_push.py         # POST /line/push（private/broadcast/targeted）
+│   ├── crawlers/
+│   │   ├── work_crawler.py      # 競品/產業/新聞 → 私人 LINE 回報
+│   │   ├── site_crawler.py      # 爬自己網站 → 建 RAG 向量庫
+│   │   ├── user_profiler.py     # 用戶畫像分析 → 分眾推播
+│   │   └── content_crawler.py   # 內容監控 → 官方廣播
+│   ├── llm/
+│   │   ├── summarizer.py        # 爬蟲結果 → LLM 摘要
+│   │   ├── embedder.py          # 文本向量化（sentence-transformers）
+│   │   └── rag.py               # RAG 查詢（pgvector）
+│   ├── line_router/
+│   │   ├── private_push.py      # Insight Bot → 你的 LINE ID（工作回報）
+│   │   ├── broadcast.py         # Official Bot → 全部好友
+│   │   └── targeted_push.py     # Official Bot → 指定 LINE ID 列表（分眾）
+│   └── analysis/
+│       ├── stats_engine.py      # pandas 統計分析
+│       ├── cluster.py           # scikit-learn 用戶分群
+│       └── sentiment_local.py   # jieba + TF-IDF 本地 NLP
+├── scheduler.py                 # APScheduler 排程定義
+├── requirements.txt
+├── .env.example
+├── Dockerfile
+└── zbpack.json                  # Zeabur 部署設定
+```
+
+**Cloudflare 設定（手動在 Dashboard 操作）**：
+```
+Firewall Rules → Create Rule：
+  名稱：Allow SnowRealm Crawler
+  條件：(http.request.headers["X-Crawler-Token"][0] eq "{{CRAWLER_TOKEN}}")
+  動作：Skip → Bot Fight Mode
+  優先級：1（最高）
+
+第二條 Rule：
+  名稱：Block Other Bots
+  條件：cf.client.bot AND NOT 上面條件
+  動作：Block
+  優先級：2
+```
+
+**環境變數（.env）**：
+```
+CRAWLER_TOKEN=                    # 自訂強密鑰（同步設定到 Cloudflare Rule）
+NEXTJS_ORIGIN=https://insight.snowrealm.pet
+DATABASE_URL=                     # 共用同一個 Supabase
+OPENAI_API_KEY=
+ANTHROPIC_API_KEY=
+INSIGHT_CHANNEL_ACCESS_TOKEN=     # Insight Bot（推私人）
+OFFICIAL_CHANNEL_ACCESS_TOKEN=    # Official Bot（推好友）
+MY_LINE_USER_ID=                  # 你的個人 LINE ID（工作回報目標）
+```
+
+---
+
+### CRAWL-2 LINE Router — 三種推播模式
+
+**目標**：統一的推播介面，依 `mode` 路由到不同 Bot 和對象
+
+| mode | Bot | 對象 |
+|------|-----|------|
+| `private` | Insight Bot | `MY_LINE_USER_ID`（你） |
+| `broadcast` | Official Bot | 全部好友 |
+| `targeted` | Official Bot | 指定 LINE ID 列表（分眾） |
+
+**分眾規則（user_profiler 產出）**：
+```python
+SEGMENT_RULES = {
+    "pet_owner":    "SELECT line_user_id FROM user_tags WHERE tag_key='pet_owner'",
+    "high_value":   "SELECT line_user_id FROM responses WHERE score > 80",
+    "inactive_30d": "SELECT line_user_id FROM line_users WHERE last_active < NOW() - INTERVAL '30 days'",
+    "new_user_7d":  "SELECT line_user_id FROM line_users WHERE created_at > NOW() - INTERVAL '7 days'",
+}
+```
+
+LINE multicast 自動分批（每批 ≤ 500 人）。
+
+---
+
+### CRAWL-3 Work Crawler — 競品/產業/新聞 → 私人 LINE 回報
+
+**目標**：定時爬競品動態、產業新聞、PTT，LLM 摘要後推給你的 LINE
+
+**爬取來源（可設定）**：
+- 競品：指定 URL 列表（每日 08:00）
+- 新聞：Google News RSS（每日 08:00）
+- PTT：問卷/SaaS 板（每週一）
+- Product Hunt：新工具追蹤（每週一）
+
+**流程**：
+```
+Playwright 爬取 → BeautifulSoup 解析
+  → LLM 摘要（200 字內，繁中）
+  → Flex Message 格式化
+  → line_router private_push → 你的 LINE
+```
+
+**排程**：APScheduler `cron(hour=8, minute=0)`
+
+---
+
+### CRAWL-4 Site Crawler — 爬自己網站建 RAG
+
+**目標**：爬 `insight.snowrealm.pet` 所有頁面 + 文件 → 向量化 → 存 pgvector
+→ LINE Bot 收到問題時用 RAG 查詢 + LLM 回答（取代純關鍵字自動回覆）
+
+**流程**：
+```
+Playwright 爬所有頁面
+  → 切段（chunk_size=500 tokens）
+  → sentence-transformers 向量化
+  → INSERT INTO rag_documents (content, embedding, url, updated_at)
+  → 每週重爬（內容更新時也可手動觸發）
+```
+
+**DB Migration**：
+```sql
+CREATE EXTENSION IF NOT EXISTS vector;
+
+CREATE TABLE IF NOT EXISTS rag_documents (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  tenant_id TEXT NOT NULL DEFAULT 'default',
+  url TEXT NOT NULL,
+  title TEXT,
+  content TEXT NOT NULL,
+  embedding vector(384),          -- sentence-transformers/all-MiniLM-L6-v2
+  source TEXT DEFAULT 'site',     -- 'site' | 'docs' | 'faq'
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_rag_embedding ON rag_documents
+  USING ivfflat (embedding vector_cosine_ops) WITH (lists = 100);
+```
+
+**Next.js 整合**：
+- `src/app/api/line/webhook/official/route.ts` 無關鍵字匹配時 → 呼叫 `/analyze/rag-query`
+- FastAPI 回傳 LLM 回答 → LINE 推回給用戶
+
+---
+
+### CRAWL-5 User Profiler — 用戶畫像分析 → 分眾推播
+
+**目標**：分析填答者行為 → 自動分群 → 觸發個性化 LINE 推播
+
+**分析流程**：
+```
+從 DB 撈 responses + answers + user_tags
+  → pandas 特徵工程
+  → scikit-learn KMeans 分群（k=4~6）
+  → 每群命名（LLM 根據特徵命名）
+  → 存回 user_tags（tag_key='segment', tag_value='高價值飼主'）
+  → 觸發 line_router targeted_push（每群不同訊息）
+```
+
+**觸發時機**：
+- 每週日 22:00 全量重算
+- 新回覆達 100 筆時增量更新
+- 手動 POST `/crawl/run` `type=user_profile`
+
+---
+
+### CRAWL-6 Content Crawler — 內容監控 → 官方廣播
+
+**目標**：監控特定關鍵字/網站，發現值得分享的內容 → 整理成 LINE 官方廣播
+
+**監控來源**：
+- 你指定的競品/媒體 URL
+- 關鍵字：可設定（如「問卷」「SaaS」「寵物」）
+
+**LLM 過濾**：每篇內容先由 LLM 評分（0-10），≥7 才推送，避免廣播垃圾訊息
+
+**推送格式**：Flex Message（標題 + 摘要 + 連結按鈕）
+
+---
+
+### CRAWL-7 排程設定（APScheduler）
+
+```python
+# scheduler.py
+每日 08:00 → work_crawler（競品/新聞）→ private
+每週一 09:00 → work_crawler（Product Hunt/PTT）→ private
+每週三 10:00 → site_crawler（重建 RAG）→ 不推播
+每週日 22:00 → user_profiler（重算分群）→ targeted
+事件觸發 → content_crawler → broadcast（LLM 評分 ≥7）
+```
+
+---
+
+### CRAWL-8 Zeabur 部署
+
+**新增**：`snowrealm-crawler/zbpack.json`
+```json
+{
+  "build_command": "pip install -r requirements.txt",
+  "start_command": "uvicorn app.main:app --host 0.0.0.0 --port 8000"
+}
+```
+
+**Zeabur 設定**：
+- 新增 Service → 選 `snowrealm-crawler/` 資料夾
+- 設定環境變數（同 .env.example）
+- 拿到固定 IP → 加進 Cloudflare Firewall Rule IP 白名單
+
+---
+
+### CRAWL-9 Next.js 整合點
+
+**修改檔案**：
+
+| 檔案 | 修改內容 |
+|------|---------|
+| `src/app/api/line/webhook/official/route.ts` | 無關鍵字 → 呼叫 Python `/analyze/rag-query` |
+| `src/app/api/admin/ai-insight/route.ts` | 可選：呼叫 Python `/analyze/survey` 取得深度分析 |
+| `src/app/api/cron/weekly-report/route.ts` | 呼叫 Python `/crawl/run` `type=user_profile` |
+
+**Python → Next.js 呼叫**（帶 token）：
+```python
+headers = {"X-Crawler-Token": os.getenv("CRAWLER_TOKEN")}
+await httpx.post("https://insight.snowrealm.pet/api/internal/...", headers=headers)
+```
