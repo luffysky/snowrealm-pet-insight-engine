@@ -11,6 +11,7 @@ import {
   AuthorCard,
   RelatedArticles,
   FontSizeToggle,
+  CodeCopyButtons,
   type Heading,
 } from './ArticleClient'
 import ShareArticleButton from './ShareArticleButton'
@@ -46,10 +47,11 @@ interface ArticleData {
   series: { id: string; title: string; is_completed: boolean; articles: SeriesArticle[] } | null
 }
 
-async function getArticle(userSlug: string, articleSlug: string): Promise<ArticleData | null> {
+async function getArticle(userSlug: string, articleSlug: string, notrack = false): Promise<ArticleData | null> {
   try {
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? 'http://localhost:3000'
-    const res = await fetch(`${baseUrl}/api/blogs/${userSlug}/${articleSlug}`, { cache: 'no-store' })
+    const url = `${baseUrl}/api/blogs/${userSlug}/${articleSlug}${notrack ? '?notrack=1' : ''}`
+    const res = await fetch(url, { cache: 'no-store' })
     if (!res.ok) return null
     return res.json()
   } catch {
@@ -63,7 +65,7 @@ export async function generateMetadata({
   params: Promise<{ userSlug: string; articleSlug: string }>
 }): Promise<Metadata> {
   const { userSlug, articleSlug } = await params
-  const data = await getArticle(userSlug, articleSlug)
+  const data = await getArticle(userSlug, articleSlug, true)
   if (!data) return { title: '文章不存在' }
   const { article } = data
   const title = article.seo_title ?? article.title
@@ -229,6 +231,9 @@ export default async function ArticlePage({
           <TableOfContents headings={headings} />
         )}
 
+        {/* BLOG-18: Copy buttons injected into code blocks after mount */}
+        <CodeCopyButtons />
+
         {/* Article content */}
         <article
           className="blog-content prose prose-invert max-w-none
@@ -368,8 +373,40 @@ export default async function ArticlePage({
           <ArticleComments userSlug={backSlug} articleSlug={articleSlug} />
         </div>
 
+        {/* CTA — 引導建立自己的部落格 */}
+        <div className="mt-12 pt-8 border-t border-white/[0.07]">
+          <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-amber-500/[0.07] via-violet-500/[0.05] to-slate-900 px-6 py-7 sm:px-8 sm:py-8 text-center">
+            <div className="absolute -top-8 -left-8 w-32 h-32 bg-amber-400/10 rounded-full blur-3xl pointer-events-none" />
+            <div className="absolute -bottom-8 -right-8 w-32 h-32 bg-violet-500/10 rounded-full blur-3xl pointer-events-none" />
+            <div className="relative">
+              <div className="text-2xl mb-2">✍️</div>
+              <h2 className="text-base sm:text-lg font-bold text-white mb-1.5">
+                你也想擁有自己的部落格？
+              </h2>
+              <p className="text-xs text-white/45 leading-relaxed max-w-sm mx-auto mb-5">
+                加入 SnowRealm，馬上開始寫作。<br />
+                支援 AI 輔助、系列文章、讀者互動。
+              </p>
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-2.5">
+                <Link
+                  href="/register?redirect=/insight-admin/blog"
+                  className="inline-flex items-center gap-2 px-5 py-2 bg-amber-500/90 hover:bg-amber-500 text-black font-semibold text-sm rounded-2xl transition-colors"
+                >
+                  免費開始寫作 →
+                </Link>
+                <Link
+                  href="/blogs"
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-white/[0.06] hover:bg-white/[0.1] text-white/60 text-sm rounded-2xl border border-white/10 transition-colors"
+                >
+                  探索更多部落格
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* Footer */}
-        <div className="mt-12 pb-16 flex items-center justify-between text-xs text-white/20">
+        <div className="mt-10 pb-16 flex items-center justify-between text-xs text-white/20">
           <Link href={`/blogs/${backSlug}`} className="hover:text-white/50 transition-colors">
             ← 回到 {article.author_name ?? '部落格'}
           </Link>

@@ -1,6 +1,8 @@
 import { Metadata } from 'next'
 import Link from 'next/link'
 import Image from 'next/image'
+import { ArticleList } from './ArticleList'
+import { SubscribeForm } from './SubscribeForm'
 
 interface BlogData {
   blog: {
@@ -106,60 +108,10 @@ export default async function BlogPage({ params }: { params: Promise<{ userSlug:
 
       {/* Article list */}
       <div className="max-w-3xl mx-auto px-4 sm:px-6 py-8 sm:py-10">
-        {articles.length === 0 ? (
-          <div className="text-center py-20 text-white/25">
-            <div className="text-4xl mb-4">📝</div>
-            <p className="text-sm">還沒有公開文章</p>
-          </div>
-        ) : (
-          <div className="space-y-6">
-            {articles.map(article => (
-              <Link
-                key={article.id}
-                href={`/blogs/${blog.userSlug}/${article.slug}`}
-                className="group flex flex-col sm:flex-row gap-4 sm:gap-5 p-4 sm:p-5 lg-dark-sharp lg-shimmer lg-lg relative overflow-hidden hover:bg-white/[0.03] transition-all"
-              >
-                {article.cover_image && (
-                  <div className="shrink-0 w-full sm:w-28 h-40 sm:h-20 rounded-xl overflow-hidden">
-                    <Image
-                      src={article.cover_image}
-                      alt={article.title}
-                      width={112}
-                      height={80}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                      style={{ objectPosition: article.cover_image_position ?? 'center center' }}
-                    />
-                  </div>
-                )}
-                <div className="flex-1 min-w-0">
-                  <h2 className="text-base font-semibold text-white/90 group-hover:text-white transition-colors line-clamp-2">
-                    {article.title}
-                  </h2>
-                  {article.summary && (
-                    <p className="text-sm text-white/45 mt-1.5 line-clamp-2 leading-relaxed">
-                      {article.summary}
-                    </p>
-                  )}
-                  <div className="flex items-center gap-3 mt-3 text-[11px] text-white/25">
-                    <span>{new Date(article.published_at).toLocaleDateString('zh-TW')}</span>
-                    <span>·</span>
-                    <span>👁 {article.view_count}</span>
-                    {article.tags.length > 0 && (
-                      <>
-                        <span>·</span>
-                        <div className="flex gap-1.5">
-                          {article.tags.slice(0, 3).map(tag => (
-                            <span key={tag} className="px-1.5 py-0.5 bg-white/5 rounded-md text-white/35">{tag}</span>
-                          ))}
-                        </div>
-                      </>
-                    )}
-                  </div>
-                </div>
-              </Link>
-            ))}
-          </div>
-        )}
+        <ArticleList articles={articles} blogSlug={blog.userSlug} />
+
+        {/* Email 訂閱 */}
+        <SubscribeForm userSlug={blog.userSlug} />
 
         {/* CTA — 引導建立自己的部落格 */}
         <div className="mt-16 mb-4">
@@ -179,7 +131,7 @@ export default async function BlogPage({ params }: { params: Promise<{ userSlug:
               </p>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
                 <Link
-                  href="/register"
+                  href="/register?redirect=/insight-admin/blog"
                   className="inline-flex items-center gap-2 px-6 py-2.5 bg-amber-500/90 hover:bg-amber-500 text-black font-semibold text-sm rounded-2xl transition-colors"
                 >
                   免費開始寫作 →
@@ -191,7 +143,6 @@ export default async function BlogPage({ params }: { params: Promise<{ userSlug:
                   探索更多部落格
                 </Link>
               </div>
-              <p className="text-[11px] text-white/25 mt-4">免費方案即可開始，不需信用卡</p>
             </div>
           </div>
         </div>

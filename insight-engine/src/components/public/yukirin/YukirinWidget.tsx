@@ -147,6 +147,21 @@ export default function YukirinWidget() {
     yukirinRef.current = null  // 切換時重置 ref，等新場景的 onLoad
   }, [character])
 
+  // 接收外部觸發開啟雪凜創作文章模式的事件
+  useEffect(() => {
+    const handleBlogWriteOpen = () => {
+      setOpen(true)
+      setChatOpen(true)
+      // 短暫延遲後自動送出 /創作文章 指令（等 panel 載入）
+      setTimeout(() => {
+        const event = new CustomEvent('yukirin:auto-send', { detail: { text: '/創作文章' } })
+        window.dispatchEvent(event)
+      }, 600)
+    }
+    window.addEventListener('yukirin:open-blog-write', handleBlogWriteOpen)
+    return () => window.removeEventListener('yukirin:open-blog-write', handleBlogWriteOpen)
+  }, [])
+
   const setPose = useCallback((poseName: string) => {
     setCurrentPoseState(poseName)
     localStorage.setItem('yukirin-pose', poseName)

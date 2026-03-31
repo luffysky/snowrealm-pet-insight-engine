@@ -544,6 +544,81 @@ export function AuthorCard({ userSlug, authorName, authorAvatar, blogSlug }: Aut
   )
 }
 
+// ─── BLOG-18: Code Copy Buttons ──────────────────────────────────────────────
+
+/** Scans all pre>code blocks inside .blog-content and injects a copy button */
+export function CodeCopyButtons() {
+  useEffect(() => {
+    const container = document.querySelector('.blog-content')
+    if (!container) return
+
+    const preElements = container.querySelectorAll<HTMLPreElement>('pre')
+
+    preElements.forEach(pre => {
+      // Avoid duplicate buttons on re-render
+      if (pre.querySelector('[data-copy-btn]')) return
+
+      pre.style.position = 'relative'
+
+      const btn = document.createElement('button')
+      btn.setAttribute('data-copy-btn', 'true')
+      btn.textContent = '複製'
+      btn.setAttribute('aria-label', '複製程式碼')
+      btn.style.cssText = [
+        'position:absolute',
+        'top:8px',
+        'right:8px',
+        'padding:2px 8px',
+        'font-size:11px',
+        'line-height:1.6',
+        'border-radius:6px',
+        'border:1px solid rgba(255,255,255,0.15)',
+        'background:rgba(255,255,255,0.08)',
+        'color:rgba(255,255,255,0.5)',
+        'cursor:pointer',
+        'transition:all 0.15s',
+        'z-index:10',
+      ].join(';')
+
+      btn.addEventListener('mouseenter', () => {
+        btn.style.background = 'rgba(255,255,255,0.14)'
+        btn.style.color = 'rgba(255,255,255,0.8)'
+      })
+      btn.addEventListener('mouseleave', () => {
+        if (btn.textContent !== '已複製') {
+          btn.style.background = 'rgba(255,255,255,0.08)'
+          btn.style.color = 'rgba(255,255,255,0.5)'
+        }
+      })
+
+      btn.addEventListener('click', async () => {
+        const code = pre.querySelector('code')
+        const text = code?.innerText ?? pre.innerText
+        try {
+          await navigator.clipboard.writeText(text)
+          btn.textContent = '已複製'
+          btn.style.background = 'rgba(34,197,94,0.2)'
+          btn.style.borderColor = 'rgba(34,197,94,0.4)'
+          btn.style.color = 'rgb(134,239,172)'
+          setTimeout(() => {
+            btn.textContent = '複製'
+            btn.style.background = 'rgba(255,255,255,0.08)'
+            btn.style.borderColor = 'rgba(255,255,255,0.15)'
+            btn.style.color = 'rgba(255,255,255,0.5)'
+          }, 2000)
+        } catch {
+          btn.textContent = '失敗'
+          setTimeout(() => { btn.textContent = '複製' }, 2000)
+        }
+      })
+
+      pre.appendChild(btn)
+    })
+  }, [])
+
+  return null
+}
+
 // ─── BLOG-4: Related Articles ─────────────────────────────────────────────────
 interface RelatedArticle {
   id: string

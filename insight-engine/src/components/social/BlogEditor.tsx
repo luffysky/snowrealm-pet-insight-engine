@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import dynamic from 'next/dynamic'
-import { ArrowLeft, Save, Eye, EyeOff, ImageIcon, Loader2, X, Tag, Check, Move, Sparkles, Globe } from 'lucide-react'
+import { ArrowLeft, Save, Eye, EyeOff, ImageIcon, Loader2, X, Tag, Check, Move, Sparkles, Globe, Bot, Send, ChevronDown, ChevronUp } from 'lucide-react'
 
 const BlogTipTapEditor = dynamic(() => import('./BlogTipTapEditor'), {
   ssr: false,
@@ -83,6 +83,46 @@ export function BlogEditor({ articleId, onSaved, onCancel }: Props) {
   const [aiSummaryLoading, setAiSummaryLoading] = useState(false)
   const [aiSlugLoading, setAiSlugLoading] = useState(false)
 
+  // AI writing assistant panel
+  const [aiPanelOpen, setAiPanelOpen] = useState(false)
+  const [aiPrompt, setAiPrompt] = useState('')
+  const [aiMode, setAiMode] = useState<'full' | 'outline' | 'refine'>('full')
+  const [aiWriting, setAiWriting] = useState(false)
+  const [aiHistory, setAiHistory] = useState<{ role: 'user' | 'ai'; text: string; applied?: boolean }[]>([])
+  const aiChatEndRef = useRef<HTMLDivElement>(null)
+
+  // Check for Yukirin blog draft in localStorage (only for new articles)
+  useEffect(() => {
+    if (articleId) return
+    try {
+      const raw = localStorage.getItem('yukirin_blog_draft')
+      if (!raw) return
+      const draft = JSON.parse(raw) as {
+        title: string; content: string; summary: string
+        tags: string[]; seoTitle: string; seoDesc: string; suggestedSlug: string
+        createdAt: number
+      }
+      // Only use if draft is less than 10 minutes old
+      if (Date.now() - draft.createdAt > 10 * 60 * 1000) {
+        localStorage.removeItem('yukirin_blog_draft')
+        return
+      }
+      setForm(f => ({
+        ...f,
+        title: draft.title || f.title,
+        content: draft.content || f.content,
+        summary: draft.summary || f.summary,
+        tags: draft.tags.length ? draft.tags : f.tags,
+        seoTitle: draft.seoTitle || f.seoTitle,
+        seoDesc: draft.seoDesc || f.seoDesc,
+        slug: draft.suggestedSlug || f.slug,
+      }))
+      localStorage.removeItem('yukirin_blog_draft')
+    } catch {
+      // ignore
+    }
+  }, [articleId])
+
   // Load existing article
   useEffect(() => {
     if (!articleId) { setLoading(false); return }
@@ -155,9 +195,63 @@ export function BlogEditor({ articleId, onSaved, onCancel }: Props) {
   }
 
   const addTag = () => {
-    const t = tagInput.trim()
-    if (t && !form.tags.includes(t)) setForm(f => ({ ...f, tags: [...f.tags, t] }))
+    // Support comma-separated bulk tag input
+    const parts = tagInput.split(',').map(s => s.trim()).filter(Boolean)
+    if (parts.length > 0) {
+      setForm(f => ({
+        ...f,
+        tags: [...f.tags, ...parts.filter(p => !f.tags.includes(p))],
+      }))
+    }
     setTagInput('')
+  }
+
+  // AI: write full article
+  const handleAiWrite = async () => {
+    if (!aiPrompt.trim()) return
+    const userMsg = aiPrompt.trim()
+    setAiHistory(h => [...h, { role: 'user', text: userMsg }])
+    setAiPrompt('')
+    setAiWriting(true)
+    try {
+      const res = await fetch('/api/admin/social/blog/ai-write', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prompt: userMsg,
+          existingTitle: form.title || undefined,
+          existingContent: form.content || undefined,
+          mode: aiMode,
+        }),
+      })
+      if (!res.ok) {
+        const err = await res.json() as { error?: string }
+        setAiHistory(h => [...h, { role: 'ai', text: `❌ ${err.error ?? '生成失敗'}` }])
+        return
+      }
+      const data = await res.json() as {
+        title: string; content: string; summary: string
+        tags: string[]; seoTitle: string; seoDesc: string; suggestedSlug: string
+      }
+      // Apply to form
+      setForm(f => ({
+        ...f,
+        title: data.title || f.title,
+        content: data.content || f.content,
+        summary: data.summary || f.summary,
+        tags: data.tags.length ? [...new Set([...f.tags, ...data.tags])] : f.tags,
+        seoTitle: data.seoTitle || f.seoTitle,
+        seoDesc: data.seoDesc || f.seoDesc,
+        slug: (!f.id && !f.slug && data.suggestedSlug) ? data.suggestedSlug : f.slug,
+      }))
+      const preview = `✅ 已填入所有欄位！\n\n**標題**：${data.title}\n**標籤**：${data.tags.join('、')}\n**摘要**：${data.summary.slice(0, 60)}...`
+      setAiHistory(h => [...h, { role: 'ai', text: preview, applied: true }])
+    } catch {
+      setAiHistory(h => [...h, { role: 'ai', text: '❌ 網路錯誤，請重試' }])
+    } finally {
+      setAiWriting(false)
+      setTimeout(() => aiChatEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100)
+    }
   }
 
   const removeTag = (tag: string) => setForm(f => ({ ...f, tags: f.tags.filter(t => t !== tag) }))
@@ -268,6 +362,31 @@ export function BlogEditor({ articleId, onSaved, onCancel }: Props) {
           <ArrowLeft className="w-4 h-4" />
         </button>
         <h2 className="text-sm font-semibold text-white/80 flex-1">{articleId ? '編輯文章' : '撰寫新文章'}</h2>
+        {/* Yukirin AI writing assistant trigger */}
+        <button
+          onClick={() => {
+            if (typeof window !== 'undefined') {
+              window.dispatchEvent(new CustomEvent('yukirin:open-blog-write'))
+            }
+          }}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium bg-violet-500/15 hover:bg-violet-500/25 text-violet-300 border border-violet-400/20 transition-colors"
+          title="開啟雪凜 AI 協助創作（200 Z幣）"
+        >
+          <Bot className="w-3.5 h-3.5" />
+          雪凜協作
+        </button>
+        {/* AI Writing Assistant toggle */}
+        <button
+          onClick={() => setAiPanelOpen(o => !o)}
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-colors ${
+            aiPanelOpen
+              ? 'bg-amber-500/25 border border-amber-400/30 text-amber-300'
+              : 'bg-white/8 hover:bg-white/12 text-white/50'
+          }`}
+        >
+          <Sparkles className="w-3.5 h-3.5" />
+          AI 助手
+        </button>
         <button
           onClick={() => setForm(f => ({ ...f, isPublic: !f.isPublic }))}
           className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-colors ${
@@ -286,6 +405,77 @@ export function BlogEditor({ articleId, onSaved, onCancel }: Props) {
           儲存
         </button>
       </div>
+
+      {/* AI Writing Assistant Panel */}
+      {aiPanelOpen && (
+        <div className="shrink-0 border-b border-violet-500/20 bg-violet-950/20">
+          {/* Mode selector + chat history */}
+          <div className="px-4 pt-3 pb-2">
+            <div className="flex items-center gap-2 mb-2">
+              <Bot className="w-3.5 h-3.5 text-violet-400 shrink-0" />
+              <span className="text-xs font-medium text-violet-300">AI 寫作助手</span>
+              <span className="text-[10px] text-white/30 ml-1">— 一氣呵成填入所有欄位</span>
+              <div className="ml-auto flex gap-1">
+                {(['full', 'outline', 'refine'] as const).map(m => (
+                  <button
+                    key={m}
+                    onClick={() => setAiMode(m)}
+                    className={`px-2 py-0.5 rounded text-[10px] font-medium transition-colors ${
+                      aiMode === m ? 'bg-violet-500/30 text-violet-300' : 'text-white/30 hover:text-white/60'
+                    }`}
+                  >
+                    {m === 'full' ? '完整文章' : m === 'outline' ? '大綱' : '潤稿'}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Chat history (max 3 items, scrollable) */}
+            {aiHistory.length > 0 && (
+              <div className="max-h-32 overflow-y-auto mb-2 space-y-1.5">
+                {aiHistory.slice(-6).map((msg, i) => (
+                  <div key={i} className={`text-xs rounded-lg px-3 py-1.5 ${
+                    msg.role === 'user'
+                      ? 'bg-white/[0.06] text-white/60 text-right ml-8'
+                      : msg.applied
+                        ? 'bg-violet-500/15 text-violet-200 mr-8'
+                        : 'bg-red-500/10 text-red-300 mr-8'
+                  }`}>
+                    {msg.text.split('\n').map((line, j) => (
+                      <span key={j}>{line}{j < msg.text.split('\n').length - 1 ? <br /> : null}</span>
+                    ))}
+                  </div>
+                ))}
+                <div ref={aiChatEndRef} />
+              </div>
+            )}
+
+            {/* Input row */}
+            <div className="flex gap-2">
+              <input
+                value={aiPrompt}
+                onChange={e => setAiPrompt(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey && !aiWriting) { e.preventDefault(); handleAiWrite() } }}
+                placeholder={
+                  aiMode === 'full' ? '描述你想寫的文章，例如：分享我第一次去日本旅行的深刻體驗...'
+                  : aiMode === 'outline' ? '描述文章主題，AI 先給你大綱框架...'
+                  : '告訴 AI 如何改善，例如：讓開頭更吸引人，加入更多例子...'
+                }
+                disabled={aiWriting}
+                className="flex-1 bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-xs text-white placeholder-white/25 outline-none focus:border-violet-400/40 transition-colors disabled:opacity-50"
+              />
+              <button
+                onClick={handleAiWrite}
+                disabled={aiWriting || !aiPrompt.trim()}
+                className="flex items-center gap-1.5 px-3 py-2 bg-violet-500/20 hover:bg-violet-500/30 text-violet-300 rounded-xl text-xs font-medium transition-colors disabled:opacity-40"
+              >
+                {aiWriting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+                {aiWriting ? '生成中...' : '生成'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {error && (
         <div className="shrink-0 px-4 py-2 bg-rose-500/15 border-b border-rose-500/20 text-xs text-rose-300 flex items-center justify-between">
@@ -474,7 +664,7 @@ export function BlogEditor({ articleId, onSaved, onCancel }: Props) {
                   value={tagInput}
                   onChange={e => setTagInput(e.target.value)}
                   onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addTag() } }}
-                  placeholder="輸入標籤後按 Enter"
+                  placeholder="輸入標籤後按 Enter（可用逗號分隔一次加多個）"
                   className="flex-1 bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-sm text-white placeholder-white/25 outline-none focus:border-amber-400/30 transition-colors"
                 />
                 <button onClick={addTag} className="px-3 py-2 bg-white/8 hover:bg-white/12 text-white/50 rounded-xl text-xs transition-colors">新增</button>

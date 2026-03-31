@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { Loader2, Plus, Pencil, Trash2, Eye, EyeOff, Globe, Check, X, ExternalLink } from 'lucide-react'
+import { useState, useEffect, useRef } from 'react'
+import { Loader2, Plus, Pencil, Trash2, Eye, EyeOff, Globe, Check, X, ExternalLink, MessageSquare, BarChart3 } from 'lucide-react'
 import { BlogEditor } from '@/components/social/BlogEditor'
 
 interface Article {
@@ -14,6 +14,8 @@ interface Article {
   view_count: number
   published_at: string
   tags: string[]
+  seo_title?: string | null
+  seo_desc?: string | null
 }
 
 interface BlogSettings {
@@ -23,12 +25,101 @@ interface BlogSettings {
   is_enabled: boolean
 }
 
+interface Comment {
+  id: string
+  article_id: string
+  article_title: string
+  article_slug: string
+  author_name: string
+  content: string
+  is_approved: boolean
+  created_at: string
+}
+
+// ─── OG Preview Modal ─────────────────────────────────────────────────────────
+
+interface OgPreviewModalProps {
+  article: Article
+  blogSlug: string
+  onClose: () => void
+}
+
+function OgPreviewModal({ article, blogSlug, onClose }: OgPreviewModalProps) {
+  const baseUrl = typeof window !== 'undefined' ? window.location.origin : ''
+  const ogTitle = article.seo_title ?? article.title
+  const ogDesc = article.seo_desc ?? article.summary ?? '沒有描述'
+  const ogUrl = `${baseUrl}/blogs/${blogSlug}/${article.slug}`
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+      onClick={onClose}
+    >
+      <div
+        className="bg-slate-900 border border-white/12 rounded-2xl p-6 max-w-sm w-full shadow-2xl"
+        onClick={e => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-sm font-semibold text-[#3d3155]">🔍 OG 分享預覽</h3>
+          <button onClick={onClose} className="text-[#8a7ca8] hover:text-[#3d3155] transition-colors">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        {/* Simulated LINE / FB card */}
+        <div className="border border-white/15 rounded-xl overflow-hidden bg-white/[0.03]">
+          {article.cover_image ? (
+            <img
+              src={article.cover_image}
+              alt=""
+              className="w-full h-36 object-cover"
+            />
+          ) : (
+            <div className="w-full h-28 bg-gradient-to-br from-amber-500/10 to-violet-500/10 flex items-center justify-center text-3xl">
+              📄
+            </div>
+          )}
+          <div className="px-3 py-2.5">
+            <p className="text-[10px] text-white/25 uppercase tracking-wider truncate mb-1">
+              {ogUrl}
+            </p>
+            <p className="text-sm font-semibold text-white/90 line-clamp-2 leading-snug">
+              {ogTitle}
+            </p>
+            <p className="text-xs text-white/45 mt-1 line-clamp-2 leading-relaxed">
+              {ogDesc}
+            </p>
+          </div>
+        </div>
+
+        <div className="mt-4 space-y-1.5 text-[11px] text-[#6b5fa8]">
+          <p><span className="text-[#8a7ca8]">og:title</span> {ogTitle}</p>
+          <p><span className="text-[#8a7ca8]">og:description</span> {ogDesc}</p>
+          <p className="truncate"><span className="text-[#8a7ca8]">og:url</span> {ogUrl}</p>
+          {!article.seo_title && (
+            <p className="text-amber-400/70 pt-1">⚠️ 未設定自訂 SEO 標題，使用文章標題作為備援</p>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function BlogManagePage() {
   const [articles, setArticles] = useState<Article[]>([])
   const [settings, setSettings] = useState<BlogSettings | null>(null)
   const [loading, setLoading] = useState(true)
   const [editingId, setEditingId] = useState<string | null | 'new'>(null)
-  const [tab, setTab] = useState<'articles' | 'settings'>('articles')
+  const [tab, setTab] = useState<'articles' | 'comments' | 'settings'>('articles')
+
+  // Comments tab state
+  const [comments, setComments] = useState<Comment[]>([])
+  const [commentsLoading, setCommentsLoading] = useState(false)
+  const [commentFilter, setCommentFilter] = useState<'all' | 'pending'>('all')
+  const commentsLoadedRef = useRef(false)
+
+  // OG preview modal state
+  const [ogPreviewArticle, setOgPreviewArticle] = useState<Article | null>(null)
 
   // Settings form state
   const [settingsForm, setSettingsForm] = useState({ blogSlug: '', blogTitle: '', blogDesc: '', isEnabled: true })
@@ -56,6 +147,32 @@ export default function BlogManagePage() {
       if (meData?.userId) setMyUserId(meData.userId)
     }).finally(() => setLoading(false))
   }, [])
+
+  // Load comments when switching to comments tab
+  useEffect(() => {
+    if (tab !== 'comments' || commentsLoadedRef.current) return
+    commentsLoadedRef.current = true
+    setCommentsLoading(true)
+    fetch('/api/admin/social/blog/comments')
+      .then(r => r.ok ? r.json() as Promise<{ comments: Comment[] }> : null)
+      .then(d => { if (d) setComments(d.comments) })
+      .finally(() => setCommentsLoading(false))
+  }, [tab])
+
+  const handleCommentAction = async (commentId: string, action: 'approve' | 'delete') => {
+    const res = await fetch('/api/admin/social/blog/comments', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ commentId, action }),
+    })
+    if (res.ok) {
+      if (action === 'delete') {
+        setComments(prev => prev.filter(c => c.id !== commentId))
+      } else {
+        setComments(prev => prev.map(c => c.id === commentId ? { ...c, is_approved: true } : c))
+      }
+    }
+  }
 
   // Blog slug availability check
   useEffect(() => {
@@ -166,19 +283,116 @@ export default function BlogManagePage() {
 
       {/* Tabs */}
       <div className="flex gap-1 mb-6 border-b border-white/8">
-        {(['articles', 'settings'] as const).map(t => (
-          <button key={t} onClick={() => setTab(t)}
-            className={`px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors ${
-              tab === t ? 'text-amber-400 border-amber-400' : 'text-[#6b5fa8] border-transparent hover:text-[#8a7ca8]'
-            }`}
-          >
-            {t === 'articles' ? `文章列表 (${articles.length})` : '部落格設定'}
-          </button>
-        ))}
+        <button onClick={() => setTab('articles')}
+          className={`px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors ${
+            tab === 'articles' ? 'text-amber-400 border-amber-400' : 'text-[#6b5fa8] border-transparent hover:text-[#8a7ca8]'
+          }`}
+        >
+          文章列表 ({articles.length})
+        </button>
+        <button onClick={() => setTab('comments')}
+          className={`px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors flex items-center gap-1.5 ${
+            tab === 'comments' ? 'text-amber-400 border-amber-400' : 'text-[#6b5fa8] border-transparent hover:text-[#8a7ca8]'
+          }`}
+        >
+          <MessageSquare className="w-3.5 h-3.5" />
+          留言管理
+        </button>
+        <button onClick={() => setTab('settings')}
+          className={`px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors ${
+            tab === 'settings' ? 'text-amber-400 border-amber-400' : 'text-[#6b5fa8] border-transparent hover:text-[#8a7ca8]'
+          }`}
+        >
+          部落格設定
+        </button>
       </div>
 
       {loading ? (
         <div className="flex justify-center py-16"><Loader2 className="w-6 h-6 text-[#8a7ca8] animate-spin" /></div>
+      ) : tab === 'comments' ? (
+        /* ── 留言管理 tab ── */
+        <div className="space-y-4">
+          {/* Filter buttons */}
+          <div className="flex items-center gap-2">
+            {(['all', 'pending'] as const).map(f => (
+              <button
+                key={f}
+                onClick={() => setCommentFilter(f)}
+                className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-colors ${
+                  commentFilter === f
+                    ? 'bg-amber-500/20 text-amber-300'
+                    : 'bg-white/5 text-[#6b5fa8] hover:bg-white/8'
+                }`}
+              >
+                {f === 'all' ? '全部' : '待審核'}
+                {f === 'pending' && comments.filter(c => !c.is_approved).length > 0 && (
+                  <span className="ml-1.5 px-1.5 py-0.5 bg-rose-500/20 text-rose-400 rounded-full text-[10px]">
+                    {comments.filter(c => !c.is_approved).length}
+                  </span>
+                )}
+              </button>
+            ))}
+          </div>
+
+          {commentsLoading ? (
+            <div className="flex justify-center py-10"><Loader2 className="w-5 h-5 text-[#8a7ca8] animate-spin" /></div>
+          ) : (() => {
+            const filtered = commentFilter === 'pending'
+              ? comments.filter(c => !c.is_approved)
+              : comments
+            if (filtered.length === 0) {
+              return (
+                <div className="text-center py-12 text-[#6b5fa8]">
+                  <MessageSquare className="w-8 h-8 mx-auto mb-3 opacity-30" />
+                  <p className="text-sm">{commentFilter === 'pending' ? '沒有待審核留言' : '還沒有留言'}</p>
+                </div>
+              )
+            }
+            return (
+              <div className="space-y-2.5">
+                {filtered.map(comment => (
+                  <div key={comment.id} className="p-4 bg-white/[0.03] border border-white/8 rounded-[20px]">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1.5">
+                          <span className="text-xs font-semibold text-[#3d3155]">{comment.author_name}</span>
+                          {!comment.is_approved && (
+                            <span className="text-[10px] px-1.5 py-0.5 bg-amber-500/15 text-amber-400 rounded-full">待審核</span>
+                          )}
+                          <span className="text-[11px] text-[#6b5fa8]">
+                            {new Date(comment.created_at).toLocaleDateString('zh-TW')}
+                          </span>
+                        </div>
+                        <p className="text-xs text-[#6b5fa8] line-clamp-2 mb-1.5">{comment.content}</p>
+                        <p className="text-[10px] text-[#8a7ca8] truncate">
+                          文章：{comment.article_title}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-1 shrink-0">
+                        {!comment.is_approved && (
+                          <button
+                            onClick={() => handleCommentAction(comment.id, 'approve')}
+                            title="核准留言"
+                            className="p-1.5 rounded-lg hover:bg-emerald-500/10 text-[#8a7ca8] hover:text-emerald-400 transition-colors"
+                          >
+                            <Check className="w-4 h-4" />
+                          </button>
+                        )}
+                        <button
+                          onClick={() => handleCommentAction(comment.id, 'delete')}
+                          title="刪除留言"
+                          className="p-1.5 rounded-lg hover:bg-rose-500/10 text-[#6b5fa8] hover:text-rose-400 transition-colors"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )
+          })()}
+        </div>
       ) : tab === 'articles' ? (
         articles.length === 0 ? (
           <div className="text-center py-20 text-[#6b5fa8]">
@@ -194,6 +408,36 @@ export default function BlogManagePage() {
           </div>
         ) : (
           <div className="space-y-3">
+            {/* Stats summary */}
+            {(() => {
+              const published = articles.filter(a => a.is_public)
+              const drafts = articles.filter(a => !a.is_public)
+              const totalViews = articles.reduce((sum, a) => sum + a.view_count, 0)
+              const topArticle = [...articles].sort((a, b) => b.view_count - a.view_count)[0]
+              return (
+                <div className="flex flex-wrap gap-2 mb-4 p-4 bg-white/[0.02] border border-white/8 rounded-[20px]">
+                  <div className="flex items-center gap-1.5 text-xs text-[#6b5fa8]">
+                    <BarChart3 className="w-3.5 h-3.5 text-[#8a7ca8]" />
+                    <span>總瀏覽 <span className="font-semibold text-[#3d3155]">{totalViews.toLocaleString()}</span></span>
+                  </div>
+                  <span className="text-white/10">·</span>
+                  <div className="text-xs text-[#6b5fa8]">
+                    公開 <span className="font-semibold text-emerald-400">{published.length}</span>
+                    {' '}/ 草稿 <span className="font-semibold text-[#8a7ca8]">{drafts.length}</span>
+                  </div>
+                  {topArticle && totalViews > 0 && (
+                    <>
+                      <span className="text-white/10">·</span>
+                      <div className="text-xs text-[#6b5fa8] truncate max-w-[200px]">
+                        最熱門：<span className="text-[#3d3155] font-medium">{topArticle.title}</span>
+                        <span className="ml-1 text-amber-400">({topArticle.view_count} 次)</span>
+                      </div>
+                    </>
+                  )}
+                </div>
+              )
+            })()}
+
             {articles.map(article => (
               <div key={article.id} className="flex flex-col sm:flex-row gap-3 p-4 bg-white/[0.03] hover:bg-white/[0.05] border border-white/8 rounded-[20px] transition-all">
                 {/* Top row: image + info */}
@@ -226,6 +470,13 @@ export default function BlogManagePage() {
                     className="p-1.5 rounded-lg hover:bg-white/8 text-[#8a7ca8] hover:text-[#3d3155] transition-colors"
                   >
                     {article.is_public ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                  </button>
+                  <button
+                    onClick={() => setOgPreviewArticle(article)}
+                    title="預覽 OG"
+                    className="p-1.5 rounded-lg hover:bg-white/8 text-[#8a7ca8] hover:text-[#3d3155] transition-colors text-[11px] font-medium"
+                  >
+                    OG
                   </button>
                   <a
                     href={`/blogs/${blogPublicSlug}/${article.slug}`}
@@ -319,6 +570,15 @@ export default function BlogManagePage() {
             儲存設定
           </button>
         </div>
+      )}
+
+      {/* OG Preview Modal */}
+      {ogPreviewArticle && (
+        <OgPreviewModal
+          article={ogPreviewArticle}
+          blogSlug={blogPublicSlug}
+          onClose={() => setOgPreviewArticle(null)}
+        />
       )}
     </div>
   )

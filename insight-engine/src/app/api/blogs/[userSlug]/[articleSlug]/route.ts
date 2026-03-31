@@ -2,6 +2,18 @@ import { NextRequest, NextResponse } from 'next/server'
 import { queryOne, execute, query } from '@/lib/db'
 import { getTenantContext } from '@/lib/tenant'
 
+/** 驗證 preview token：與 preview-token route 保持一致的雜湊邏輯 */
+async function verifyPreviewToken(articleId: string, token: string): Promise<boolean> {
+  const secret = process.env.JWT_SECRET ?? process.env.ADMIN_SECRET ?? 'preview-secret'
+  const data = new TextEncoder().encode(articleId + secret)
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data)
+  const hashBytes = new Uint8Array(hashBuffer)
+  let binary = ''
+  for (let i = 0; i < hashBytes.length; i++) binary += String.fromCharCode(hashBytes[i])
+  const b64 = btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
+  return b64.slice(0, 12) === token
+}
+
 interface ArticleRow extends Record<string, unknown> {
   id: string
   user_id: string
@@ -63,19 +75,28 @@ export async function GET(
 
   if (!article) return NextResponse.json({ error: '找不到文章' }, { status: 404 })
 
-  // 私人文章：需確認是作者本人
+  // 私人文章：允許作者本人或持有有效 preview_token 的請求
   if (!article.is_public) {
-    const ctx = await getTenantContext()
-    if (ctx.userId !== article.user_id) {
-      return NextResponse.json({ error: '此文章為私人' }, { status: 403 })
+    const previewToken = req.nextUrl.searchParams.get('preview_token')
+    if (previewToken) {
+      const valid = await verifyPreviewToken(article.id, previewToken)
+      if (!valid) return NextResponse.json({ error: '無效的預覽 token' }, { status: 403 })
+    } else {
+      const ctx = await getTenantContext()
+      if (ctx.userId !== article.user_id) {
+        return NextResponse.json({ error: '此文章為私人' }, { status: 403 })
+      }
     }
   }
 
-  // 增加瀏覽次數（非同步，不影響回應速度）
-  execute(
-    `UPDATE user_blog_articles SET view_count = view_count + 1 WHERE id = $1`,
-    [article.id]
-  ).catch(() => {})
+  // 增加瀏覽次數（notrack=1 時跳過，用於 generateMetadata 呼叫避免重複計算）
+  const noTrack = req.nextUrl.searchParams.get('notrack') === '1'
+  if (!noTrack) {
+    execute(
+      `UPDATE user_blog_articles SET view_count = view_count + 1 WHERE id = $1`,
+      [article.id]
+    ).catch(() => {})
+  }
 
   // 上一篇 / 下一篇（同作者的公開文章） + 系列文章列表（如果有）
   interface NavRow extends Record<string, unknown> { title: string; slug: string }

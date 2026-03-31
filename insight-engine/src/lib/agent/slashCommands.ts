@@ -259,6 +259,16 @@ const TOOL: Array<SlashCommand & { handler: CommandHandler }> = [
       needsLLM: false,
     }),
   },
+  {
+    command: '/創作文章', aliases: ['/write', '/寫文章', '/寫部落格', '/blog'], description: 'AI 協助創作部落格文章（消耗 200 Z幣）',
+    category: 'tool', adminOnly: false,
+    handler: () => ({
+      yukirin: { text: '___BLOG_WRITE_INIT___', mood: 'excited', animation: 'excited' },
+      riku:    { text: '___BLOG_WRITE_INIT___', mood: 'neutral', animation: null },
+      action: { type: 'blog_write_mode', target: '' },
+      needsLLM: false,
+    }),
+  },
 ]
 
 // ── 管理員指令 ────────────────────────────────────────────────────────────────

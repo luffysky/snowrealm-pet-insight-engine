@@ -200,6 +200,10 @@ export default function YukirinChatPanel({ onClose, character = 'yukirin', onSwi
   // 斜線指令自動完成
   const [cmdSuggestions, setCmdSuggestions] = useState<SlashCommand[]>([])
 
+  // 部落格創作模式
+  const [blogWriteMode, setBlogWriteMode] = useState(false)
+  const [blogWriting, setBlogWriting] = useState(false)
+
   // 捲到最新訊息
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -281,6 +285,111 @@ export default function YukirinChatPanel({ onClose, character = 'yukirin', onSwi
     // 清空後立即 focus，避免手機鍵盤縮回去
     requestAnimationFrame(() => inputRef.current?.focus())
 
+    // ── 部落格創作模式：攔截使用者輸入，呼叫 AI write API ─────────────────
+    if (blogWriteMode && !isSlashCommand(text)) {
+      setBlogWriting(true)
+      setIsLoading(true)
+
+      // 確認 Z幣餘額
+      const balance = turnsInfo?.zcoinBalance ?? 0
+      if (balance < 200 && !turnsInfo?.isUnlimited) {
+        const notEnough = character === 'riku'
+          ? `...Z幣不夠。你有 ${balance} Z幣，需要 200 Z幣。去商城補一下吧。`
+          : `哎呀！你的 Z幣只剩 ${balance} 個，需要 200 Z幣才能創作文章～ 去商城補一些吧！`
+        setMessages(prev => appendMessage(prev, {
+          id: (Date.now() + 1).toString(),
+          role: 'assistant',
+          text: notEnough,
+          mood: 'sad',
+        }))
+        setBlogWriteMode(false)
+        setBlogWriting(false)
+        setIsLoading(false)
+        setQuickReplies([...DEFAULT_QUICK_REPLIES])
+        return
+      }
+
+      const thinkingMsgs = character === 'riku' ? [
+        '...在想。稍等。',
+        '...寫文章中。',
+      ] : [
+        '好的！讓我想想怎麼寫最好～✨',
+        '嗯嗯！我來幫你組織一下！',
+        '交給我！我在想最棒的寫法～',
+      ]
+      const thinking = thinkingMsgs[Math.floor(Math.random() * thinkingMsgs.length)]
+      yukirinRef.current?.setMood('thinking', 300)
+      yukirinRef.current?.playAnimation('think')
+      setMessages(prev => appendMessage(prev, {
+        id: (Date.now() + 1).toString(),
+        role: 'assistant',
+        text: thinking + '\n\n（正在創作，請稍候...）',
+        mood: 'thinking',
+      }))
+
+      try {
+        const res = await fetch('/api/admin/social/blog/ai-write', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ prompt: text, mode: 'full' }),
+        })
+        if (!res.ok) {
+          const err = await res.json() as { error?: string }
+          const errMsg = character === 'riku'
+            ? `...失敗了。${err.error ?? '錯誤'}`
+            : `哎呀出錯了 QQ ${err.error ?? '請稍後再試'}`
+          setMessages(prev => appendMessage(prev, {
+            id: (Date.now() + 1).toString(),
+            role: 'assistant',
+            text: errMsg,
+            mood: 'sad',
+          }))
+        } else {
+          const data = await res.json() as {
+            title: string; content: string; summary: string
+            tags: string[]; seoTitle: string; seoDesc: string; suggestedSlug: string
+          }
+          // 存到 localStorage，讓部落格編輯器讀取
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('yukirin_blog_draft', JSON.stringify({
+              ...data,
+              createdAt: Date.now(),
+              character,
+            }))
+          }
+
+          const doneVariants = character === 'riku' ? [
+            `完成了。\n\n**「${data.title}」**\n\n摘要：${data.summary.slice(0, 60)}...\n標籤：${data.tags.slice(0, 3).join('、')}\n\n前往部落格編輯器套用 →`,
+          ] : [
+            `寫好了！✨\n\n**「${data.title}」**\n\n${data.summary.slice(0, 60)}...\n\n標籤：${data.tags.slice(0, 3).join('、')}\n\n去看看成品，沒問題就可以直接發布～`,
+            `完成！來看看我寫的～ ✨\n\n**「${data.title}」**\n\n${data.summary.slice(0, 60)}...\n標籤：${data.tags.slice(0, 3).join('、')}\n\n點下面的按鈕套用到部落格編輯器吧！`,
+          ]
+          const doneMsg = doneVariants[Math.floor(Math.random() * doneVariants.length)]
+
+          yukirinRef.current?.setMood('happy', 300)
+          setMessages(prev => appendMessage(prev, {
+            id: (Date.now() + 1).toString(),
+            role: 'assistant',
+            text: doneMsg,
+            mood: 'happy',
+          }))
+          setBlogWriteMode(false)
+          setQuickReplies(['前往部落格編輯器', '再寫一篇'])
+        }
+      } catch {
+        setMessages(prev => appendMessage(prev, {
+          id: (Date.now() + 1).toString(),
+          role: 'assistant',
+          text: character === 'riku' ? '...網路錯誤。' : '哎呀網路有點問題 QQ 等一下再試試看？',
+          mood: 'sad',
+        }))
+      } finally {
+        setBlogWriting(false)
+        setIsLoading(false)
+      }
+      return
+    }
+
     // ── 斜線指令：零 Token 即時回應 ────────────────────────────────────────
     if (isSlashCommand(text)) {
       const slashResult = handleSlashCommand(text, buildSlashState())
@@ -295,8 +404,33 @@ export default function YukirinChatPanel({ onClose, character = 'yukirin', onSwi
         if (!slashResult.needsLLM) {
           // 特殊 action：show_command_list — 直接在對話裡顯示指令清單
           const cmdListText = slashResult.action?.type === 'show_command_list'
-            ? '\n\n📋 **基本**\n/問卷 /結果 /Z幣 /商城 /成就 /每日任務\n\n🎮 **互動**\n/揮手 /拍頭 /抱抱 /跳舞 /戳 /嚇 /加油 /睡覺 /坐下 /站起來\n\n💫 **角色**\n/切換角色 /告白 /叫另一半 /放閃\n\n🔧 **工具**\n/設定 /幫助 /週報' + (turnsInfo?.isAdmin ? '\n\n👑 **管理員**\n/stats /cost /alerts' : '')
+            ? '\n\n📋 **基本**\n/問卷 /結果 /Z幣 /商城 /成就 /每日任務\n\n🎮 **互動**\n/揮手 /拍頭 /抱抱 /跳舞 /戳 /嚇 /加油 /睡覺 /坐下 /站起來\n\n💫 **角色**\n/切換角色 /告白 /叫另一半 /放閃\n\n🔧 **工具**\n/設定 /幫助 /週報 /創作文章' + (turnsInfo?.isAdmin ? '\n\n👑 **管理員**\n/stats /cost /alerts' : '')
             : null
+
+          // 特殊 action：blog_write_mode — 進入部落格創作模式
+          if (slashResult.action?.type === 'blog_write_mode') {
+            setBlogWriteMode(true)
+            const BLOG_WRITE_GREETINGS = character === 'riku' ? [
+              '...創作文章？說吧，主題是什麼。（需要 200 Z幣）',
+              '嗯。告訴我你想寫什麼，我來幫你。',
+              '...行。什麼主題？寫清楚一點。',
+            ] : [
+              '哦！要請我幫忙寫文章嗎～ 告訴我你想寫什麼！\n\n✨ 我會幫你把標題、內容、標籤、SEO 全部一次搞定\n（需要 200 Z幣）',
+              '寫文章！我最喜歡這種任務了～\n說說看，你想分享什麼故事或想法？\n（需要 200 Z幣）',
+              '好耶！AI 創作模式～✨\n你想寫什麼主題？說詳細一點，我寫得更好！\n（需要 200 Z幣）',
+            ]
+            const greeting = BLOG_WRITE_GREETINGS[Math.floor(Math.random() * BLOG_WRITE_GREETINGS.length)]
+            yukirinRef.current?.setMood('excited', 300)
+            yukirinRef.current?.playAnimation('excited')
+            setMessages(prev => appendMessage(prev, {
+              id: (Date.now() + 1).toString(),
+              role: 'assistant',
+              text: greeting,
+              mood: 'excited',
+            }))
+            setQuickReplies(['分享旅遊體驗', '寫產品心得', '記錄生活感悟'])
+            return
+          }
 
           setMessages(prev => appendMessage(prev, {
             id: (Date.now() + 1).toString(),
@@ -532,8 +666,26 @@ export default function YukirinChatPanel({ onClose, character = 'yukirin', onSwi
   }, [input, sendMessage])
 
   const handleQuickReply = useCallback((text: string) => {
+    // 特殊快速回覆：前往部落格編輯器
+    if (text === '前往部落格編輯器') {
+      router.push('/insight-admin/blog')
+      return
+    }
+    // 再寫一篇 → 重新進入 blog write mode
+    if (text === '再寫一篇') {
+      setBlogWriteMode(true)
+      const greeting = character === 'riku' ? '...什麼主題？' : '好！這次要寫什麼？'
+      setMessages(prev => appendMessage(prev, {
+        id: (Date.now() + 1).toString(),
+        role: 'assistant',
+        text: greeting,
+        mood: 'happy',
+      }))
+      setQuickReplies(['分享旅遊體驗', '寫產品心得', '記錄生活感悟'])
+      return
+    }
     sendMessage(text)
-  }, [sendMessage])
+  }, [sendMessage, router, character])
 
   const handleBought = useCallback((addedTurns: number, newBalance: number, totalCredits: number) => {
     setTurnsInfo(prev => prev ? {
@@ -551,6 +703,16 @@ export default function YukirinChatPanel({ onClose, character = 'yukirin', onSwi
     }))
     setQuickReplies(DEFAULT_QUICK_REPLIES)
   }, [])
+
+  // 接收外部自動發送指令事件（例如從部落格編輯器觸發 /創作文章）
+  useEffect(() => {
+    const handleAutoSend = (e: Event) => {
+      const text = (e as CustomEvent<{ text: string }>).detail?.text
+      if (text) sendMessage(text)
+    }
+    window.addEventListener('yukirin:auto-send', handleAutoSend)
+    return () => window.removeEventListener('yukirin:auto-send', handleAutoSend)
+  }, [sendMessage])
 
   // 次數倒數顯示文字
   const turnsLabel = (() => {

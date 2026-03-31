@@ -109,13 +109,12 @@ export default async function BlogsPage() {
               </p>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
                 <Link
-                  href="/register"
+                  href="/register?redirect=/insight-admin/blog"
                   className="inline-flex items-center gap-2 px-6 py-2.5 bg-amber-500/90 hover:bg-amber-500 text-black font-semibold text-sm rounded-2xl transition-colors"
                 >
                   免費開始寫作 →
                 </Link>
               </div>
-              <p className="text-[11px] text-white/25 mt-4">免費方案即可開始，不需信用卡</p>
             </div>
           </div>
         </div>
