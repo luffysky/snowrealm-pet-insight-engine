@@ -87,9 +87,15 @@ export function BlogEditor({ articleId, onSaved, onCancel }: Props) {
   const [aiPanelOpen, setAiPanelOpen] = useState(false)
   const [aiPrompt, setAiPrompt] = useState('')
   const [aiMode, setAiMode] = useState<'full' | 'outline' | 'refine'>('full')
+  const [aiTier, setAiTier] = useState<'sonnet' | 'haiku'>('sonnet')
   const [aiWriting, setAiWriting] = useState(false)
   const [aiHistory, setAiHistory] = useState<{ role: 'user' | 'ai'; text: string; applied?: boolean }[]>([])
   const aiChatEndRef = useRef<HTMLDivElement>(null)
+
+  const AI_COSTS = {
+    sonnet: { full: 200, outline: 50, refine: 100 },
+    haiku:  { full: 80,  outline: 20, refine: 40  },
+  } as const
 
   // Check for Yukirin blog draft in localStorage (only for new articles)
   useEffect(() => {
@@ -210,11 +216,12 @@ export function BlogEditor({ articleId, onSaved, onCancel }: Props) {
   const handleAiWrite = async () => {
     if (!aiPrompt.trim()) return
     const userMsg = aiPrompt.trim()
+    const cost = AI_COSTS[aiTier][aiMode]
     setAiHistory(h => [...h, { role: 'user', text: userMsg }])
     setAiPrompt('')
     setAiWriting(true)
     try {
-      const res = await fetch('/api/admin/social/blog/ai-write', {
+      const res = await fetch('/api/blogs/ai-write', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -222,6 +229,7 @@ export function BlogEditor({ articleId, onSaved, onCancel }: Props) {
           existingTitle: form.title || undefined,
           existingContent: form.content || undefined,
           mode: aiMode,
+          tier: aiTier,
         }),
       })
       if (!res.ok) {
@@ -232,6 +240,7 @@ export function BlogEditor({ articleId, onSaved, onCancel }: Props) {
       const data = await res.json() as {
         title: string; content: string; summary: string
         tags: string[]; seoTitle: string; seoDesc: string; suggestedSlug: string
+        newBalance?: number | null; cost?: number
       }
       // Apply to form
       setForm(f => ({
@@ -244,7 +253,8 @@ export function BlogEditor({ articleId, onSaved, onCancel }: Props) {
         seoDesc: data.seoDesc || f.seoDesc,
         slug: (!f.id && !f.slug && data.suggestedSlug) ? data.suggestedSlug : f.slug,
       }))
-      const preview = `✅ 已填入所有欄位！\n\n**標題**：${data.title}\n**標籤**：${data.tags.join('、')}\n**摘要**：${data.summary.slice(0, 60)}...`
+      const balanceHint = data.newBalance != null ? `（剩餘 ${data.newBalance} Z幣）` : ''
+      const preview = `✅ 已填入所有欄位！扣除 ${data.cost ?? cost} Z幣${balanceHint}\n\n標題：${data.title}\n標籤：${data.tags.join('、')}\n摘要：${data.summary.slice(0, 60)}...`
       setAiHistory(h => [...h, { role: 'ai', text: preview, applied: true }])
     } catch {
       setAiHistory(h => [...h, { role: 'ai', text: '❌ 網路錯誤，請重試' }])
@@ -370,7 +380,7 @@ export function BlogEditor({ articleId, onSaved, onCancel }: Props) {
             }
           }}
           className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium bg-violet-500/15 hover:bg-violet-500/25 text-violet-300 border border-violet-400/20 transition-colors"
-          title="開啟雪凜 AI 協助創作（200 Z幣）"
+          title="開啟雪凜 AI 協助創作"
         >
           <Bot className="w-3.5 h-3.5" />
           雪凜協作
@@ -414,19 +424,45 @@ export function BlogEditor({ articleId, onSaved, onCancel }: Props) {
             <div className="flex items-center gap-2 mb-2">
               <Bot className="w-3.5 h-3.5 text-violet-400 shrink-0" />
               <span className="text-xs font-medium text-violet-300">AI 寫作助手</span>
-              <span className="text-[10px] text-white/30 ml-1">— 一氣呵成填入所有欄位</span>
-              <div className="ml-auto flex gap-1">
-                {(['full', 'outline', 'refine'] as const).map(m => (
+              <span className="text-[10px] text-white/30 ml-1">
+                — {AI_COSTS[aiTier][aiMode]} Z幣
+              </span>
+              <div className="ml-auto flex items-center gap-2">
+                {/* Tier selector */}
+                <div className="flex gap-0.5 border border-white/10 rounded-lg overflow-hidden">
                   <button
-                    key={m}
-                    onClick={() => setAiMode(m)}
-                    className={`px-2 py-0.5 rounded text-[10px] font-medium transition-colors ${
-                      aiMode === m ? 'bg-violet-500/30 text-violet-300' : 'text-white/30 hover:text-white/60'
+                    onClick={() => setAiTier('sonnet')}
+                    className={`px-2 py-0.5 text-[10px] font-medium transition-colors ${
+                      aiTier === 'sonnet' ? 'bg-violet-500/40 text-violet-200' : 'text-white/30 hover:text-white/60'
                     }`}
+                    title="Sonnet — 品質更高"
                   >
-                    {m === 'full' ? '完整文章' : m === 'outline' ? '大綱' : '潤稿'}
+                    ⚡Sonnet
                   </button>
-                ))}
+                  <button
+                    onClick={() => setAiTier('haiku')}
+                    className={`px-2 py-0.5 text-[10px] font-medium transition-colors ${
+                      aiTier === 'haiku' ? 'bg-slate-500/40 text-slate-300' : 'text-white/30 hover:text-white/60'
+                    }`}
+                    title="Haiku — Z幣較少"
+                  >
+                    Haiku
+                  </button>
+                </div>
+                {/* Mode selector */}
+                <div className="flex gap-1">
+                  {(['full', 'outline', 'refine'] as const).map(m => (
+                    <button
+                      key={m}
+                      onClick={() => setAiMode(m)}
+                      className={`px-2 py-0.5 rounded text-[10px] font-medium transition-colors ${
+                        aiMode === m ? 'bg-violet-500/30 text-violet-300' : 'text-white/30 hover:text-white/60'
+                      }`}
+                    >
+                      {m === 'full' ? '完整文章' : m === 'outline' ? '大綱' : '潤稿'}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
 

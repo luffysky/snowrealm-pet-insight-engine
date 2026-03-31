@@ -6,7 +6,16 @@ import { getActiveAiKey, getPlatformKey, logAiUsage } from '@/lib/aiService'
 
 export const runtime = 'nodejs'
 
-const ZCOIN_COST = 200
+// Z幣成本：tier × mode
+const ZCOIN_COSTS = {
+  sonnet: { full: 200, outline: 50, refine: 100 },
+  haiku:  { full: 80,  outline: 20, refine: 40  },
+} as const
+
+const HAIKU_MODEL = 'claude-haiku-4-5-20251001'
+const SONNET_MODEL = 'claude-sonnet-4-6'
+const OPENAI_HAIKU_MODEL = 'gpt-4o-mini'   // OpenAI 沒有 haiku，haiku 降到 mini
+const OPENAI_SONNET_MODEL = 'gpt-4o'
 
 interface AiWriteResult {
   title: string
@@ -35,23 +44,28 @@ export async function POST(req: NextRequest) {
 
   const isUnlimited = await isUserPlatformUnlimited(userId)
 
-  // 非特權用戶檢查 Z幣
-  if (!isUnlimited) {
-    const balance = await getBalance({ userId })
-    if (balance < ZCOIN_COST) {
-      return NextResponse.json({
-        error: `Z幣不足（需要 ${ZCOIN_COST} Z幣，你有 ${balance} Z幣）`,
-        balance,
-        cost: ZCOIN_COST,
-      }, { status: 402 })
-    }
-  }
-
   const body = await req.json() as {
     prompt: string
     existingTitle?: string
     existingContent?: string
     mode?: 'full' | 'outline' | 'refine'
+    tier?: 'sonnet' | 'haiku'
+  }
+
+  const mode = body.mode ?? 'full'
+  const tier = body.tier ?? 'sonnet'
+  const zcoinCost = ZCOIN_COSTS[tier][mode]
+
+  // 非特權用戶檢查 Z幣
+  if (!isUnlimited) {
+    const balance = await getBalance({ userId })
+    if (balance < zcoinCost) {
+      return NextResponse.json({
+        error: `Z幣不足（需要 ${zcoinCost} Z幣，你有 ${balance} Z幣）`,
+        balance,
+        cost: zcoinCost,
+      }, { status: 402 })
+    }
   }
 
   if (!body.prompt?.trim()) {
@@ -65,7 +79,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: '尚未設定 AI Key，請至 AI 設定頁面配置' }, { status: 400 })
   }
 
-  const mode = body.mode ?? 'full'
+  // tier 決定使用模型（用戶自訂 key 仍優先，但若是平台 key 則按 tier 選）
+  const resolvedModel = aiKey.keySource === 'platform_key'
+    ? (aiKey.provider === 'anthropic'
+        ? (tier === 'haiku' ? HAIKU_MODEL : SONNET_MODEL)
+        : (tier === 'haiku' ? OPENAI_HAIKU_MODEL : OPENAI_SONNET_MODEL))
+    : (aiKey.model ?? (aiKey.provider === 'anthropic' ? SONNET_MODEL : OPENAI_SONNET_MODEL))
 
   const systemPrompt = `你是一位有個性的繁體中文部落格作者。你的文章讀起來像真人在說話，不像 AI 寫的。
 
@@ -155,7 +174,7 @@ export async function POST(req: NextRequest) {
           'content-type': 'application/json',
         },
         body: JSON.stringify({
-          model: aiKey.model ?? 'claude-sonnet-4-6',
+          model: resolvedModel,
           max_tokens: 4096,
           messages: [{ role: 'user', content: fullPrompt }],
         }),
@@ -171,7 +190,7 @@ export async function POST(req: NextRequest) {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: aiKey.model ?? 'gpt-4o-mini',
+          model: resolvedModel,
           max_tokens: 4096,
           messages: [{ role: 'user', content: fullPrompt }],
         }),
@@ -187,7 +206,7 @@ export async function POST(req: NextRequest) {
       action: 'generate',
       keySource: aiKey.keySource,
       provider: aiKey.provider,
-      model: aiKey.model ?? '',
+      model: resolvedModel,
       promptTokens,
       completionTokens,
       isFree: aiKey.keySource === 'platform_key' || isUnlimited,
@@ -209,7 +228,7 @@ export async function POST(req: NextRequest) {
     // 成功後扣 Z幣
     let newBalance: number | null = null
     if (!isUnlimited) {
-      const result2 = await spendZcoin({ userId, amount: ZCOIN_COST, reason: 'ai_usage' })
+      const result2 = await spendZcoin({ userId, amount: zcoinCost, reason: 'ai_usage' })
       newBalance = result2.newBalance ?? null
     }
 
@@ -222,8 +241,9 @@ export async function POST(req: NextRequest) {
       seoDesc: result.seoDesc ?? '',
       suggestedSlug: slug,
       newBalance,
-      model: aiKey.model ?? (aiKey.provider === 'anthropic' ? 'claude-sonnet-4-6' : 'gpt-4o-mini'),
-    } satisfies AiWriteResult & { newBalance: number | null; model: string })
+      model: resolvedModel,
+      cost: zcoinCost,
+    } satisfies AiWriteResult & { newBalance: number | null; model: string; cost: number })
   } catch (err) {
     console.error('[blogs/ai-write]', err)
     return NextResponse.json({ error: `AI 生成失敗：${(err as Error).message ?? '請稍後再試'}` }, { status: 500 })
