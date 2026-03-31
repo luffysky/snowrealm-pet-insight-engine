@@ -361,3 +361,80 @@ export async function switchUserRichMenu(lineUserId: string, tenantId?: string):
     console.error('[switchUserRichMenu] Failed:', err)
   }
 }
+
+// ━━━━━━━━━━━━━━━━━ LINE-5 統一推播介面 ━━━━━━━━━━━━━━━━━
+
+export type LineMessage = Record<string, unknown>
+
+/**
+ * 統一推播入口 — 依 bot 類型選對應的 Channel Access Token
+ * @param to       LINE userId 或 groupId
+ * @param messages 最多 5 則
+ * @param bot      'insight'（後台回報）| 'official'（對外官方）
+ */
+export async function pushMessage(
+  to: string,
+  messages: LineMessage[],
+  bot: 'insight' | 'official' = 'official',
+): Promise<void> {
+  try {
+    const tokenKey = bot === 'insight'
+      ? 'INSIGHT_CHANNEL_ACCESS_TOKEN'
+      : 'OFFICIAL_CHANNEL_ACCESS_TOKEN'
+    const token = await getLineConfig(tokenKey)
+    if (!token) {
+      console.warn(`[pushMessage] ${tokenKey} 未設定，跳過推播`)
+      return
+    }
+    await fetch(PUSH_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ to, messages }),
+      signal: AbortSignal.timeout(10000),
+    })
+  } catch (err) {
+    console.error('[pushMessage] 失敗:', err)
+  }
+}
+
+/** 推播文字訊息給單一用戶（Official Bot） */
+export async function pushToUser(lineUserId: string, text: string): Promise<void> {
+  await pushMessage(lineUserId, [{ type: 'text', text }], 'official')
+}
+
+/** 廣播給全部好友（Official Bot） */
+export async function broadcastToAll(messages: LineMessage[]): Promise<void> {
+  try {
+    const token = await getLineConfig('OFFICIAL_CHANNEL_ACCESS_TOKEN')
+    if (!token) return
+    await fetch('https://api.line.me/v2/bot/message/broadcast', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ messages }),
+      signal: AbortSignal.timeout(15000),
+    })
+  } catch (err) {
+    console.error('[broadcastToAll] 失敗:', err)
+  }
+}
+
+/** 推播給指定用戶清單（Official Bot），自動分批每批 500 人 */
+export async function multicastToUsers(lineUserIds: string[], messages: LineMessage[]): Promise<void> {
+  if (lineUserIds.length === 0) return
+  try {
+    const token = await getLineConfig('OFFICIAL_CHANNEL_ACCESS_TOKEN')
+    if (!token) return
+    const BATCH = 500
+    for (let i = 0; i < lineUserIds.length; i += BATCH) {
+      const batch = lineUserIds.slice(i, i + BATCH)
+      await fetch('https://api.line.me/v2/bot/message/multicast', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ to: batch, messages }),
+        signal: AbortSignal.timeout(15000),
+      }).catch((err) => console.error('[multicastToUsers] batch 失敗:', err))
+    }
+  } catch (err) {
+    console.error('[multicastToUsers] 失敗:', err)
+  }
+}
