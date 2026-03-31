@@ -1,6 +1,6 @@
 # 所有待辦任務（含 New 規格整合版）
 
-> 最後更新：2026-03-30（緊急 bug 修復 + 接線確認 + BUG-F1/F2 完成）
+> 最後更新：2026-03-31（FEAT-9 情感分析接線；api-keys 頁面補完；orders/export 補完）
 > ~~刪除線~~ = 已完成
 > 優先級：🔴 緊急 / 🟡 重要 / 🟢 一般 / ⚪ 未來
 > 規格來源：docs/new/ 目錄下 14 份規格書
@@ -86,9 +86,10 @@
 - `api/cron/weekly-report`：加 AI 摘要
 - 新增 `api/cron/ai-alerts`：NPS 下降/棄卷飆升/負面關鍵字預警
 
-### FEAT-9 開放題情感分析
-- `lib/sentimentAnalysis.ts`：批量情感分析（每 50 筆一批）
-- `insight/page.tsx`：新增「開放題分析」圓餅圖 + 關鍵字標籤雲
+### ~~FEAT-9 開放題情感分析~~ ✅
+- ~~`lib/sentimentAnalysis.ts`：批量情感分析（每 50 筆一批）~~
+- ~~`insight/page.tsx`：新增「開放題分析」圓餅圖 + 關鍵字標籤雲~~
+- 已確認：sentimentAnalysis.ts 存在；insight/page.tsx 已有第三 tab「🔤 開放題分析」+ SentimentDisplay 元件
 
 ---
 

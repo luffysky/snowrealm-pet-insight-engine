@@ -1,6 +1,6 @@
 # 所有待辦任務
 
-> 最後更新：2026-03-31
+> 最後更新：2026-03-31（掃描確認 + FEAT-9 完成）
 > 優先級：🔴 緊急 / 🟡 重要 / 🟢 一般 / ⚪ 未來
 
 ---
@@ -39,32 +39,32 @@
 
 ## 🔴 接線工作（後端做好但前端沒接上）
 
-### WIRE-1 故事報告沒有存 DB
+### ~~WIRE-1 故事報告沒有存 DB~~ ✅
 - `src/app/api/admin/ai-story/route.ts`：return 前加 `INSERT INTO ai_insight_reports`（`report_type = 'story'`）
 - DB：`ALTER TABLE ai_insight_reports ADD COLUMN IF NOT EXISTS report_type TEXT DEFAULT 'data'`
 
-### WIRE-2 洞察報告歷史不區分數據/故事
+### ~~WIRE-2 洞察報告歷史不區分數據/故事~~ ✅
 - `ai-insight GET` 回傳加 `report_type`
 - `insight/page.tsx` 歷史列表加 📊/📖 圖示，點擊切換對應 tab
 - 報告生成成功顯示「✅ 已自動保存」toast
 
-### WIRE-3 故事牆管理頁無 Sidebar 入口
+### ~~WIRE-3 故事牆管理頁無 Sidebar 入口~~ ✅
 - `layout.tsx` + `middleware.ts` 加 `'story-wall'`
 - 新增 `insight-admin/story-wall/page.tsx`（審核/隱藏/置頂/篩選）
 
-### WIRE-4 問卷完成頁缺 Story Card + 分享按鈕
+### ~~WIRE-4 問卷完成頁缺 Story Card + 分享按鈕~~ ✅
 - 新增 `components/public/StoryCard.tsx`
 - 新增 `components/public/ShareButtons.tsx`
 - 修改 `app/(public)/done/DoneClient.tsx`：呼叫 story-card API → 渲染卡片 → 分享按鈕
 - `submit route`：`allow_story_wall` 預設 `false`，由完成頁勾選
 
-### WIRE-5 Rich Menu 設定搬進後台 LINE 設定頁面
+### ~~WIRE-5 Rich Menu 設定搬進後台 LINE 設定頁面~~ ✅
 - `lib/lineConfig.ts`：`LINE_CONFIG_KEYS` 新增 `POST_SURVEY_RICH_MENU_ID` 等 8 個 key
 - `lib/lineNotify.ts`：`switchUserRichMenu()` 改用 `getLineConfig`
 - `line-settings/page.tsx`：新增 Rich Menu / LIFF / LINE Login 區塊
 - `listLineConfigs()`：group 從定義讀取，非 key 前綴判斷
 
-### WIRE-6 洞察報告分享功能（公開連結 + 分享小卡）
+### ~~WIRE-6 洞察報告分享功能（公開連結 + 分享小卡）~~ ✅
 - DB：`ai_insight_reports` 加 `share_slug`、`is_public`、`share_title`、`share_views` 欄位
 - `ai-insight route` 新增 PATCH handler（`share`/`unshare`/`update_title`）
 - 新增 `app/api/report/[slug]/route.ts`（公開 API，不需登入）
@@ -88,19 +88,19 @@
 
 ## 🟡 功能補完
 
-### FEAT-1 Dashboard 頁面整合新指標
+### ~~FEAT-1 Dashboard 頁面整合新指標~~ ✅
 - 確認 `page.tsx` 顯示：平均填答時間、數據品質分數、回覆速度長條圖、棄卷熱點標紅
 - `funnel/page.tsx`：熱點題目標紅（`isHotspot = true`）
 
-### FEAT-2 AI 對話生成問卷確認能寫入 DB
+### ~~FEAT-2 AI 對話生成問卷確認能寫入 DB~~ ✅
 - `AiSurveyChat.tsx` 流程：`parseSurveyJson` → 預覽 → `POST /api/admin/surveys` → 建立題目
 - 目前可能只做到顯示 JSON 預覽，未寫入 DB
 
-### FEAT-3 品牌化 PDF 報告匯出
+### ~~FEAT-3 品牌化 PDF 報告匯出~~ ✅
 - 新增 `api/admin/export-report/route.ts`（用 `@react-pdf/renderer`）
 - `insight/page.tsx` 加「匯出 PDF」按鈕
 
-### FEAT-4 公開故事牆頁面補完
+### ~~FEAT-4 公開故事牆頁面補完~~ ✅
 - 底部 CTA：「💛 看完他們的故事，也來分享你的？」→ 問卷連結
 - 頂部統計：總故事數 + 關鍵字標籤雲
 
@@ -108,7 +108,7 @@
 - `[packId]/stickers/route.ts` 目前仍用 `req.formData()`
 - 需改為 `application/octet-stream` 模式
 
-### FEAT-9 開放題情感分析
+### ~~FEAT-9 開放題情感分析~~ ✅
 - `lib/sentimentAnalysis.ts`：批量情感分析（每 50 筆一批）
 - `insight/page.tsx`：新增「開放題分析」區塊（圓餅圖 + 關鍵字標籤雲）
 
@@ -154,11 +154,11 @@
 
 ## 🟡 P-URGENT 剩餘
 
-### URG-2 服務狀態紅燈（panel 頁面）
+### ~~URG-2 服務狀態紅燈（panel 頁面）~~ ✅
 - `api/admin/system/route.ts` 第 62-98 行
 - 改為呼叫 `getLineConfig()` 而非直接查 DB（自動 fallback DB → ENV）
 
-### URG-5 LINE 設定頁 Token 視覺化
+### ~~URG-5 LINE 設定頁 Token 視覺化~~ ✅
 - 未設定 → 灰色「尚未設定」
 - DB → 綠色標籤（ENV 已有橘色）
 - 連線失敗 → 紅叉 + 錯誤訊息
@@ -260,8 +260,8 @@
 - [x] 來源分析（utm）
 - [x] A/B 比較（ab）
 - [x] AI 洞察報告（insight）
-- [ ] 故事牆管理（story-wall） ← WIRE-3
-- [ ] 客服中心（support） ← 🟢
+- [x] 故事牆管理（story-wall）
+- [x] 客服中心（support）
 - [x] LINE 推播（broadcast）
 - [x] 通知規則（notification-rules）
 - [x] 訊息模板（templates）
@@ -278,5 +278,5 @@
 - [x] 團隊管理（team）
 - [x] 租戶管理（tenants，僅 super_admin）
 - [x] 帳號設定（account）
-- [ ] 問卷模板（survey-templates） ← FEAT-6
-- [ ] 升級方案（upgrade） ← ⚪ 未來
+- [x] 問卷模板（survey-templates）
+- [x] 升級方案（upgrade）

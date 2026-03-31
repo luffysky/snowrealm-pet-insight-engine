@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useAdminSurvey } from '@/components/admin/AdminSurveyContext'
 import type { InsightReport, InsightHighlight, InsightRecommendation } from '@/lib/insightEngine'
 import type { StoryInsightReport } from '@/lib/storyEngine'
+import type { SentimentResult } from '@/lib/sentimentAnalysis'
 import { ShareCardModal } from '@/components/admin/ShareCardModal'
 
 // ===== 型別 =====
@@ -36,7 +37,7 @@ interface ShareModalState {
   createdAt: string
 }
 
-type ActiveTab = 'data' | 'story'
+type ActiveTab = 'data' | 'story' | 'sentiment'
 
 // ===== 數據報告子元件 =====
 
@@ -183,6 +184,80 @@ function StoryReportDisplay({ report }: { report: StoryInsightReport }) {
   )
 }
 
+// ===== 情感分析元件 =====
+
+function SentimentBar({ label, value, color }: { label: string; value: number; color: string }) {
+  return (
+    <div className="space-y-1">
+      <div className="flex justify-between text-sm">
+        <span className="text-[#3d3155]">{label}</span>
+        <span className="font-medium text-[#6b5fa8]">{value}%</span>
+      </div>
+      <div className="h-2 bg-[#b8a9e8]/15 rounded-full overflow-hidden">
+        <div className={`h-full rounded-full ${color}`} style={{ width: `${value}%` }} />
+      </div>
+    </div>
+  )
+}
+
+interface SentimentMeta {
+  analyzedCount: number
+  provider: string
+  model: string
+}
+
+function SentimentDisplay({ result, meta }: { result: SentimentResult; meta: SentimentMeta | null }) {
+  return (
+    <div className="space-y-5">
+      <div className="bg-white/40 backdrop-blur-sm border border-[#b8a9e8]/25 rounded-[20px] p-6 space-y-4">
+        <h2 className="text-base font-semibold text-[#3d3155]">情感分布</h2>
+        <div className="space-y-3">
+          <SentimentBar label="😊 正面" value={result.positive} color="bg-emerald-400" />
+          <SentimentBar label="😐 中性" value={result.neutral} color="bg-amber-400" />
+          <SentimentBar label="😟 負面" value={result.negative} color="bg-red-400" />
+        </div>
+      </div>
+
+      {result.topKeywords.length > 0 && (
+        <div className="bg-white/40 backdrop-blur-sm border border-[#b8a9e8]/25 rounded-[20px] p-6 space-y-4">
+          <h2 className="text-base font-semibold text-[#3d3155]">高頻關鍵字</h2>
+          <div className="flex flex-wrap gap-2">
+            {result.topKeywords.map((kw, i) => (
+              <span key={i} className="px-3 py-1 bg-[#b8a9e8]/15 text-[#6b5fa8] rounded-full text-sm font-medium">
+                {kw}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {(result.samplePositive || result.sampleNegative) && (
+        <div className="bg-white/40 backdrop-blur-sm border border-[#b8a9e8]/25 rounded-[20px] p-6 space-y-3">
+          <h2 className="text-base font-semibold text-[#3d3155]">代表性回覆</h2>
+          {result.samplePositive && (
+            <div className="border-l-4 border-emerald-500/60 bg-emerald-500/5 rounded-r-xl pl-4 py-2 pr-3">
+              <p className="text-xs text-emerald-600 mb-1">😊 正面</p>
+              <p className="text-sm text-[#3d3155]/75 italic">「{result.samplePositive}」</p>
+            </div>
+          )}
+          {result.sampleNegative && (
+            <div className="border-l-4 border-red-500/60 bg-red-500/5 rounded-r-xl pl-4 py-2 pr-3">
+              <p className="text-xs text-red-600 mb-1">😟 負面</p>
+              <p className="text-sm text-[#3d3155]/75 italic">「{result.sampleNegative}」</p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {meta && (
+        <p className="text-xs text-slate-600 text-right">
+          分析 {meta.analyzedCount} 筆開放題回覆・由 {meta.provider}/{meta.model} 分析
+        </p>
+      )}
+    </div>
+  )
+}
+
 // ===== 已儲存 Toast =====
 
 function SavedToast({ visible }: { visible: boolean }) {
@@ -218,6 +293,12 @@ export default function InsightPage() {
   const [storyGenerating, setStoryGenerating] = useState(false)
   const [storyError, setStoryError] = useState('')
   const [currentStoryReportId, setCurrentStoryReportId] = useState<string | null>(null)
+
+  // 情感分析狀態
+  const [sentimentResult, setSentimentResult] = useState<SentimentResult | null>(null)
+  const [sentimentAnalyzing, setSentimentAnalyzing] = useState(false)
+  const [sentimentError, setSentimentError] = useState('')
+  const [sentimentMeta, setSentimentMeta] = useState<SentimentMeta | null>(null)
 
   // Tab 狀態
   const [activeTab, setActiveTab] = useState<ActiveTab>('data')
@@ -262,6 +343,9 @@ export default function InsightPage() {
     setStoryError('')
     setCurrentDataReportId(null)
     setCurrentStoryReportId(null)
+    setSentimentResult(null)
+    setSentimentError('')
+    setSentimentMeta(null)
     fetchHistory()
   }, [fetchHistory])
 
@@ -351,6 +435,46 @@ export default function InsightPage() {
       setStoryError('網路錯誤，請稍後再試')
     } finally {
       setStoryGenerating(false)
+    }
+  }
+
+  // ===== 情感分析 =====
+
+  async function handleAnalyzeSentiment() {
+    if (!selectedSurveyId || sentimentAnalyzing) return
+    setSentimentAnalyzing(true)
+    setSentimentError('')
+
+    try {
+      const res = await fetch('/api/admin/ai-sentiment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ surveyId: selectedSurveyId }),
+      })
+
+      const data = await res.json() as SentimentResult & {
+        meta?: SentimentMeta
+        error?: string
+      }
+
+      if (!res.ok) {
+        setSentimentError(data.error ?? '情感分析失敗')
+        return
+      }
+
+      setSentimentResult({
+        positive: data.positive,
+        negative: data.negative,
+        neutral: data.neutral,
+        topKeywords: data.topKeywords,
+        samplePositive: data.samplePositive,
+        sampleNegative: data.sampleNegative,
+      })
+      if (data.meta) setSentimentMeta(data.meta)
+    } catch {
+      setSentimentError('網路錯誤，請稍後再試')
+    } finally {
+      setSentimentAnalyzing(false)
     }
   }
 
@@ -549,6 +673,16 @@ export default function InsightPage() {
               </button>
             </>
           )}
+          {activeTab === 'sentiment' && (
+            <button
+              type="button"
+              onClick={handleAnalyzeSentiment}
+              disabled={sentimentAnalyzing}
+              className="px-5 py-2.5 bg-gradient-to-r from-teal-400 to-cyan-400 hover:opacity-90 disabled:opacity-50 text-white rounded-xl text-sm font-medium transition-all cursor-pointer"
+            >
+              {sentimentAnalyzing ? '🔍 分析中...' : sentimentResult ? '🔄 重新分析' : '🔤 分析開放題'}
+            </button>
+          )}
         </div>
       </div>
 
@@ -575,6 +709,17 @@ export default function InsightPage() {
           }`}
         >
           📖 故事模式
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab('sentiment')}
+          className={`px-4 py-2 rounded-lg text-sm font-medium transition-all cursor-pointer ${
+            activeTab === 'sentiment'
+              ? 'bg-teal-500/20 text-teal-700 shadow'
+              : 'text-[#8a7ca8] hover:text-[#3d3155]'
+          }`}
+        >
+          🔤 開放題分析
         </button>
       </div>
 
@@ -711,6 +856,35 @@ export default function InsightPage() {
             onExport={(id) => handleExportReport(id)}
             onDelete={handleDeleteReport}
           />
+        </div>
+      )}
+
+      {/* ===== 開放題分析 Tab ===== */}
+      {activeTab === 'sentiment' && (
+        <div className="space-y-4 sm:space-y-6">
+          {sentimentError && (
+            <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 text-sm text-red-400">
+              {sentimentError}
+            </div>
+          )}
+
+          {sentimentAnalyzing && (
+            <div className="space-y-4 animate-pulse">
+              {[...Array(2)].map((_, i) => (
+                <div key={i} className="bg-white/40 backdrop-blur-sm border border-[#b8a9e8]/20 rounded-[20px] h-32" />
+              ))}
+            </div>
+          )}
+
+          {!sentimentAnalyzing && !sentimentResult && !sentimentError && (
+            <div className="bg-white/40 backdrop-blur-sm border border-[#b8a9e8]/25 rounded-[20px] p-12 text-center space-y-4">
+              <p className="text-5xl">🔤</p>
+              <p className="text-lg text-[#3d3155]">點擊「分析開放題」開始分析</p>
+              <p className="text-sm text-[#8a7ca8]">AI 將分析所有開放題回覆的情感傾向與高頻關鍵字</p>
+            </div>
+          )}
+
+          {sentimentResult && <SentimentDisplay result={sentimentResult} meta={sentimentMeta} />}
         </div>
       )}
     </div>
