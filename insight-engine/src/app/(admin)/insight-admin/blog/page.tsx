@@ -195,27 +195,31 @@ export default function BlogManagePage() {
         ) : (
           <div className="space-y-3">
             {articles.map(article => (
-              <div key={article.id} className="flex gap-4 p-4 bg-white/[0.03] hover:bg-white/[0.05] border border-white/8 rounded-[20px] transition-all group">
-                {article.cover_image && (
-                  <img src={article.cover_image} alt="" className="w-20 h-14 object-cover rounded-xl shrink-0" />
-                )}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-start gap-2 flex-wrap">
-                    <h3 className="text-sm font-semibold text-[#3d3155]/90 flex-1 truncate">{article.title}</h3>
-                    <span className={`shrink-0 text-[10px] px-2 py-0.5 rounded-full font-medium ${
-                      article.is_public ? 'bg-emerald-500/15 text-emerald-400' : 'bg-white/8 text-[#8a7ca8]'
-                    }`}>
-                      {article.is_public ? '公開' : '私人'}
-                    </span>
-                  </div>
-                  {article.summary && <p className="text-xs text-[#6b5fa8] truncate mt-0.5">{article.summary}</p>}
-                  <div className="flex items-center gap-3 mt-2 text-[11px] text-[#6b5fa8]">
-                    <span>/{article.slug}</span>
-                    <span>👁 {article.view_count}</span>
-                    <span>{new Date(article.published_at).toLocaleDateString('zh-TW')}</span>
+              <div key={article.id} className="flex flex-col sm:flex-row gap-3 p-4 bg-white/[0.03] hover:bg-white/[0.05] border border-white/8 rounded-[20px] transition-all">
+                {/* Top row: image + info */}
+                <div className="flex gap-3 flex-1 min-w-0">
+                  {article.cover_image && (
+                    <img src={article.cover_image} alt="" className="w-16 h-12 sm:w-20 sm:h-14 object-cover rounded-xl shrink-0" />
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start gap-2">
+                      <h3 className="text-sm font-semibold text-[#3d3155]/90 flex-1 truncate">{article.title}</h3>
+                      <span className={`shrink-0 text-[10px] px-2 py-0.5 rounded-full font-medium ${
+                        article.is_public ? 'bg-emerald-500/15 text-emerald-400' : 'bg-white/8 text-[#8a7ca8]'
+                      }`}>
+                        {article.is_public ? '公開' : '私人'}
+                      </span>
+                    </div>
+                    {article.summary && <p className="text-xs text-[#6b5fa8] truncate mt-0.5">{article.summary}</p>}
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1.5 text-[11px] text-[#6b5fa8]">
+                      <span className="truncate max-w-[140px]">/{article.slug}</span>
+                      <span>👁 {article.view_count}</span>
+                      <span>{new Date(article.published_at).toLocaleDateString('zh-TW')}</span>
+                    </div>
                   </div>
                 </div>
-                <div className="flex items-center gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                {/* Action buttons — always visible on mobile */}
+                <div className="flex items-center gap-1 shrink-0 self-end sm:self-center">
                   <button
                     onClick={() => togglePublic(article)}
                     title={article.is_public ? '設為私人' : '設為公開'}

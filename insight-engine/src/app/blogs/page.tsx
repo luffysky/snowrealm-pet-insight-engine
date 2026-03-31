@@ -94,6 +94,31 @@ export default async function BlogsPage() {
             ))}
           </div>
         )}
+
+        {/* CTA */}
+        <div className="mt-14">
+          <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-amber-500/[0.07] via-violet-500/[0.05] to-slate-900 px-6 py-8 sm:px-10 sm:py-10 text-center">
+            <div className="absolute -top-10 -left-10 w-40 h-40 bg-amber-400/10 rounded-full blur-3xl pointer-events-none" />
+            <div className="absolute -bottom-10 -right-10 w-40 h-40 bg-violet-500/10 rounded-full blur-3xl pointer-events-none" />
+            <div className="relative">
+              <div className="text-3xl mb-3">✍️</div>
+              <h2 className="text-lg sm:text-xl font-bold text-white mb-2">開始你自己的部落格</h2>
+              <p className="text-sm text-white/50 leading-relaxed max-w-md mx-auto mb-6">
+                加入 SnowRealm，擁有屬於你的寫作空間。<br />
+                AI 輔助寫作、系列文章、讀者互動，一鍵開啟。
+              </p>
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+                <Link
+                  href="/register"
+                  className="inline-flex items-center gap-2 px-6 py-2.5 bg-amber-500/90 hover:bg-amber-500 text-black font-semibold text-sm rounded-2xl transition-colors"
+                >
+                  免費開始寫作 →
+                </Link>
+              </div>
+              <p className="text-[11px] text-white/25 mt-4">免費方案即可開始，不需信用卡</p>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   )
