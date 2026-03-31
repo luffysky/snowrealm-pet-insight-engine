@@ -104,7 +104,7 @@ function buildFlexMessage(card: FlexCard) {
  * 推播給所有管理員（Insight Bot）
  * 統一使用 line.ts 的 pushLineMessage，確保 ENV+DB 管理員 ID 去重一致
  */
-function pushToAdmin(message: Record<string, unknown>): void {
+function pushToAdmin(message: { type: string } & Record<string, unknown>): void {
   pushLineMessage([message]).catch((err) => {
     console.error('[lineNotify pushToAdmin] 失敗:', err)
   })

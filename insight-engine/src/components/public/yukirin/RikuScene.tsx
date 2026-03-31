@@ -5,7 +5,7 @@ import * as THREE from 'three'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import { VRMLoaderPlugin, VRM, VRMUtils } from '@pixiv/three-vrm'
 import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader.js'
-import type { VRMHumanBoneName } from '@pixiv/three-vrm'
+import { retargetMixamoAnimation } from '@/lib/vrm/loadMixamoAnimation'
 
 export type RikuMood = 'neutral' | 'relaxed' | 'thinking' | 'happy' | 'shy' | 'sad' | 'surprised'
 
@@ -148,55 +148,6 @@ const MOOD_EXPRESSION: Record<RikuMood, string> = {
   surprised: 'surprised',
 }
 
-// ── Mixamo → VRM 骨骼名稱映射 ──────────────────────────────────────────────
-const MIXAMO_TO_VRM: Record<string, string> = {
-  mixamorigHips:          'hips',
-  mixamorigSpine:         'spine',
-  mixamorigSpine1:        'chest',
-  mixamorigSpine2:        'upperChest',
-  mixamorigNeck:          'neck',
-  mixamorigHead:          'head',
-  mixamorigLeftShoulder:  'leftShoulder',
-  mixamorigLeftArm:       'leftUpperArm',
-  mixamorigLeftForeArm:   'leftLowerArm',
-  mixamorigLeftHand:      'leftHand',
-  mixamorigRightShoulder: 'rightShoulder',
-  mixamorigRightArm:      'rightUpperArm',
-  mixamorigRightForeArm:  'rightLowerArm',
-  mixamorigRightHand:     'rightHand',
-  mixamorigLeftUpLeg:     'leftUpperLeg',
-  mixamorigLeftLeg:       'leftLowerLeg',
-  mixamorigLeftFoot:      'leftFoot',
-  mixamorigLeftToeBase:   'leftToes',
-  mixamorigRightUpLeg:    'rightUpperLeg',
-  mixamorigRightLeg:      'rightLowerLeg',
-  mixamorigRightFoot:     'rightFoot',
-  mixamorigRightToeBase:  'rightToes',
-}
-
-/** 把 Mixamo FBX 動畫的骨骼名稱重新對應到 VRM 骨骼節點名稱 */
-function retargetMixamoClip(clip: THREE.AnimationClip, vrm: VRM): THREE.AnimationClip {
-  const boneMap: Record<string, string> = {}
-  for (const [mixamoName, vrmBoneName] of Object.entries(MIXAMO_TO_VRM)) {
-    const node = vrm.humanoid.getNormalizedBoneNode(vrmBoneName as VRMHumanBoneName)
-    if (node) boneMap[mixamoName] = node.name
-  }
-
-  const tracks: THREE.KeyframeTrack[] = []
-  for (const track of clip.tracks) {
-    const dotIdx = track.name.lastIndexOf('.')
-    if (dotIdx === -1) continue
-    const boneName = track.name.slice(0, dotIdx)
-    const property = track.name.slice(dotIdx + 1)
-    if (property !== 'quaternion') continue   // 只用旋轉，避免位移飄移
-    const vrmNodeName = boneMap[boneName]
-    if (!vrmNodeName) continue
-    const newTrack = track.clone()
-    newTrack.name = `${vrmNodeName}.${property}`
-    tracks.push(newTrack)
-  }
-  return new THREE.AnimationClip(clip.name, clip.duration, tracks)
-}
 
 export default function RikuScene({
   cameraMode = 'fullBody',
@@ -594,7 +545,7 @@ export default function RikuScene({
           fbxLoader.loadAsync(path)
             .then(fbx => {
               if (fbx.animations.length > 0) {
-                fbxClipsRef.current[name] = retargetMixamoClip(fbx.animations[0], vrm)
+                fbxClipsRef.current[name] = retargetMixamoAnimation(fbx, vrm)
               }
             })
             .catch(() => { /* 載入失敗跳過 */ })
