@@ -77,6 +77,15 @@
   --sc-send-hover:   rgba(245,158,11,0.22);
 }
 
+/* ── Landing Page 文字色票（WCAG AA，統一管理）──
+   修改顏色只需改這裡，page.tsx 用 text-[var(--lp-*)] 引用 */
+.home-page {
+  --lp-h:      #3d3155;  /* 標題、強調文字（≥12:1 on white）*/
+  --lp-accent: #5a4d94;  /* 連結、標籤、icon（≥7:1 on white）*/
+  --lp-body:   #5f5380;  /* 內文、說明文字（≥6.5:1 on white）*/
+  --lp-muted:  #7a6da0;  /* footer、次要說明（≥4.5:1 on white）*/
+}
+
 /* 平台禮遇徽章 */
 .badge-partner {
   background-color: var(--badge-partner-bg);

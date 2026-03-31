@@ -76,7 +76,7 @@ function TypewriterText() {
 
 function LavenderBadge({ children }: { children: React.ReactNode }) {
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-full border border-[#b8a9e8]/40 bg-[#b8a9e8]/15 px-3 py-1 text-xs font-medium text-[#6b5fa8]">
+    <span className="inline-flex items-center gap-1.5 rounded-full border border-[#b8a9e8]/40 bg-[#b8a9e8]/15 px-3 py-1 text-xs font-medium text-[var(--lp-accent)]">
       <Sparkles className="h-3 w-3" />
       {children}
     </span>
@@ -132,11 +132,11 @@ export default function HomePage() {
       <header className="relative z-20 mx-auto flex w-full max-w-7xl items-center justify-between px-5 py-5 md:px-8 lg:px-10">
         <div className="flex items-center gap-3">
           <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-[#b8a9e8]/40 bg-[#b8a9e8]/15 shadow-[0_8px_20px_rgba(184,169,232,0.2)]">
-            <Brain className="h-5 w-5 text-[#6b5fa8]" />
+            <Brain className="h-5 w-5 text-[var(--lp-accent)]" />
           </div>
           <div>
-            <p className="text-sm font-semibold tracking-[0.2em] text-[#6b5fa8]">SNOWREALM INSIGHT</p>
-            <p className="text-xs text-[#8a7ca8]">AI 智慧問卷平台</p>
+            <p className="text-sm font-semibold tracking-[0.2em] text-[var(--lp-accent)]">SNOWREALM INSIGHT</p>
+            <p className="text-xs text-[var(--lp-body)]">AI 智慧問卷平台</p>
           </div>
         </div>
         <HomeNav />
@@ -158,19 +158,19 @@ export default function HomePage() {
               <LavenderBadge>Story Card</LavenderBadge>
             </div>
 
-            <h1 className="mt-5 max-w-2xl text-3xl font-black leading-tight tracking-tight text-[#3d3155] sm:text-4xl md:text-5xl md:leading-[1.1]">
+            <h1 className="mt-5 max-w-2xl text-3xl font-black leading-tight tracking-tight text-[var(--lp-h)] sm:text-4xl md:text-5xl md:leading-[1.1]">
               有些問題，
               <span className="block bg-gradient-to-r from-[#b8a9e8] via-[#d4a8d8] to-[#f5b8b5] bg-clip-text text-transparent">
                 你可能從沒問過自己。
               </span>
             </h1>
 
-            <p className="mt-5 max-w-xl text-base leading-7 text-[#8a7ca8] md:text-lg">
+            <p className="mt-5 max-w-xl text-base leading-7 text-[var(--lp-body)] md:text-lg">
               填一填，說不定會看見一個陌生又熟悉的自己。
               每份問卷最後會給你一張專屬的故事卡片，可以收藏，也可以傳給懂你的人。
             </p>
 
-            <div className="mt-4 inline-flex items-center rounded-full border border-[#b8a9e8]/30 bg-[#b8a9e8]/10 px-4 py-2 text-sm text-[#8a7ca8]">
+            <div className="mt-4 inline-flex items-center rounded-full border border-[#b8a9e8]/30 bg-[#b8a9e8]/10 px-4 py-2 text-sm text-[var(--lp-body)]">
               <MessageCircleHeart className="mr-2 h-4 w-4 text-[#f5b8b5]" />
               <TypewriterText />
             </div>
@@ -185,7 +185,7 @@ export default function HomePage() {
               </Link>
               <Link
                 href="/register"
-                className="inline-flex items-center justify-center gap-2 rounded-full border border-[#b8a9e8]/40 bg-[#b8a9e8]/12 px-6 py-4 text-base font-medium text-[#6b5fa8] backdrop-blur-xl transition hover:bg-[#b8a9e8]/20"
+                className="inline-flex items-center justify-center gap-2 rounded-full border border-[#b8a9e8]/40 bg-[#b8a9e8]/12 px-6 py-4 text-base font-medium text-[var(--lp-accent)] backdrop-blur-xl transition hover:bg-[#b8a9e8]/20"
               >
                 免費建立問卷
                 <Sparkles className="h-4 w-4 text-[#b8a9e8]" />
@@ -202,8 +202,8 @@ export default function HomePage() {
                   key={item.label}
                   className="rounded-2xl border border-[#b8a9e8]/25 bg-white/40 px-3 py-4 shadow-[0_4px_16px_rgba(184,169,232,0.12)] backdrop-blur-xl"
                 >
-                  <div className="text-lg font-black text-[#3d3155]">{item.value}</div>
-                  <div className="mt-0.5 text-xs text-[#8a7ca8]">{item.label}</div>
+                  <div className="text-lg font-black text-[var(--lp-h)]">{item.value}</div>
+                  <div className="mt-0.5 text-xs text-[var(--lp-body)]">{item.label}</div>
                 </div>
               ))}
             </div>
@@ -234,9 +234,9 @@ export default function HomePage() {
               <div className="pointer-events-none absolute bottom-4 left-4 right-4 rounded-[24px] border border-white/40 bg-white/35 p-4 shadow-[0_8px_32px_rgba(184,169,232,0.2)] backdrop-blur-2xl">
                 <div className="flex items-start justify-between gap-4">
                   <div>
-                    <p className="text-xs font-semibold tracking-[0.2em] text-[#6b5fa8]">你的故事卡片</p>
-                    <h3 className="mt-1.5 text-base font-bold text-[#3d3155] md:text-lg">你最被低估的，是觀察力</h3>
-                    <p className="mt-1 text-sm leading-5 text-[#8a7ca8]">
+                    <p className="text-xs font-semibold tracking-[0.2em] text-[var(--lp-accent)]">你的故事卡片</p>
+                    <h3 className="mt-1.5 text-base font-bold text-[var(--lp-h)] md:text-lg">你最被低估的，是觀察力</h3>
+                    <p className="mt-1 text-sm leading-5 text-[var(--lp-body)]">
                       你早就看懂很多事了，只是習慣不說。
                     </p>
                   </div>
@@ -253,10 +253,10 @@ export default function HomePage() {
         <section className="mt-14 md:mt-18">
           <div className="mb-5 flex items-end justify-between gap-3">
             <div>
-              <p className="text-xs font-semibold tracking-[0.18em] text-[#6b5fa8]">最近大家在問自己的幾件事</p>
-              <h2 className="mt-1.5 text-xl font-black text-[#3d3155] sm:text-2xl md:text-3xl">你想先從哪一個開始？</h2>
+              <p className="text-xs font-semibold tracking-[0.18em] text-[var(--lp-accent)]">最近大家在問自己的幾件事</p>
+              <h2 className="mt-1.5 text-xl font-black text-[var(--lp-h)] sm:text-2xl md:text-3xl">你想先從哪一個開始？</h2>
             </div>
-            <Link href="/explore" className="hidden rounded-full border border-[#b8a9e8]/30 bg-[#b8a9e8]/10 px-4 py-2 text-sm text-[#6b5fa8] transition hover:bg-[#b8a9e8]/20 md:block">
+            <Link href="/explore" className="hidden rounded-full border border-[#b8a9e8]/30 bg-[#b8a9e8]/10 px-4 py-2 text-sm text-[var(--lp-accent)] transition hover:bg-[#b8a9e8]/20 md:block">
               看更多
             </Link>
           </div>
@@ -273,13 +273,13 @@ export default function HomePage() {
               >
                 <div className="flex items-center justify-between">
                   <span className="text-2xl">{card.emoji}</span>
-                  <span className="inline-flex rounded-full border border-[#b8a9e8]/40 bg-white/50 px-2.5 py-0.5 text-xs font-semibold text-[#6b5fa8]">
+                  <span className="inline-flex rounded-full border border-[#b8a9e8]/40 bg-white/50 px-2.5 py-0.5 text-xs font-semibold text-[var(--lp-accent)]">
                     {card.badge}
                   </span>
                 </div>
-                <h3 className="mt-4 text-base font-bold leading-snug text-[#3d3155] md:text-lg">{card.title}</h3>
-                <p className="mt-2 text-sm leading-6 text-[#8a7ca8]">{card.subtitle}</p>
-                <Link href={card.href} className="mt-5 inline-flex items-center gap-1.5 text-sm font-semibold text-[#6b5fa8] transition group-hover:gap-2.5">
+                <h3 className="mt-4 text-base font-bold leading-snug text-[var(--lp-h)] md:text-lg">{card.title}</h3>
+                <p className="mt-2 text-sm leading-6 text-[var(--lp-body)]">{card.subtitle}</p>
+                <Link href={card.href} className="mt-5 inline-flex items-center gap-1.5 text-sm font-semibold text-[var(--lp-accent)] transition group-hover:gap-2.5">
                   去填填看
                   <ChevronRight className="h-4 w-4" />
                 </Link>
@@ -292,17 +292,17 @@ export default function HomePage() {
         <section className="mt-12 grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
           {/* 故事牆 */}
           <div className="rounded-[28px] border border-[#b8a9e8]/25 bg-white/25 p-6 shadow-[0_8px_32px_rgba(184,169,232,0.1)] backdrop-blur-xl">
-            <p className="text-xs font-semibold tracking-[0.18em] text-[#6b5fa8]">填完之後，他們這樣說</p>
-            <h2 className="mt-2 text-xl font-black text-[#3d3155] md:text-2xl">有些答案，填完才知道</h2>
+            <p className="text-xs font-semibold tracking-[0.18em] text-[var(--lp-accent)]">填完之後，他們這樣說</p>
+            <h2 className="mt-2 text-xl font-black text-[var(--lp-h)] md:text-2xl">有些答案，填完才知道</h2>
             <div className="mt-5 space-y-3">
               {storyWall.map((item) => (
                 <div key={item.quote} className="rounded-[20px] border border-[#b8a9e8]/20 bg-white/35 p-4">
-                  <p className="text-sm font-bold text-[#3d3155] md:text-base leading-snug">{item.quote}</p>
-                  <p className="mt-2 text-xs leading-5 text-[#8a7ca8] md:text-sm">{item.desc}</p>
+                  <p className="text-sm font-bold text-[var(--lp-h)] md:text-base leading-snug">{item.quote}</p>
+                  <p className="mt-2 text-xs leading-5 text-[var(--lp-body)] md:text-sm">{item.desc}</p>
                 </div>
               ))}
             </div>
-            <Link href="/explore" className="mt-5 inline-flex items-center gap-1.5 text-sm font-semibold text-[#6b5fa8] transition hover:gap-2.5">
+            <Link href="/explore" className="mt-5 inline-flex items-center gap-1.5 text-sm font-semibold text-[var(--lp-accent)] transition hover:gap-2.5">
               看更多故事牆
               <ChevronRight className="h-4 w-4" />
             </Link>
@@ -310,20 +310,20 @@ export default function HomePage() {
 
           {/* Story Card CTA */}
           <div className="rounded-[28px] border border-[#f5b8b5]/30 bg-gradient-to-br from-[#ffeef5]/60 to-[#eee8ff]/60 p-6 shadow-[0_8px_32px_rgba(245,184,181,0.12)] backdrop-blur-xl">
-            <p className="text-xs font-semibold tracking-[0.18em] text-[#6b5fa8]">每一份問卷，都會給你一張卡片</p>
-            <h2 className="mt-2 text-xl font-black text-[#3d3155] md:text-2xl">不只是測驗，是你的一小片故事</h2>
-            <p className="mt-4 text-sm leading-7 text-[#8a7ca8]">
+            <p className="text-xs font-semibold tracking-[0.18em] text-[var(--lp-accent)]">每一份問卷，都會給你一張卡片</p>
+            <h2 className="mt-2 text-xl font-black text-[var(--lp-h)] md:text-2xl">不只是測驗，是你的一小片故事</h2>
+            <p className="mt-4 text-sm leading-7 text-[var(--lp-body)]">
               填完之後，我們會用你的回答生成一張專屬的故事卡片。
               不是評分，不是排名，是一個只屬於你的小畫面。
             </p>
             <div className="mt-5 rounded-[18px] border border-[#b8a9e8]/25 bg-white/40 p-4">
-              <div className="flex items-center gap-3 text-[#3d3155]">
+              <div className="flex items-center gap-3 text-[var(--lp-h)]">
                 <div className="rounded-xl bg-[#b8a9e8]/20 p-2">
-                  <Brain className="h-4 w-4 text-[#6b5fa8]" />
+                  <Brain className="h-4 w-4 text-[var(--lp-accent)]" />
                 </div>
                 <div>
                   <p className="text-sm font-bold">你的答案，只有你知道</p>
-                  <p className="text-xs text-[#8a7ca8]">所有回答只用來生成你的故事，不做其他用途。</p>
+                  <p className="text-xs text-[var(--lp-body)]">所有回答只用來生成你的故事，不做其他用途。</p>
                 </div>
               </div>
             </div>
@@ -343,18 +343,18 @@ export default function HomePage() {
         <div className="mx-auto max-w-7xl px-5 py-8 md:px-8 lg:px-10">
           <div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
             <div className="flex items-center gap-2">
-              <Brain className="h-4 w-4 text-[#6b5fa8]" />
-              <span className="text-sm font-semibold tracking-wide text-[#6b5fa8]">SNOWREALM INSIGHT</span>
+              <Brain className="h-4 w-4 text-[var(--lp-accent)]" />
+              <span className="text-sm font-semibold tracking-wide text-[var(--lp-accent)]">SNOWREALM INSIGHT</span>
             </div>
-            <div className="flex flex-wrap justify-center gap-x-6 gap-y-2 text-xs text-[#8a7ca8]">
-              <Link href="/explore" className="hover:text-[#3d3155] transition-colors">探索問卷</Link>
-              <Link href="/pricing" className="hover:text-[#3d3155] transition-colors">定價方案</Link>
-              <Link href="/privacy" className="hover:text-[#3d3155] transition-colors">隱私權政策</Link>
-              <Link href="/terms" className="hover:text-[#3d3155] transition-colors">使用條款</Link>
-              <Link href="/login" className="hover:text-[#3d3155] transition-colors">登入</Link>
-              <Link href="/register" className="hover:text-[#3d3155] transition-colors">免費註冊</Link>
+            <div className="flex flex-wrap justify-center gap-x-6 gap-y-2 text-xs text-[var(--lp-body)]">
+              <Link href="/explore" className="hover:text-[var(--lp-h)] transition-colors">探索問卷</Link>
+              <Link href="/pricing" className="hover:text-[var(--lp-h)] transition-colors">定價方案</Link>
+              <Link href="/privacy" className="hover:text-[var(--lp-h)] transition-colors">隱私權政策</Link>
+              <Link href="/terms" className="hover:text-[var(--lp-h)] transition-colors">使用條款</Link>
+              <Link href="/login" className="hover:text-[var(--lp-h)] transition-colors">登入</Link>
+              <Link href="/register" className="hover:text-[var(--lp-h)] transition-colors">免費註冊</Link>
             </div>
-            <p className="text-xs text-[#b5a8d0]">© 2026 SnowRealm. All rights reserved.</p>
+            <p className="text-xs text-[var(--lp-muted)]">© 2026 SnowRealm. All rights reserved.</p>
           </div>
         </div>
       </footer>
