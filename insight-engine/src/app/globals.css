@@ -2942,3 +2942,25 @@ button:hover .option-emoji-bounce {
 .scrollbar-none::-webkit-scrollbar {
   display: none;
 }
+
+/* ── Blog article: heading anchor links (BLOG-5) ── */
+.heading-anchor {
+  opacity: 0;
+  margin-left: 0.4em;
+  color: #f59e0b;
+  text-decoration: none;
+  font-size: 0.8em;
+  transition: opacity 0.15s;
+}
+h2:hover .heading-anchor,
+h3:hover .heading-anchor {
+  opacity: 0.6;
+}
+h2:hover .heading-anchor:hover,
+h3:hover .heading-anchor:hover {
+  opacity: 1;
+}
+
+/* ── Blog article: font size adjustment (BLOG-17) ── */
+.blog-font-small  .blog-content { font-size: 0.875rem; }
+.blog-font-large  .blog-content { font-size: 1.0625rem; }

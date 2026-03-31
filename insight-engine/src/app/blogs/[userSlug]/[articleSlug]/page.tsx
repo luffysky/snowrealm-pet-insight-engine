@@ -2,7 +2,17 @@ import { Metadata } from 'next'
 import Link from 'next/link'
 import Image from 'next/image'
 import { notFound } from 'next/navigation'
-import { ReadingProgress, ArticleReactions, ArticleComments, ArticleThemeToggle } from './ArticleClient'
+import {
+  ReadingProgress,
+  ArticleReactions,
+  ArticleComments,
+  ArticleThemeToggle,
+  TableOfContents,
+  AuthorCard,
+  RelatedArticles,
+  FontSizeToggle,
+  type Heading,
+} from './ArticleClient'
 import ShareArticleButton from './ShareArticleButton'
 
 interface ArticleNav { title: string; slug: string }
@@ -76,6 +86,34 @@ function estimateReadTime(content: string): number {
   return Math.max(1, Math.round(words / 400))
 }
 
+// BLOG-5: Process headings — inject id attrs and anchor links
+function processHeadings(html: string): { processedHtml: string; headings: Heading[] } {
+  const headings: Heading[] = []
+  const idCounts: Record<string, number> = {}
+
+  const processed = html.replace(/<(h[23])([^>]*)>([\s\S]*?)<\/h[23]>/g, (match, tag, attrs, inner) => {
+    const level = parseInt(tag[1], 10) as 2 | 3
+    const text = inner.replace(/<[^>]*>/g, '').trim()
+    const baseId = text
+      .toLowerCase()
+      .replace(/[^\w\u4e00-\u9fff\s-]/g, '')
+      .replace(/\s+/g, '-')
+      .slice(0, 60)
+
+    // Deduplicate ids in case same heading text appears more than once
+    const count = idCounts[baseId] ?? 0
+    idCounts[baseId] = count + 1
+    const id = count === 0 ? baseId : `${baseId}-${count}`
+
+    headings.push({ id, text, level })
+
+    const anchorLink = `<a href="#${id}" class="heading-anchor" aria-label="直接連結">#</a>`
+    return `<${tag}${attrs} id="${id}">${inner}${anchorLink}</${tag}>`
+  })
+
+  return { processedHtml: processed, headings }
+}
+
 export default async function ArticlePage({
   params,
 }: {
@@ -90,6 +128,9 @@ export default async function ArticlePage({
   const readTime = estimateReadTime(article.content)
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? 'https://insight.snowrealm.pet'
   const shareUrl = `${baseUrl}/blogs/${backSlug}/${articleSlug}`
+
+  // BLOG-5: pre-process headings server-side
+  const { processedHtml, headings } = processHeadings(article.content)
 
   return (
     <div className="min-h-screen bg-slate-950 text-white" style={{ paddingBottom: 'var(--bnav-h, 76px)' }}>
@@ -113,7 +154,7 @@ export default async function ArticlePage({
 
       <div className="max-w-2xl mx-auto px-5 sm:px-6">
 
-        {/* Breadcrumbs + theme toggle */}
+        {/* Breadcrumbs + theme toggle + font size toggle */}
         <nav className={`flex items-center gap-1.5 text-xs text-white/30 ${article.cover_image ? '-mt-6 relative z-10' : 'pt-10'}`}>
           <Link href="/blogs" className="hover:text-white/60 transition-colors">部落格</Link>
           <span>/</span>
@@ -122,7 +163,8 @@ export default async function ArticlePage({
           </Link>
           <span>/</span>
           <span className="text-white/50 truncate max-w-[160px]">{article.title}</span>
-          <span className="ml-auto">
+          <span className="ml-auto flex items-center gap-1.5">
+            <FontSizeToggle />
             <ArticleThemeToggle />
           </span>
         </nav>
@@ -182,6 +224,11 @@ export default async function ArticlePage({
           </div>
         </header>
 
+        {/* BLOG-1: Table of Contents (shown only if >= 3 headings) */}
+        {headings.length >= 3 && (
+          <TableOfContents headings={headings} />
+        )}
+
         {/* Article content */}
         <article
           className="blog-content prose prose-invert max-w-none
@@ -199,7 +246,7 @@ export default async function ArticlePage({
             prose-h1:text-2xl prose-h1:mt-10 prose-h1:mb-4
             prose-h2:text-xl prose-h2:mt-8 prose-h2:mb-3
             prose-h3:text-lg prose-h3:mt-6 prose-h3:mb-2"
-          dangerouslySetInnerHTML={{ __html: article.content }}
+          dangerouslySetInnerHTML={{ __html: processedHtml }}
         />
 
         {/* Series navigation */}
@@ -250,8 +297,18 @@ export default async function ArticlePage({
           </div>
         )}
 
+        {/* BLOG-3: Author Card */}
+        <div className="mt-12 pt-8 border-t border-white/[0.07]">
+          <AuthorCard
+            userSlug={userSlug}
+            authorName={article.author_name ?? userSlug}
+            authorAvatar={article.author_avatar}
+            blogSlug={backSlug}
+          />
+        </div>
+
         {/* Reactions + Share */}
-        <div className="mt-12 pt-8 border-t border-white/[0.07] space-y-5">
+        <div className="mt-8 pt-8 border-t border-white/[0.07] space-y-5">
           <div className="flex flex-col sm:flex-row sm:items-center gap-4 justify-between">
             <div>
               <p className="text-xs text-white/30 mb-3">覺得這篇文章如何？</p>
@@ -265,6 +322,14 @@ export default async function ArticlePage({
             />
           </div>
         </div>
+
+        {/* BLOG-4: Related Articles */}
+        <RelatedArticles
+          userSlug={userSlug}
+          articleSlug={articleSlug}
+          tags={article.tags}
+          blogSlug={backSlug}
+        />
 
         {/* Prev / Next navigation */}
         {(prev || next) && (
