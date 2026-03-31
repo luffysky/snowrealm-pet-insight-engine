@@ -75,6 +75,46 @@ export const LINE_CONFIG_KEYS = {
     group: 'login' as const,
     description: '例：https://insight.snowrealm.pet/api/auth/line/callback',
   },
+  // === 毛行天下-足跡站（私人，只有管理員）===
+  MAOXING_CHANNEL_ACCESS_TOKEN: {
+    envKey: 'LINE_MAOXING_CHANNEL_ACCESS_TOKEN',
+    secret: true,
+    label: 'Channel Access Token',
+    group: 'maoxing' as const,
+    description: '毛行天下足跡站 Bot — 問卷回報專用',
+  },
+  MAOXING_CHANNEL_SECRET: {
+    envKey: 'LINE_MAOXING_CHANNEL_SECRET',
+    secret: true,
+    label: 'Channel Secret',
+    group: 'maoxing' as const,
+  },
+  MAOXING_CHANNEL_ID: {
+    envKey: 'LINE_MAOXING_CHANNEL_ID',
+    secret: false,
+    label: 'Channel ID',
+    group: 'maoxing' as const,
+  },
+  // === Insight Engine 對外帳號（B2B，租戶管理員）===
+  INSIGHT_EXT_CHANNEL_ACCESS_TOKEN: {
+    envKey: 'LINE_INSIGHT_EXT_CHANNEL_ACCESS_TOKEN',
+    secret: true,
+    label: 'Channel Access Token',
+    group: 'insight_ext' as const,
+    description: 'Insight Engine 對外 Bot — 租戶管理員頻道',
+  },
+  INSIGHT_EXT_CHANNEL_SECRET: {
+    envKey: 'LINE_INSIGHT_EXT_CHANNEL_SECRET',
+    secret: true,
+    label: 'Channel Secret',
+    group: 'insight_ext' as const,
+  },
+  INSIGHT_EXT_CHANNEL_ID: {
+    envKey: 'LINE_INSIGHT_EXT_CHANNEL_ID',
+    secret: false,
+    label: 'Channel ID',
+    group: 'insight_ext' as const,
+  },
 } as const
 
 export type LineConfigKey = keyof typeof LINE_CONFIG_KEYS
@@ -159,7 +199,7 @@ export async function getLineConfig(key: LineConfigKey, tenantId = 'default'): P
 
 // ===== Admin 用：列出所有設定（遮罩敏感值） =====
 
-export type LineConfigGroup = 'insight' | 'official' | 'admin' | 'richmenu' | 'login'
+export type LineConfigGroup = 'insight' | 'official' | 'admin' | 'richmenu' | 'login' | 'maoxing' | 'insight_ext'
 
 export interface LineConfigInfo {
   key: LineConfigKey

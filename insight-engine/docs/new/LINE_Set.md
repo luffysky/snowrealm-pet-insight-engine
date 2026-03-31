@@ -166,16 +166,18 @@ Webhook URL 設定：`https://insight.snowrealm.pet/api/line/webhook/insight`
 
 ---
 
-## 六、需要修改的程式碼清單
+## 六、程式碼修改狀態
 
-| 檔案 | 問題 | 修改內容 |
-|------|------|---------|
-| `src/app/api/auth/line/super-admin/callback/route.ts` | `SUPER_ADMIN_LINE_USER_ID` 設了但沒比對 | 加入精確 User ID 比對 |
-| `src/app/api/line/webhook/insight-engine/route.ts` | 死路，與 `/webhook` 用同一 Token | 廢棄刪除 |
-| `src/lib/lineConfig.ts` | 缺少 MAOXING 和 INSIGHT_EXT Channel 設定 | 新增兩組 config keys |
-| 新建：`src/app/api/line/webhook/maoxing/route.ts` | 足跡站 webhook 不存在 | 建立，只接受你的 LINE ID |
-| 新建：`src/app/api/line/webhook/insight/route.ts` | Insight 對外 webhook 不存在 | 建立，B2B 租戶管理員 |
-| `src/lib/lineNotify.ts` | 推播介面不統一 | 整理成統一介面 |
+| 檔案 | 狀態 |
+|------|------|
+| `src/app/api/auth/line/super-admin/callback/route.ts` | ✅ 已有 User ID 精確比對（第 65 行） |
+| `src/app/api/line/webhook/insight-engine/route.ts` | ✅ 已廢棄，回傳 410 |
+| `src/lib/lineConfig.ts` | ✅ 新增 MAOXING + INSIGHT_EXT 兩組 config keys |
+| `src/app/api/line/webhook/maoxing/route.ts` | ✅ 新建，只接受管理員 LINE ID |
+| `src/app/api/line/webhook/insight/route.ts` | ✅ 新建，B2B 租戶管理員頻道 |
+| Rich Menu A（預設）| ✅ `richmenu-e879cc72cf43693d9b66043ed3d3b7b0` 已建立 + 設為預設 |
+| Rich Menu B（填完後）| ✅ `richmenu-c5e2bc40ccde95086165165679bec029` 已建立 |
+| `src/lib/lineNotify.ts` | ⬜ 待整理統一推播介面（Phase 6 LINE-5） |
 
 ---
 
