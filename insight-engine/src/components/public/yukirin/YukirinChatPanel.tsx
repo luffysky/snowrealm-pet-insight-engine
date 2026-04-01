@@ -257,7 +257,7 @@ export default function YukirinChatPanel({ onClose, character = 'yukirin', onSwi
         }
       } catch { /* skip */ }
 
-      // Step 3: 更新問候語（只在沒有歷史時才設定初始問候；有歷史時在最前面插入老闆問候）
+      // Step 3: 問候語 — 永遠追加在最後面（最新訊息），像真人打招呼
       if (!cancelled && turns && (turns.isLoggedIn || turns.isUnlimited)) {
         const name = turns.userName
         let greeting: string
@@ -274,13 +274,8 @@ export default function YukirinChatPanel({ onClose, character = 'yukirin', onSwi
             // 沒有歷史 → 直接替換初始訊息
             return [{ ...prev[0], text: greeting }]
           }
-          if (hasHistory) {
-            // 有歷史 → 在最前面加上問候語（不重複）
-            const alreadyHasGreeting = prev[0]?.text?.includes('歡迎回來') || prev[0]?.text?.includes('歡迎回到後台')
-            if (alreadyHasGreeting) return prev
-            return [{ id: 'greeting', role: 'assistant' as const, text: greeting, mood: 'happy' as const }, ...prev]
-          }
-          return prev
+          // 有歷史 → 在最後面追加問候語（像真人打開聊天室先跟你打招呼）
+          return [...prev, { id: `greeting-${Date.now()}`, role: 'assistant' as const, text: greeting, mood: 'happy' as const }]
         })
       }
     }
@@ -1341,7 +1336,7 @@ export default function YukirinChatPanel({ onClose, character = 'yukirin', onSwi
           </form>
           {/* 版本標記（debug 用，確認部署版本） */}
           {turnsInfo?.isOwner && (
-            <div className="text-center text-[8px] text-white/15 pb-0.5">v0401b</div>
+            <div className="text-center text-[8px] text-white/15 pb-0.5">v0401c</div>
           )}
         </div>
       )}
