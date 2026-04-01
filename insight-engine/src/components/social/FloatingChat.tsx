@@ -10,7 +10,7 @@ export function setFloatingChatEnabled(enabled: boolean) {
 
 import { useEffect, useState, useRef, useCallback } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
-import { MessageCircle, X, Send, ChevronRight, Minus, Smile, Paperclip, Loader2 } from 'lucide-react'
+import { MessageCircle, X, Send, ChevronRight, Minus, Smile, Paperclip, Loader2, Mic, MicOff } from 'lucide-react'
 import { GifPicker } from './GifPicker'
 
 interface Conversation {
@@ -42,7 +42,7 @@ interface StickerPack {
   stickers: { id: string; url: string; name?: string }[]
 }
 
-type MediaPanel = 'sticker' | 'gif' | null
+type MediaPanel = 'sticker' | 'gif' | 'emoji' | null
 
 const HIDDEN_PREFIXES = ['/messages', '/login', '/register', '/super-login', '/api', '/story/create', '/write']
 const POS_KEY = 'floating_chat_pos'
@@ -51,6 +51,14 @@ const BTN = 48
 const DRAG_THRESHOLD = 6
 const WIN_W = 280
 const WIN_H = 380
+
+const EMOJI_LIST = [
+  '😀','😂','🥰','😎','😭','🥺','😅','🤣','😊','😍',
+  '🤔','😤','🙄','😜','😏','🥳','🤗','😬','🫠','🤫',
+  '👍','👎','👌','✌️','🤞','🙏','👏','💪','🫶','🤝',
+  '❤️','💔','🔥','⭐','✨','💯','🎉','🎊','💎','🚀',
+  '🌈','🌸','🐾','🐶','🐱','🍕','🍔','🎵','🎮','🏆',
+]
 
 function clamp(x: number, y: number): { x: number; y: number } {
   if (typeof window === 'undefined') return { x, y }
@@ -158,11 +166,36 @@ function FloatingChatWindow({ win, meId, index, onClose, onToggleMinimize, onFoc
   const [stickerPacks, setStickerPacks] = useState<StickerPack[]>([])
   const [stickerPackIdx, setStickerPackIdx] = useState(0)
   const [loadingStickers, setLoadingStickers] = useState(false)
+  const [recording, setRecording] = useState(false)
+  const [winPos, setWinPos] = useState<{ x: number; y: number } | null>(null)
+  const [winSize, setWinSize] = useState({ w: WIN_W, h: WIN_H })
+
   const bottomRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null)
+  const audioChunksRef = useRef<Blob[]>([])
 
-  const rightOffset = 16 + (WIN_W + 8) * index + BTN + 8
+  // Drag state refs
+  const posInitialized = useRef(false)
+  const winDragging = useRef(false)
+  const winDidDrag = useRef(false)
+  const winDragOffset = useRef({ dx: 0, dy: 0 })
+
+  // Resize state refs
+  const resizing = useRef(false)
+  const resizeStart = useRef({ mx: 0, my: 0, w: WIN_W, h: WIN_H })
+
+  // Initialize position once
+  useEffect(() => {
+    if (posInitialized.current || typeof window === 'undefined') return
+    posInitialized.current = true
+    const rightOffset = 16 + (WIN_W + 8) * index + BTN + 8
+    setWinPos({
+      x: Math.max(4, window.innerWidth - rightOffset - WIN_W),
+      y: Math.max(4, window.innerHeight - 16 - WIN_H - 42),
+    })
+  }, [index])
 
   const loadMessages = useCallback(() => {
     fetch(`/api/admin/social/messages/${conv.userId}`)
@@ -249,19 +282,115 @@ function FloatingChatWindow({ win, meId, index, onClose, onToggleMinimize, onFoc
     if (panel === 'sticker') void loadStickers()
   }
 
+  // ── Drag handlers ───────────────────────────────────────────────────────────
+  const handleHeaderPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    winDragging.current = true
+    winDidDrag.current = false
+    const p = winPos ?? { x: 0, y: 0 }
+    winDragOffset.current = { dx: e.clientX - p.x, dy: e.clientY - p.y }
+    ;(e.currentTarget as HTMLElement).setPointerCapture(e.pointerId)
+    e.preventDefault()
+  }
+
+  const handleHeaderPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!winDragging.current) return
+    const p = winPos ?? { x: 0, y: 0 }
+    const dx = e.clientX - (p.x + winDragOffset.current.dx)
+    const dy = e.clientY - (p.y + winDragOffset.current.dy)
+    if (!winDidDrag.current && Math.hypot(dx, dy) > DRAG_THRESHOLD) winDidDrag.current = true
+    if (!winDidDrag.current) return
+    const newX = e.clientX - winDragOffset.current.dx
+    const newY = e.clientY - winDragOffset.current.dy
+    const maxX = window.innerWidth - winSize.w
+    const maxY = window.innerHeight - 40
+    setWinPos({ x: Math.max(0, Math.min(maxX, newX)), y: Math.max(0, Math.min(maxY, newY)) })
+  }
+
+  const handleHeaderPointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+    const didDrag = winDidDrag.current
+    winDragging.current = false
+    ;(e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId)
+    if (!didDrag) {
+      onToggleMinimize(conv.userId)
+    }
+  }
+
+  // ── Resize handlers ──────────────────────────────────────────────────────────
+  const handleResizePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    resizing.current = true
+    resizeStart.current = { mx: e.clientX, my: e.clientY, w: winSize.w, h: winSize.h }
+    ;(e.currentTarget as HTMLElement).setPointerCapture(e.pointerId)
+    e.preventDefault()
+    e.stopPropagation()
+  }
+
+  const handleResizePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!resizing.current) return
+    const dw = e.clientX - resizeStart.current.mx
+    const dh = e.clientY - resizeStart.current.my
+    setWinSize({
+      w: Math.max(240, Math.min(500, resizeStart.current.w + dw)),
+      h: Math.max(200, Math.min(600, resizeStart.current.h + dh)),
+    })
+  }
+
+  const handleResizePointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+    resizing.current = false
+    ;(e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId)
+  }
+
+  // ── Voice recording ──────────────────────────────────────────────────────────
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      const mr = new MediaRecorder(stream)
+      audioChunksRef.current = []
+      mr.ondataavailable = e => { if (e.data.size > 0) audioChunksRef.current.push(e.data) }
+      mr.onstop = async () => {
+        stream.getTracks().forEach(t => t.stop())
+        const blob = new Blob(audioChunksRef.current, { type: 'audio/webm' })
+        const file = new File([blob], `voice-${Date.now()}.webm`, { type: 'audio/webm' })
+        await uploadFile(file)
+      }
+      mr.start()
+      mediaRecorderRef.current = mr
+      setRecording(true)
+      setMediaPanel(null)
+    } catch (err) {
+      console.error('[FloatingChat] Microphone error:', err)
+    }
+  }
+
+  const stopRecording = () => {
+    mediaRecorderRef.current?.stop()
+    mediaRecorderRef.current = null
+    setRecording(false)
+  }
+
+  // ── Emoji insert ─────────────────────────────────────────────────────────────
+  const insertEmoji = (emoji: string) => {
+    setInput(prev => prev + emoji)
+    setMediaPanel(null)
+    requestAnimationFrame(() => inputRef.current?.focus())
+  }
+
   const formatTime = (iso: string) =>
     new Date(iso).toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' })
 
+  if (!winPos) return null
+
   return (
     <div
-      style={{ position: 'fixed', right: rightOffset, bottom: 16, width: WIN_W, zIndex: 50 }}
+      style={{ position: 'fixed', left: winPos.x, top: winPos.y, width: winSize.w, zIndex: 50 }}
       onPointerDown={() => onFocus(conv.userId)}
     >
-      {/* Header */}
+      {/* Header — draggable */}
       <div
-        className="flex items-center gap-2 px-3 py-2 rounded-t-2xl cursor-pointer select-none"
+        onPointerDown={handleHeaderPointerDown}
+        onPointerMove={handleHeaderPointerMove}
+        onPointerUp={handleHeaderPointerUp}
+        className="flex items-center gap-2 px-3 py-2 rounded-t-2xl cursor-grab active:cursor-grabbing select-none"
         style={{ background: 'rgba(15,23,42,0.97)', borderBottom: '1px solid rgba(255,255,255,0.07)' }}
-        onClick={() => onToggleMinimize(conv.userId)}
       >
         <Avatar user={conv} size={7} />
         <p className="flex-1 text-xs font-semibold text-white/85 truncate">{conv.displayName ?? '用戶'}</p>
@@ -285,7 +414,7 @@ function FloatingChatWindow({ win, meId, index, onClose, onToggleMinimize, onFoc
       {!minimized && (
         <div
           style={{
-            height: WIN_H,
+            height: winSize.h,
             display: 'flex',
             flexDirection: 'column',
             background: 'rgba(15,23,42,0.97)',
@@ -328,10 +457,26 @@ function FloatingChatWindow({ win, meId, index, onClose, onToggleMinimize, onFoc
             <div ref={bottomRef} />
           </div>
 
+          {/* Emoji panel */}
+          {mediaPanel === 'emoji' && (
+            <div className="border-t border-white/[0.06] shrink-0 p-2" style={{ background: 'rgba(10,18,36,0.98)' }}>
+              <div className="grid grid-cols-10 gap-0.5 max-h-[120px] overflow-y-auto">
+                {EMOJI_LIST.map(emoji => (
+                  <button
+                    key={emoji}
+                    onClick={() => insertEmoji(emoji)}
+                    className="text-lg hover:bg-white/10 rounded-lg p-0.5 transition-colors leading-none"
+                  >
+                    {emoji}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Sticker panel */}
           {mediaPanel === 'sticker' && (
             <div className="border-t border-white/[0.06] shrink-0" style={{ background: 'rgba(10,18,36,0.98)' }}>
-              {/* Pack tabs */}
               {stickerPacks.length > 0 && (
                 <div className="flex gap-1 px-2 pt-1.5 pb-1 overflow-x-auto">
                   {stickerPacks.map((pack, i) => (
@@ -349,7 +494,6 @@ function FloatingChatWindow({ win, meId, index, onClose, onToggleMinimize, onFoc
                   ))}
                 </div>
               )}
-              {/* Grid */}
               <div className="grid grid-cols-5 gap-1 p-2 overflow-y-auto" style={{ maxHeight: 148 }}>
                 {loadingStickers ? (
                   <div className="col-span-5 flex justify-center py-4">
@@ -383,6 +527,17 @@ function FloatingChatWindow({ win, meId, index, onClose, onToggleMinimize, onFoc
           <div className="px-2 py-1.5 border-t border-white/[0.06] shrink-0">
             {/* Toolbar */}
             <div className="flex items-center gap-0.5 mb-1.5">
+              {/* Emoji */}
+              <button
+                onClick={() => togglePanel('emoji')}
+                className={`p-1.5 rounded-lg transition-colors text-sm leading-none ${
+                  mediaPanel === 'emoji' ? 'text-yellow-400 bg-yellow-400/10' : 'text-white/35 hover:text-white/70 hover:bg-white/8'
+                }`}
+                title="表情符號"
+              >
+                🙂
+              </button>
+              {/* Sticker */}
               <button
                 onClick={() => togglePanel('sticker')}
                 className={`p-1.5 rounded-lg transition-colors ${
@@ -392,6 +547,7 @@ function FloatingChatWindow({ win, meId, index, onClose, onToggleMinimize, onFoc
               >
                 <Smile className="w-4 h-4" />
               </button>
+              {/* GIF */}
               <button
                 onClick={() => togglePanel('gif')}
                 className={`px-1.5 py-1 rounded-lg text-[10px] font-bold leading-none transition-colors ${
@@ -401,11 +557,12 @@ function FloatingChatWindow({ win, meId, index, onClose, onToggleMinimize, onFoc
               >
                 GIF
               </button>
+              {/* File / Image */}
               <button
                 onClick={() => fileInputRef.current?.click()}
-                disabled={uploading}
+                disabled={uploading || recording}
                 className="p-1.5 rounded-lg text-white/35 hover:text-white/70 hover:bg-white/8 transition-colors disabled:opacity-40"
-                title="傳送圖片 / 檔案"
+                title="傳送圖片 / 影片 / 檔案"
               >
                 {uploading
                   ? <Loader2 className="w-4 h-4 animate-spin" />
@@ -418,7 +575,28 @@ function FloatingChatWindow({ win, meId, index, onClose, onToggleMinimize, onFoc
                 accept="image/*,video/*,audio/*,.pdf,.zip,.doc,.docx"
                 onChange={e => { const f = e.target.files?.[0]; if (f) void uploadFile(f) }}
               />
+              {/* Voice recording */}
+              <button
+                onClick={recording ? stopRecording : () => void startRecording()}
+                disabled={uploading}
+                className={`p-1.5 rounded-lg transition-colors disabled:opacity-40 ${
+                  recording
+                    ? 'text-rose-400 bg-rose-400/15 animate-pulse'
+                    : 'text-white/35 hover:text-white/70 hover:bg-white/8'
+                }`}
+                title={recording ? '停止錄音' : '錄音'}
+              >
+                {recording ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+              </button>
             </div>
+
+            {/* Recording indicator */}
+            {recording && (
+              <div className="flex items-center gap-1.5 mb-1.5 px-1 text-rose-400 text-[10px]">
+                <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" />
+                錄音中… 再次點擊停止送出
+              </div>
+            )}
 
             {/* Text input + send */}
             <div className="flex items-center gap-1.5">
@@ -432,7 +610,13 @@ function FloatingChatWindow({ win, meId, index, onClose, onToggleMinimize, onFoc
                   e.target.style.height = `${Math.min(e.target.scrollHeight, 80)}px`
                 }}
                 onFocus={() => setMediaPanel(null)}
-                placeholder="傳送訊息...（Shift+Enter 換行）"
+                onKeyDown={e => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault()
+                    void send()
+                  }
+                }}
+                placeholder="傳送訊息…（Shift+Enter 換行）"
                 className="flex-1 bg-white/8 border border-white/10 rounded-xl px-3 py-1.5 text-xs text-white placeholder-white/30 outline-none focus:border-sky-500/40 resize-none overflow-hidden leading-relaxed"
                 style={{ minHeight: 30, maxHeight: 80 }}
               />
@@ -454,6 +638,25 @@ function FloatingChatWindow({ win, meId, index, onClose, onToggleMinimize, onFoc
           className="h-1 rounded-b-xl"
           style={{ background: 'rgba(15,23,42,0.97)', borderBottom: '1px solid rgba(255,255,255,0.07)' }}
         />
+      )}
+
+      {/* Resize handle (bottom-right corner) */}
+      {!minimized && (
+        <div
+          style={{ position: 'absolute', right: 0, bottom: 0, width: 18, height: 18, cursor: 'nwse-resize', zIndex: 2 }}
+          onPointerDown={handleResizePointerDown}
+          onPointerMove={handleResizePointerMove}
+          onPointerUp={handleResizePointerUp}
+          className="flex items-end justify-end p-1 text-white/20 hover:text-white/50 transition-colors"
+          title="拖曳調整大小"
+        >
+          <svg width="8" height="8" viewBox="0 0 8 8" fill="currentColor">
+            <rect x="6" y="0" width="2" height="8" rx="1"/>
+            <rect x="0" y="6" width="8" height="2" rx="1"/>
+            <rect x="3" y="3" width="2" height="5" rx="1"/>
+            <rect x="3" y="3" width="5" height="2" rx="1"/>
+          </svg>
+        </div>
       )}
     </div>
   )

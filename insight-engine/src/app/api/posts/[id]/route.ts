@@ -11,28 +11,31 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   const viewerId = auth?.sub
 
   // 密碼保護：先查 password_hash，若有則需驗證 unlock cookie
-  const pwRow = await queryOne<{ user_id: string; password_hash: string | null }>(
-    `SELECT user_id, password_hash FROM social_posts WHERE id = $1`,
-    [id]
-  )
-  if (pwRow?.password_hash) {
-    const isOwner = viewerId === pwRow.user_id
-    if (!isOwner) {
-      const unlockCookie = req.cookies.get(`post_unlock_${id}`)?.value
-      if (unlockCookie !== '1') {
-        return NextResponse.json({
-          post: {
-            id,
+  // 用 try/catch 防止欄位尚未 migrate 時崩潰
+  try {
+    const pwRow = await queryOne<{ user_id: string; password_hash: string | null }>(
+      `SELECT user_id, password_hash FROM social_posts WHERE id = $1`,
+      [id]
+    )
+    if (pwRow?.password_hash) {
+      const isOwner = viewerId === pwRow.user_id
+      if (!isOwner) {
+        const unlockCookie = req.cookies.get(`post_unlock_${id}`)?.value
+        if (unlockCookie !== '1') {
+          return NextResponse.json({
+            post: {
+              id,
+              isPasswordProtected: true,
+              content: '',
+              images: [],
+              tags: [],
+            },
             isPasswordProtected: true,
-            content: '',
-            images: [],
-            tags: [],
-          },
-          isPasswordProtected: true,
-        })
+          })
+        }
       }
     }
-  }
+  } catch { /* password_hash 欄位尚未 migrate，略過密碼驗證 */ }
 
   const post = await getPost(id, viewerId)
   if (!post) return NextResponse.json({ error: '文章不存在' }, { status: 404 })
