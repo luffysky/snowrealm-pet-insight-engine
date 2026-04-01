@@ -54,7 +54,21 @@ function LoginForm() {
   useEffect(() => {
     const ua = navigator.userAgent
     setIsInApp(/Instagram|FBAN|FBAV|FB_IAB|MicroMessenger|Line\//.test(ua))
-  }, [])
+    // LINE OAuth 錯誤提示
+    const oauthError = searchParams.get('error')
+    if (oauthError) {
+      const msgs: Record<string, string> = {
+        token_exchange: 'LINE 登入失敗，請重試',
+        invalid_state: 'LINE 登入逾時，請重試',
+        missing_code: 'LINE 授權失敗',
+        line_denied: '已取消 LINE 登入',
+        line_not_configured: 'LINE 登入尚未設定',
+        profile_error: '無法取得 LINE 個人資料',
+        server_error: '伺服器錯誤，請稍後再試',
+      }
+      setError(msgs[oauthError] || `登入失敗 (${oauthError})`)
+    }
+  }, [searchParams])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()

@@ -29,13 +29,23 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     const state = request.nextUrl.searchParams.get('state')
     const storedState = request.cookies.get('line_sa_state')?.value
 
+    const error = request.nextUrl.searchParams.get('error')
+    if (error) {
+      console.error('[Super Admin LINE] User denied or error:', error)
+      return NextResponse.redirect(`${baseUrl}/super-login?error=line_denied`)
+    }
     if (!code) return NextResponse.redirect(`${baseUrl}/super-login?error=missing_code`)
-    if (!state || state !== storedState) return NextResponse.redirect(`${baseUrl}/super-login?error=invalid_state`)
+    if (!state || state !== storedState) {
+      console.error('[Super Admin LINE] State mismatch:', { state, storedState: storedState ? 'exists' : 'missing' })
+      return NextResponse.redirect(`${baseUrl}/super-login?error=invalid_state`)
+    }
 
     const channelId = process.env.LINE_LOGIN_CHANNEL_ID!
     const channelSecret = process.env.LINE_LOGIN_CHANNEL_SECRET!
     const callbackUrl = `${baseUrl}/api/auth/line/super-admin/callback`
     const allowedUserId = process.env.SUPER_ADMIN_LINE_USER_ID || process.env.LINE_YOUR_USER_ID
+
+    console.log('[Super Admin LINE] Token exchange attempt:', { callbackUrl, channelId })
 
     // Code → Token
     const tokenRes = await fetch('https://api.line.me/oauth2/v2.1/token', {
@@ -49,7 +59,11 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
         client_secret: channelSecret,
       }),
     })
-    if (!tokenRes.ok) return NextResponse.redirect(`${baseUrl}/super-login?error=token_exchange`)
+    if (!tokenRes.ok) {
+      const errBody = await tokenRes.text()
+      console.error('[Super Admin LINE] Token exchange failed:', errBody, { callbackUrl, channelId })
+      return NextResponse.redirect(`${baseUrl}/super-login?error=token_exchange`)
+    }
 
     const tokenData: LineTokenResponse = await tokenRes.json()
 

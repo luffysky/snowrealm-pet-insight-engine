@@ -24,19 +24,39 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   try {
     const code = request.nextUrl.searchParams.get('code')
     const state = request.nextUrl.searchParams.get('state')
+    const error = request.nextUrl.searchParams.get('error')
     const storedState = request.cookies.get('line_oauth_state')?.value
 
+    // LINE 使用者拒絕授權
+    if (error) {
+      console.error('[LINE OAuth] User denied or error:', error)
+      return NextResponse.redirect(`${baseUrl}/login?error=line_denied`)
+    }
+
     if (!code) {
+      console.error('[LINE OAuth] No code in callback')
       return NextResponse.redirect(`${baseUrl}/login?error=missing_code`)
     }
     if (!state || state !== storedState) {
+      console.error('[LINE OAuth] State mismatch:', { state, storedState: storedState ? 'exists' : 'missing' })
       return NextResponse.redirect(`${baseUrl}/login?error=invalid_state`)
     }
 
-    const channelId = process.env.LINE_LOGIN_CHANNEL_ID!
-    const channelSecret = process.env.LINE_LOGIN_CHANNEL_SECRET!
+    const channelId = process.env.LINE_LOGIN_CHANNEL_ID
+    const channelSecret = process.env.LINE_LOGIN_CHANNEL_SECRET
+    if (!channelId || !channelSecret) {
+      console.error('[LINE OAuth] Missing channel config')
+      return NextResponse.redirect(`${baseUrl}/login?error=line_not_configured`)
+    }
+
     const callbackUrl = process.env.LINE_LOGIN_CALLBACK_URL
       || `${baseUrl}/api/auth/line/callback`
+
+    console.log('[LINE OAuth] Token exchange attempt:', {
+      callbackUrl,
+      channelId,
+      codePrefix: code.slice(0, 8) + '...',
+    })
 
     // 用 authorization code 換 access token
     const tokenRes = await fetch('https://api.line.me/oauth2/v2.1/token', {
@@ -52,7 +72,8 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     })
 
     if (!tokenRes.ok) {
-      console.error('[LINE OAuth] Token exchange failed:', await tokenRes.text())
+      const errBody = await tokenRes.text()
+      console.error('[LINE OAuth] Token exchange failed:', errBody, { callbackUrl, channelId })
       return NextResponse.redirect(`${baseUrl}/login?error=token_exchange`)
     }
 
