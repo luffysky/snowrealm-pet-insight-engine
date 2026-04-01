@@ -12,18 +12,20 @@ interface UserRow {
 
 interface GrantLog {
   id: string
-  targetType: 'all' | 'specific'
+  target_type: 'all' | 'specific'
   amount: number
-  reason: string
-  affectedCount: number
-  createdAt: string
-  usernames?: string[]  // 指定用戶時的用戶名列表
+  reason: string | null
+  note: string | null
+  affected_count: number
+  created_at: string
+  admin_name: string | null
 }
 
 export default function SuperAdminZcoinPage() {
   // ── 批量發放 ──
   const [amount, setAmount] = useState('')
   const [reason, setReason] = useState('')
+  const [note, setNote] = useState('')
   const [targetMode, setTargetMode] = useState<'all' | 'specific'>('all')
   const [granting, setGranting] = useState(false)
   const [grantMsg, setGrantMsg] = useState<{ type: 'ok' | 'err'; text: string } | null>(null)
@@ -35,8 +37,18 @@ export default function SuperAdminZcoinPage() {
   const [searching, setSearching] = useState(false)
   const [selectedUsers, setSelectedUsers] = useState<UserRow[]>([])
 
-  // ── 發放記錄 ──
+  // ── 發放記錄（從 DB 載入） ──
   const [logs, setLogs] = useState<GrantLog[]>([])
+
+  const loadLogs = useCallback(async () => {
+    try {
+      const res = await fetch('/api/super-admin/zcoin')
+      const data = await res.json() as { logs?: GrantLog[] }
+      setLogs(data.logs ?? [])
+    } catch { /* ignore */ }
+  }, [])
+
+  useEffect(() => { loadLogs() }, [loadLogs])
 
   // ── 搜尋用戶（從 tenants API 取全部，前端過濾） ──
   const [allUsers, setAllUsers] = useState<UserRow[]>([])
@@ -103,8 +115,8 @@ export default function SuperAdminZcoinPage() {
     setGrantMsg(null)
     try {
       const body = targetMode === 'all'
-        ? { amount: amt, reason: reason || 'super_admin_bulk_grant', targetAll: true }
-        : { amount: amt, reason: reason || 'super_admin_grant', targetUserIds: selectedUsers.map(u => u.id) }
+        ? { amount: amt, reason: reason || 'super_admin_bulk_grant', note: note || null, targetAll: true }
+        : { amount: amt, reason: reason || 'super_admin_grant', note: note || null, targetUserIds: selectedUsers.map(u => u.id) }
 
       const res = await fetch('/api/super-admin/zcoin', {
         method: 'POST',
@@ -113,24 +125,15 @@ export default function SuperAdminZcoinPage() {
       })
       const data = await res.json() as { ok?: boolean; affectedCount?: number; error?: string }
       if (data.ok) {
-        const newLog: GrantLog = {
-          id: Date.now().toString(),
-          targetType: targetMode,
-          amount: amt,
-          reason: reason || (targetMode === 'all' ? 'super_admin_bulk_grant' : 'super_admin_grant'),
-          affectedCount: data.affectedCount ?? selectedUsers.length,
-          createdAt: new Date().toISOString(),
-          usernames: targetMode === 'specific'
-            ? selectedUsers.map(u => u.display_name || u.username || u.id.slice(0, 8))
-            : undefined,
-        }
-        setLogs(prev => [newLog, ...prev])
         setGrantMsg({ type: 'ok', text: `✅ 已成功發放 ${amt} Z幣 給 ${data.affectedCount} 位用戶` })
         setAmount('')
         setReason('')
+        setNote('')
         setSelectedUsers([])
         setSearchQ('')
         setSearchResults([])
+        // Reload logs from DB
+        loadLogs()
       } else {
         setGrantMsg({ type: 'err', text: `❌ ${data.error ?? '操作失敗'}` })
       }
@@ -176,13 +179,25 @@ export default function SuperAdminZcoinPage() {
 
             {/* 備註 */}
             <div>
-              <label className="block text-xs text-white/50 mb-1.5">備註（記錄用）</label>
+              <label className="block text-xs text-white/50 mb-1.5">備註（記錄用，僅管理員可見）</label>
               <input
                 type="text"
                 value={reason}
                 onChange={e => setReason(e.target.value)}
                 placeholder="例：平台活動獎勵"
                 className="w-full px-3.5 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-sm text-white placeholder-white/25 focus:outline-none focus:border-yellow-500/50 transition-colors"
+              />
+            </div>
+
+            {/* 給使用者的話 */}
+            <div>
+              <label className="block text-xs text-white/50 mb-1.5">給使用者的話（顯示在用戶 Z幣明細中）</label>
+              <input
+                type="text"
+                value={note}
+                onChange={e => setNote(e.target.value)}
+                placeholder="例：感謝您參與平台活動，獎勵 Z幣！"
+                className="w-full px-3.5 py-2.5 bg-slate-800 border border-yellow-500/20 rounded-xl text-sm text-white placeholder-white/25 focus:outline-none focus:border-yellow-500/50 transition-colors"
               />
             </div>
 
@@ -277,10 +292,11 @@ export default function SuperAdminZcoinPage() {
           </div>
         </div>
 
-        {/* ── 本次操作記錄 ── */}
+        {/* ── 發放記錄 ── */}
         <div className="bg-slate-900/60 border border-slate-800 rounded-2xl overflow-hidden">
-          <div className="px-5 py-4 border-b border-slate-800">
-            <h2 className="text-sm font-semibold text-white">本次操作記錄</h2>
+          <div className="px-5 py-4 border-b border-slate-800 flex items-center justify-between">
+            <h2 className="text-sm font-semibold text-white">發放記錄</h2>
+            <button onClick={loadLogs} className="text-[10px] text-white/30 hover:text-white/60 transition-colors">重新整理</button>
           </div>
           {logs.length === 0 ? (
             <div className="py-16 text-center text-white/20 text-sm">
@@ -288,31 +304,36 @@ export default function SuperAdminZcoinPage() {
               <p>尚未執行任何發放操作</p>
             </div>
           ) : (
-            <div className="divide-y divide-slate-800/60">
+            <div className="divide-y divide-slate-800/60 max-h-[420px] overflow-y-auto">
               {logs.map(log => (
                 <div key={log.id} className="px-5 py-4">
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm text-white font-semibold">
-                        <span className="inline-block px-1.5 py-0.5 rounded-md bg-black/40 backdrop-blur-sm border border-yellow-500/20 text-yellow-400">+{log.amount} Z幣</span>
-                      </p>
-                      <p className="text-xs text-white/40 mt-1">
-                        {log.targetType === 'all' ? '🌍 全部用戶' : `🎯 指定 ${log.affectedCount} 位`}
-                        {' · '}{log.reason}
-                      </p>
-                      {log.usernames && log.usernames.length > 0 && (
-                        <div className="flex flex-wrap gap-1 mt-1.5">
-                          {log.usernames.map((name, i) => (
-                            <span key={i} className="inline-block px-1.5 py-0.5 rounded bg-black/30 backdrop-blur-sm border border-white/10 text-white/50 text-[10px]">
-                              {name}
-                            </span>
-                          ))}
-                        </div>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="inline-block px-1.5 py-0.5 rounded-md bg-black/40 backdrop-blur-sm border border-yellow-500/20 text-yellow-400 text-sm font-semibold">+{log.amount} Z幣</span>
+                        <span className="text-xs text-white/40">
+                          {log.target_type === 'all' ? '🌍 全部用戶' : `🎯 指定 ${log.affected_count} 位`}
+                        </span>
+                      </div>
+                      {log.reason && (
+                        <p className="text-xs text-white/35 mt-1">備註：{log.reason}</p>
+                      )}
+                      {log.note && (
+                        <p className="text-xs text-yellow-300/70 mt-1 bg-yellow-500/5 border border-yellow-500/15 rounded-lg px-2 py-1">
+                          💬 {log.note}
+                        </p>
+                      )}
+                      {log.admin_name && (
+                        <p className="text-[10px] text-white/25 mt-1">由 {log.admin_name} 執行</p>
                       )}
                     </div>
                     <div className="text-right shrink-0">
-                      <p className="text-xs text-emerald-400 font-semibold">{log.affectedCount} 人</p>
-                      <p className="text-[10px] text-white/25 mt-0.5">{new Date(log.createdAt).toLocaleTimeString('zh-TW')}</p>
+                      <p className="text-xs text-emerald-400 font-semibold">{log.affected_count} 人</p>
+                      <p className="text-[10px] text-white/25 mt-0.5">
+                        {new Date(log.created_at).toLocaleDateString('zh-TW', { month: 'numeric', day: 'numeric' })}
+                        {' '}
+                        {new Date(log.created_at).toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' })}
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -334,6 +355,7 @@ export default function SuperAdminZcoinPage() {
                 {targetMode === 'all' ? ' 給全部用戶' : ` 給 ${selectedUsers.length} 位用戶`}
               </p>
               {reason && <p className="text-xs text-white/50">備註：{reason}</p>}
+              {note && <p className="text-xs text-yellow-300/70">💬 給使用者：{note}</p>}
               {targetMode === 'all' && (
                 <p className="text-xs">
                   <span className="inline-block px-2 py-0.5 rounded-lg bg-black/40 backdrop-blur-md border border-amber-500/20 text-amber-400/90">⚠️ 此操作將影響所有平台用戶，請確認金額正確</span>

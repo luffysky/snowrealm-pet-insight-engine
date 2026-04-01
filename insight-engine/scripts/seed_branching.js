@@ -74,11 +74,12 @@ async function run() {
     for (const q of bQuestions) {
       await client.query(
         `INSERT INTO questions (id, survey_id, key, type, content, options, order_index, is_required, max_selections, route)
-         VALUES (uuid_generate_v4(), $1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+         VALUES (uuid_generate_v4(), $1, $2, $3, $4, $5, $6, $7, $8, $9)
+         ON CONFLICT (survey_id, key) DO NOTHING`,
         [SURVEY_ID, q.key, q.type, q.content, JSON.stringify(q.options), q.order_index, q.is_required, q.max_selections, 'B']
       );
     }
-    console.log('Inserted 4 B-route questions');
+    console.log('Inserted 4 B-route questions (skipped existing)');
 
     // 3. Insert C-route questions (Q2C-Q5C)
     const cQuestions = [
@@ -132,11 +133,12 @@ async function run() {
     for (const q of cQuestions) {
       await client.query(
         `INSERT INTO questions (id, survey_id, key, type, content, options, order_index, is_required, max_selections, route)
-         VALUES (uuid_generate_v4(), $1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+         VALUES (uuid_generate_v4(), $1, $2, $3, $4, $5, $6, $7, $8, $9)
+         ON CONFLICT (survey_id, key) DO NOTHING`,
         [SURVEY_ID, q.key, q.type, q.content, JSON.stringify(q.options), q.order_index, q.is_required, q.max_selections, 'C']
       );
     }
-    console.log('Inserted 4 C-route questions');
+    console.log('Inserted 4 C-route questions (skipped existing)');
 
     // 4. Set branch_config on MVP survey
     const branchConfig = {

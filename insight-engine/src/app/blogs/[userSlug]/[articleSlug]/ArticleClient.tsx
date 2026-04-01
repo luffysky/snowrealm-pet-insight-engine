@@ -231,6 +231,7 @@ interface Comment {
   author_name: string
   content: string
   created_at: string
+  like_count: number
 }
 
 interface CommentsProps {
@@ -252,6 +253,7 @@ function timeAgo(iso: string): string {
 
 export function ArticleComments({ userSlug, articleSlug }: CommentsProps) {
   const [comments, setComments] = useState<Comment[]>([])
+  const [likedComments, setLikedComments] = useState<Set<string>>(new Set())
   const [name, setName] = useState('')
   const [content, setContent] = useState('')
   const [submitting, setSubmitting] = useState(false)
@@ -261,9 +263,23 @@ export function ArticleComments({ userSlug, articleSlug }: CommentsProps) {
   useEffect(() => {
     fetch(`/api/blogs/${userSlug}/${articleSlug}/comments`)
       .then(r => r.json())
-      .then(d => { setComments(d.comments ?? []); setLoaded(true) })
+      .then(d => { setComments((d.comments ?? []).map((c: Comment) => ({ ...c, like_count: c.like_count ?? 0 }))); setLoaded(true) })
       .catch(() => setLoaded(true))
   }, [userSlug, articleSlug])
+
+  const likeComment = async (commentId: string) => {
+    const fp = getFingerprint()
+    const isLiked = likedComments.has(commentId)
+    setLikedComments(prev => { const next = new Set(prev); isLiked ? next.delete(commentId) : next.add(commentId); return next })
+    setComments(prev => prev.map(c => c.id === commentId ? { ...c, like_count: Math.max(0, c.like_count + (isLiked ? -1 : 1)) } : c))
+    try {
+      await fetch(`/api/blogs/${userSlug}/${articleSlug}/comments/${commentId}/like`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fingerprint: fp }),
+      })
+    } catch { /* ignore */ }
+  }
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -311,6 +327,17 @@ export function ArticleComments({ userSlug, articleSlug }: CommentsProps) {
                   <span className="text-xs text-white/25">{timeAgo(c.created_at)}</span>
                 </div>
                 <p className="text-sm text-white/65 leading-relaxed whitespace-pre-wrap">{c.content}</p>
+                <button
+                  onClick={() => likeComment(c.id)}
+                  className={`mt-2 flex items-center gap-1 text-xs transition-colors ${
+                    likedComments.has(c.id)
+                      ? 'text-rose-400'
+                      : 'text-white/25 hover:text-white/50'
+                  }`}
+                >
+                  <span>{likedComments.has(c.id) ? '❤️' : '🤍'}</span>
+                  {c.like_count > 0 && <span>{c.like_count}</span>}
+                </button>
               </div>
             </div>
           ))}
@@ -354,6 +381,48 @@ export function ArticleComments({ userSlug, articleSlug }: CommentsProps) {
 }
 
 // ─── Dark / Light Mode Toggle ─────────────────────────────────────────────────
+
+/** Detect if a CSS color value is near-white (invisible on light background) */
+function isNearWhiteColor(color: string): boolean {
+  const c = color.trim().toLowerCase()
+  if (c === 'white' || c === '#fff' || c === '#ffffff') return true
+  if (c.startsWith('#')) {
+    const hex = c.slice(1)
+    const full = hex.length === 3 ? hex.split('').map(ch => ch + ch).join('') : hex
+    if (full.length === 6) {
+      const r = parseInt(full.slice(0, 2), 16)
+      const g = parseInt(full.slice(2, 4), 16)
+      const b = parseInt(full.slice(4, 6), 16)
+      return (r + g + b) / 3 > 210
+    }
+  }
+  if (c.startsWith('rgb')) {
+    const nums = c.match(/\d+/g)?.slice(0, 3).map(Number)
+    if (nums && nums.length === 3) return nums.reduce((a, b) => a + b, 0) / 3 > 210
+  }
+  return false
+}
+
+/** Fix TipTap inline colors that are near-white when switching to light mode */
+function fixInlineColorsForTheme(toLight: boolean) {
+  if (typeof document === 'undefined') return
+  const spans = document.querySelectorAll<HTMLSpanElement>('.blog-content span[style]')
+  spans.forEach(span => {
+    const raw = span.getAttribute('style') ?? ''
+    const m = raw.match(/color:\s*([^;]+)/)
+    if (!m) return
+    const colorVal = m[1].trim()
+    if (toLight && isNearWhiteColor(colorVal)) {
+      span.dataset.origColor = colorVal
+      span.style.setProperty('color', '#1a1020', 'important')
+    } else if (!toLight && span.dataset.origColor) {
+      span.style.removeProperty('color')
+      span.style.color = span.dataset.origColor
+      delete span.dataset.origColor
+    }
+  })
+}
+
 export function ArticleThemeToggle() {
   const [isDark, setIsDark] = useState(true)
 
@@ -363,6 +432,9 @@ export function ArticleThemeToggle() {
       if (saved === 'light') {
         setIsDark(false)
         document.documentElement.classList.add('blog-light')
+        // Fix near-white inline colors on initial load in light mode
+        // Defer until after article content is rendered
+        setTimeout(() => fixInlineColorsForTheme(true), 100)
       }
     } catch { /* ignore */ }
   }, [])
@@ -374,9 +446,11 @@ export function ArticleThemeToggle() {
       if (toLight) {
         document.documentElement.classList.add('blog-light')
         localStorage.setItem('blog-theme', 'light')
+        fixInlineColorsForTheme(true)
       } else {
         document.documentElement.classList.remove('blog-light')
         localStorage.setItem('blog-theme', 'dark')
+        fixInlineColorsForTheme(false)
       }
     } catch { /* ignore */ }
   }

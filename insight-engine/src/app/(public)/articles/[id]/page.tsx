@@ -240,7 +240,21 @@ export default function ArticleDetailPage() {
 
         {/* Comments */}
         {commentsOpen && (
-          <div className="border-t border-slate-200/80 pt-4">
+          <div className="border-t border-slate-200/80 pt-4"
+            style={{
+              '--sc-fg': '#1e293b',
+              '--sc-fg-muted': '#64748b',
+              '--sc-fg-faint': '#94a3b8',
+              '--sc-fg-accent': '#6b5fa8',
+              '--sc-hover-bg': 'rgba(15,23,42,0.06)',
+              '--sc-input-bg': 'rgba(0,0,0,0.03)',
+              '--sc-input-border': 'rgba(0,0,0,0.12)',
+              '--sc-bubble-bg': 'rgba(0,0,0,0.04)',
+              '--sc-send-bg': '#6b5fa8',
+              '--sc-send-fg': '#ffffff',
+              '--sc-badge-bg': '#e2e8f0',
+            } as React.CSSProperties}
+          >
             <h3 className="text-sm font-semibold text-[#5a4c8a] mb-4 flex items-center gap-2">
               <MessageSquare className="w-4 h-4" /> 留言 ({commentsCount})
             </h3>

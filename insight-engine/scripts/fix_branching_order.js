@@ -48,7 +48,8 @@ async function run() {
     // 3. Insert Q6B (B route, order_index=5)
     await client.query(
       `INSERT INTO questions (id, survey_id, key, type, content, options, order_index, is_required, max_selections, route)
-       VALUES (uuid_generate_v4(), $1, 'q6b', 'single', '如果未來有了寵物，你最想為牠留下的是？', $2, 5, true, null, 'B')`,
+       VALUES (uuid_generate_v4(), $1, 'q6b', 'single', '如果未來有了寵物，你最想為牠留下的是？', $2, 5, true, null, 'B')
+       ON CONFLICT (survey_id, key) DO NOTHING`,
       [
         SURVEY_ID,
         JSON.stringify([
@@ -64,7 +65,8 @@ async function run() {
     // 4. Insert Q6C (C route, order_index=5)
     await client.query(
       `INSERT INTO questions (id, survey_id, key, type, content, options, order_index, is_required, max_selections, route)
-       VALUES (uuid_generate_v4(), $1, 'q6c', 'single', '如果你身邊有人很重視一隻寵物，你覺得最值得被留下的是？', $2, 5, true, null, 'C')`,
+       VALUES (uuid_generate_v4(), $1, 'q6c', 'single', '如果你身邊有人很重視一隻寵物，你覺得最值得被留下的是？', $2, 5, true, null, 'C')
+       ON CONFLICT (survey_id, key) DO NOTHING`,
       [
         SURVEY_ID,
         JSON.stringify([

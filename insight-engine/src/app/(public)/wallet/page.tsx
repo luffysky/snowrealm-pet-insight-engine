@@ -8,7 +8,9 @@ interface Transaction {
   amount: number
   type: 'earn' | 'spend'
   reason: string
-  createdAt: string
+  note?: string | null
+  created_at?: string
+  createdAt?: string
 }
 
 interface WalletData {
@@ -106,15 +108,22 @@ export default function WalletPage() {
             {history.map((tx) => (
               <div
                 key={tx.id}
-                className="flex items-center justify-between lg-light rounded-xl px-4 py-3"
+                className="lg-light rounded-xl px-4 py-3"
               >
-                <div>
-                  <p className="text-sm text-[#3d3155]">{REASON_LABEL[tx.reason] ?? tx.reason}</p>
-                  <p className="text-xs text-[#b5a8d0]">{formatDate(tx.createdAt)}</p>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-[#3d3155]">{REASON_LABEL[tx.reason] ?? tx.reason}</p>
+                    <p className="text-xs text-[#b5a8d0]">{formatDate(tx.created_at ?? tx.createdAt ?? '')}</p>
+                  </div>
+                  <span className={`text-base font-semibold ${tx.type === 'earn' ? 'text-emerald-400' : 'text-rose-400'}`}>
+                    {tx.type === 'earn' ? '+' : '-'}{Math.abs(tx.amount)}
+                  </span>
                 </div>
-                <span className={`text-base font-semibold ${tx.type === 'earn' ? 'text-emerald-400' : 'text-rose-400'}`}>
-                  {tx.type === 'earn' ? '+' : '-'}{Math.abs(tx.amount)}
-                </span>
+                {tx.note && (
+                  <p className="text-xs text-amber-700/80 mt-1.5 bg-amber-50 border border-amber-200/60 rounded-lg px-2.5 py-1">
+                    💬 {tx.note}
+                  </p>
+                )}
               </div>
             ))}
           </div>

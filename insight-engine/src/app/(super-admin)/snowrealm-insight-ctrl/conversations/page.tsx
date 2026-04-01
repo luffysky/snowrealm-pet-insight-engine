@@ -12,6 +12,8 @@ interface Conversation {
   created_at: string
   nickname: string | null
   display_name: string | null
+  last_user_message: string | null
+  last_assistant_message: string | null
 }
 
 interface Message {
@@ -122,7 +124,14 @@ export default function ConversationsPage() {
                       <td className="px-4 py-2.5 text-cyan-400 text-xs font-mono">{c.model ?? '—'}</td>
                       <td className="px-4 py-2.5 text-right text-white/60">{c.message_count ?? '—'}</td>
                       <td className="px-4 py-2.5 text-right text-white/40 text-xs">{c.total_tokens?.toLocaleString() ?? '—'}</td>
-                      <td className="px-4 py-2.5 text-white/40 text-xs">{new Date(c.created_at).toLocaleString('zh-TW')}</td>
+                      <td className="px-4 py-2.5 text-white/40 text-xs max-w-xs">
+                        <div>{new Date(c.created_at).toLocaleString('zh-TW')}</div>
+                        {c.last_user_message && (
+                          <div className="text-white/30 text-xs mt-0.5 truncate max-w-[200px]" title={c.last_user_message}>
+                            👤 {c.last_user_message.slice(0, 60)}{c.last_user_message.length > 60 ? '...' : ''}
+                          </div>
+                        )}
+                      </td>
                       <td className="px-4 py-2.5">
                         <button onClick={() => toggleExpand(c.id)} className="text-xs text-cyan-400 hover:underline">
                           {expanded === c.id ? '收起' : '查看'}

@@ -154,6 +154,7 @@ interface TxRow extends Record<string, unknown> {
   type: string
   reason: TxReason
   reference_id: string | null
+  note: string | null
   created_at: string
 }
 
