@@ -677,6 +677,31 @@ export default function YukirinChatPanel({ onClose, character = 'yukirin', onSwi
             mood,
           }))
           // 執行 action
+          if (slashResult.action?.type === 'fetch_owner_data') {
+            // 老闆指令：從 API 查真實數據
+            fetch(`/api/guide/owner-data?cmd=${slashResult.action.target}`)
+              .then(r => r.json())
+              .then((d: { text?: string }) => {
+                if (d.text) {
+                  setMessages(prev => appendMessage(prev, {
+                    id: (Date.now() + 2).toString(),
+                    role: 'assistant',
+                    text: d.text,
+                    mood: 'happy',
+                  }))
+                }
+              })
+              .catch(() => {
+                setMessages(prev => appendMessage(prev, {
+                  id: (Date.now() + 2).toString(),
+                  role: 'assistant',
+                  text: character === 'riku' ? '...查詢失敗' : '哎呀查不到資料 QQ',
+                  mood: 'sad',
+                }))
+              })
+            setQuickReplies(DEFAULT_QUICK_REPLIES)
+            return
+          }
           if (slashResult.action?.type === 'navigate') router.push(slashResult.action.target)
           if (slashResult.action?.type === 'switch_character' && onSwitchCharacter) {
             onSwitchCharacter(slashResult.action.target as 'yukirin' | 'riku')

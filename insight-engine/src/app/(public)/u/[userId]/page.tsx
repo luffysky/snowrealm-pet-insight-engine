@@ -313,7 +313,7 @@ function AvatarLightbox({ src, onClose }: { src: string; onClose: () => void }) 
       <button className="absolute top-4 right-4 text-[#6b5fa8] hover:text-white" onClick={onClose}>
         <X className="w-6 h-6" />
       </button>
-      <img src={src} alt="" className="max-w-sm w-full max-h-[80vh] object-contain rounded-2xl shadow-2xl" onClick={e => e.stopPropagation()} />
+      <img src={src} alt="" className="max-w-[90vw] sm:max-w-sm w-full max-h-[80vh] object-contain rounded-2xl shadow-2xl" onClick={e => e.stopPropagation()} />
     </div>
   )
 }
@@ -456,7 +456,7 @@ export default function UserProfilePage() {
   const bannerStyle = getBannerStyle(profile.profileTheme, profile.bannerUrl)
 
   return (
-    <div className="min-h-screen text-[#3d3155]" style={{ background: "linear-gradient(150deg, #f3eeff 0%, #ffeef5 35%, #eef5ff 65%, #fff5ee 100%)", fontFamily: "var(--font-zen-maru), var(--font-noto-tc), sans-serif" }}>
+    <div className="min-h-screen text-[#3d3155]" style={{ background: "linear-gradient(150deg, #f3eeff 0%, #ffeef5 35%, #eef5ff 65%, #fff5ee 100%)", fontFamily: "var(--font-zen-maru), var(--font-noto-tc), sans-serif", paddingBottom: "var(--bnav-h, 76px)" }}>
       <LoginPrompt open={loginPrompt} onClose={() => setLoginPrompt(false)} action="追蹤或私訊" />
       {followModal && <FollowListModal type={followModal} userId={userId} onClose={() => setFollowModal(null)} />}
       {sidebarOpen && isMe && <ProfileSidebar onClose={() => setSidebarOpen(false)} tenantSlug={meTenantSlug} isSuperAdmin={meIsSuperAdmin} />}
@@ -493,12 +493,12 @@ export default function UserProfilePage() {
           {/* Banner */}
           <div className="h-24" style={bannerStyle} />
 
-          <div className="px-6 pb-6 -mt-10">
+          <div className="px-4 sm:px-6 pb-5 sm:pb-6 -mt-10">
             <div className="flex items-end justify-between mb-4">
               {/* Avatar */}
               <div className="relative group">
                 <div
-                  className={`w-20 h-20 rounded-2xl border-4 border-slate-950 bg-gradient-to-br from-amber-500/30 to-purple-500/30 flex items-center justify-center text-2xl font-bold text-white/80 overflow-hidden shrink-0 shadow-xl ${profile.avatar ? 'cursor-pointer' : ''}`}
+                  className={`w-20 h-20 rounded-2xl border-4 border-white/90 bg-gradient-to-br from-amber-500/30 to-purple-500/30 flex items-center justify-center text-2xl font-bold text-white/80 overflow-hidden shrink-0 shadow-xl ${profile.avatar ? 'cursor-pointer' : ''}`}
                   onClick={() => {
                     if (isMe) return // isMe handled by label below
                     if (profile.avatar) setAvatarLightbox(true)
@@ -524,7 +524,7 @@ export default function UserProfilePage() {
                   編輯個人資料
                 </Link>
               ) : (
-                <div className="flex gap-2">
+                <div className="flex gap-2 flex-wrap">
                   {meId ? (
                     <>
                       <FollowButton targetUserId={userId} initialFollowing={profile.isFollowing} />
@@ -532,8 +532,8 @@ export default function UserProfilePage() {
                     </>
                   ) : (
                     <>
-                      <button onClick={() => setLoginPrompt(true)} className="px-4 py-1.5 bg-amber-500/20 border border-amber-400/30 text-amber-300 rounded-xl text-sm font-medium hover:bg-amber-500/30 transition-colors">追蹤</button>
-                      <button onClick={() => setLoginPrompt(true)} className="px-4 py-1.5 bg-white/8 border border-white/12 text-[#6b5fa8] rounded-xl text-sm hover:bg-white/12 transition-colors">私訊</button>
+                      <button onClick={() => setLoginPrompt(true)} className="px-4 py-1.5 min-h-[44px] bg-amber-500/20 border border-amber-400/30 text-amber-300 rounded-xl text-sm font-medium hover:bg-amber-500/30 transition-colors">追蹤</button>
+                      <button onClick={() => setLoginPrompt(true)} className="px-4 py-1.5 min-h-[44px] bg-white/8 border border-white/12 text-[#6b5fa8] rounded-xl text-sm hover:bg-white/12 transition-colors">私訊</button>
                     </>
                   )}
                 </div>
@@ -676,7 +676,7 @@ export default function UserProfilePage() {
                   <div className="absolute top-3 right-3" ref={openMenuId === post.id ? menuRef : undefined}>
                     <button
                       onClick={e => { e.preventDefault(); e.stopPropagation(); setOpenMenuId(openMenuId === post.id ? null : post.id) }}
-                      className="p-1.5 text-[#8a7ca8]/75 hover:text-[#3d3155]/80 hover:bg-white/10 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
+                      className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center text-[#8a7ca8]/75 hover:text-[#3d3155]/80 hover:bg-white/10 rounded-lg transition-colors sm:opacity-0 sm:group-hover:opacity-100"
                     >
                       <MoreHorizontal className="w-4 h-4" />
                     </button>

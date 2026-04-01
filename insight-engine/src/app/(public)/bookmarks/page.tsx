@@ -195,28 +195,28 @@ function BookmarkCard({
           <div className="flex items-center justify-between pt-1 border-t border-white/5">
             <div className="flex items-center gap-1">
               <button onClick={toggleLike} disabled={liking}
-                className={`flex items-center gap-1 px-2 py-1 rounded-lg text-xs transition-colors ${liked ? 'text-red-400 bg-red-400/10' : 'text-[#8a7ca8]/75 hover:text-red-400 hover:bg-white/5'}`}
+                className={`flex items-center gap-1 min-w-[44px] min-h-[44px] px-2 py-2 rounded-lg text-xs transition-colors justify-center ${liked ? 'text-red-400 bg-red-400/10' : 'text-[#8a7ca8]/75 hover:text-red-400 hover:bg-white/5'}`}
               >
-                <Heart className={`w-3.5 h-3.5 ${liked ? 'fill-red-400' : ''}`} />
+                <Heart className={`w-4 h-4 ${liked ? 'fill-red-400' : ''}`} />
                 {likesCount > 0 && <span>{likesCount}</span>}
               </button>
               <button onClick={e => { e.stopPropagation(); router.push(`${postUrl}#comments`) }}
-                className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs text-[#8a7ca8]/75 hover:text-blue-400 hover:bg-white/5 transition-colors"
+                className="flex items-center gap-1 min-w-[44px] min-h-[44px] px-2 py-2 rounded-lg text-xs text-[#8a7ca8]/75 hover:text-blue-400 hover:bg-white/5 transition-colors justify-center"
               >
-                <MessageSquare className="w-3.5 h-3.5" />
+                <MessageSquare className="w-4 h-4" />
                 {post.commentsCount > 0 && <span>{post.commentsCount}</span>}
               </button>
             </div>
             <div className="flex items-center gap-1">
               <button onClick={e => { e.stopPropagation(); setShowShareCard(true) }}
-                className="p-1.5 rounded-lg text-[#8a7ca8] hover:text-[#6b5fa8] hover:bg-white/5 transition-colors"
+                className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg text-[#8a7ca8] hover:text-[#6b5fa8] hover:bg-white/5 transition-colors"
               >
-                <Share2 className="w-3.5 h-3.5" />
+                <Share2 className="w-4 h-4" />
               </button>
               <button onClick={toggleBookmark} disabled={bookmarking}
-                className="p-1.5 rounded-lg transition-colors text-amber-500 hover:text-amber-400"
+                className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg transition-colors text-amber-500 hover:text-amber-400"
               >
-                <Bookmark className="w-3.5 h-3.5 fill-current" />
+                <Bookmark className="w-4 h-4 fill-current" />
               </button>
             </div>
           </div>

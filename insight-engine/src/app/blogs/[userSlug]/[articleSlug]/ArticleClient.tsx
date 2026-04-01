@@ -229,9 +229,13 @@ export function ArticleReactions({ userSlug, articleSlug }: ReactionsProps) {
 interface Comment {
   id: string
   author_name: string
+  author_avatar?: string | null
+  user_id?: string | null
   content: string
   created_at: string
   like_count: number
+  parent_id?: string | null
+  replies?: Comment[]
 }
 
 interface CommentsProps {
@@ -259,11 +263,22 @@ export function ArticleComments({ userSlug, articleSlug }: CommentsProps) {
   const [submitting, setSubmitting] = useState(false)
   const [msg, setMsg] = useState('')
   const [loaded, setLoaded] = useState(false)
+  const [replyTo, setReplyTo] = useState<{ id: string; name: string } | null>(null)
+  const replyInputRef = useRef<HTMLTextAreaElement>(null)
+
+  const totalCount = comments.reduce((sum, c) => sum + 1 + (c.replies?.length ?? 0), 0)
 
   useEffect(() => {
     fetch(`/api/blogs/${userSlug}/${articleSlug}/comments`)
       .then(r => r.json())
-      .then(d => { setComments((d.comments ?? []).map((c: Comment) => ({ ...c, like_count: c.like_count ?? 0 }))); setLoaded(true) })
+      .then(d => {
+        setComments((d.comments ?? []).map((c: Comment) => ({
+          ...c,
+          like_count: c.like_count ?? 0,
+          replies: (c.replies ?? []).map((r: Comment) => ({ ...r, like_count: r.like_count ?? 0 })),
+        })))
+        setLoaded(true)
+      })
       .catch(() => setLoaded(true))
   }, [userSlug, articleSlug])
 
@@ -271,7 +286,14 @@ export function ArticleComments({ userSlug, articleSlug }: CommentsProps) {
     const fp = getFingerprint()
     const isLiked = likedComments.has(commentId)
     setLikedComments(prev => { const next = new Set(prev); isLiked ? next.delete(commentId) : next.add(commentId); return next })
-    setComments(prev => prev.map(c => c.id === commentId ? { ...c, like_count: Math.max(0, c.like_count + (isLiked ? -1 : 1)) } : c))
+    // Update in both top-level and replies
+    setComments(prev => prev.map(c => {
+      if (c.id === commentId) return { ...c, like_count: Math.max(0, c.like_count + (isLiked ? -1 : 1)) }
+      if (c.replies?.length) {
+        return { ...c, replies: c.replies.map(r => r.id === commentId ? { ...r, like_count: Math.max(0, r.like_count + (isLiked ? -1 : 1)) } : r) }
+      }
+      return c
+    }))
     try {
       await fetch(`/api/blogs/${userSlug}/${articleSlug}/comments/${commentId}/like`, {
         method: 'POST',
@@ -279,6 +301,11 @@ export function ArticleComments({ userSlug, articleSlug }: CommentsProps) {
         body: JSON.stringify({ fingerprint: fp }),
       })
     } catch { /* ignore */ }
+  }
+
+  const startReply = (commentId: string, authorName: string) => {
+    setReplyTo({ id: commentId, name: authorName })
+    setTimeout(() => replyInputRef.current?.focus(), 100)
   }
 
   const submit = async (e: React.FormEvent) => {
@@ -289,12 +316,25 @@ export function ArticleComments({ userSlug, articleSlug }: CommentsProps) {
       const res = await fetch(`/api/blogs/${userSlug}/${articleSlug}/comments`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ author_name: name || '匿名訪客', content }),
+        body: JSON.stringify({
+          author_name: name || '匿名訪客',
+          content,
+          parent_id: replyTo?.id ?? undefined,
+        }),
       })
       const data = await res.json() as { comment?: Comment; error?: string }
       if (res.ok && data.comment) {
-        setComments(prev => [...prev, data.comment!])
-        setContent(''); setMsg('留言成功！')
+        if (replyTo) {
+          // Append reply under parent
+          setComments(prev => prev.map(c =>
+            c.id === replyTo.id
+              ? { ...c, replies: [...(c.replies ?? []), data.comment!] }
+              : c
+          ))
+        } else {
+          setComments(prev => [...prev, { ...data.comment!, replies: [] }])
+        }
+        setContent(''); setReplyTo(null); setMsg('留言成功！')
         setTimeout(() => setMsg(''), 3000)
       } else {
         setMsg(data.error ?? '留言失敗')
@@ -303,12 +343,58 @@ export function ArticleComments({ userSlug, articleSlug }: CommentsProps) {
     finally { setSubmitting(false) }
   }
 
+  const renderAvatar = (c: Comment) => {
+    if (c.author_avatar) {
+      return (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={c.author_avatar} alt="" className="w-8 h-8 rounded-full object-cover ring-1 ring-white/10 shrink-0" />
+      )
+    }
+    return (
+      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-amber-500/30 to-purple-500/30 border border-white/10 flex items-center justify-center text-xs font-bold text-white/60 shrink-0">
+        {c.author_name.charAt(0).toUpperCase()}
+      </div>
+    )
+  }
+
+  const renderComment = (c: Comment, isReply = false) => (
+    <div key={c.id} className={`flex gap-3 ${isReply ? 'ml-11 mt-3' : ''}`}>
+      {renderAvatar(c)}
+      <div className="flex-1 min-w-0">
+        <div className="flex items-baseline gap-2 mb-1">
+          <span className="text-sm font-medium text-white/80">{c.author_name}</span>
+          <span className="text-xs text-white/25">{timeAgo(c.created_at)}</span>
+        </div>
+        <p className="text-sm text-white/65 leading-relaxed whitespace-pre-wrap">{c.content}</p>
+        <div className="mt-1.5 flex items-center gap-3">
+          <button
+            onClick={() => likeComment(c.id)}
+            className={`flex items-center gap-1 text-xs transition-colors ${
+              likedComments.has(c.id) ? 'text-rose-400' : 'text-white/25 hover:text-white/50'
+            }`}
+          >
+            <span>{likedComments.has(c.id) ? '❤️' : '🤍'}</span>
+            {c.like_count > 0 && <span>{c.like_count}</span>}
+          </button>
+          {!isReply && (
+            <button
+              onClick={() => startReply(c.id, c.author_name)}
+              className="text-xs text-white/25 hover:text-white/50 transition-colors"
+            >
+              回覆
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+
   return (
     <div className="space-y-6">
       <h3 className="text-lg font-semibold text-white/90 flex items-center gap-2">
         💬 留言
-        {loaded && comments.length > 0 && (
-          <span className="text-sm text-white/30 font-normal">({comments.length})</span>
+        {loaded && totalCount > 0 && (
+          <span className="text-sm text-white/30 font-normal">({totalCount})</span>
         )}
       </h3>
 
@@ -317,46 +403,39 @@ export function ArticleComments({ userSlug, articleSlug }: CommentsProps) {
       ) : (
         <div className="space-y-4">
           {comments.map(c => (
-            <div key={c.id} className="flex gap-3">
-              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-amber-500/30 to-purple-500/30 border border-white/10 flex items-center justify-center text-xs font-bold text-white/60 shrink-0">
-                {c.author_name.charAt(0).toUpperCase()}
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-baseline gap-2 mb-1">
-                  <span className="text-sm font-medium text-white/80">{c.author_name}</span>
-                  <span className="text-xs text-white/25">{timeAgo(c.created_at)}</span>
+            <div key={c.id}>
+              {renderComment(c)}
+              {/* Replies */}
+              {c.replies && c.replies.length > 0 && (
+                <div className="space-y-0">
+                  {c.replies.map(r => renderComment(r, true))}
                 </div>
-                <p className="text-sm text-white/65 leading-relaxed whitespace-pre-wrap">{c.content}</p>
-                <button
-                  onClick={() => likeComment(c.id)}
-                  className={`mt-2 flex items-center gap-1 text-xs transition-colors ${
-                    likedComments.has(c.id)
-                      ? 'text-rose-400'
-                      : 'text-white/25 hover:text-white/50'
-                  }`}
-                >
-                  <span>{likedComments.has(c.id) ? '❤️' : '🤍'}</span>
-                  {c.like_count > 0 && <span>{c.like_count}</span>}
-                </button>
-              </div>
+              )}
             </div>
           ))}
         </div>
       )}
 
       <form onSubmit={submit} className="space-y-3 pt-2 border-t border-white/8">
+        {replyTo && (
+          <div className="flex items-center gap-2 text-xs text-amber-400/70 bg-amber-500/5 border border-amber-500/10 rounded-lg px-3 py-2">
+            <span>回覆 {replyTo.name}</span>
+            <button type="button" onClick={() => setReplyTo(null)} className="ml-auto text-white/30 hover:text-white/60">✕</button>
+          </div>
+        )}
         <input
           type="text"
           value={name}
           onChange={e => setName(e.target.value)}
-          placeholder="你的名字（選填）"
+          placeholder="你的名字（選填，登入者自動帶入）"
           maxLength={50}
           className="w-full bg-white/[0.04] border border-white/10 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder:text-white/25 focus:outline-none focus:border-amber-500/40 focus:bg-white/[0.06] transition-colors"
         />
         <textarea
+          ref={replyInputRef}
           value={content}
           onChange={e => setContent(e.target.value)}
-          placeholder="寫下你的想法..."
+          placeholder={replyTo ? `回覆 ${replyTo.name}...` : '寫下你的想法...'}
           rows={3}
           maxLength={1000}
           required
@@ -371,7 +450,7 @@ export function ArticleComments({ userSlug, articleSlug }: CommentsProps) {
               disabled={submitting || !content.trim()}
               className="px-4 py-1.5 bg-amber-500/20 border border-amber-400/30 text-amber-300 text-sm rounded-xl hover:bg-amber-500/30 disabled:opacity-40 transition-colors"
             >
-              {submitting ? '送出中...' : '發表留言'}
+              {submitting ? '送出中...' : replyTo ? '回覆' : '發表留言'}
             </button>
           </div>
         </div>

@@ -898,27 +898,30 @@ const OWNER: Array<SlashCommand & { handler: CommandHandler }> = [
     command: '/全平台', aliases: ['/platform', '/overview', '/總覽'], description: '全平台租戶與用戶總覽',
     category: 'owner', adminOnly: true, ownerOnly: true,
     handler: () => ({
-      yukirin: { text: '老闆要看全平台！讓我統計一下...', mood: 'thinking', animation: 'think' },
-      riku:    { text: '全平台概況', mood: 'neutral', animation: null },
-      needsLLM: true,
+      yukirin: { text: '老闆要看全平台！讓我查...', mood: 'thinking', animation: 'think' },
+      riku:    { text: '...查詢中', mood: 'neutral', animation: 'think' },
+      action: { type: 'fetch_owner_data', target: 'platform' },
+      needsLLM: false,
     }),
   },
   {
     command: '/財報', aliases: ['/revenue', '/income', '/營收'], description: 'Z幣收支與平台營收',
     category: 'owner', adminOnly: true, ownerOnly: true,
     handler: () => ({
-      yukirin: { text: '讓我算算平台的錢...老闆有在賺嗎？', mood: 'thinking', animation: 'think' },
-      riku:    { text: '財務狀況', mood: 'neutral', animation: null },
-      needsLLM: true,
+      yukirin: { text: '讓我算算平台的錢...', mood: 'thinking', animation: 'think' },
+      riku:    { text: '...算帳中', mood: 'neutral', animation: 'think' },
+      action: { type: 'fetch_owner_data', target: 'revenue' },
+      needsLLM: false,
     }),
   },
   {
     command: '/今日報告', aliases: ['/today', '/日報', '/daily-report'], description: '今日平台活躍、問卷、AI 消耗彙整',
     category: 'owner', adminOnly: true, ownerOnly: true,
     handler: () => ({
-      yukirin: { text: '今天的報告來了！', mood: 'happy', animation: null },
-      riku:    { text: '今日數據', mood: 'neutral', animation: null },
-      needsLLM: true,
+      yukirin: { text: '今天的報告馬上來！', mood: 'happy', animation: null },
+      riku:    { text: '...整理中', mood: 'neutral', animation: 'think' },
+      action: { type: 'fetch_owner_data', target: 'today' },
+      needsLLM: false,
     }),
   },
   {
@@ -926,8 +929,9 @@ const OWNER: Array<SlashCommand & { handler: CommandHandler }> = [
     category: 'owner', adminOnly: true, ownerOnly: true,
     handler: () => ({
       yukirin: { text: '讓我算算燒了多少 Token...', mood: 'thinking', animation: 'think' },
-      riku:    { text: 'AI 成本', mood: 'neutral', animation: null },
-      needsLLM: true,
+      riku:    { text: '...計算中', mood: 'neutral', animation: 'think' },
+      action: { type: 'fetch_owner_data', target: 'ai-cost' },
+      needsLLM: false,
     }),
   },
   // ── 租戶/用戶管理 ──
@@ -984,18 +988,20 @@ const OWNER: Array<SlashCommand & { handler: CommandHandler }> = [
     command: '/部署', aliases: ['/deploy', '/deployment', '/最新部署'], description: '查看最新部署記錄',
     category: 'owner', adminOnly: true, ownerOnly: true,
     handler: () => ({
-      yukirin: { text: '讓我看看最近部署狀況...', mood: 'thinking', animation: 'think' },
-      riku:    { text: '部署記錄', mood: 'neutral', animation: null },
-      needsLLM: true,
+      yukirin: { text: '部署相關要去 Zeabur 面板看！帶你去總後台～', mood: 'happy', animation: null },
+      riku:    { text: '...去系統健康面板', mood: 'neutral', animation: null },
+      action: { type: 'navigate', target: '/snowrealm-insight-ctrl/health' },
+      needsLLM: false,
     }),
   },
   {
     command: '/錯誤日誌', aliases: ['/logs', '/errors', '/error-log'], description: '查看最新錯誤記錄',
     category: 'owner', adminOnly: true, ownerOnly: true,
     handler: () => ({
-      yukirin: { text: '讓我看看有什麼錯誤...', mood: 'sad', animation: null },
-      riku:    { text: '錯誤日誌', mood: 'neutral', animation: null },
-      needsLLM: true,
+      yukirin: { text: '錯誤日誌在審計紀錄裡！帶你去看～', mood: 'happy', animation: null },
+      riku:    { text: '...審計紀錄', mood: 'neutral', animation: null },
+      action: { type: 'navigate', target: '/snowrealm-insight-ctrl/audit' },
+      needsLLM: false,
     }),
   },
   // ── 內容/通知管理 ──
@@ -1034,8 +1040,9 @@ const OWNER: Array<SlashCommand & { handler: CommandHandler }> = [
     category: 'owner', adminOnly: true, ownerOnly: true,
     handler: () => ({
       yukirin: { text: '所有問卷的數據，馬上來！', mood: 'thinking', animation: 'think' },
-      riku:    { text: '問卷總覽', mood: 'neutral', animation: null },
-      needsLLM: true,
+      riku:    { text: '...查詢中', mood: 'neutral', animation: 'think' },
+      action: { type: 'fetch_owner_data', target: 'surveys' },
+      needsLLM: false,
     }),
   },
   {
@@ -1043,8 +1050,9 @@ const OWNER: Array<SlashCommand & { handler: CommandHandler }> = [
     category: 'owner', adminOnly: true, ownerOnly: true,
     handler: () => ({
       yukirin: { text: '來看看這週的趨勢！', mood: 'happy', animation: null },
-      riku:    { text: '週趨勢', mood: 'neutral', animation: null },
-      needsLLM: true,
+      riku:    { text: '...整理中', mood: 'neutral', animation: 'think' },
+      action: { type: 'fetch_owner_data', target: 'weekly' },
+      needsLLM: false,
     }),
   },
   // ── 部落格 & 創作 ──

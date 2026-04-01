@@ -1,13 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { query, execute, queryOne } from '@/lib/db'
+import { query, queryOne } from '@/lib/db'
 import { pushToUser } from '@/lib/lineNotify'
+import { verifyToken } from '@/lib/jwt'
 
 interface CommentRow extends Record<string, unknown> {
   id: string
   author_name: string
+  author_avatar: string | null
+  user_id: string | null
   content: string
   created_at: string
   like_count: number
+  parent_id: string | null
 }
 
 interface ArticleContext {
@@ -43,14 +47,33 @@ export async function GET(
   if (!ctx) return NextResponse.json({ comments: [] })
 
   try {
-    const comments = await query<CommentRow>(
-      `SELECT id, author_name, content, created_at, COALESCE(like_count, 0) AS like_count
-       FROM blog_comments
-       WHERE article_id = $1 AND is_approved = true
-       ORDER BY created_at ASC`,
+    const rows = await query<CommentRow>(
+      `SELECT bc.id, bc.author_name, bc.author_avatar, bc.user_id::text,
+              bc.content, bc.created_at, COALESCE(bc.like_count, 0) AS like_count,
+              bc.parent_id::text
+       FROM blog_comments bc
+       WHERE bc.article_id = $1 AND bc.is_approved = true
+       ORDER BY bc.created_at ASC`,
       [ctx.articleId]
     )
-    return NextResponse.json({ comments })
+    // Build tree: top-level + replies grouped by parent
+    const topLevel: (CommentRow & { replies: CommentRow[] })[] = []
+    const replyMap = new Map<string, CommentRow[]>()
+
+    for (const r of rows) {
+      if (r.parent_id) {
+        const arr = replyMap.get(r.parent_id) ?? []
+        arr.push(r)
+        replyMap.set(r.parent_id, arr)
+      } else {
+        topLevel.push({ ...r, replies: [] })
+      }
+    }
+    for (const c of topLevel) {
+      c.replies = replyMap.get(c.id) ?? []
+    }
+
+    return NextResponse.json({ comments: topLevel })
   } catch {
     return NextResponse.json({ comments: [] })
   }
@@ -64,19 +87,43 @@ export async function POST(
   const ctx = await getArticleContext(userSlug, articleSlug)
   if (!ctx) return NextResponse.json({ error: '文章不存在' }, { status: 404 })
 
-  const body = await req.json() as { author_name?: string; content?: string }
-  const authorName = (body.author_name ?? '').trim() || '匿名訪客'
+  const body = await req.json() as { author_name?: string; content?: string; parent_id?: string }
   const content = (body.content ?? '').trim()
 
   if (!content || content.length > 1000) {
     return NextResponse.json({ error: '留言內容不得為空或超過 1000 字' }, { status: 400 })
   }
 
+  // 嘗試從 session 取得登入用戶（可選）
+  const sessionToken = req.cookies.get('admin_session')?.value
+  const auth = sessionToken ? await verifyToken(sessionToken).catch(() => null) : null
+  let authorName = (body.author_name ?? '').trim() || '匿名訪客'
+  let authorAvatar: string | null = null
+  let userId: string | null = null
+
+  if (auth?.sub) {
+    userId = auth.sub
+    const profile = await queryOne<{ display_name: string | null; avatar_url: string | null }>(
+      `SELECT COALESCE(up.display_name, au.display_name, au.username) AS display_name,
+              COALESCE(up.avatar_url, au.avatar_url) AS avatar_url
+       FROM admin_users au
+       LEFT JOIN user_profiles up ON up.user_id = au.id
+       WHERE au.id = $1`,
+      [userId]
+    )
+    if (profile?.display_name) authorName = profile.display_name
+    authorAvatar = profile?.avatar_url ?? null
+  }
+
+  const parentId = body.parent_id || null
+
   try {
-    const row = await queryOne<{ id: string; author_name: string; content: string; created_at: string; like_count: number }>(
-      `INSERT INTO blog_comments (article_id, author_name, content)
-       VALUES ($1, $2, $3) RETURNING id, author_name, content, created_at, COALESCE(like_count, 0) AS like_count`,
-      [ctx.articleId, authorName, content]
+    const row = await queryOne<CommentRow>(
+      `INSERT INTO blog_comments (article_id, author_name, author_avatar, user_id, content, parent_id)
+       VALUES ($1, $2, $3, $4, $5, $6)
+       RETURNING id, author_name, author_avatar, user_id::text, content, created_at,
+                 COALESCE(like_count, 0) AS like_count, parent_id::text`,
+      [ctx.articleId, authorName, authorAvatar, userId, content, parentId]
     )
 
     // Notify blog author via LINE (non-blocking)
