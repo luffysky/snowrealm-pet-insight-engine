@@ -3,6 +3,7 @@ import { verifyToken } from '@/lib/jwt'
 import { isUserPlatformUnlimited } from '@/lib/platformUnlimited'
 import { spendZcoin, getBalance } from '@/lib/zcoinEngine'
 import { getActiveAiKey, getPlatformKey, logAiUsage } from '@/lib/aiService'
+import { validateAiKey } from '@/lib/aiCall'
 import { queryOne } from '@/lib/db'
 
 export const runtime = 'nodejs'
@@ -236,13 +237,17 @@ export async function POST(req: NextRequest) {
   const promptTokens = Math.ceil(fullPrompt.length / 4)
 
   try {
+    // 使用前先驗證 API Key 是否有效
+    await validateAiKey(aiKey!)
+
     let raw = ''
 
-    if (aiKey.provider === 'anthropic') {
-      const res = await fetch('https://api.anthropic.com/v1/messages', {
+    if (aiKey!.provider === 'anthropic') {
+      const baseUrl = aiKey!.baseUrl ?? 'https://api.anthropic.com'
+      const res = await fetch(`${baseUrl}/v1/messages`, {
         method: 'POST',
         headers: {
-          'x-api-key': aiKey.apiKey,
+          'x-api-key': aiKey!.apiKey,
           'anthropic-version': '2023-06-01',
           'content-type': 'application/json',
         },
@@ -256,10 +261,11 @@ export async function POST(req: NextRequest) {
       if (!res.ok) throw new Error(data.error?.message ?? 'Anthropic API error')
       raw = data.content?.[0]?.text ?? ''
     } else {
-      const res = await fetch('https://api.openai.com/v1/chat/completions', {
+      const baseUrl = aiKey!.baseUrl ?? 'https://api.openai.com'
+      const res = await fetch(`${baseUrl}/v1/chat/completions`, {
         method: 'POST',
         headers: {
-          Authorization: `Bearer ${aiKey.apiKey}`,
+          Authorization: `Bearer ${aiKey!.apiKey}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({

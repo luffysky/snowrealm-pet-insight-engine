@@ -55,9 +55,10 @@ export async function callAnthropicApi(
   model: string,
   systemPrompt: string,
   userContent: string,
-  options?: { maxTokens?: number }
+  options?: { maxTokens?: number; baseUrl?: string }
 ): Promise<AiCallResult> {
-  const res = await fetch('https://api.anthropic.com/v1/messages', {
+  const base = (options?.baseUrl ?? 'https://api.anthropic.com').replace(/\/$/, '')
+  const res = await fetch(`${base}/v1/messages`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -89,6 +90,41 @@ export async function callAnthropicApi(
 }
 
 /**
+ * 使用前驗證 API Key 是否有效（輕量 ping，幾乎不消耗 tokens）
+ * OpenAI-compatible: GET /v1/models（零 tokens）
+ * Anthropic: POST /v1/messages max_tokens=1（≈ $0）
+ */
+export async function validateAiKey(
+  key: { provider: string; apiKey: string; model: string; baseUrl?: string }
+): Promise<void> {
+  const timeout = AbortSignal.timeout(5000)
+
+  if (key.provider === 'anthropic') {
+    const base = (key.baseUrl ?? 'https://api.anthropic.com').replace(/\/$/, '')
+    const res = await fetch(`${base}/v1/messages`, {
+      method: 'POST',
+      headers: {
+        'x-api-key': key.apiKey,
+        'anthropic-version': '2023-06-01',
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({ model: key.model, max_tokens: 1, messages: [{ role: 'user', content: 'hi' }] }),
+      signal: timeout,
+    })
+    if (res.status === 401) throw new Error('API Key 無效或已過期，請到 AI 設定頁面重新設定')
+    if (res.status === 403) throw new Error('API Key 權限不足，請確認帳號狀態')
+  } else {
+    const base = (key.baseUrl ?? 'https://api.openai.com').replace(/\/$/, '')
+    const res = await fetch(`${base}/v1/models`, {
+      headers: { Authorization: `Bearer ${key.apiKey}` },
+      signal: timeout,
+    })
+    if (res.status === 401) throw new Error('API Key 無效或已過期，請到 AI 設定頁面重新設定')
+    if (res.status === 403) throw new Error('API Key 權限不足，請確認帳號狀態')
+  }
+}
+
+/**
  * 統一分流：根據 provider 自動選擇 OpenAI-compatible 或 Anthropic
  * 這是最常用的函式，所有 AI 功能都應該透過這個呼叫
  */
@@ -99,7 +135,7 @@ export async function callAiProvider(
   options?: { temperature?: number; maxTokens?: number }
 ): Promise<AiCallResult> {
   if (aiKey.provider === 'anthropic') {
-    return callAnthropicApi(aiKey.apiKey, aiKey.model, systemPrompt, userContent, options)
+    return callAnthropicApi(aiKey.apiKey, aiKey.model, systemPrompt, userContent, { ...options, baseUrl: aiKey.baseUrl })
   }
   return callOpenAiCompatible(
     aiKey.apiKey,
