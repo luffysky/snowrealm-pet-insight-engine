@@ -6,6 +6,7 @@ import { ArrowLeft, MessageCircle, Send, Loader2, X, Paperclip, Smile, ImageIcon
 import Link from 'next/link'
 import { GifPicker } from '@/components/social/GifPicker'
 import { CHAT_BACKGROUNDS, ChatBgLayer, type BgId } from '@/components/admin/chat-bg'
+import FriendQrCard from '@/components/admin/FriendQrCard'
 
 // ─── Emoji data ───
 const EMOJI_CATEGORIES = [
@@ -498,6 +499,8 @@ export default function MessagesPage() {
   const [friendSearching, setFriendSearching] = useState(false)
   const [pendingRequests, setPendingRequests] = useState<PendingRequest[]>([])
   const [sendingRequest, setSendingRequest] = useState<string | null>(null)
+  const [friendSubTab, setFriendSubTab] = useState<'list' | 'qr'>('list')
+  const [myIdCopied, setMyIdCopied] = useState(false)
   const friendSearchTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [hideOnlineStatus, setHideOnlineStatus] = useState(false)
   const [mutedUsers, setMutedUsers] = useState<Set<string>>(new Set())
@@ -1332,27 +1335,61 @@ export default function MessagesPage() {
               </div>
             )
           ) : mainTab === 'friends' ? (
-            // ─── 好友 / 搜索 ───
+            // ─── 好友 / 搜索 / QR ───
             <div className="flex flex-col h-full overflow-y-auto">
-              {/* 搜索框 */}
-              <div className="px-4 pt-3 pb-2 sticky top-0 bg-slate-950/95 backdrop-blur z-10">
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30 text-sm">🔍</span>
-                  <input
-                    type="text"
-                    value={friendSearch}
-                    onChange={e => handleFriendSearch(e.target.value)}
-                    placeholder="搜尋用戶名稱或 ID..."
-                    className="w-full pl-8 pr-8 py-2 bg-white/[0.06] border border-white/10 rounded-xl text-sm text-white placeholder-white/25 focus:outline-none focus:border-amber-400/40 transition-colors"
-                  />
-                  {friendSearch && (
-                    <button onClick={() => { setFriendSearch(''); setFriendSearchResults([]) }} className="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60">
-                      <X className="w-3.5 h-3.5" />
-                    </button>
-                  )}
+              {/* 子分頁切換 */}
+              <div className="px-4 pt-3 pb-2 sticky top-0 bg-slate-950/95 backdrop-blur z-10 space-y-2">
+                <div className="flex gap-1 bg-white/[0.04] rounded-xl p-0.5">
+                  <button onClick={() => setFriendSubTab('list')} className={`flex-1 py-1.5 text-xs rounded-lg transition-colors ${friendSubTab === 'list' ? 'bg-white/10 text-white font-medium' : 'text-white/40 hover:text-white/60'}`}>👥 好友</button>
+                  <button onClick={() => setFriendSubTab('qr')} className={`flex-1 py-1.5 text-xs rounded-lg transition-colors ${friendSubTab === 'qr' ? 'bg-white/10 text-white font-medium' : 'text-white/40 hover:text-white/60'}`}>📱 加好友</button>
                 </div>
+                {friendSubTab === 'list' && (
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30 text-sm">🔍</span>
+                    <input
+                      type="text"
+                      value={friendSearch}
+                      onChange={e => handleFriendSearch(e.target.value)}
+                      placeholder="搜尋用戶名稱或 ID..."
+                      className="w-full pl-8 pr-8 py-2 bg-white/[0.06] border border-white/10 rounded-xl text-sm text-white placeholder-white/25 focus:outline-none focus:border-amber-400/40 transition-colors"
+                    />
+                    {friendSearch && (
+                      <button onClick={() => { setFriendSearch(''); setFriendSearchResults([]) }} className="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60">
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
+                )}
               </div>
 
+              {friendSubTab === 'qr' ? (
+                // ─── QR Code 加好友 ───
+                <div className="px-4 py-4 space-y-4">
+                  {/* 我的 ID */}
+                  {meId && (
+                    <div className="bg-white/[0.04] border border-white/8 rounded-xl px-4 py-3">
+                      <p className="text-[10px] text-white/30 mb-1.5">我的 ID</p>
+                      <div className="flex items-center gap-2">
+                        <code className="flex-1 text-sm text-amber-400/90 font-mono tracking-wider">{meId.replace(/-/g, '').slice(0, 12)}</code>
+                        <button
+                          onClick={async () => {
+                            await navigator.clipboard.writeText(meId.replace(/-/g, '').slice(0, 12))
+                            setMyIdCopied(true)
+                            setTimeout(() => setMyIdCopied(false), 2000)
+                          }}
+                          className="px-2.5 py-1 text-[10px] bg-white/5 hover:bg-white/10 border border-white/8 rounded-lg text-white/50 hover:text-white/80 transition-colors"
+                        >
+                          {myIdCopied ? '✓ 已複製' : '複製'}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                  {/* QR Card */}
+                  {meId && <FriendQrCard userId={meId} />}
+                  <p className="text-center text-[10px] text-white/20">掃描 QR Code 或分享連結邀請好友</p>
+                </div>
+              ) : (
+              <>
               {friendSearch.trim() ? (
                 // ─ 搜索結果 ─
                 friendSearching ? (
@@ -1476,6 +1513,8 @@ export default function MessagesPage() {
                     </div>
                   )}
                 </>
+              )}
+              </>
               )}
             </div>
           )

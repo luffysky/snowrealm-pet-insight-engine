@@ -686,7 +686,7 @@ export default function YukirinChatPanel({ onClose, character = 'yukirin', onSwi
                   setMessages(prev => appendMessage(prev, {
                     id: (Date.now() + 2).toString(),
                     role: 'assistant',
-                    text: d.text,
+                    text: d.text ?? '',
                     mood: 'happy',
                   }))
                 }
