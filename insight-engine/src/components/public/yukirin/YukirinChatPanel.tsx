@@ -955,9 +955,8 @@ export default function YukirinChatPanel({ onClose, character = 'yukirin', onSwi
   const handleQuickReply = useCallback((text: string) => {
     // 特殊快速回覆：前往部落格編輯器（草稿已存 localStorage，blog 頁面會自動載入）
     if (text === '前往部落格編輯器') {
-      const m2 = pathname?.match(/^\/insight-admin\/([^/]+)/)
-      const slug2 = m2?.[1]
-      router.push(slug2 ? `/insight-admin/${slug2}/blog` : '/insight-admin/blog')
+      // 草稿已存 localStorage（yukirin_blog_draft），BlogEditor 會自動載入
+      router.push('/insight-admin/blog')
       return
     }
     // 再寫一篇 → 重新進入 blog write mode
