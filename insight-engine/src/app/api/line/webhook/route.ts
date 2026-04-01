@@ -13,6 +13,8 @@ import {
   type GuideContext,
 } from '@/lib/guideEngine'
 import { buildYukirinFlexMessage } from '@/lib/proactive/pushEngine'
+import { handleSlashCommand, isSlashCommand } from '@/lib/agent/slashCommands'
+import { getOwnerData } from '@/lib/ownerData'
 
 const DEFAULT_TENANT = process.env.DEFAULT_TENANT_SLUG || 'default'
 const PASSCODE_FALLBACK = '我要成為管理員'
@@ -57,7 +59,40 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       const text = (event.message.text as string).trim()
       const replyToken = event.replyToken as string
 
-      // 管理員指令：今日報告 / 漏斗 / 標籤
+      // 斜線指令（老闆 + 管理員）
+      if (isSlashCommand(text)) {
+        const isOwner = await isLineUserOwner(userId)
+        const lineState = {
+          userId, nickname: '', isAdmin: true, isOwner,
+          selectedCharacter: 'yukirin' as const, presenceMode: 'chat' as const, characterSize: 1,
+          currentPage: 'line', timeOnPage: 0, scrollPosition: 0, scrollSpeed: 'idle' as const,
+          isTyping: false, lastClickTarget: '', pageVisitCount: 0,
+          currentSurveyId: null, currentQuestionIndex: 0, totalQuestions: 0,
+          isGuideOpen: true, currentSessionRounds: 0,
+          visitCount: 1, surveysCompleted: 0, zcoinBalance: 0, streakDays: 0, daysSinceLastVisit: 0,
+          currentHour: new Date().getHours(), dayOfWeek: new Date().getDay(), isWeekend: [0, 6].includes(new Date().getDay()),
+        }
+        const slashResult = handleSlashCommand(text, lineState)
+        if (slashResult) {
+          // fetch_owner_data 指令 → 查真實 DB 數據
+          if (slashResult.action?.type === 'fetch_owner_data' && isOwner) {
+            const data = await getOwnerData(slashResult.action.target)
+            if (data) {
+              const flex = buildYukirinFlexMessage(data, 'happy')
+              await replyMessages(replyToken, [flex as unknown as { type: string; [key: string]: unknown }], CHANNEL_ACCESS_TOKEN)
+              continue
+            }
+          }
+          // 一般斜線指令 → 回傳靜態文字
+          const replyText = slashResult.yukirin?.text || slashResult.riku?.text || '指令已執行'
+          const replyMood = slashResult.yukirin?.mood || 'happy'
+          const flex = buildYukirinFlexMessage(replyText, replyMood)
+          await replyMessages(replyToken, [flex as unknown as { type: string; [key: string]: unknown }], CHANNEL_ACCESS_TOKEN)
+          continue
+        }
+      }
+
+      // 管理員指令（舊版：今日報告 / 漏斗 / 標籤，不用 / 前綴）
       if (await isLineAdmin(userId)) {
         const adminMessages = await handleAdminCommand(userId, text, 'default')
         if (adminMessages !== null) {
