@@ -228,7 +228,8 @@
       "Bash(git -C \"/d/SnowRealmRebirth/snowrealm-insight-engine/insight-engine/.claude/worktrees/eager-yalow\" log --oneline -5)",
       "Bash(find \"D:/SnowRealmRebirth/snowrealm-insight-engine/insight-engine/src/app/\\(admin\\)/insight-admin\" -name \"page.tsx\")",
       "WebSearch",
-      "Bash(\"D:\\\\SnowRealmRebirth\\\\snowrealm-insight-engine\\\\insight-engine\\\\src\\\\app\\\\globals.css\")"
+      "Bash(\"D:\\\\SnowRealmRebirth\\\\snowrealm-insight-engine\\\\insight-engine\\\\src\\\\app\\\\globals.css\")",
+      "Bash(find \"D:\\\\SnowRealmRebirth\\\\snowrealm-insight-engine\\\\insight-engine\\\\src\\\\app\\\\\\(admin\\)\" -type f -name \"page.tsx\")"
     ]
   }
 }

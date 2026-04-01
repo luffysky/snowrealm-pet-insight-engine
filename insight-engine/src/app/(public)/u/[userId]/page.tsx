@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef, type ReactNode } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, Globe, Heart, MessageSquare, Loader2, X, Settings, ChevronRight, Bell, MessageCircle, LayoutDashboard, BookOpen, Image, MoreHorizontal, Pencil, Trash2, Camera, Wallet, Library, LogOut } from 'lucide-react'
+import { ArrowLeft, Globe, Heart, MessageSquare, Loader2, X, Settings, ChevronRight, Bell, MessageCircle, LayoutDashboard, BookOpen, Image, MoreHorizontal, Pencil, Trash2, Camera, Wallet, Library, LogOut, Bookmark } from 'lucide-react'
 import { UserAlbum } from '@/components/social/UserAlbum'
 import { setFloatingChatEnabled, FLOATING_CHAT_ENABLED_KEY } from '@/components/social/FloatingChat'
 
@@ -55,6 +55,7 @@ function ProfileSidebar({ onClose, tenantSlug, isSuperAdmin }: { onClose: () => 
             <SidebarLink href="/insight-admin/blog" icon={<BookOpen className="w-4 h-4" />} label="我的部落格" onClick={onClose} />
             <SidebarLink href="/blogs" icon={<Library className="w-4 h-4" />} label="部落格廣場" onClick={onClose} />
             <SidebarLink href="/articles" icon={<Image className="w-4 h-4" />} label="相簿 &amp; 動態" onClick={onClose} />
+            <SidebarLink href="/bookmarks" icon={<Bookmark className="w-4 h-4" />} label="我的收藏" onClick={onClose} />
             <SidebarLink href="/notifications" icon={<Bell className="w-4 h-4" />} label="通知" onClick={onClose} />
             <SidebarLink href="/messages" icon={<MessageCircle className="w-4 h-4" />} label="私訊" onClick={onClose} />
             <SidebarLink href="/wallet" icon={<Wallet className="w-4 h-4" />} label="Z幣錢包" onClick={onClose} />
@@ -468,12 +469,20 @@ export default function UserProfilePage() {
             <ArrowLeft className="w-4 h-4" /> 社群
           </Link>
           {isMe && (
-            <button
-              onClick={() => setSidebarOpen(true)}
-              className="ml-auto p-1.5 text-[#8a7ca8]/75 hover:text-[#3d3155]/80 hover:bg-white/8 rounded-lg transition-colors"
-            >
-              <Settings className="w-4 h-4" />
-            </button>
+            <div className="ml-auto flex items-center gap-1">
+              <Link
+                href="/bookmarks"
+                className="p-1.5 text-[#8a7ca8]/75 hover:text-amber-500 hover:bg-white/8 rounded-lg transition-colors"
+              >
+                <Bookmark className="w-4 h-4" />
+              </Link>
+              <button
+                onClick={() => setSidebarOpen(true)}
+                className="p-1.5 text-[#8a7ca8]/75 hover:text-[#3d3155]/80 hover:bg-white/8 rounded-lg transition-colors"
+              >
+                <Settings className="w-4 h-4" />
+              </button>
+            </div>
           )}
         </div>
       </nav>

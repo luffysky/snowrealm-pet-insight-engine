@@ -3059,14 +3059,19 @@ h3:hover .heading-anchor:hover {
 }
 
 /* ── Blog article: font size adjustment (BLOG-17) ── */
-.blog-font-small  .blog-content { font-size: 0.875rem; }
-.blog-font-medium .blog-content { font-size: 1rem; }
-.blog-font-large  .blog-content { font-size: 1.0625rem; }
-/* 確保 prose 段落繼承字體大小 */
+.blog-font-small  .blog-content { font-size: 0.875rem; line-height: 1.7; }
+.blog-font-medium .blog-content { font-size: 1.0625rem; line-height: 1.8; }
+.blog-font-large  .blog-content { font-size: 1.3125rem; line-height: 1.9; }
+/* 確保 prose 段落繼承字體大小與行高 */
 .blog-font-small  .blog-content p,
-.blog-font-small  .blog-content li { font-size: inherit; }
+.blog-font-small  .blog-content li { font-size: inherit; line-height: inherit; }
+.blog-font-medium .blog-content p,
+.blog-font-medium .blog-content li { font-size: inherit; line-height: inherit; }
 .blog-font-large  .blog-content p,
-.blog-font-large  .blog-content li { font-size: inherit; }
+.blog-font-large  .blog-content li { font-size: inherit; line-height: inherit; }
+/* 大字模式下標題也放大 */
+.blog-font-large  .blog-content h2 { font-size: 1.75rem; }
+.blog-font-large  .blog-content h3 { font-size: 1.4rem; }
 
 /* ── 雪凜自由漫步動畫 ── */
 @keyframes yukirin-stroll {
