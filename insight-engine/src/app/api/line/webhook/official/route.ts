@@ -193,7 +193,7 @@ async function isLineUserOwner(lineUserId: string): Promise<boolean> {
   // 方法 2：查 DB admin_users
   try {
     const row = await queryOne<{ id: string }>(
-      `SELECT id FROM admin_users WHERE line_id = $1 AND (role = 'super_admin' OR platform_unlimited = true) LIMIT 1`,
+      `SELECT id FROM admin_users WHERE line_id = $1 AND role = 'super_admin' LIMIT 1`,
       [lineUserId]
     )
     return !!row

@@ -28,8 +28,8 @@ export async function GET(req: NextRequest) {
   // 每次都查 DB 確認特權狀態
   const isUnlimited = await isUserPlatformUnlimited(userId)
   const isAdmin = !!(payload?.role && ['super_admin', 'admin'].includes(payload.role))
-  // isOwner = platform_unlimited OR super_admin（與 guide/chat 的 boss 判斷邏輯一致）
-  const isOwner = isUnlimited || payload?.role === 'super_admin'
+  // isOwner = 只認 super_admin（平台禮遇只是不限額度，不等於老闆）
+  const isOwner = payload?.role === 'super_admin'
   const userName = payload?.name ?? null
   if (isUnlimited || payload?.role === 'super_admin') {
     return NextResponse.json({ isUnlimited: true, freeRemaining: null, purchasedCredits: null, zcoinBalance: null, isAdmin, isOwner, userName })

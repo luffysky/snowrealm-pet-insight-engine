@@ -246,10 +246,12 @@ export async function POST(req: NextRequest) {
 
   // 前端傳入的 character 優先覆蓋 DB 記憶（即時切換不需等 DB 更新）
   if (character) userMemory.selectedCharacter = character
-  context = { ...context, userRole, userName, userMemory, isOwner: isUnlimited, promptSettings: promptSettings ?? undefined }
+  // isOwner = 只認 super_admin（平台禮遇只是不限額度，不等於老闆）
+  const isOwner = userRole === 'super_admin'
+  context = { ...context, userRole, userName, userMemory, isOwner, promptSettings: promptSettings ?? undefined }
 
-  // 老闆（platform_unlimited）或 super_admin 注入今日平台數據
-  if (isUnlimited || userRole === 'super_admin') {
+  // 老闆（super_admin）注入今日平台數據
+  if (isOwner) {
     context.platformStats = await getPlatformQuickStats()
   }
 

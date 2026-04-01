@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { verifyToken } from '@/lib/jwt'
-import { isUserPlatformUnlimited } from '@/lib/platformUnlimited'
 import { getOwnerData } from '@/lib/ownerData'
 
 async function requireOwner(req: NextRequest) {
@@ -8,8 +7,8 @@ async function requireOwner(req: NextRequest) {
   if (!token) return null
   const payload = await verifyToken(token).catch(() => null)
   if (!payload?.sub) return null
-  const isUnlimited = await isUserPlatformUnlimited(payload.sub) || payload.role === 'super_admin'
-  if (!isUnlimited) return null
+  // 只有 super_admin 可查老闆數據（平台禮遇不等於老闆）
+  if (payload.role !== 'super_admin') return null
   return payload
 }
 
