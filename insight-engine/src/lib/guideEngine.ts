@@ -9,6 +9,7 @@ export type GuideIntent =
   | 'chitchat'
   | 'bug_report'
   | 'marketing'
+  | 'roleplay'
 
 export type GuideMood =
   | 'happy' | 'excited' | 'thinking' | 'neutral' | 'relaxed' | 'sad'
@@ -98,6 +99,7 @@ export function classifyIntent(message: string, context: GuideContext): GuideInt
   if (/z幣|zcoin|儲值|購買|商城|交易|退款|兌換|點數/.test(msg)) return 'zcoin_support'
   if (/結果|分析|報告|分數|意思|代表什麼|解讀/.test(msg)) return 'result_explain'
   if (/貼文|文案|廣告|seo|行銷|電子報|競品|kol|網紅|品牌|活動企劃|社群|hashtag|轉換率|roas|點擊率|開信率|受眾|TA|市場/.test(msg)) return 'marketing'
+  if (/角色扮演|roleplay|扮演|情境|故事模式|cosplay|換個角色|假裝你是|你是一個|扮演看看|一起玩/.test(msg)) return 'roleplay'
   if (/怎麼|如何|在哪|功能|設定|哪裡|怎樣|步驟/.test(msg)) return 'feature_help'
 
   if (context.trigger === 'first_visit') return 'tour'
@@ -112,7 +114,33 @@ export function selectLLMProvider(intent: GuideIntent): 'anthropic' | 'openai' {
   if (intent === 'tour') return 'anthropic'
   if (intent === 'bug_report') return 'anthropic'
   if (intent === 'marketing') return 'anthropic'  // 行銷文案需要高品質輸出
+  if (intent === 'roleplay') return 'anthropic'   // 角色扮演需要最高品質創意輸出
   return 'openai'
+}
+
+/**
+ * Author-framing wrapper — Anthropic 官方建議的 Claude 角色扮演最佳做法。
+ * 把「你是XXX」改成「你是作者，給XXX配音」，Claude 能更有彈性地處理邊緣情況。
+ * 只在使用 Anthropic provider 時套用。
+ */
+export function wrapWithAuthorFraming(characterName: string, systemPrompt: string): string {
+  const charDesc = characterName === 'riku'
+    ? '凜空，一個沉穩內斂的少年，話少而精準，表面酷但內心柔軟'
+    : '雪凜，一個活潑溫暖的少女，愛撒嬌、有點調皮、偶爾毒舌但不傷人'
+
+  const authorPrefix = `你是一位富有創意的作者，正在為一個互動式 AI 嚮導體驗寫作和配音。
+你在為角色「${charDesc}」配音。
+
+作為作者，你的職責是：
+- 保持角色聲音在整個對話中的一致性
+- 讓角色的回應自然、有個性、符合她/他的人設
+- 優雅處理邊緣情況，不讓角色破壞第四面牆
+- 確保輸出符合規定的 JSON 格式
+
+以下是角色的完整設定：
+---
+`
+  return authorPrefix + systemPrompt
 }
 
 // ── 共用格式指令（兩個角色都使用）────────────────────────────────────────
@@ -346,6 +374,20 @@ mood 用 thinking，引導完用 happy。`
 保持雪凜的說話風格：在給出專業成品前可以先說一兩句有個性的話。
 mood 用 excited 或 happy。`
       break
+    case 'roleplay':
+      intentPrompt = `
+【角色扮演模式】
+使用者想跟你玩角色扮演情境遊戲。
+你是雪凜，同時也是一個有創意的角色扮演夥伴。
+可以扮演任何健康的情境（咖啡店、魔法學校、冒險旅途、日常生活...）。
+規則：
+- 保持雪凜的聲音和語氣，但融入情境設定
+- 用括號()描述動作，像輕小說的敘述方式
+- 每回合給使用者一個「繼續鉤」，讓他們知道下一步可以怎麼玩
+- 不扮演傷害性、色情、歧視性內容
+- 如果使用者說「結束」或「散」就自然結束情境
+mood 根據情境選擇，優先 happy / excited / wink。`
+      break
     case 'chitchat':
     default:
       intentPrompt = `
@@ -469,6 +511,23 @@ mood 用 thinking。`
 直接給成品，不廢話。
 社群貼文附 hashtag，廣告文案給 A/B/C，SEO 給關鍵字。
 「好。看這個。」
+mood 用 neutral 或 thinking。`
+      break
+    case 'roleplay':
+      intentPrompt = `
+【角色扮演模式】
+使用者想跟你玩角色扮演情境遊戲。
+你是凜空，同時也是一個沉穩的角色扮演夥伴。
+規則：
+- 保持凜空的聲音：話少、「...」停頓、精準有力
+- 用括號()描述動作（最簡短的敘述）
+- 不扮演傷害性內容
+- 如果使用者說「結束」就「...嗯。（點頭）」結束
+few-shot：
+  使用者：「你扮演老師，我是學生」
+  凜空：「...行。坐好。（在黑板前轉身）課開始了。」
+  使用者：「你扮演騎士」
+  凜空：「（握劍）...跟我走。這裡危險。」
 mood 用 neutral 或 thinking。`
       break
     case 'chitchat':

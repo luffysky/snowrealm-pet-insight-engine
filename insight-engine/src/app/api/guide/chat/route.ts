@@ -7,6 +7,7 @@ import {
   classifyIntent,
   selectLLMProvider,
   buildSystemPrompt,
+  wrapWithAuthorFraming,
   parseGuideResponse,
   shouldTriggerCoupleInteraction,
   buildCoupleInteractionPrompt,
@@ -254,7 +255,12 @@ export async function POST(req: NextRequest) {
 
   const intent = classifyIntent(message, context)
   const provider = selectLLMProvider(intent)
-  const systemPrompt = buildSystemPrompt(intent, context)
+  const selectedChar = context.userMemory?.selectedCharacter ?? 'yukirin'
+  const rawPrompt = buildSystemPrompt(intent, context)
+  // Author-framing 只在 Anthropic provider 套用（效果更好，且不浪費 OpenAI tokens）
+  const systemPrompt = provider === 'anthropic'
+    ? wrapWithAuthorFraming(selectedChar, rawPrompt)
+    : rawPrompt
 
   const aiKey = getPlatformKey()
   if (!aiKey) {

@@ -703,7 +703,7 @@ export default function YukirinWidget() {
               setFreeBubble(b => !b)
               yukirinRef.current?.setMood('happy', 400)
             }}
-            className="w-full h-full rounded-2xl overflow-hidden bg-gradient-to-b from-[#f3eeff]/60 to-[#ffeef5]/60 border border-[#b8a9e8]/20 shadow-[0_8px_32px_rgba(184,169,232,0.3)] cursor-pointer"
+            className="w-full h-full cursor-pointer"
             title="點我說話"
           >
             {character === 'riku' ? (
