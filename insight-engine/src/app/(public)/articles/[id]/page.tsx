@@ -223,7 +223,9 @@ export default function ArticleDetailPage() {
 
 
         {/* Interaction */}
-        <div className="border-t border-slate-200/80 pt-4">
+        <div className="border-t border-slate-200/80 pt-4"
+          style={{ '--sc-fg': '#1e293b', '--sc-fg-muted': '#64748b', '--sc-hover-bg': 'rgba(15,23,42,0.06)', '--sc-badge-bg': '#e2e8f0' } as React.CSSProperties}
+        >
           <InteractionBar
             postId={post.id}
             initialLikes={post.likesCount}
