@@ -650,6 +650,9 @@ export default function YukirinChatPanel({ onClose, character = 'yukirin', onSwi
                 '/首頁 /個人檔案 /我的文章 /收藏 /探索',
                 '\n🔧 **工具**',
                 '/設定 /週報 /創作文章 /意見回饋 /常見問題',
+                '\n📣 **行銷**',
+                '/寫貼文 /廣告文案 /SEO /內容策略 /電子報',
+                '/行銷分析 /競品分析 /品牌定位 /KOL企劃 /活動企劃',
                 turnsInfo?.isAdmin ? '\n\n👑 **管理員**\n/後台 /問卷管理 /填答記錄 /AI洞察 /標籤分析 /漏斗分析\n/LINE推播 /LINE設定 /AI設定 /團隊管理 /生成問卷 /今日填答\n/stats /cost /alerts' : '',
                 turnsInfo?.isOwner ? '\n\n🔑 **老闆（只有你看得到）**\n📊 /全平台 /財報 /今日報告 /AI成本 /問卷總覽 /週趨勢\n👥 /租戶 /用戶 /發Z幣 /禮遇 /模擬登入\n🖥️ /系統狀態 /部署 /錯誤日誌\n📣 /公告 /文章管理 /提示詞 /清記憶\n✨ /老闆模式' : '',
               ].join('\n')

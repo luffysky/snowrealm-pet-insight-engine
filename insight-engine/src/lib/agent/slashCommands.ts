@@ -715,18 +715,20 @@ const ADMIN: Array<SlashCommand & { handler: CommandHandler }> = [
     command: '/stats', aliases: ['/數據', '/狀態', '/dashboard'], description: '即時問卷數據總覽',
     category: 'admin', adminOnly: true, ownerOnly: false,
     handler: () => ({
-      yukirin: { text: '幫你看看現在的數據！', mood: 'thinking', animation: 'think' },
+      yukirin: { text: '數據都在 Dashboard！帶你去看～', mood: 'happy', animation: null },
       riku:    { text: '數據', mood: 'neutral', animation: null },
-      needsLLM: true,
+      action: { type: 'navigate', target: '/insight-admin' },
+      needsLLM: false,
     }),
   },
   {
     command: '/cost', aliases: ['/成本', '/花費', '/ai-usage'], description: '今日 AI Token 消耗',
     category: 'admin', adminOnly: true, ownerOnly: false,
     handler: () => ({
-      yukirin: { text: '讓我算算今天花了多少...', mood: 'thinking', animation: 'think' },
+      yukirin: { text: 'AI 使用狀況在這裡！帶你去看～', mood: 'happy', animation: null },
       riku:    { text: '今日成本', mood: 'neutral', animation: null },
-      needsLLM: true,
+      action: { type: 'navigate', target: '/insight-admin/ai-settings' },
+      needsLLM: false,
     }),
   },
   {
@@ -844,18 +846,20 @@ const ADMIN: Array<SlashCommand & { handler: CommandHandler }> = [
     command: '/生成問卷', aliases: ['/ai-survey', '/ai生成', '/ai問卷', '/自動生成'], description: 'AI 幫你生成問卷',
     category: 'admin', adminOnly: true, ownerOnly: false,
     handler: () => ({
-      yukirin: { text: '要用 AI 幫你生成問卷嗎！說主題！', mood: 'excited', animation: 'excited' },
-      riku:    { text: '...說主題\n我幫你生成', mood: 'neutral', animation: null },
-      needsLLM: true,
+      yukirin: { text: '問卷建立在這邊！可以用 AI 對話生成喔～', mood: 'excited', animation: 'excited' },
+      riku:    { text: '問卷建立', mood: 'neutral', animation: null },
+      action: { type: 'navigate', target: '/insight-admin/surveys' },
+      needsLLM: false,
     }),
   },
   {
     command: '/今日填答', aliases: ['/today-responses', '/今天回覆', '/今天填答幾筆'], description: '查看今日填答數量',
     category: 'admin', adminOnly: true, ownerOnly: false,
     handler: () => ({
-      yukirin: { text: '今天有多少人填問卷？讓我查查～', mood: 'thinking', animation: 'think' },
+      yukirin: { text: '填答記錄在這邊！帶你去看～', mood: 'happy', animation: null },
       riku:    { text: '今日填答', mood: 'neutral', animation: null },
-      needsLLM: true,
+      action: { type: 'navigate', target: '/insight-admin/responses' },
+      needsLLM: false,
     }),
   },
   {
@@ -959,18 +963,20 @@ const OWNER: Array<SlashCommand & { handler: CommandHandler }> = [
     command: '/發Z幣', aliases: ['/give-zcoin', '/給Z幣', '/zcoin-grant'], description: '給指定用戶發放 Z 幣',
     category: 'owner', adminOnly: true, ownerOnly: true,
     handler: () => ({
-      yukirin: { text: '老闆大方撒錢！要給誰多少？', mood: 'excited', animation: 'excited' },
-      riku:    { text: '...發放 Z 幣，說明用戶和數量', mood: 'neutral', animation: null },
-      needsLLM: true,
+      yukirin: { text: '發 Z 幣要去總後台操作！帶你去～', mood: 'excited', animation: 'excited' },
+      riku:    { text: '發放 Z 幣', mood: 'neutral', animation: null },
+      action: { type: 'navigate', target: '/snowrealm-insight-ctrl/zcoin' },
+      needsLLM: false,
     }),
   },
   {
     command: '/禮遇', aliases: ['/platform-unlimited', '/設禮遇', '/grant-unlimited'], description: '設定/取消用戶的平台禮遇',
     category: 'owner', adminOnly: true, ownerOnly: true,
     handler: () => ({
-      yukirin: { text: '要給誰開啟平台禮遇？說用戶名稱～', mood: 'happy', animation: null },
-      riku:    { text: '平台禮遇管理，說明目標用戶', mood: 'neutral', animation: null },
-      needsLLM: true,
+      yukirin: { text: '平台禮遇設定在用戶管理！帶你去～', mood: 'happy', animation: null },
+      riku:    { text: '平台禮遇管理', mood: 'neutral', animation: null },
+      action: { type: 'navigate', target: '/snowrealm-insight-ctrl/users' },
+      needsLLM: false,
     }),
   },
   // ── 系統 & 部署 ──
@@ -1029,9 +1035,10 @@ const OWNER: Array<SlashCommand & { handler: CommandHandler }> = [
     command: '/清記憶', aliases: ['/forget', '/reset-memory', '/清除記憶'], description: '清除所有用戶的 AI 對話記憶',
     category: 'owner', adminOnly: true, ownerOnly: true,
     handler: () => ({
-      yukirin: { text: '等等...老闆你確定要清記憶嗎？這個要去後台操作喔！', mood: 'surprised', animation: null },
-      riku:    { text: '這個需要謹慎', mood: 'neutral', animation: null },
-      needsLLM: true,
+      yukirin: { text: '對話記憶管理在這邊！請小心操作喔～', mood: 'surprised', animation: null },
+      riku:    { text: '對話記憶管理', mood: 'neutral', animation: null },
+      action: { type: 'navigate', target: '/snowrealm-insight-ctrl/conversations' },
+      needsLLM: false,
     }),
   },
   // ── 數據 & 問卷 ──
@@ -1062,7 +1069,7 @@ const OWNER: Array<SlashCommand & { handler: CommandHandler }> = [
     handler: () => ({
       yukirin: { text: '去看看文章列表！', mood: 'happy', animation: null },
       riku:    { text: '文章管理', mood: 'neutral', animation: null },
-      action: { type: 'navigate_admin', target: 'blog' },
+      action: { type: 'navigate', target: '/write' },
       needsLLM: false,
     }),
   },
@@ -1071,9 +1078,10 @@ const OWNER: Array<SlashCommand & { handler: CommandHandler }> = [
     command: '/模擬登入', aliases: ['/impersonate', '/sudo', '/以身分登入'], description: '以某租戶身分進入後台（模擬）',
     category: 'owner', adminOnly: true, ownerOnly: true,
     handler: () => ({
-      yukirin: { text: '要模擬哪個組織的管理員？說組織名稱～', mood: 'thinking', animation: 'think' },
-      riku:    { text: '模擬登入，說組織 slug', mood: 'neutral', animation: null },
-      needsLLM: true,
+      yukirin: { text: '模擬登入要從租戶管理操作！帶你去～', mood: 'happy', animation: null },
+      riku:    { text: '租戶管理', mood: 'neutral', animation: null },
+      action: { type: 'navigate', target: '/snowrealm-insight-ctrl/tenants' },
+      needsLLM: false,
     }),
   },
   {
