@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { queryOne, execute, query } from '@/lib/db'
 import { getTenantContext } from '@/lib/tenant'
+import { verifyPassword } from '@/lib/auth'
 
 /** 驗證 preview token：與 preview-token route 保持一致的雜湊邏輯 */
 async function verifyPreviewToken(articleId: string, token: string): Promise<boolean> {
@@ -35,6 +36,7 @@ interface ArticleRow extends Record<string, unknown> {
   author_name: string | null
   author_avatar: string | null
   blog_slug: string | null
+  password_hash: string | null
 }
 
 interface SeriesArticleRow extends Record<string, unknown> {
@@ -86,6 +88,23 @@ export async function GET(
       if (ctx.userId !== article.user_id) {
         return NextResponse.json({ error: '此文章為私人' }, { status: 403 })
       }
+    }
+  }
+
+  // 密碼保護：檢查 unlock cookie
+  if (article.password_hash) {
+    const noTrack = req.nextUrl.searchParams.get('notrack') === '1'
+    const unlockCookie = req.cookies.get(`article_unlock_${article.id}`)?.value
+    if (!noTrack && unlockCookie !== '1') {
+      // 不回傳內容，只回傳基本資訊讓前端顯示密碼輸入
+      const { password_hash: _ph, content: _c, ...publicInfo } = article
+      return NextResponse.json({
+        article: { ...publicInfo, content: '', is_password_protected: true },
+        is_password_protected: true,
+        prev: null,
+        next: null,
+        series: null,
+      })
     }
   }
 

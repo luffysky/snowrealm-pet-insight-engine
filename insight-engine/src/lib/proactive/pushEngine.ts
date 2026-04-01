@@ -172,6 +172,7 @@ export function buildYukirinFlexMessage(
         type: 'box',
         layout: 'vertical',
         paddingAll: '14px',
+        backgroundColor: '#1a1033',
         contents: [
           {
             type: 'text',

@@ -220,7 +220,13 @@
       "Bash(python3:*)",
       "Bash(python:*)",
       "Bash(\"D:\\\\SnowRealmRebirth\\\\snowrealm-insight-engine\\\\insight-engine\\\\docs\\\\new\\\\todo_list_all.md\":*)",
-      "Bash(ls -la \"D:\\\\SnowRealmRebirth\\\\snowrealm-insight-engine\\\\insight-engine\\\\src\\\\app\\\\\\(admin\\)\\\\insight-admin\\\\support\")"
+      "Bash(ls -la \"D:\\\\SnowRealmRebirth\\\\snowrealm-insight-engine\\\\insight-engine\\\\src\\\\app\\\\\\(admin\\)\\\\insight-admin\\\\support\")",
+      "Bash(mkdir -p \"D:/SnowRealmRebirth/snowrealm-insight-engine/insight-engine/src/app/blogs/[userSlug]/feed.xml\")",
+      "Bash(mkdir -p \"D:/SnowRealmRebirth/snowrealm-insight-engine/insight-engine/src/app/api/blogs/[userSlug]/subscribe\")",
+      "Bash(mkdir -p \"D:/SnowRealmRebirth/snowrealm-insight-engine/insight-engine/src/app/api/admin/social/blog/[id]/preview-token\")",
+      "Bash(git -C /d/SnowRealmRebirth/snowrealm-insight-engine log --oneline main..claude/eager-yalow)",
+      "Bash(git -C \"/d/SnowRealmRebirth/snowrealm-insight-engine/insight-engine/.claude/worktrees/eager-yalow\" log --oneline -5)",
+      "Bash(find \"D:/SnowRealmRebirth/snowrealm-insight-engine/insight-engine/src/app/\\(admin\\)/insight-admin\" -name \"page.tsx\")"
     ]
   }
 }

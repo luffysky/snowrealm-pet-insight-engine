@@ -314,6 +314,12 @@ body:not(:has(.admin-root)) {
 
 /* ── 部落格淺色模式 (class .blog-light 加在 <html>) ── */
 .blog-light { background-color: #f8f5ff !important; }
+/* 覆蓋文章頁的 bg-slate-950 */
+.blog-light .blog-article-root { background-color: #f8f5ff !important; }
+.blog-light .blog-article-root nav,
+.blog-light .blog-article-root header { color: #3d3155 !important; }
+.blog-light .blog-article-root nav a,
+.blog-light .blog-article-root nav span { color: #5a4d94 !important; }
 .blog-light .blog-content { color: #1a1020; }
 .blog-light .blog-content h1,.blog-light .blog-content h2,.blog-light .blog-content h3,
 .blog-light .blog-content h4,.blog-light .blog-content h5,.blog-light .blog-content h6 { color: #1a1020 !important; }
@@ -2972,4 +2978,10 @@ h3:hover .heading-anchor:hover {
 
 /* ── Blog article: font size adjustment (BLOG-17) ── */
 .blog-font-small  .blog-content { font-size: 0.875rem; }
+.blog-font-medium .blog-content { font-size: 1rem; }
 .blog-font-large  .blog-content { font-size: 1.0625rem; }
+/* 確保 prose 段落繼承字體大小 */
+.blog-font-small  .blog-content p,
+.blog-font-small  .blog-content li { font-size: inherit; }
+.blog-font-large  .blog-content p,
+.blog-font-large  .blog-content li { font-size: inherit; }

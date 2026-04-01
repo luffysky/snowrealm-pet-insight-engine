@@ -122,8 +122,8 @@ async function generateMenuImage(
 
       const cx = x + w / 2
       const cy = y + h / 2
-      texts.push(`<text x="${cx}" y="${cy - 40}" text-anchor="middle" dominant-baseline="central" font-size="100" fill="white">${btn.emoji}</text>`)
-      texts.push(`<text x="${cx}" y="${cy + 100}" text-anchor="middle" dominant-baseline="central" font-size="72" font-weight="bold" fill="white" font-family="sans-serif">${btn.label}</text>`)
+      texts.push(`<text x="${cx}" y="${cy - 70}" text-anchor="middle" dominant-baseline="central" font-size="280" fill="white">${btn.emoji}</text>`)
+      texts.push(`<text x="${cx}" y="${cy + 250}" text-anchor="middle" dominant-baseline="central" font-size="120" font-weight="bold" fill="white" font-family="sans-serif">${btn.label}</text>`)
     }
   }
 

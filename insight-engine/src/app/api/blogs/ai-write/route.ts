@@ -9,8 +9,8 @@ export const runtime = 'nodejs'
 
 // Z幣成本：tier × mode
 const ZCOIN_COSTS = {
-  sonnet: { full: 200, outline: 50, refine: 100 },
-  haiku:  { full: 80,  outline: 20, refine: 40  },
+  sonnet: { full: 200, outline: 50, refine: 100, research: 30 },
+  haiku:  { full: 80,  outline: 20, refine: 40,  research: 15 },
 } as const
 
 const HAIKU_MODEL = 'claude-haiku-4-5-20251001'
@@ -80,9 +80,11 @@ export async function POST(req: NextRequest) {
     prompt: string
     existingTitle?: string
     existingContent?: string
-    mode?: 'full' | 'outline' | 'refine'
+    mode?: 'full' | 'outline' | 'refine' | 'research'
     tier?: 'sonnet' | 'haiku'
     keyPreference?: 'own' | 'platform'
+    /** 研究成果，用於 full 模式中提升文章品質 */
+    researchContext?: string
   }
 
   const mode = body.mode ?? 'full'
@@ -181,10 +183,31 @@ export async function POST(req: NextRequest) {
   "seoDesc": "（SEO 描述建議）",
   "suggestedSlug": "（英文 slug）"
 }`
+  } else if (mode === 'research') {
+    userPrompt = `針對以下主題進行深度研究分析，為部落格寫作提供素材：
+
+主題：${body.prompt}
+
+請整理出以下內容並回傳 JSON（不要包裝在 markdown code block 中）：
+{
+  "title": "（適合寫成文章的標題建議）",
+  "content": "（研究摘要，HTML 格式，包含：<h2>核心觀點</h2>、<h2>重要數據或事實</h2>、<h2>不同角度與觀點</h2>、<h2>可延伸討論的方向</h2>，每個章節用 <p> 說明重點）",
+  "summary": "（50-100 字，這個主題最值得寫的切入點）",
+  "tags": ["相關標籤1", "相關標籤2", "相關標籤3"],
+  "seoTitle": "（SEO 標題建議）",
+  "seoDesc": "（SEO 描述建議）",
+  "suggestedSlug": "（英文 slug）"
+}
+
+注意：這是研究素材，不是正式文章。請提供具體事實、數據（如有）、多元觀點，讓作者有豐富素材可以發揮。`
   } else {
+    const researchSection = body.researchContext
+      ? `\n\n以下是關於此主題的研究素材，請善用這些資料讓文章更有深度：\n${body.researchContext.slice(0, 2000)}`
+      : ''
+
     userPrompt = `請根據以下需求，撰寫一篇完整的繁體中文部落格文章：
 
-需求：${body.prompt}
+需求：${body.prompt}${researchSection}
 
 要求：
 - 文章長度：600-1500 字

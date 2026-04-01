@@ -47,6 +47,7 @@ interface TurnsInfo {
   isLoggedIn?: boolean
   isAdmin?: boolean
   isOwner?: boolean
+  userName?: string | null
 }
 
 interface YukirinChatPanelProps {
@@ -231,7 +232,28 @@ export default function YukirinChatPanel({ onClose, character = 'yukirin', onSwi
   useEffect(() => {
     fetch('/api/guide/turns')
       .then(r => r.json())
-      .then((data: TurnsInfo) => setTurnsInfo(data))
+      .then((data: TurnsInfo) => {
+        setTurnsInfo(data)
+        // 已登入時更新歡迎訊息，讓雪凜認出使用者
+        if (data.isLoggedIn || data.isUnlimited) {
+          const name = data.userName
+          let greeting: string
+          if (data.isOwner) {
+            greeting = `${name ? `嗨嗨，${name}！` : '嗨嗨，老闆！'} 歡迎回來 ✨ 有什麼需要我幫你的嗎？`
+          } else if (data.isAdmin) {
+            greeting = `嗨嗨${name ? `，${name}` : ''}！ 歡迎回到後台 🌸 有什麼我可以幫你的嗎？`
+          } else {
+            greeting = `嗨嗨${name ? `，${name}` : ''}！ 很高興再次見到你 💜 有什麼我可以幫你的嗎？`
+          }
+          setMessages(prev => {
+            // 只更新第一條（初始歡迎訊息）
+            if (prev.length === 1 && prev[0].id === '0') {
+              return [{ ...prev[0], text: greeting }]
+            }
+            return prev
+          })
+        }
+      })
       .catch(() => {})
   }, [])
 
@@ -260,7 +282,8 @@ export default function YukirinChatPanel({ onClose, character = 'yukirin', onSwi
         // 從 pathname 提取租戶 slug 再組合後台路徑
         const m = pathname?.match(/^\/insight-admin\/([^/]+)/)
         const slug = m?.[1]
-        router.push(slug ? `/insight-admin/${slug}/${action.target}` : `/insight-admin/${action.target}`)
+        const tgt = action.target ? `/${action.target}` : ''
+        router.push(slug ? `/insight-admin/${slug}${tgt}` : `/insight-admin${tgt}`)
         break
       }
       case 'scroll': {
@@ -451,12 +474,12 @@ export default function YukirinChatPanel({ onClose, character = 'yukirin', onSwi
       }
 
       const thinkingMsgs = character === 'riku' ? [
-        '...在想。稍等。',
-        '...寫文章中。',
+        '...在查資料。稍等。',
+        '...先蒐集素材。',
       ] : [
-        '好的！讓我想想怎麼寫最好～✨',
-        '嗯嗯！我來幫你組織一下！',
-        '交給我！我在想最棒的寫法～',
+        '好的！我先查一下相關資料，再開始寫～✨',
+        '嗯嗯！讓我先找找素材，文章會更有深度！',
+        '交給我！先查資料，再動筆～',
       ]
       const thinking = thinkingMsgs[Math.floor(Math.random() * thinkingMsgs.length)]
       yukirinRef.current?.setMood('thinking', 300)
@@ -464,15 +487,51 @@ export default function YukirinChatPanel({ onClose, character = 'yukirin', onSwi
       setMessages(prev => appendMessage(prev, {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        text: thinking + '\n\n（正在創作，請稍候...）',
+        text: thinking,
         mood: 'thinking',
       }))
 
       try {
+        // Step 1: 先做研究
+        let researchContext = ''
+        try {
+          const researchRes = await fetch('/api/blogs/ai-write', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ prompt: text, mode: 'research' }),
+          })
+          if (researchRes.ok) {
+            const researchData = await researchRes.json() as { content?: string; title?: string }
+            if (researchData.content) {
+              const plain = researchData.content.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim()
+              researchContext = plain
+              const researchMsg = character === 'riku'
+                ? `...素材整理好了。開始寫文章。`
+                : `資料查好了！✨ 我找到一些不錯的素材，現在開始動筆～`
+              setMessages(prev => appendMessage(prev, {
+                id: (Date.now() + 2).toString(),
+                role: 'assistant',
+                text: researchMsg,
+                mood: 'thinking',
+              }))
+            }
+          }
+        } catch {
+          // 研究失敗不影響寫作
+        }
+
+        // Step 2: 正式寫作
+        setMessages(prev => appendMessage(prev, {
+          id: (Date.now() + 3).toString(),
+          role: 'assistant',
+          text: character === 'riku' ? '...正在寫文章中。' : '（正在創作，請稍候...）',
+          mood: 'thinking',
+        }))
+
         const res = await fetch('/api/blogs/ai-write', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ prompt: text, mode: 'full' }),
+          body: JSON.stringify({ prompt: text, mode: 'full', researchContext: researchContext || undefined }),
         })
         const resData = await res.json() as {
           title?: string; content?: string; summary?: string
@@ -834,16 +893,11 @@ export default function YukirinChatPanel({ onClose, character = 'yukirin', onSwi
   }, [input, sendMessage])
 
   const handleQuickReply = useCallback((text: string) => {
-    // 特殊快速回覆：前往部落格編輯器
+    // 特殊快速回覆：前往部落格編輯器（草稿已存 localStorage，blog 頁面會自動載入）
     if (text === '前往部落格編輯器') {
-      // 從 pathname 提取租戶 slug，例如 /insight-admin/snowrealm-pet/surveys → snowrealm-pet
-      const match = pathname?.match(/^\/insight-admin\/([^/]+)/)
-      const tenantSlug = match?.[1]
-      if (tenantSlug) {
-        router.push(`/insight-admin/${tenantSlug}/blog`)
-      } else {
-        router.push('/insight-admin/blog')
-      }
+      const m2 = pathname?.match(/^\/insight-admin\/([^/]+)/)
+      const slug2 = m2?.[1]
+      router.push(slug2 ? `/insight-admin/${slug2}/blog` : '/insight-admin/blog')
       return
     }
     // 再寫一篇 → 重新進入 blog write mode
@@ -1085,7 +1139,7 @@ export default function YukirinChatPanel({ onClose, character = 'yukirin', onSwi
             <div className="mx-3 mb-1 rounded-xl border border-white/10 overflow-hidden"
               style={{ background: 'rgba(15,9,30,0.97)' }}
             >
-              {cmdSuggestions.slice(0, 8).map(cmd => (
+              {cmdSuggestions.slice(0, 20).map(cmd => (
                 <button
                   key={cmd.command}
                   onClick={() => { setCmdSuggestions([]); sendMessage(cmd.command) }}

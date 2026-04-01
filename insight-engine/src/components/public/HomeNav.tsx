@@ -67,8 +67,8 @@ export function HomeNav() {
                     hover:brightness-110 active:scale-95 transition-[transform,filter]
                     ${spinning ? 'animate-sphere-pop' : ''}`}
         style={{
-          background: 'radial-gradient(circle at 36% 32%, rgba(255,255,255,0.88) 0%, #7dd3fc 38%, #3b82f6 68%, #1e3a8a 100%)',
-          boxShadow: '0 4px 18px rgba(59,130,246,0.45), inset 0 -4px 8px rgba(0,0,0,0.18), inset 0 4px 8px rgba(255,255,255,0.35)',
+          background: 'radial-gradient(circle at 36% 32%, rgba(255,255,255,0.88) 0%, #d8d0f0 38%, #9b8ee0 68%, #5a4d94 100%)',
+          boxShadow: '0 4px 18px rgba(130,100,220,0.40), inset 0 -4px 8px rgba(0,0,0,0.15), inset 0 4px 8px rgba(255,255,255,0.35)',
         }}
       >
         {/* Shine highlight */}
@@ -82,13 +82,13 @@ export function HomeNav() {
       {dropOpen && (
         <div className="absolute top-full right-0 mt-2.5 w-56 max-w-[calc(100vw-2rem)]
                         bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl
-                        border border-sky-100/80 dark:border-white/10
-                        shadow-xl shadow-sky-100/30 dark:shadow-black/40
+                        border border-purple-100/80 dark:border-white/10
+                        shadow-xl shadow-purple-100/30 dark:shadow-black/40
                         rounded-2xl py-2 z-50">
           {user ? (
             <>
               {/* User info header */}
-              <div className="px-4 py-2.5 border-b border-sky-50 dark:border-white/8 mb-1">
+              <div className="px-4 py-2.5 border-b border-purple-50 dark:border-white/8 mb-1">
                 <p className="text-sm font-semibold text-slate-800 dark:text-slate-100 truncate">{user.userName}</p>
                 <p className="text-xs text-slate-400 truncate mt-0.5">{user.tenantName ?? user.tenantId}</p>
                 {zcoinBalance !== null && (
@@ -98,19 +98,19 @@ export function HomeNav() {
 
               {/* Navigation links */}
               <Link href="/explore" onClick={close}
-                className="flex items-center gap-2 px-4 py-2 text-sm text-slate-600 dark:text-slate-300 hover:text-sky-600 hover:bg-sky-50 dark:hover:bg-sky-900/30 transition-colors">
+                className="flex items-center gap-2 px-4 py-2 text-sm text-slate-600 dark:text-slate-300 hover:text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-900/30 transition-colors">
                 <span>🔍</span> 探索問卷
               </Link>
               <Link href={`/insight-admin/${user.tenantId}`} onClick={close}
-                className="flex items-center gap-2 px-4 py-2 text-sm text-slate-600 dark:text-slate-300 hover:text-sky-600 hover:bg-sky-50 dark:hover:bg-sky-900/30 transition-colors">
+                className="flex items-center gap-2 px-4 py-2 text-sm text-slate-600 dark:text-slate-300 hover:text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-900/30 transition-colors">
                 <span>📊</span> 進入後台
               </Link>
               <Link href="/articles" onClick={close}
-                className="flex items-center gap-2 px-4 py-2 text-sm text-slate-600 dark:text-slate-300 hover:text-sky-600 hover:bg-sky-50 dark:hover:bg-sky-900/30 transition-colors">
+                className="flex items-center gap-2 px-4 py-2 text-sm text-slate-600 dark:text-slate-300 hover:text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-900/30 transition-colors">
                 <span>🌐</span> 社群文章
               </Link>
               <Link href="/write" onClick={close}
-                className="flex items-center gap-2 px-4 py-2 text-sm text-slate-600 dark:text-slate-300 hover:text-sky-600 hover:bg-sky-50 dark:hover:bg-sky-900/30 transition-colors">
+                className="flex items-center gap-2 px-4 py-2 text-sm text-slate-600 dark:text-slate-300 hover:text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-900/30 transition-colors">
                 <span>✍️</span> 發布文章
               </Link>
               <Link href="/zcoin-shop" onClick={close}
@@ -118,11 +118,11 @@ export function HomeNav() {
                 <span>🪙</span> Z幣商店
               </Link>
               <Link href="/wallet" onClick={close}
-                className="flex items-center gap-2 px-4 py-2 text-sm text-slate-600 dark:text-slate-300 hover:text-sky-600 hover:bg-sky-50 dark:hover:bg-sky-900/30 transition-colors">
+                className="flex items-center gap-2 px-4 py-2 text-sm text-slate-600 dark:text-slate-300 hover:text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-900/30 transition-colors">
                 <span>💼</span> 錢包記錄
               </Link>
               <Link href={`/insight-admin/${user.tenantId}/account`} onClick={close}
-                className="flex items-center gap-2 px-4 py-2 text-sm text-slate-600 dark:text-slate-300 hover:text-sky-600 hover:bg-sky-50 dark:hover:bg-sky-900/30 transition-colors">
+                className="flex items-center gap-2 px-4 py-2 text-sm text-slate-600 dark:text-slate-300 hover:text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-900/30 transition-colors">
                 <span>⚙️</span> 帳號設定
               </Link>
               {user.role === 'super_admin' && (
@@ -131,7 +131,7 @@ export function HomeNav() {
                   <span>⚡</span> 總控台
                 </Link>
               )}
-              <div className="border-t border-sky-50 dark:border-white/8 mt-1 pt-1">
+              <div className="border-t border-purple-50 dark:border-white/8 mt-1 pt-1">
                 <button onClick={handleLogout}
                   className="w-full flex items-center gap-2 px-4 py-2 text-sm text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20 transition-colors cursor-pointer">
                   <span>🚪</span> 登出
@@ -142,18 +142,18 @@ export function HomeNav() {
             /* Logged-out menu */
             <>
               <Link href="/explore" onClick={close}
-                className="flex items-center gap-2 px-4 py-2 text-sm text-slate-600 dark:text-slate-300 hover:text-sky-600 hover:bg-sky-50 dark:hover:bg-sky-900/30 transition-colors">
+                className="flex items-center gap-2 px-4 py-2 text-sm text-slate-600 dark:text-slate-300 hover:text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-900/30 transition-colors">
                 <span>🔍</span> 探索問卷
               </Link>
               <Link href="/articles" onClick={close}
-                className="flex items-center gap-2 px-4 py-2 text-sm text-slate-600 dark:text-slate-300 hover:text-sky-600 hover:bg-sky-50 dark:hover:bg-sky-900/30 transition-colors">
+                className="flex items-center gap-2 px-4 py-2 text-sm text-slate-600 dark:text-slate-300 hover:text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-900/30 transition-colors">
                 <span>🌐</span> 社群文章
               </Link>
-              <div className="border-t border-sky-50 dark:border-white/8 mt-1 pt-1 px-4 py-2 flex flex-col gap-2">
+              <div className="border-t border-purple-50 dark:border-white/8 mt-1 pt-1 px-4 py-2 flex flex-col gap-2">
                 <Link
                   href={`/login?redirect=${encodeURIComponent(pathname)}`}
                   onClick={close}
-                  className="block text-center py-1.5 text-sm font-medium text-sky-600 hover:text-sky-700 transition-colors"
+                  className="block text-center py-1.5 text-sm font-medium text-purple-600 hover:text-purple-700 transition-colors"
                 >
                   登入
                 </Link>
@@ -161,7 +161,7 @@ export function HomeNav() {
                   href="/register"
                   onClick={close}
                   className="block text-center py-2 text-sm font-semibold rounded-full
-                             bg-gradient-to-r from-sky-500 to-indigo-500 hover:from-sky-400 hover:to-indigo-400
+                             bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-400 hover:to-indigo-400
                              text-white transition-all shadow-sm"
                 >
                   免費註冊

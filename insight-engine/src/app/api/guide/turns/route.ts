@@ -30,8 +30,9 @@ export async function GET(req: NextRequest) {
   const isAdmin = !!(payload?.role && ['super_admin', 'admin'].includes(payload.role))
   // isOwner = platform_unlimited（比 role 更可靠，不受 tenant role 影響）
   const isOwner = isUnlimited
+  const userName = payload?.name ?? null
   if (isUnlimited) {
-    return NextResponse.json({ isUnlimited: true, freeRemaining: null, purchasedCredits: null, zcoinBalance: null, isAdmin, isOwner })
+    return NextResponse.json({ isUnlimited: true, freeRemaining: null, purchasedCredits: null, zcoinBalance: null, isAdmin, isOwner, userName })
   }
 
   const userKey = getUserKey(req, userId)
@@ -63,6 +64,7 @@ export async function GET(req: NextRequest) {
       isLoggedIn: !!userId,
       isAdmin,
       isOwner,
+      userName,
     })
   } catch {
     return NextResponse.json({
@@ -73,6 +75,7 @@ export async function GET(req: NextRequest) {
       isLoggedIn: !!userId,
       isAdmin,
       isOwner,
+      userName,
     })
   }
 }

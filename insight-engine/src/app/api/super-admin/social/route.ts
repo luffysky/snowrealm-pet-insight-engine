@@ -165,13 +165,16 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
 
   if (tab === 'posts') {
     const rows = await query<PostRow>(
-      `SELECT sp.id, sp.user_id, up.display_name as author_name, up.avatar_url as author_avatar,
+      `SELECT sp.id, sp.user_id,
+              COALESCE(up.display_name, au.display_name, au.username) as author_name,
+              COALESCE(up.avatar_url, au.avatar_url) as author_avatar,
               sp.type, sp.title, sp.content, sp.images::text,
               array_to_json(sp.tags)::text AS tags,
               sp.is_public, sp.created_at,
               sp.likes_count, sp.comments_count
        FROM social_posts sp
        LEFT JOIN user_profiles up ON up.user_id = sp.user_id
+       LEFT JOIN admin_users au ON au.id = sp.user_id
        ORDER BY sp.created_at DESC
        LIMIT $1 OFFSET $2`,
       [pageSize, offset]
@@ -271,15 +274,17 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
     try {
       const rows = await query<AlbumRow>(
         `SELECT ua.id, ua.user_id::text,
-                up.display_name as author_name, up.avatar_url as author_avatar,
+                COALESCE(up.display_name, au.display_name, au.username) as author_name,
+                COALESCE(up.avatar_url, au.avatar_url) as author_avatar,
                 ua.name, ua.description,
                 (SELECT url FROM user_album_photos WHERE album_id = ua.id ORDER BY display_order ASC, created_at ASC LIMIT 1) AS cover_image,
                 ua.is_public, ua.created_at, ua.updated_at,
                 COUNT(uap.id)::text as photo_count
          FROM user_albums ua
          LEFT JOIN user_profiles up ON up.user_id = ua.user_id
+         LEFT JOIN admin_users au ON au.id = ua.user_id
          LEFT JOIN user_album_photos uap ON uap.album_id = ua.id
-         GROUP BY ua.id, up.display_name, up.avatar_url, ua.user_id, ua.name, ua.description, ua.is_public, ua.created_at, ua.updated_at
+         GROUP BY ua.id, up.display_name, up.avatar_url, au.display_name, au.username, au.avatar_url, ua.user_id, ua.name, ua.description, ua.is_public, ua.created_at, ua.updated_at
          ORDER BY ua.created_at DESC
          LIMIT $1 OFFSET $2`,
         [pageSize, offset]
@@ -310,12 +315,15 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
   if (tab === 'blogs') {
     try {
       const rows = await query<BlogRow>(
-        `SELECT uba.id, uba.user_id::text, up.display_name as author_name, up.avatar_url as author_avatar,
+        `SELECT uba.id, uba.user_id::text,
+                COALESCE(up.display_name, au.display_name, au.username) as author_name,
+                COALESCE(up.avatar_url, au.avatar_url) as author_avatar,
                 uba.title, uba.slug, uba.summary, uba.cover_image,
                 uba.is_public, uba.view_count, uba.published_at,
                 array_to_json(uba.tags)::text as tags
          FROM user_blog_articles uba
          LEFT JOIN user_profiles up ON up.user_id = uba.user_id
+         LEFT JOIN admin_users au ON au.id = uba.user_id
          ORDER BY uba.published_at DESC
          LIMIT $1 OFFSET $2`,
         [pageSize, offset]

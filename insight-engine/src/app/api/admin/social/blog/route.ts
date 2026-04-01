@@ -54,6 +54,8 @@ export async function POST(req: NextRequest) {
     isPublic?: boolean
     seoTitle?: string
     seoDesc?: string
+    seriesId?: string | null
+    seriesOrder?: number | null
   }
 
   if (!body.title?.trim()) return NextResponse.json({ error: '缺少標題' }, { status: 400 })
@@ -71,8 +73,8 @@ export async function POST(req: NextRequest) {
 
   const article = await queryOne<BlogArticleRow>(
     `INSERT INTO user_blog_articles
-       (user_id, tenant_id, title, slug, summary, content, cover_image, cover_image_position, tags, is_public, seo_title, seo_desc)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+       (user_id, tenant_id, title, slug, summary, content, cover_image, cover_image_position, tags, is_public, seo_title, seo_desc, series_id, series_order)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
      RETURNING *`,
     [
       ctx.userId, ctx.tenantId ?? 'default',
@@ -85,6 +87,8 @@ export async function POST(req: NextRequest) {
       body.isPublic ?? true,
       body.seoTitle ?? null,
       body.seoDesc ?? null,
+      body.seriesId ?? null,
+      body.seriesOrder ?? null,
     ]
   )
 

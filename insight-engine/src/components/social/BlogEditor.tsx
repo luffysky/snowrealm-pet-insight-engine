@@ -27,6 +27,9 @@ interface BlogArticle {
   seoDesc: string
   seriesId: string
   seriesOrder: string
+  /** 設定密碼（空字串 = 不設定 / 移除密碼） */
+  password: string
+  hasPassword: boolean
 }
 
 interface BlogSeries {
@@ -41,6 +44,7 @@ const EMPTY: BlogArticle = {
   coverImage: '', coverImagePosition: 'center center',
   tags: [], isPublic: true, seoTitle: '', seoDesc: '',
   seriesId: '', seriesOrder: '',
+  password: '', hasPassword: false,
 }
 
 function slugify(text: string): string {
@@ -158,7 +162,7 @@ export function BlogEditor({ articleId, onSaved, onCancel }: Props) {
         title: string; slug: string; summary: string | null; content: string
         cover_image: string | null; cover_image_position?: string; tags: string[]
         is_public: boolean; seo_title: string | null; seo_desc: string | null
-        series_id: string | null; series_order: number | null
+        series_id: string | null; series_order: number | null; has_password?: boolean
       } }> : null)
       .then(d => {
         if (!d) return
@@ -171,6 +175,7 @@ export function BlogEditor({ articleId, onSaved, onCancel }: Props) {
           tags: a.tags ?? [], isPublic: a.is_public,
           seoTitle: a.seo_title ?? '', seoDesc: a.seo_desc ?? '',
           seriesId: a.series_id ?? '', seriesOrder: a.series_order?.toString() ?? '',
+          password: '', hasPassword: !!a.has_password,
         })
       })
       .finally(() => setLoading(false))
@@ -316,6 +321,12 @@ export function BlogEditor({ articleId, onSaved, onCancel }: Props) {
           seoDesc: form.seoDesc || null,
           seriesId: form.seriesId || null,
           seriesOrder: form.seriesOrder ? parseInt(form.seriesOrder) : null,
+          // 有輸入新密碼才送；hasPassword=false 且 password='' = 移除密碼；不送 = 不修改
+          ...(form.password
+            ? { password: form.password }
+            : !form.hasPassword && articleId
+              ? { password: null }
+              : {}),
         }),
       })
       if (!res.ok) {
@@ -923,6 +934,32 @@ export function BlogEditor({ articleId, onSaved, onCancel }: Props) {
               <p className="text-base font-medium text-blue-400 truncate">{form.seoTitle || form.title || '文章標題'}</p>
               <p className="text-xs text-green-400/70 truncate mt-0.5">{typeof window !== 'undefined' ? window.location.origin : ''}/blogs/...</p>
               <p className="text-xs text-white/50 mt-1 line-clamp-2">{form.seoDesc || form.summary || '文章摘要描述'}</p>
+            </div>
+            {/* 密碼保護 */}
+            <div>
+              <label className="text-[11px] text-white/40 font-medium uppercase tracking-widest block mb-1.5">文章密碼保護</label>
+              <div className="space-y-2">
+                {form.hasPassword && (
+                  <p className="text-xs text-amber-400/70 flex items-center gap-1.5">
+                    <span>🔒</span> 目前已設定密碼
+                    <button
+                      type="button"
+                      onClick={() => setForm(f => ({ ...f, password: '', hasPassword: false }))}
+                      className="ml-auto text-rose-400/70 hover:text-rose-400 text-[10px]"
+                    >
+                      移除密碼
+                    </button>
+                  </p>
+                )}
+                <input
+                  type="password"
+                  value={form.password}
+                  onChange={e => setForm(f => ({ ...f, password: e.target.value }))}
+                  placeholder={form.hasPassword ? '輸入新密碼以更換（留空則保留現有密碼）' : '設定閱讀密碼（留空代表不加密）'}
+                  className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white placeholder-white/25 outline-none focus:border-amber-400/30 transition-colors"
+                />
+                <p className="text-[10px] text-white/25">設定後讀者需輸入密碼才能查看文章內容</p>
+              </div>
             </div>
             <div>
               <label className="text-[11px] text-white/40 font-medium uppercase tracking-widest block mb-1.5">一鍵 AI 生成 SEO</label>

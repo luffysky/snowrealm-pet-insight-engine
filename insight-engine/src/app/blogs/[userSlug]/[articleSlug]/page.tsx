@@ -15,12 +15,14 @@ import {
   type Heading,
 } from './ArticleClient'
 import ShareArticleButton from './ShareArticleButton'
+import { ArticlePasswordGate } from './ArticlePasswordGate'
 
 interface ArticleNav { title: string; slug: string }
 
 interface SeriesArticle { id: string; title: string; slug: string; series_order: number | null }
 
 interface ArticleData {
+  is_password_protected?: boolean
   article: {
     id: string
     user_id: string
@@ -32,6 +34,7 @@ interface ArticleData {
     cover_image_position: string | null
     tags: string[]
     is_public: boolean
+    is_password_protected?: boolean
     view_count: number
     seo_title: string | null
     seo_desc: string | null
@@ -125,6 +128,21 @@ export default async function ArticlePage({
   const data = await getArticle(userSlug, articleSlug)
   if (!data) notFound()
 
+  // 密碼保護 → 顯示解鎖表單
+  if (data.is_password_protected) {
+    return (
+      <ArticlePasswordGate
+        userSlug={userSlug}
+        articleSlug={articleSlug}
+        title={data.article.title}
+        coverImage={data.article.cover_image}
+        coverImagePosition={data.article.cover_image_position}
+        summary={data.article.summary}
+        authorName={data.article.author_name}
+      />
+    )
+  }
+
   const { article, prev, next, series } = data
   const backSlug = article.blog_slug ?? userSlug
   const readTime = estimateReadTime(article.content)
@@ -135,7 +153,7 @@ export default async function ArticlePage({
   const { processedHtml, headings } = processHeadings(article.content)
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white" style={{ paddingBottom: 'var(--bnav-h, 76px)' }}>
+    <div className="blog-article-root min-h-screen bg-slate-950 text-white" style={{ paddingBottom: 'var(--bnav-h, 76px)' }}>
       <ReadingProgress />
 
       {/* Cover image — full bleed */}

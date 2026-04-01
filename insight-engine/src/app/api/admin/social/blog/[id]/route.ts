@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getTenantContext } from '@/lib/tenant'
 import { queryOne, execute } from '@/lib/db'
+import { hashPassword } from '@/lib/auth'
 
 interface BlogArticleRow extends Record<string, unknown> {
   id: string
@@ -39,7 +40,9 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
   )
   if (!article) return NextResponse.json({ error: '找不到文章' }, { status: 404 })
 
-  return NextResponse.json({ article })
+  // 不回傳 password_hash，只回傳是否有密碼
+  const { password_hash, ...articleSafe } = article as typeof article & { password_hash?: unknown }
+  return NextResponse.json({ article: { ...articleSafe, has_password: !!password_hash } })
 }
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -57,6 +60,8 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     tags?: string[]
     isPublic?: boolean
     seoTitle?: string | null
+    /** 空字串 = 移除密碼；非空字串 = 設定新密碼；undefined = 不修改 */
+    password?: string | null
     seoDesc?: string | null
     seriesId?: string | null
     seriesOrder?: number | null
@@ -74,6 +79,12 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     if (conflict) return NextResponse.json({ error: '此 slug 已被使用' }, { status: 409 })
   }
 
+  // 處理密碼：空字串 = 移除，非空字串 = 設定新密碼
+  let newPasswordHash: string | null | undefined = undefined
+  if ('password' in body) {
+    newPasswordHash = body.password ? await hashPassword(body.password) : null
+  }
+
   const article = await queryOne<BlogArticleRow>(
     `UPDATE user_blog_articles SET
        title                = COALESCE($1, title),
@@ -88,8 +99,9 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
        seo_desc             = CASE WHEN $13::boolean THEN $14 ELSE seo_desc END,
        series_id            = CASE WHEN $15::boolean THEN $16::uuid ELSE series_id END,
        series_order         = CASE WHEN $17::boolean THEN $18 ELSE series_order END,
+       password_hash        = CASE WHEN $19::boolean THEN $20 ELSE password_hash END,
        updated_at           = NOW()
-     WHERE id::text = $19 AND user_id::text = $20
+     WHERE id::text = $21 AND user_id::text = $22
      RETURNING *`,
     [
       body.title ?? null,
@@ -104,12 +116,14 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       'seoDesc' in body, body.seoDesc ?? null,
       'seriesId' in body, body.seriesId ?? null,
       'seriesOrder' in body, body.seriesOrder ?? null,
+      newPasswordHash !== undefined, newPasswordHash ?? null,
       id, ctx.userId,
     ]
   )
   if (!article) return NextResponse.json({ error: '找不到文章或無權限' }, { status: 404 })
 
-  return NextResponse.json({ article })
+  const { password_hash: ph, ...patchSafe } = article as typeof article & { password_hash?: unknown }
+  return NextResponse.json({ article: { ...patchSafe, has_password: !!ph } })
 }
 
 export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
