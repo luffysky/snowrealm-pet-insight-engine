@@ -1217,7 +1217,7 @@ export default function YukirinChatPanel({ onClose, character = 'yukirin', onSwi
             <div className="mx-3 mb-1 rounded-xl border border-white/10 overflow-y-auto"
               style={{ background: 'rgba(15,9,30,0.97)', maxHeight: 180 }}
             >
-              {cmdSuggestions.slice(0, 40).map(cmd => (
+              {cmdSuggestions.slice(0, 80).map(cmd => (
                 <button
                   key={cmd.command}
                   onClick={() => { setCmdSuggestions([]); sendMessage(cmd.command) }}
@@ -1341,7 +1341,7 @@ export default function YukirinChatPanel({ onClose, character = 'yukirin', onSwi
           </form>
           {/* 版本標記（debug 用，確認部署版本） */}
           {turnsInfo?.isOwner && (
-            <div className="text-center text-[8px] text-white/15 pb-0.5">v0401a</div>
+            <div className="text-center text-[8px] text-white/15 pb-0.5">v0401b</div>
           )}
         </div>
       )}

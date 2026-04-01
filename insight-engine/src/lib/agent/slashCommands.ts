@@ -1339,7 +1339,7 @@ export function getCommandSuggestions(
   isOwner?: boolean
 ): SlashCommand[] {
   const q = filter.toLowerCase()
-  return ALL_COMMANDS
+  const results = ALL_COMMANDS
     .filter(c => !c.ownerOnly || isOwner)
     .filter(c => !c.adminOnly || isAdmin)
     .filter(c =>
@@ -1350,6 +1350,17 @@ export function getCommandSuggestions(
     .map(({ command, aliases, description, category, adminOnly, ownerOnly }) =>
       ({ command, aliases, description, category, adminOnly, ownerOnly })
     )
+  // 老闆指令優先顯示在最前面
+  if (isOwner) {
+    results.sort((a, b) => {
+      if (a.ownerOnly && !b.ownerOnly) return -1
+      if (!a.ownerOnly && b.ownerOnly) return 1
+      if (a.adminOnly && !b.adminOnly) return -1
+      if (!a.adminOnly && b.adminOnly) return 1
+      return 0
+    })
+  }
+  return results
 }
 
 /** 判斷輸入是否是斜線指令 */
