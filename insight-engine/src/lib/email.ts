@@ -50,6 +50,43 @@ export async function sendEmail({ to, subject, html }: SendEmailOptions): Promis
   return { success: false, error: '未設定 RESEND_API_KEY，無法寄送 Email' }
 }
 
+/** 部落格新文章通知 Email */
+export function buildBlogNotificationEmail(opts: {
+  authorName: string
+  blogUrl: string
+  articleTitle: string
+  articleSummary: string | null
+  articleUrl: string
+  coverImage: string | null
+  unsubscribeUrl: string
+}): string {
+  const { authorName, articleTitle, articleSummary, articleUrl, coverImage, unsubscribeUrl } = opts
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? 'https://insight.snowrealm.pet'
+  return `<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8"></head>
+<body style="font-family:Arial,sans-serif;line-height:1.6;color:#333;margin:0;padding:0;background:#f4f4f7;">
+  <div style="max-width:520px;margin:40px auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08);">
+    <div style="background:linear-gradient(135deg,#6b5fa8,#8b7fc8);padding:24px 32px;">
+      <h2 style="margin:0;color:#fff;font-size:18px;">✨ ${authorName} 發表了新文章</h2>
+    </div>
+    ${coverImage ? `<img src="${coverImage}" alt="" style="width:100%;max-height:220px;object-fit:cover;display:block;">` : ''}
+    <div style="padding:32px;">
+      <h1 style="margin:0 0 12px;font-size:22px;color:#3d3155;line-height:1.3;">${articleTitle}</h1>
+      ${articleSummary ? `<p style="margin:0 0 20px;font-size:15px;color:#666;">${articleSummary}</p>` : ''}
+      <a href="${articleUrl}" style="display:inline-block;padding:12px 28px;background:#6b5fa8;color:#fff;text-decoration:none;border-radius:8px;font-weight:bold;font-size:15px;">閱讀文章 →</a>
+    </div>
+    <div style="padding:16px 32px;background:#f9fafb;text-align:center;font-size:12px;color:#aaa;">
+      你正在接收來自 ${authorName} 的部落格通知。
+      <br><a href="${unsubscribeUrl}" style="color:#aaa;">取消訂閱</a>
+      &nbsp;·&nbsp; &copy; SnowRealm ${new Date().getFullYear()}
+    </div>
+  </div>
+</body>
+</html>`
+  void baseUrl
+}
+
 /** 產生驗證碼 Email HTML */
 export function buildVerificationEmail(code: string): string {
   return `<!DOCTYPE html>

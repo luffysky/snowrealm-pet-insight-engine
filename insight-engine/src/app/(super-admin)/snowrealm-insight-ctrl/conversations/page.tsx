@@ -49,9 +49,9 @@ export default function ConversationsPage() {
     setExpanded(id)
     setLoadingMsgs(true)
     try {
-      const res = await fetch(`/api/super-admin/conversations/${id}/messages`)
-      const d = await res.json()
-      setMessages(d.messages ?? [])
+      const res = await fetch(`/api/super-admin/conversations/${encodeURIComponent(id)}/messages`)
+      const d = await res.json() as { data?: Message[]; messages?: Message[] }
+      setMessages(d.data ?? d.messages ?? [])
     } finally {
       setLoadingMsgs(false)
     }

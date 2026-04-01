@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getTenantContext } from '@/lib/tenant'
-import { queryOne, execute } from '@/lib/db'
+import { queryOne, execute, query } from '@/lib/db'
 import { hashPassword } from '@/lib/auth'
+import { sendEmail, buildBlogNotificationEmail } from '@/lib/email'
 
 interface BlogArticleRow extends Record<string, unknown> {
   id: string
@@ -67,6 +68,13 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     seriesOrder?: number | null
   }
 
+  // 先查原本的 is_public，用於判斷是否剛發布
+  const existing = await queryOne<{ is_public: boolean }>(
+    `SELECT is_public FROM user_blog_articles WHERE id::text = $1 AND user_id::text = $2`,
+    [id, ctx.userId]
+  )
+  const wasPublic = existing?.is_public ?? false
+
   // 如果要改 slug，先確認唯一性
   if (body.slug !== undefined) {
     if (!/^[a-z0-9-]+$/.test(body.slug)) {
@@ -122,8 +130,57 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   )
   if (!article) return NextResponse.json({ error: '找不到文章或無權限' }, { status: 404 })
 
+  // 剛從私人 → 公開：非同步通知訂閱者
+  if (body.isPublic === true && !wasPublic) {
+    notifySubscribers(article, ctx.userId).catch(e => console.error('[blog notify]', e))
+  }
+
   const { password_hash: ph, ...patchSafe } = article as typeof article & { password_hash?: unknown }
   return NextResponse.json({ article: { ...patchSafe, has_password: !!ph } })
+}
+
+async function notifySubscribers(article: BlogArticleRow, userId: string) {
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? 'https://insight.snowrealm.pet'
+
+  // 取部落格資訊
+  const blog = await queryOne<{ blog_slug: string | null; display_name: string | null }>(
+    `SELECT ubs.blog_slug, au.display_name
+     FROM admin_users au
+     LEFT JOIN user_blog_settings ubs ON ubs.user_id = au.id
+     WHERE au.id::text = $1`,
+    [userId]
+  )
+  if (!blog) return
+
+  const authorName = blog.display_name ?? '部落客'
+  const blogSlug = blog.blog_slug ?? userId
+  const articleUrl = `${baseUrl}/blogs/${blogSlug}/${article.slug}`
+
+  // 取所有訂閱者
+  const subscribers = await query<{ email: string; name: string | null; unsubscribe_token: string }>(
+    `SELECT email, name, unsubscribe_token FROM blog_subscribers WHERE blog_user_id::text = $1`,
+    [userId]
+  )
+  if (subscribers.length === 0) return
+
+  // 逐一發信（非阻塞，忽略個別失敗）
+  for (const sub of subscribers) {
+    const unsubscribeUrl = `${baseUrl}/api/blogs/unsubscribe?token=${sub.unsubscribe_token}`
+    const html = buildBlogNotificationEmail({
+      authorName,
+      blogUrl: `${baseUrl}/blogs/${blogSlug}`,
+      articleTitle: article.title,
+      articleSummary: article.summary,
+      articleUrl,
+      coverImage: article.cover_image,
+      unsubscribeUrl,
+    })
+    await sendEmail({
+      to: sub.email,
+      subject: `${authorName} 發表了新文章：${article.title}`,
+      html,
+    }).catch(() => {/* ignore per-subscriber failures */})
+  }
 }
 
 export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
