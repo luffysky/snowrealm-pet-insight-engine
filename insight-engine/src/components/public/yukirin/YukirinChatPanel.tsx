@@ -233,45 +233,60 @@ export default function YukirinChatPanel({ onClose, character = 'yukirin', onSwi
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, streamingText])
 
-  // 開啟時查詢剩餘次數（每次打開都重查）
+  // 開啟時查詢剩餘次數 + 載入歷史（依序執行避免 race condition）
   useEffect(() => {
-    fetch('/api/guide/turns')
-      .then(r => r.json())
-      .then((data: TurnsInfo) => {
-        setTurnsInfo(data)
-        // 已登入時更新歡迎訊息，讓雪凜認出使用者
-        if (data.isLoggedIn || data.isUnlimited) {
-          const name = data.userName
-          let greeting: string
-          if (data.isOwner) {
-            greeting = `${name ? `嗨嗨，${name}！` : '嗨嗨，老闆！'} 歡迎回來 ✨ 有什麼需要我幫你的嗎？`
-          } else if (data.isAdmin) {
-            greeting = `嗨嗨${name ? `，${name}` : ''}！ 歡迎回到後台 🌸 有什麼我可以幫你的嗎？`
-          } else {
-            greeting = `嗨嗨${name ? `，${name}` : ''}！ 很高興再次見到你 💜 有什麼我可以幫你的嗎？`
-          }
-          setMessages(prev => {
-            // 只更新第一條（初始歡迎訊息）
-            if (prev.length === 1 && prev[0].id === '0') {
-              return [{ ...prev[0], text: greeting }]
-            }
-            return prev
-          })
-        }
-      })
-      .catch(() => {})
-  }, [])
+    let cancelled = false
 
-  // 開啟時載入對話歷史（登入用戶才有）
-  useEffect(() => {
-    fetch('/api/guide/history')
-      .then(r => r.json())
-      .then((data: { messages: ChatMessage[] }) => {
-        if (data.messages && data.messages.length > 0) {
+    async function init() {
+      // Step 1: 查詢身份 + 次數
+      let turns: TurnsInfo | null = null
+      try {
+        const r = await fetch('/api/guide/turns')
+        turns = await r.json() as TurnsInfo
+        if (!cancelled) setTurnsInfo(turns)
+      } catch { /* skip */ }
+
+      // Step 2: 載入對話歷史
+      let hasHistory = false
+      try {
+        const r = await fetch('/api/guide/history')
+        const data = await r.json() as { messages: ChatMessage[] }
+        if (!cancelled && data.messages && data.messages.length > 0) {
           setMessages(data.messages)
+          hasHistory = true
         }
-      })
-      .catch(() => {})
+      } catch { /* skip */ }
+
+      // Step 3: 更新問候語（只在沒有歷史時才設定初始問候；有歷史時在最前面插入老闆問候）
+      if (!cancelled && turns && (turns.isLoggedIn || turns.isUnlimited)) {
+        const name = turns.userName
+        let greeting: string
+        if (turns.isOwner) {
+          greeting = `${name ? `嗨嗨，${name}！` : '嗨嗨，老闆！'} 歡迎回來 ✨ 有什麼需要我幫你的嗎？`
+        } else if (turns.isAdmin) {
+          greeting = `嗨嗨${name ? `，${name}` : ''}！ 歡迎回到後台 🌸 有什麼我可以幫你的嗎？`
+        } else {
+          greeting = `嗨嗨${name ? `，${name}` : ''}！ 很高興再次見到你 💜 有什麼我可以幫你的嗎？`
+        }
+
+        setMessages(prev => {
+          if (!hasHistory && prev.length === 1 && prev[0].id === '0') {
+            // 沒有歷史 → 直接替換初始訊息
+            return [{ ...prev[0], text: greeting }]
+          }
+          if (hasHistory) {
+            // 有歷史 → 在最前面加上問候語（不重複）
+            const alreadyHasGreeting = prev[0]?.text?.includes('歡迎回來') || prev[0]?.text?.includes('歡迎回到後台')
+            if (alreadyHasGreeting) return prev
+            return [{ id: 'greeting', role: 'assistant' as const, text: greeting, mood: 'happy' as const }, ...prev]
+          }
+          return prev
+        })
+      }
+    }
+
+    init()
+    return () => { cancelled = true }
   }, [])
 
   const handleLoad = useCallback((controls: AnySceneControls) => {
@@ -1324,6 +1339,10 @@ export default function YukirinChatPanel({ onClose, character = 'yukirin', onSwi
               </svg>
             </button>
           </form>
+          {/* 版本標記（debug 用，確認部署版本） */}
+          {turnsInfo?.isOwner && (
+            <div className="text-center text-[8px] text-white/15 pb-0.5">v0401a</div>
+          )}
         </div>
       )}
     </div>
