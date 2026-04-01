@@ -5,6 +5,14 @@ import { generateInviteToken } from '@/lib/auth'
 import { getLineConfig } from '@/lib/lineConfig'
 import { isLineAdmin, handleAdminCommand } from '@/lib/lineAdminBot'
 import { getTenantBranding } from '@/lib/tenantBranding'
+import { getPlatformKey } from '@/lib/aiService'
+import {
+  classifyIntent,
+  buildSystemPrompt,
+  parseGuideResponse,
+  type GuideContext,
+} from '@/lib/guideEngine'
+import { buildYukirinFlexMessage } from '@/lib/proactive/pushEngine'
 
 const DEFAULT_TENANT = process.env.DEFAULT_TENANT_SLUG || 'default'
 const PASSCODE_FALLBACK = '我要成為管理員'
@@ -112,8 +120,13 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         continue
       }
 
-      // 其他訊息 → 提示
-      await replyMessage(replyToken, '📊 問卷系統管理帳號\n\n輸入正確口令即可取得註冊連結，成為管理員。\n\n點選下方選單可查看後台數據。', CHANNEL_ACCESS_TOKEN)
+      // 其他訊息 → 雪凜 AI 對話
+      const aiReply = await handleYukirinChat(text, userId, CHANNEL_ACCESS_TOKEN)
+      if (aiReply) {
+        await replyMessages(replyToken, [aiReply], CHANNEL_ACCESS_TOKEN)
+      } else {
+        await replyMessage(replyToken, '📊 問卷系統管理帳號\n\n輸入正確口令即可取得註冊連結，成為管理員。\n\n點選下方選單可查看後台數據。', CHANNEL_ACCESS_TOKEN)
+      }
     }
 
     // 加好友 → 歡迎訊息
@@ -169,6 +182,69 @@ async function getLineDisplayName(userId: string, accessToken?: string): Promise
     if (!res.ok) return null
     const profile = await res.json() as { displayName?: string }
     return profile.displayName ?? null
+  } catch {
+    return null
+  }
+}
+
+// ----- 雪凜 AI 對話（Insight Bot） -----
+
+/** 判斷 LINE 使用者是否為老闆 */
+async function isLineUserOwner(lineUserId: string): Promise<boolean> {
+  const allowedId = process.env.SUPER_ADMIN_LINE_USER_ID || process.env.LINE_YOUR_USER_ID
+  if (allowedId && lineUserId === allowedId) return true
+  try {
+    const row = await queryOne<{ id: string }>(
+      `SELECT id FROM admin_users WHERE line_id = $1 AND (role = 'super_admin' OR platform_unlimited = true) LIMIT 1`,
+      [lineUserId]
+    )
+    return !!row
+  } catch { return false }
+}
+
+/** Insight Bot 雪凜 AI 對話 */
+async function handleYukirinChat(
+  text: string,
+  lineUserId: string,
+  _accessToken: string
+): Promise<{ type: string; [key: string]: unknown } | null> {
+  const aiKey = getPlatformKey()
+  if (!aiKey) return null
+
+  try {
+    const isOwner = await isLineUserOwner(lineUserId)
+    const context: GuideContext = { trigger: 'manual', isOwner }
+    const intent = classifyIntent(text, context)
+    const systemPrompt = buildSystemPrompt(intent, context)
+
+    const res = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${aiKey.apiKey}`,
+      },
+      body: JSON.stringify({
+        model: aiKey.model,
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: text },
+        ],
+        max_tokens: 300,
+        temperature: 0.8,
+      }),
+      signal: AbortSignal.timeout(8000),
+    })
+
+    if (!res.ok) return null
+    const data = await res.json() as { choices?: Array<{ message?: { content?: string } }> }
+    const raw = data.choices?.[0]?.message?.content ?? ''
+    if (!raw) return null
+
+    const parsed = parseGuideResponse(raw)
+    const action = parsed.action && 'target' in parsed.action
+      ? { type: parsed.action.type, target: (parsed.action as { type: string; target: string }).target }
+      : undefined
+    return buildYukirinFlexMessage(parsed.text, parsed.mood, action) as unknown as { type: string; [key: string]: unknown }
   } catch {
     return null
   }
