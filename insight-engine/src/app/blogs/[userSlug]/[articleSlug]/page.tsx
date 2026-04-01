@@ -2,6 +2,7 @@ import { Metadata } from 'next'
 import Link from 'next/link'
 import Image from 'next/image'
 import { notFound } from 'next/navigation'
+import { cookies } from 'next/headers'
 import {
   ReadingProgress,
   ArticleReactions,
@@ -54,7 +55,13 @@ async function getArticle(userSlug: string, articleSlug: string, notrack = false
   try {
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? 'http://localhost:3000'
     const url = `${baseUrl}/api/blogs/${userSlug}/${articleSlug}${notrack ? '?notrack=1' : ''}`
-    const res = await fetch(url, { cache: 'no-store' })
+    // 轉發瀏覽器 cookies（包含 article_unlock_* cookie）到 API
+    const cookieStore = await cookies()
+    const cookieHeader = cookieStore.getAll().map(c => `${c.name}=${c.value}`).join('; ')
+    const res = await fetch(url, {
+      cache: 'no-store',
+      headers: cookieHeader ? { Cookie: cookieHeader } : {},
+    })
     if (!res.ok) return null
     return res.json()
   } catch {

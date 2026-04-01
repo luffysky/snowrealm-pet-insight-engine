@@ -340,6 +340,88 @@ body:not(:has(.admin-root)) {
 .blog-light .blog-content th { background: rgba(0,0,0,0.04) !important; }
 .blog-light .blog-content hr { border-color: rgba(0,0,0,0.10) !important; }
 
+/* ── 部落格淺色模式：覆蓋 Tailwind text-white/* 系列 ── */
+/* 純 text-white */
+.blog-light .blog-article-root .text-white { color: #1a1020 !important; }
+/* text-white/90, text-white/80 → 深色 90/80 % */
+.blog-light .blog-article-root [class*="text-white/9"],
+.blog-light .blog-article-root [class*="text-white/8"] { color: rgba(26,16,32,0.88) !important; }
+/* text-white/70, text-white/60 */
+.blog-light .blog-article-root [class*="text-white/7"],
+.blog-light .blog-article-root [class*="text-white/6"] { color: rgba(26,16,32,0.68) !important; }
+/* text-white/50, text-white/40 */
+.blog-light .blog-article-root [class*="text-white/5"],
+.blog-light .blog-article-root [class*="text-white/4"] { color: rgba(26,16,32,0.52) !important; }
+/* text-white/30, text-white/20 */
+.blog-light .blog-article-root [class*="text-white/3"],
+.blog-light .blog-article-root [class*="text-white/2"] { color: rgba(26,16,32,0.38) !important; }
+/* text-white/10, text-white/[0.XX] */
+.blog-light .blog-article-root [class*="text-white/1"],
+.blog-light .blog-article-root [class*="text-white/[0"] { color: rgba(26,16,32,0.22) !important; }
+/* border-white/* */
+.blog-light .blog-article-root [class*="border-white"] { border-color: rgba(0,0,0,0.10) !important; }
+/* ring-white/* */
+.blog-light .blog-article-root [class*="ring-white"] { --tw-ring-color: rgba(0,0,0,0.10) !important; }
+/* divide-white/* */
+.blog-light .blog-article-root [class*="divide-white"] > * + * { border-color: rgba(0,0,0,0.08) !important; }
+/* bg-white/* → 淡灰 */
+.blog-light .blog-article-root [class*="bg-white/"] { background-color: rgba(0,0,0,0.04) !important; }
+/* 深色背景色 → 淡紫白 */
+.blog-light .blog-article-root .bg-slate-950,
+.blog-light .blog-article-root .bg-slate-900 { background-color: #f0ecfa !important; }
+.blog-light .blog-article-root .bg-slate-800 { background-color: #e8e4f5 !important; }
+/* 漸層起點修正 */
+.blog-light .blog-article-root .from-slate-950,
+.blog-light .blog-article-root .from-slate-900 { --tw-gradient-from: #f8f5ff var(--tw-gradient-from-position) !important; }
+/* 表單輸入框 */
+.blog-light .blog-article-root input,
+.blog-light .blog-article-root textarea,
+.blog-light .blog-article-root select {
+  background-color: rgba(0,0,0,0.04) !important;
+  border-color: rgba(0,0,0,0.12) !important;
+  color: #1a1020 !important;
+}
+.blog-light .blog-article-root input::placeholder,
+.blog-light .blog-article-root textarea::placeholder { color: rgba(26,16,32,0.35) !important; }
+/* 按鈕與互動元素（hover 態保持可見）*/
+.blog-light .blog-article-root button { color: #3d3155 !important; }
+/* svg icon */
+.blog-light .blog-article-root svg { color: inherit !important; }
+
+/* ── 部落格列表頁淺色模式 (blog-list-root) ── */
+.blog-light .blog-list-root { background-color: #f8f5ff !important; }
+.blog-light .blog-list-root .text-white { color: #1a1020 !important; }
+.blog-light .blog-list-root [class*="text-white/9"],
+.blog-light .blog-list-root [class*="text-white/8"] { color: rgba(26,16,32,0.88) !important; }
+.blog-light .blog-list-root [class*="text-white/7"],
+.blog-light .blog-list-root [class*="text-white/6"] { color: rgba(26,16,32,0.68) !important; }
+.blog-light .blog-list-root [class*="text-white/5"],
+.blog-light .blog-list-root [class*="text-white/4"] { color: rgba(26,16,32,0.52) !important; }
+.blog-light .blog-list-root [class*="text-white/3"],
+.blog-light .blog-list-root [class*="text-white/2"] { color: rgba(26,16,32,0.38) !important; }
+.blog-light .blog-list-root [class*="text-white/1"],
+.blog-light .blog-list-root [class*="text-white/[0"] { color: rgba(26,16,32,0.22) !important; }
+.blog-light .blog-list-root [class*="border-white"] { border-color: rgba(0,0,0,0.10) !important; }
+.blog-light .blog-list-root [class*="bg-white/"] { background-color: rgba(0,0,0,0.04) !important; }
+.blog-light .blog-list-root .bg-slate-950,
+.blog-light .blog-list-root .bg-slate-900 { background-color: #f0ecfa !important; }
+.blog-light .blog-list-root .bg-slate-800 { background-color: #e8e4f5 !important; }
+/* lg-dark-sharp 在淺色模式下改為淡玻璃 */
+.blog-light .blog-list-root .lg-dark-sharp {
+  background: rgba(255,255,255,0.7) !important;
+  box-shadow: 0 2px 16px rgba(0,0,0,0.08) !important;
+  border-color: rgba(0,0,0,0.08) !important;
+}
+.blog-light .blog-list-root input,
+.blog-light .blog-list-root textarea {
+  background-color: rgba(0,0,0,0.04) !important;
+  border-color: rgba(0,0,0,0.12) !important;
+  color: #1a1020 !important;
+}
+.blog-light .blog-list-root input::placeholder,
+.blog-light .blog-list-root textarea::placeholder { color: rgba(26,16,32,0.35) !important; }
+.blog-light .blog-list-root button { color: #3d3155; }
+
 /* 自訂滾動條 */
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }

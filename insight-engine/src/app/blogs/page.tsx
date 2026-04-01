@@ -33,7 +33,7 @@ export default async function BlogsPage() {
   const blogs = await getBlogs()
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white" style={{ paddingBottom: 'var(--bnav-h, 76px)' }}>
+    <div className="blog-list-root min-h-screen bg-slate-950 text-white" style={{ paddingBottom: 'var(--bnav-h, 76px)' }}>
       <div className="max-w-3xl mx-auto px-4 sm:px-6 py-10 sm:py-14">
         {/* Header */}
         <div className="mb-8">

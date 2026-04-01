@@ -202,8 +202,8 @@ export async function POST(req: NextRequest) {
     userName = payload?.name ?? undefined
   }
 
-  // ── 特權帳號每次重新查 DB ─────────────────────────────────────────────────
-  const isUnlimited = await isUserPlatformUnlimited(userId)
+  // ── 特權帳號每次重新查 DB（platform_unlimited 或 super_admin 均視為無限制）─────
+  const isUnlimited = await isUserPlatformUnlimited(userId) || userRole === 'super_admin'
 
   let quotaResult: QuotaResult = {
     allowed: true,

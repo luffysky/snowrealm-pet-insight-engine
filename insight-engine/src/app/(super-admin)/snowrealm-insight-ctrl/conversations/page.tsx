@@ -20,6 +20,7 @@ interface Message {
   sender: string
   content: string
   created_at: string
+  image_url?: string | null
 }
 
 export default function ConversationsPage() {
@@ -151,6 +152,14 @@ export default function ConversationsPage() {
                                     m.sender === 'user' ? 'bg-cyan-500/20 text-cyan-100' : 'bg-slate-700 text-white/70'
                                   }`}>
                                     <span className="text-white/30 mr-1">{m.sender === 'user' ? '👤' : '🤖'}</span>
+                                    {m.image_url && (
+                                      // eslint-disable-next-line @next/next/no-img-element
+                                      <img
+                                        src={m.image_url}
+                                        alt="使用者上傳圖片"
+                                        className="mt-1 mb-1 max-w-[200px] max-h-[160px] rounded-lg object-cover border border-white/10"
+                                      />
+                                    )}
                                     {m.content}
                                   </div>
                                 </div>

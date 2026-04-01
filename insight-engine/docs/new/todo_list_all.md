@@ -2514,3 +2514,163 @@ src/components/public/yukirin/YukirinChatPanel.tsx
    摘要：這篇文章分析了...
 ```
 
+---
+
+## 2026-04-01 新增任務 🆕
+
+---
+
+### ~~BUG-BLOG-1 部落格密碼文章進不去~~ ✅
+
+**問題**：密碼正確設定 unlock cookie 後，頁面 reload 仍顯示密碼輸入頁。
+
+**根因**：`page.tsx` 的 `getArticle()` 是 Server Component 的 `fetch()`，不會自動帶入瀏覽器 cookies。API route 讀不到 `article_unlock_*` cookie。
+
+**修復**（已完成）：
+```
+src/app/blogs/[userSlug]/[articleSlug]/page.tsx
+  — import { cookies } from 'next/headers'
+  — getArticle() 中讀取所有 cookies 並以 Cookie header 轉發到 internal fetch
+```
+
+---
+
+### ~~BUG-BLOG-2 部落格淺色模式白字看不見~~ ✅
+
+**問題**：blog 頁面開啟淺色模式，所有 Tailwind `text-white/*` 類別文字不可見。
+
+**根因**：CSS 繼承 `color` 無法覆蓋子元素明確的 Tailwind 類別（specificity 問題）。
+
+**修復**（已完成）：
+```
+src/app/globals.css
+  — 新增 .blog-light .blog-article-root [class*="text-white/X"] 系列選擇器
+  — 新增 .blog-light .blog-list-root 相同規則
+  — 覆蓋 bg-white/ border-white/ 以及 bg-slate-950 等深色背景
+
+src/app/blogs/page.tsx           — root div 加 blog-list-root class
+src/app/blogs/[userSlug]/page.tsx — root div 加 blog-list-root class
+```
+
+---
+
+### ~~BUG-GUIDE-1 雪凜/凜空不認識老闆（boss 模式未啟動）~~ ✅
+
+**問題**：`turnsInfo.isOwner` 是 `false`，導致前端不顯示 boss greeting、slash 指令不可用。
+
+**根因**：`/api/guide/turns` 只用 `isUnlimited = await isUserPlatformUnlimited(userId)` 判斷，如果 DB 查詢失敗或 column 不存在，super_admin 也會被判定為非 owner。
+
+**修復**（已完成）：
+```
+src/app/api/guide/turns/route.ts
+  — isOwner = isUnlimited || payload?.role === 'super_admin'
+  — 早期 return 條件也改為 isUnlimited || super_admin
+
+src/app/api/guide/chat/route.ts
+  — isUnlimited = await isUserPlatformUnlimited(userId) || userRole === 'super_admin'
+```
+
+---
+
+### FEAT-POST-PWD 長短貼文 + 相簿 + 部落格密碼保護 🆕
+
+> 「公開給特定人看就一定要有密碼」
+
+**密碼規則**：至少 8 碼、1 大寫、1 小寫、1 數字、1 特殊符號（前端 + 後端雙重驗證）
+
+**驗證 regex**：`/^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]).{8,}$/`
+
+**DB Migration**
+```sql
+-- 長貼文（user_posts 或類似表名）
+ALTER TABLE user_posts ADD COLUMN IF NOT EXISTS password_hash TEXT;
+-- 短貼文
+ALTER TABLE user_short_posts ADD COLUMN IF NOT EXISTS password_hash TEXT;
+-- 相簿
+ALTER TABLE user_albums ADD COLUMN IF NOT EXISTS password_hash TEXT;
+-- 部落格文章（已有，確認）
+-- ALTER TABLE user_blog_articles — password_hash 已存在
+```
+
+**新增檔案**
+```
+src/app/api/posts/[postId]/unlock/route.ts
+  — POST { password } → verifyPassword → 設 HttpOnly cookie article_unlock_{postId}
+
+src/app/api/short-posts/[postId]/unlock/route.ts
+  — 同上
+
+src/app/api/albums/[albumId]/unlock/route.ts
+  — 同上
+
+src/components/public/PasswordGate.tsx（通用元件）
+  — 可複用的密碼輸入表單（Blog / Post / Album 共用）
+  — Props: { unlockUrl, onUnlocked, title, coverImage, authorName }
+```
+
+**修改檔案**
+```
+src/app/api/admin/posts/[id]/route.ts（或對應 PATCH）
+  — 支援 password 欄位設定（前端傳明文 → bcrypt hash 後存 DB）
+  — 支援清除密碼（password: null）
+
+src/app/api/admin/short-posts/[id]/route.ts — 同上
+
+src/app/api/admin/albums/[id]/route.ts — 同上
+
+前端編輯器（長貼文/短貼文/相簿）
+  — 新增「🔒 設定密碼保護」toggle
+  — 密碼輸入框（含強度驗證顯示）
+  — 已設定密碼 → 顯示「已加密」badge + 「變更/移除密碼」按鈕
+
+公開閱讀頁（長貼文/短貼文/相簿）
+  — 同 blog 的 PasswordGate 邏輯：
+    1. Server Component fetch API（帶 Cookie header）
+    2. API 檢查 password_hash + unlock cookie
+    3. cookie 不存在 → 回傳 is_password_protected: true
+    4. 前端顯示 PasswordGate 元件
+```
+
+**密碼強度驗證工具函式**
+```typescript
+// src/lib/passwordStrength.ts
+export function validateStrongPassword(pwd: string): { valid: boolean; message: string } {
+  if (pwd.length < 8) return { valid: false, message: '密碼至少 8 個字元' }
+  if (!/[A-Z]/.test(pwd)) return { valid: false, message: '需包含至少 1 個大寫字母' }
+  if (!/[a-z]/.test(pwd)) return { valid: false, message: '需包含至少 1 個小寫字母' }
+  if (!/\d/.test(pwd)) return { valid: false, message: '需包含至少 1 個數字' }
+  if (!/[!@#$%^&*()\-_=+\[\]{};:'",.<>/?\\|`~]/.test(pwd))
+    return { valid: false, message: '需包含至少 1 個特殊符號' }
+  return { valid: true, message: '密碼強度良好' }
+}
+```
+
+---
+
+### FEAT-CONVERSATION-IMG 總後台 AI 對話記錄顯示圖片 🆕
+
+**問題**：使用者傳圖片給 AI 分析，總後台對話記錄不顯示圖片。
+
+**根因**：`analyze-image/route.ts` 沒有寫入 `guide_chat_messages`。
+
+**修復**（已完成）：
+
+**DB Migration**
+```sql
+ALTER TABLE guide_chat_messages ADD COLUMN IF NOT EXISTS image_url TEXT;
+```
+
+**修改檔案**：
+```
+src/app/api/guide/analyze-image/route.ts
+  — AI 回應成功後，async 上傳圖片到 R2
+  — 寫入 user 訊息（帶 image_url）+ assistant 訊息到 guide_chat_messages
+
+src/app/api/super-admin/conversations/[conversationId]/messages/route.ts
+  — SELECT 新增 image_url 欄位
+
+src/app/(super-admin)/snowrealm-insight-ctrl/conversations/page.tsx
+  — Message interface 加 image_url
+  — 渲染 <img> 當 image_url 存在
+```
+

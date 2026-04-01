@@ -73,7 +73,7 @@ export default async function BlogPage({ params }: { params: Promise<{ userSlug:
   const { blog, articles } = data
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white" style={{ paddingBottom: 'var(--bnav-h, 76px)' }}>
+    <div className="blog-list-root min-h-screen bg-slate-950 text-white" style={{ paddingBottom: 'var(--bnav-h, 76px)' }}>
       {/* Hero / Author info */}
       <div className="border-b border-white/8">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 py-8 sm:py-12">

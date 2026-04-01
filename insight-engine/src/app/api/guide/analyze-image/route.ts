@@ -4,6 +4,8 @@ import { isUserPlatformUnlimited } from '@/lib/platformUnlimited'
 import { spendZcoin, getBalance } from '@/lib/zcoinEngine'
 import { getActiveAiKey, getPlatformKey } from '@/lib/aiService'
 import { getTenantContext } from '@/lib/tenant'
+import { uploadToR2 } from '@/lib/r2'
+import { execute } from '@/lib/db'
 
 export const runtime = 'nodejs'
 
@@ -131,6 +133,30 @@ export async function POST(req: NextRequest) {
       const result = await spendZcoin({ userId, amount: IMAGE_ZCOIN_COST, reason: 'ai_usage' })
       newBalance = result.newBalance ?? null
     }
+
+    // 上傳圖片到 R2 並儲存對話記錄（非同步，不影響回應速度）
+    const userKey = `user:${userId}`
+    ;(async () => {
+      try {
+        const imageBuffer = Buffer.from(bytes)
+        const ext = mimeType.split('/')[1] ?? 'jpg'
+        const imageUrl = await uploadToR2(imageBuffer, `image.${ext}`, mimeType, 'chat-images')
+        // 儲存使用者訊息（帶圖片 URL）
+        await execute(
+          `INSERT INTO guide_chat_messages (user_key, role, content, image_url)
+           VALUES ($1, 'user', $2, $3)`,
+          [userKey, userQuestion || '（圖片分析）', imageUrl]
+        )
+        // 儲存 AI 回覆
+        await execute(
+          `INSERT INTO guide_chat_messages (user_key, role, content)
+           VALUES ($1, 'assistant', $2)`,
+          [userKey, responseText]
+        )
+      } catch (saveErr) {
+        console.error('[analyze-image] save to DB failed:', saveErr)
+      }
+    })()
 
     return NextResponse.json({
       text: responseText,
