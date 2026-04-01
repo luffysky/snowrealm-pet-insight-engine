@@ -201,8 +201,9 @@ export async function POST(req: NextRequest) {
 
 注意：這是研究素材，不是正式文章。請提供具體事實、數據（如有）、多元觀點，讓作者有豐富素材可以發揮。`
   } else {
-    const researchSection = body.researchContext
-      ? `\n\n以下是關於此主題的研究素材，請善用這些資料讓文章更有深度：\n${body.researchContext.slice(0, 2000)}`
+    const cleanResearch = (body.researchContext ?? '').replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, '').slice(0, 2000)
+    const researchSection = cleanResearch
+      ? `\n\n以下是關於此主題的研究素材，請善用這些資料讓文章更有深度：\n${cleanResearch}`
       : ''
 
     userPrompt = `請根據以下需求，撰寫一篇完整的繁體中文部落格文章：
@@ -229,7 +230,9 @@ export async function POST(req: NextRequest) {
 }`
   }
 
-  const fullPrompt = `${systemPrompt}\n\n${userPrompt}`
+  // 清理 prompt 中可能導致 JSON.stringify 失敗的字元
+  const sanitize = (s: string) => s.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, '')
+  const fullPrompt = sanitize(`${systemPrompt}\n\n${userPrompt}`)
   const promptTokens = Math.ceil(fullPrompt.length / 4)
 
   try {
