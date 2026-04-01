@@ -1022,6 +1022,20 @@ export default function YukirinChatPanel({ onClose, character = 'yukirin', onSwi
               {character === 'riku' ? '凜空' : '雪凜'}
             </span>
             <span className="text-white/40 text-[10px]">AI 嚮導</span>
+            {turnsInfo !== null && (
+              <span
+                title={`isOwner=${turnsInfo.isOwner} isAdmin=${turnsInfo.isAdmin} isUnlimited=${turnsInfo.isUnlimited}`}
+                className={`text-[8px] px-1 py-0.5 rounded-full font-mono pointer-events-auto cursor-help select-none ${
+                  turnsInfo.isOwner
+                    ? 'bg-amber-500/30 text-amber-300 border border-amber-500/40'
+                    : turnsInfo.isAdmin
+                    ? 'bg-violet-500/20 text-violet-300 border border-violet-500/30'
+                    : 'bg-white/5 text-white/20 border border-white/10'
+                }`}
+              >
+                {turnsInfo.isOwner ? '👑boss' : turnsInfo.isAdmin ? '🛡️admin' : '👤user'}
+              </span>
+            )}
           </div>
           {/* 角色切換（面板內） */}
           {onSwitchCharacter && (

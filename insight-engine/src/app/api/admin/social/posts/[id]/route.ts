@@ -3,6 +3,8 @@ import { getTenantContext } from '@/lib/tenant'
 import { getPost, updatePost, deletePost } from '@/lib/socialEngine'
 import { execute } from '@/lib/db'
 import { requireRole } from '@/lib/tenant'
+import { hashPassword } from '@/lib/auth'
+import { validateStrongPassword } from '@/lib/passwordStrength'
 
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -24,9 +26,21 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     tags?: string[]
     isPublic?: boolean
     status?: string
+    password?: string | null
   }
 
-  const post = await updatePost(id, ctx.userId, body)
+  let passwordHash: string | null | undefined = undefined
+  if (body.password !== undefined) {
+    if (body.password === null) {
+      passwordHash = null
+    } else {
+      const check = validateStrongPassword(body.password)
+      if (!check.valid) return NextResponse.json({ error: check.message }, { status: 400 })
+      passwordHash = await hashPassword(body.password)
+    }
+  }
+
+  const post = await updatePost(id, ctx.userId, { ...body, passwordHash })
   if (!post) return NextResponse.json({ error: '貼文不存在或無權限' }, { status: 404 })
   return NextResponse.json({ post })
 }

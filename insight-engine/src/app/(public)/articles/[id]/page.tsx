@@ -11,6 +11,7 @@ import { FollowButton } from '@/components/social/FollowButton'
 import { DMButton } from '@/components/social/DMButton'
 import { PostShareCard } from '@/components/social/PostShareCard'
 import type { SocialPost } from '@/lib/socialEngine'
+import { ContentPasswordGate } from '@/components/public/ContentPasswordGate'
 import type { ArticleBlock } from '@/components/social/ArticleEditor'
 import { VideoPlayer } from '@/components/public/VideoPlayer'
 import { ImageCarousel } from '@/components/social/ImageCarousel'
@@ -63,6 +64,7 @@ export default function ArticleDetailPage() {
   const [commentsCount, setCommentsCount] = useState(0)
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null)
   const [showShareCard, setShowShareCard] = useState(false)
+  const [isPasswordProtected, setIsPasswordProtected] = useState(false)
 
   useEffect(() => {
     fetch('/api/auth/me')
@@ -71,12 +73,23 @@ export default function ArticleDetailPage() {
       .catch(() => {/* not logged in */})
   }, [])
 
-  useEffect(() => {
+  const fetchPost = () => {
+    setLoading(true)
     fetch(`/api/posts/${id}`)
-      .then(r => r.ok ? r.json() as Promise<{ post: SocialPost }> : null)
-      .then(d => { if (d?.post) { setPost(d.post); setCommentsCount(d.post.commentsCount) } })
+      .then(r => r.ok ? r.json() as Promise<{ post: SocialPost; isPasswordProtected?: boolean }> : null)
+      .then(d => {
+        if (d?.isPasswordProtected) {
+          setIsPasswordProtected(true)
+        } else if (d?.post) {
+          setPost(d.post)
+          setCommentsCount(d.post.commentsCount)
+          setIsPasswordProtected(false)
+        }
+      })
       .finally(() => setLoading(false))
-  }, [id])
+  }
+
+  useEffect(() => { fetchPost() }, [id])
 
   const copyLink = async () => {
     await navigator.clipboard.writeText(window.location.href)
@@ -87,6 +100,17 @@ export default function ArticleDetailPage() {
   if (loading) return (
     <div className="min-h-screen bg-transparent flex items-center justify-center">
       <Loader2 className="w-8 h-8 text-amber-400 animate-spin" />
+    </div>
+  )
+
+  if (isPasswordProtected) return (
+    <div className="min-h-screen bg-transparent">
+      <ContentPasswordGate
+        unlockUrl={`/api/posts/${id}/unlock`}
+        onUnlocked={fetchPost}
+        title="此文章受密碼保護"
+        description="輸入密碼以繼續閱讀"
+      />
     </div>
   )
 

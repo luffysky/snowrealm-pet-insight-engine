@@ -35,6 +35,7 @@ export interface SocialPost {
   tags: string[]
   status: 'published' | 'draft'
   isPublic: boolean
+  isPasswordProtected?: boolean
   likesCount: number
   commentsCount: number
   viewsCount: number
@@ -85,6 +86,7 @@ interface PostRow extends Record<string, unknown> {
   tags: string[] | null
   status: string
   is_public: boolean
+  password_hash: string | null
   likes_count: number
   comments_count: number
   views_count: number
@@ -250,6 +252,7 @@ export async function updatePost(postId: string, userId: string, data: {
   tags?: string[]
   isPublic?: boolean
   status?: string
+  passwordHash?: string | null
 }): Promise<SocialPost | null> {
   const fields: string[] = []
   const params: unknown[] = []
@@ -261,6 +264,7 @@ export async function updatePost(postId: string, userId: string, data: {
   if (data.tags !== undefined) { fields.push(`tags = $${i++}`); params.push(data.tags) }
   if (data.isPublic !== undefined) { fields.push(`is_public = $${i++}`); params.push(data.isPublic) }
   if (data.status !== undefined) { fields.push(`status = $${i++}`); params.push(data.status) }
+  if (data.passwordHash !== undefined) { fields.push(`password_hash = $${i++}`); params.push(data.passwordHash) }
   if (!fields.length) return getPost(postId)
 
   fields.push(`updated_at = NOW()`)

@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getTenantContext } from '@/lib/tenant'
 import { query, queryOne, execute } from '@/lib/db'
+import { hashPassword } from '@/lib/auth'
+import { validateStrongPassword } from '@/lib/passwordStrength'
 
 interface AlbumRow extends Record<string, unknown> {
   id: string
@@ -75,22 +77,52 @@ export async function PATCH(req: NextRequest) {
   const ctx = await getTenantContext()
   if (!ctx.userId) return NextResponse.json({ error: '未登入' }, { status: 401 })
 
-  const body = await req.json() as { id: string; name?: string; description?: string; isPublic?: boolean }
+  const body = await req.json() as {
+    id: string
+    name?: string
+    description?: string
+    isPublic?: boolean
+    password?: string | null  // 新密碼（null = 移除密碼）
+  }
   if (!body.id) return NextResponse.json({ error: '缺少 id' }, { status: 400 })
 
-  const album = await queryOne<{ id: string; name: string; is_public: boolean }>(
-    `UPDATE user_albums SET
-       name = COALESCE($1, name),
-       description = COALESCE($2, description),
-       is_public = COALESCE($3, is_public),
-       updated_at = NOW()
-     WHERE id = $4 AND user_id = $5
-     RETURNING id, name, is_public`,
-    [body.name ?? null, body.description ?? null, body.isPublic ?? null, body.id, ctx.userId]
+  let passwordHash: string | null | undefined = undefined
+  if (body.password !== undefined) {
+    if (body.password === null) {
+      passwordHash = null  // 移除密碼
+    } else {
+      const check = validateStrongPassword(body.password)
+      if (!check.valid) return NextResponse.json({ error: check.message }, { status: 400 })
+      passwordHash = await hashPassword(body.password)
+    }
+  }
+
+  const fields: string[] = [
+    'name = COALESCE($1, name)',
+    'description = COALESCE($2, description)',
+    'is_public = COALESCE($3, is_public)',
+    'updated_at = NOW()',
+  ]
+  const params: unknown[] = [body.name ?? null, body.description ?? null, body.isPublic ?? null]
+
+  if (passwordHash !== undefined) {
+    fields.push(`password_hash = $${params.length + 1}`)
+    params.push(passwordHash)
+  }
+
+  params.push(body.id, ctx.userId)
+  const idIdx = params.length - 1
+  const userIdx = params.length
+
+  const album = await queryOne<{ id: string; name: string; is_public: boolean; password_hash: string | null }>(
+    `UPDATE user_albums SET ${fields.join(', ')}
+     WHERE id = $${idIdx} AND user_id = $${userIdx}
+     RETURNING id, name, is_public, password_hash`,
+    params
   )
 
   if (!album) return NextResponse.json({ error: '找不到相簿' }, { status: 404 })
-  return NextResponse.json({ album })
+  return NextResponse.json({ album: { ...album, isPasswordProtected: !!album.password_hash } })
 }
 
 export async function DELETE(req: NextRequest) {
