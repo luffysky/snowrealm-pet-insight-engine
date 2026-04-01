@@ -1215,7 +1215,7 @@ export default function YukirinChatPanel({ onClose, character = 'yukirin', onSwi
             <div className="mx-3 mb-1 rounded-xl border border-white/10 overflow-y-auto"
               style={{ background: 'rgba(15,9,30,0.97)', maxHeight: 180 }}
             >
-              {cmdSuggestions.slice(0, 80).map(cmd => (
+              {cmdSuggestions.slice(0, 120).map(cmd => (
                 <button
                   key={cmd.command}
                   onClick={() => { setCmdSuggestions([]); sendMessage(cmd.command) }}
