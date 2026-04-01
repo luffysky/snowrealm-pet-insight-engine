@@ -12,7 +12,7 @@ export interface SlashCommand {
   command: string
   aliases: string[]
   description: string
-  category: 'basic' | 'social' | 'interact' | 'character' | 'tool' | 'fun' | 'navigate' | 'admin' | 'owner'
+  category: 'basic' | 'social' | 'interact' | 'character' | 'tool' | 'marketing' | 'fun' | 'navigate' | 'admin' | 'owner'
   adminOnly: boolean
   ownerOnly: boolean
 }
@@ -286,6 +286,121 @@ const INTERACT: Array<SlashCommand & { handler: CommandHandler }> = [
     handler: () => ({
       yukirin: { text: rnd(['對吧對吧！我超厲害的！\n（得意）繼續誇嘛～', '嘿嘿！（害羞但得意）當然啦！我本來就很厲害！', '（激動）啊！謝謝你說！！我也覺得！！', '嗯嗯嗯！！我努力的！！（開心）']), mood: 'excited', animation: 'excited' },
       riku:    { text: rnd(['...（別過臉）\n沒什麼大不了的', '...（耳朵有點紅）\n...還行', '...嗯\n（難得沒有否認）', '...（沉默了一秒）\n...謝謝']), mood: 'shy', animation: null },
+      needsLLM: false,
+    }),
+  },
+]
+
+// ── 顯示模式指令 ──────────────────────────────────────────────────────────────
+
+const PRESENCE: Array<SlashCommand & { handler: CommandHandler }> = [
+  {
+    command: '/出來逛逛', aliases: ['/自由', '/free', '/出來', '/free-mode'],
+    description: '讓角色在畫面上自由走動',
+    category: 'interact', adminOnly: false, ownerOnly: false,
+    handler: () => ({
+      yukirin: { text: rnd(['太好了！被關在那個小圈圈裡好悶\n我出來透透氣～（伸懶腰）', '出來了！！（立刻伸懶腰）好多了好多了～', '欸嘿！自由啦！\n（立刻開始到處亂走）']), mood: 'excited', animation: 'excited' },
+      riku:    { text: rnd(['...終於放出來了', '（伸了個懶腰）...嗯', '...（走出來）']), mood: 'neutral', animation: null },
+      action: { type: 'set_presence_mode', target: 'free' },
+      needsLLM: false,
+    }),
+  },
+  {
+    command: '/回家', aliases: ['/收起來', '/mini', '/縮回去'],
+    description: '角色收回迷你頭像模式',
+    category: 'interact', adminOnly: false, ownerOnly: false,
+    handler: () => ({
+      yukirin: { text: rnd(['好吧...（縮小）\n有事再叫我喔', '（嘟嘴）我去角落待著了\n要叫我的時候叫一聲', '嗯嗯 我縮小一下\n叫我的時候點一下就好～']), mood: 'sad', animation: null },
+      riku:    { text: rnd(['...嗯\n需要的時候叫我', '（點頭）...知道了', '...縮回去了']), mood: 'neutral', animation: null },
+      action: { type: 'set_presence_mode', target: 'mini' },
+      needsLLM: false,
+    }),
+  },
+  {
+    command: '/站好', aliases: ['/stand', '/陪我', '/站著', '/companion'],
+    description: '角色站在旁邊不走動',
+    category: 'interact', adminOnly: false, ownerOnly: false,
+    handler: () => ({
+      yukirin: { text: rnd(['好啦好啦 不亂走了\n（乖乖站好）', '站這裡！不動了！（努力保持站姿）', '嗯嗯～就這樣陪著你～（安靜站好）']), mood: 'happy', animation: null },
+      riku:    { text: rnd(['嗯\n站這', '...（站定）', '（靜靜站著）...嗯']), mood: 'neutral', animation: null },
+      action: { type: 'set_presence_mode', target: 'companion' },
+      needsLLM: false,
+    }),
+  },
+  {
+    command: '/聊天', aliases: ['/chat', '/對話', '/chat-mode'],
+    description: '打開對話氣泡模式',
+    category: 'interact', adminOnly: false, ownerOnly: false,
+    handler: () => ({
+      yukirin: { text: rnd(['想聊什麼～', '嗯嗯！說說看吧！', '（靠過來）聊天！說說你今天怎麼了～']), mood: 'happy', animation: 'wave' },
+      riku:    { text: rnd(['嗯 說', '...說吧', '（點頭）什麼事']), mood: 'neutral', animation: 'nod' },
+      action: { type: 'set_presence_mode', target: 'chat' },
+      needsLLM: false,
+    }),
+  },
+  {
+    command: '/變大', aliases: ['/bigger', '/放大', '/大一點'],
+    description: '角色放大',
+    category: 'interact', adminOnly: false, ownerOnly: false,
+    handler: () => ({
+      yukirin: { text: rnd(['我變大了！\n是不是更可愛了 (≧∀≦)', '哦哦！我好大！\n（轉了一圈）這樣怎樣？！', '大了大了！欸這樣好嗎（有點得意）']), mood: 'excited', animation: 'excited' },
+      riku:    { text: rnd(['...', '（無言地大了一號）', '...（沒有評論）']), mood: 'neutral', animation: null },
+      action: { type: 'resize_character', target: 'bigger' },
+      needsLLM: false,
+    }),
+  },
+  {
+    command: '/變小', aliases: ['/smaller', '/縮小一點', '/小一點'],
+    description: '角色縮小',
+    category: 'interact', adminOnly: false, ownerOnly: false,
+    handler: () => ({
+      yukirin: { text: rnd(['嗚 我變小了...\n你是不是嫌我太大隻', '（縮小了）欸這樣還可以嗎...\n（有點委屈）', '嗚嗚我越來越小了...下次不要再縮了！']), mood: 'sad', animation: null },
+      riku:    { text: rnd(['...（沉默接受）', '（縮小）...嗯', '...（一言不發地變小了）']), mood: 'neutral', animation: null },
+      action: { type: 'resize_character', target: 'smaller' },
+      needsLLM: false,
+    }),
+  },
+  {
+    command: '/過來', aliases: ['/come', '/到這裡', '/走過來'],
+    description: '叫角色走到你的位置',
+    category: 'interact', adminOnly: false, ownerOnly: false,
+    handler: () => ({
+      yukirin: { text: rnd(['來了來了！（跑過去）', '欸！等我等我！（小跑步）', '在的在的！走過去～（快走）']), mood: 'happy', animation: 'excited' },
+      riku:    { text: rnd(['...（走過去）', '（靜靜走過來）', '...嗯（走來了）']), mood: 'neutral', animation: null },
+      action: { type: 'move_to_cursor', target: '' },
+      needsLLM: false,
+    }),
+  },
+  {
+    command: '/走開', aliases: ['/go', '/旁邊去', '/去旁邊'],
+    description: '叫角色走到畫面邊緣',
+    category: 'interact', adminOnly: false, ownerOnly: false,
+    handler: () => ({
+      yukirin: { text: rnd(['哼！不要我就不要\n（走到角落）...偷看', '（走到旁邊）哼！\n（但還是用眼角瞄著你）', '好好好我走我走！\n（走到旁邊）...才不是捨不得']), mood: 'sad', animation: null },
+      riku:    { text: rnd(['...好\n（走到旁邊但還是看著你）', '（走開）...（回頭看了一眼）', '...（靜靜走到一旁）']), mood: 'neutral', animation: null },
+      action: { type: 'move_to_edge', target: '' },
+      needsLLM: false,
+    }),
+  },
+  {
+    command: '/放風', aliases: ['/兩個出來', '/情侶模式', '/double'],
+    description: '讓雪凜和凜空一起出來互動',
+    category: 'character', adminOnly: false, ownerOnly: false,
+    handler: () => ({
+      yukirin: { text: rnd(['凜空！出來放風了！\n（大聲呼喚）', '欸欸欸！雙人模式！\n（興奮地跑來跑去）', '凜空凜空！跑出來玩～！']), mood: 'excited', animation: 'excited' },
+      riku:    { text: rnd(['...被你拖出來的', '（被扯出來）...嗯', '（走出來）...你又在幹嘛']), mood: 'neutral', animation: null },
+      action: { type: 'set_presence_mode', target: 'couple_free' },
+      needsLLM: false,
+    }),
+  },
+  {
+    command: '/收工', aliases: ['/回去', '/結束放風'],
+    description: '讓兩人一起回去',
+    category: 'character', adminOnly: false, ownerOnly: false,
+    handler: () => ({
+      yukirin: { text: rnd(['好吧 收工了\n凜空走了喔～', '（揮手）好好好回去了！\n凜空！跟上！', '嗯嗯 先回去了～\n（轉頭）凜空你走不走！']), mood: 'relaxed', animation: null },
+      riku:    { text: rnd(['...嗯', '（點頭）', '...（跟著離開）']), mood: 'neutral', animation: null },
+      action: { type: 'set_presence_mode', target: 'companion' },
       needsLLM: false,
     }),
   },
@@ -964,9 +1079,231 @@ const OWNER: Array<SlashCommand & { handler: CommandHandler }> = [
   },
 ]
 
+// ── 行銷助手指令 ──────────────────────────────────────────────────────────────
+
+const MARKETING: Array<SlashCommand & { handler: CommandHandler }> = [
+  // ── 社群貼文 ──
+  {
+    command: '/寫貼文', aliases: ['/post', '/social', '/社群貼文', '/ig', '/fb'],
+    description: '為社群媒體（IG / FB / LINE / Twitter）生成貼文文案與 hashtag',
+    category: 'marketing', adminOnly: false, ownerOnly: false,
+    handler: (_, args) => ({
+      yukirin: {
+        text: args
+          ? `好！幫你寫「${args}」的社群貼文～\n\n告訴我：哪個平台？（IG / FB / LINE / Twitter）目標受眾是誰？要什麼語氣？（活潑/專業/感性）`
+          : rnd([
+              '行銷助手模式開啟！✍️\n\n告訴我你要宣傳什麼？（產品/活動/文章/品牌故事）\n我幫你寫各平台貼文 + hashtag 組合！',
+              '社群文案交給我！📱\n\n什麼主題？哪個平台？還有…你希望什麼感覺？（溫暖/霸氣/可愛）',
+              '貼文生成中～✨\n\n先告訴我：要宣傳什麼？主力在哪個平台？',
+            ]),
+        mood: 'excited', animation: 'excited',
+      },
+      riku: {
+        text: rnd(['說說你要宣傳什麼', '平台？主題？風格？', '...告訴我細節']),
+        mood: 'thinking', animation: 'think',
+      },
+      needsLLM: true,
+    }),
+  },
+  {
+    command: '/廣告文案', aliases: ['/ad', '/ads', '/廣告', '/文案'],
+    description: '生成廣告標題、內文、CTA（A/B 變體）',
+    category: 'marketing', adminOnly: false, ownerOnly: false,
+    handler: (_, args) => ({
+      yukirin: {
+        text: args
+          ? `幫你做「${args}」的廣告文案！\n\n一次給你 3 種版本（理性/感性/急迫感），你挑最順眼的！`
+          : rnd([
+              '廣告文案生成！🎯\n\n告訴我：賣什麼？TA 是誰？要跑哪個平台廣告？\n我給你 A/B/C 三個版本！',
+              '文案交給我！📣\n\n產品名稱？主要賣點？還有預算有限制嗎？（影響用詞急迫感）',
+            ]),
+        mood: 'excited', animation: 'wave',
+      },
+      riku: {
+        text: rnd(['說說產品和TA', '...需要哪類文案', '賣點？平台？']),
+        mood: 'thinking', animation: 'think',
+      },
+      needsLLM: true,
+    }),
+  },
+  // ── SEO / 內容行銷 ──
+  {
+    command: '/SEO', aliases: ['/seo', '/關鍵字', '/搜尋優化', '/meta'],
+    description: '生成 SEO 標題、meta description、關鍵字建議',
+    category: 'marketing', adminOnly: false, ownerOnly: false,
+    handler: (_, args) => ({
+      yukirin: {
+        text: args
+          ? `幫你分析「${args}」的 SEO！\n\n給我你的目標關鍵字或文章主題，我來生成 meta title、description 和 H1 建議！`
+          : rnd([
+              'SEO 優化開始！🔍\n\n貼上你的文章標題或主題，我幫你：\n① 最佳化 meta title（60 字以內）\n② 寫 meta description（150 字以內）\n③ 建議 5 個長尾關鍵字',
+              '搜尋優化交給我！✨\n\n你想優化哪篇文章？或者想針對哪個關鍵字做排名？',
+            ]),
+        mood: 'thinking', animation: 'think',
+      },
+      riku: {
+        text: rnd(['文章主題？', '...關鍵字是什麼', '說說要優化什麼']),
+        mood: 'thinking', animation: 'think',
+      },
+      needsLLM: true,
+    }),
+  },
+  {
+    command: '/內容策略', aliases: ['/content', '/內容規劃', '/行銷計畫', '/editorial'],
+    description: '生成一週/一個月的內容行銷排程與主題規劃',
+    category: 'marketing', adminOnly: false, ownerOnly: false,
+    handler: (_, args) => ({
+      yukirin: {
+        text: args
+          ? `幫你規劃「${args}」的內容策略！\n\n要幾週的計畫？主力平台是哪些？`
+          : rnd([
+              '內容行銷策略規劃！📅\n\n告訴我：\n① 你的品牌/產品是什麼？\n② 主力平台（IG/部落格/LINE）？\n③ 想規劃幾週？\n\n我幫你做完整主題排程！',
+              '幫你排行銷日曆！🗓️\n\n品牌定位？目標族群？最近有沒有特定活動要配合？',
+            ]),
+        mood: 'excited', animation: 'excited',
+      },
+      riku: {
+        text: rnd(['品牌？平台？週期？', '...說說行銷目標', '規劃幾週？']),
+        mood: 'thinking', animation: 'think',
+      },
+      needsLLM: true,
+    }),
+  },
+  // ── Email 行銷 ──
+  {
+    command: '/電子報', aliases: ['/newsletter', '/email行銷', '/email', '/信件'],
+    description: '生成電子報、促銷信件、活動邀請函草稿',
+    category: 'marketing', adminOnly: false, ownerOnly: false,
+    handler: (_, args) => ({
+      yukirin: {
+        text: args
+          ? `幫你寫「${args}」的電子報！\n\n是促銷信？活動通知？還是定期週報？給我主題我來起草！`
+          : rnd([
+              '電子報撰寫模式！📧\n\n告訴我：\n① 這封信的目的（促銷/活動通知/週報/召回信）\n② 收件者是誰？\n③ 最重要想傳達的一件事？\n\n我幫你寫主旨 + 內文 + CTA！',
+              '信件文案來了！✉️\n\n什麼類型的信？（歡迎信/促銷/活動/流失召回）給我主題！',
+            ]),
+        mood: 'happy', animation: null,
+      },
+      riku: {
+        text: rnd(['信件類型？主題？', '...要給誰的信', '說說目的']),
+        mood: 'neutral', animation: null,
+      },
+      needsLLM: true,
+    }),
+  },
+  // ── 數據分析 ──
+  {
+    command: '/行銷分析', aliases: ['/analytics', '/數據', '/成效分析', '/marketing-report'],
+    description: '解讀行銷數據、提供改善建議',
+    category: 'marketing', adminOnly: false, ownerOnly: false,
+    handler: (_, args) => ({
+      yukirin: {
+        text: args
+          ? `幫你分析「${args}」！\n\n貼上你的數據或描述現況，我來解讀 + 給出行動建議！`
+          : rnd([
+              '行銷數據分析！📊\n\n貼上你的數字（點擊率/轉換率/開信率/ROAS 等），或者描述你遇到的問題，我來幫你診斷 + 提供改善方向！',
+              '數據解讀交給我！🔍\n\n你有什麼數字想搞懂？還是某個指標一直不理想？說說看！',
+            ]),
+        mood: 'thinking', animation: 'think',
+      },
+      riku: {
+        text: rnd(['貼上你的數據', '...什麼指標有問題', '說說現況']),
+        mood: 'thinking', animation: 'think',
+      },
+      needsLLM: true,
+    }),
+  },
+  // ── 競品分析 ──
+  {
+    command: '/競品分析', aliases: ['/competitor', '/競爭對手', '/市場分析'],
+    description: '分析競爭對手行銷策略，找出差異化機會',
+    category: 'marketing', adminOnly: false, ownerOnly: false,
+    handler: (_, args) => ({
+      yukirin: {
+        text: args
+          ? `分析「${args}」的行銷策略！\n\n告訴我更多背景，我幫你找出差異化機會點！`
+          : rnd([
+              '競品分析開始！🕵️\n\n告訴我：\n① 你的競爭對手是誰？\n② 你們的產品/服務大概是什麼？\n③ 你覺得他們哪裡比你強？\n\n我幫你找出差距和機會！',
+              '研究競爭對手！🔬\n\n競品名稱？他們主要在哪個平台活躍？你想超越他們的哪個面向？',
+            ]),
+        mood: 'thinking', animation: 'think',
+      },
+      riku: {
+        text: rnd(['競品是誰？', '...說說對手', '你想超越哪個面向？']),
+        mood: 'thinking', animation: 'think',
+      },
+      needsLLM: true,
+    }),
+  },
+  // ── 品牌聲音 ──
+  {
+    command: '/品牌定位', aliases: ['/branding', '/品牌', '/定位', '/brand'],
+    description: '釐清品牌定位、目標受眾、獨特價值主張（UVP）',
+    category: 'marketing', adminOnly: false, ownerOnly: false,
+    handler: () => ({
+      yukirin: {
+        text: rnd([
+          '品牌定位工作坊！🎨\n\n我問你答，一起釐清你的品牌！\n\n第一題：你的產品/服務幫什麼人解決什麼問題？（一句話）',
+          '幫你想清楚品牌！💡\n\n很多人說不清楚自己的差異化，沒關係！\n我來問，你來答，最後我整理成一份品牌定位摘要！\n\n先說：你的產品是什麼？',
+        ]),
+        mood: 'excited', animation: 'excited',
+      },
+      riku: {
+        text: rnd(['產品是什麼？', '...說說你的品牌', '解決什麼問題？']),
+        mood: 'thinking', animation: 'think',
+      },
+      needsLLM: true,
+    }),
+  },
+  // ── 口碑行銷 ──
+  {
+    command: '/KOL企劃', aliases: ['/kol', '/網紅', '/influencer', '/口碑行銷'],
+    description: '設計 KOL / 網紅行銷企劃、合作提案',
+    category: 'marketing', adminOnly: false, ownerOnly: false,
+    handler: (_, args) => ({
+      yukirin: {
+        text: args
+          ? `幫你做「${args}」的 KOL 行銷企劃！\n\n預算範圍？希望合作的 KOL 規模（奈米/微型/中型/大型）？`
+          : rnd([
+              'KOL 合作企劃！🌟\n\n告訴我：\n① 你的品牌/產品\n② 預算大概多少？\n③ 目標是曝光還是轉換？\n\n我幫你設計合作方案 + 寄出的提案模板！',
+              '網紅行銷企劃！✨\n\n想找 KOL 合作嗎？說說你的品牌和目標，我幫你規劃策略！',
+            ]),
+        mood: 'happy', animation: 'wave',
+      },
+      riku: {
+        text: rnd(['品牌？預算？目標？', '...找什麼規模的KOL', '說說合作目標']),
+        mood: 'thinking', animation: 'think',
+      },
+      needsLLM: true,
+    }),
+  },
+  // ── 活動企劃 ──
+  {
+    command: '/活動企劃', aliases: ['/event', '/活動', '/campaign', '/企劃'],
+    description: '生成行銷活動企劃、促銷方案設計',
+    category: 'marketing', adminOnly: false, ownerOnly: false,
+    handler: (_, args) => ({
+      yukirin: {
+        text: args
+          ? `幫你設計「${args}」的活動企劃！\n\n規模大嗎？線上線下？預算？時間點？`
+          : rnd([
+              '活動企劃時間！🎉\n\n什麼類型的活動？（週年慶/新品上市/節日促銷/品牌體驗）\n線上還是線下？預算大概多少？\n我幫你從主題到執行細節全部規劃！',
+              '一起做活動！🎊\n\n有什麼想辦的活動或促銷嗎？說說你的想法，我來幫你充實成完整企劃！',
+            ]),
+        mood: 'excited', animation: 'excited',
+      },
+      riku: {
+        text: rnd(['活動類型？規模？', '...線上還是線下', '說說你的想法']),
+        mood: 'thinking', animation: 'think',
+      },
+      needsLLM: true,
+    }),
+  },
+]
+
 // ── 對外 API ──────────────────────────────────────────────────────────────────
 
-const ALL_COMMANDS = [...BASIC, ...INTERACT, ...CHARACTER, ...TOOL, ...FUN, ...NAVIGATE, ...ADMIN, ...OWNER]
+const ALL_COMMANDS = [...BASIC, ...INTERACT, ...PRESENCE, ...CHARACTER, ...TOOL, ...MARKETING, ...FUN, ...NAVIGATE, ...ADMIN, ...OWNER]
 
 /** 處理斜線指令，回傳結果（null = 找不到指令） */
 export function handleSlashCommand(

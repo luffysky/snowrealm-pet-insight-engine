@@ -70,12 +70,18 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   const defaultTid = tenants.length > 0 ? tenants[0].tid : 'default'
 
   const SESSION_SECONDS = 60 * 60 * 24 * 30 // 30 天
+  // super_admin 帳號必須保留真實 role，不能被 tenant role 覆蓋
+  // 否則 guide engine / middleware 讀 JWT 永遠看到 'admin' 而非 'super_admin'
+  const jwtRole = user.role === 'super_admin'
+    ? 'super_admin'
+    : (tenants.length > 0 ? tenants[0].role : 'admin')
+
   const token = await signToken(
     {
       sub: user.id,
       tenants,
       tid: defaultTid,
-      role: tenants.length > 0 ? tenants[0].role : 'admin',
+      role: jwtRole,
       name: user.display_name ?? loginId,
     },
     SESSION_SECONDS,

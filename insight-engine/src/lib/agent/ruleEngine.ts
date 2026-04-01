@@ -10,6 +10,10 @@ export interface UserState {
   isOwner: boolean
   selectedCharacter: 'yukirin' | 'riku'
 
+  // 角色顯示模式
+  presenceMode: 'mini' | 'chat' | 'companion' | 'free'
+  characterSize: number  // 0.5 ~ 2.0
+
   // 頁面狀態
   currentPage: string
   timeOnPage: number          // 秒

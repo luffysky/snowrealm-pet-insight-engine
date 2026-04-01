@@ -164,5 +164,8 @@ export function usePageTracker(opts: PageTrackerOptions = {}): UserState {
     currentHour,
     dayOfWeek,
     isWeekend: dayOfWeek === 0 || dayOfWeek === 6,
+
+    presenceMode: 'chat' as const,
+    characterSize: 1.0,
   }
 }

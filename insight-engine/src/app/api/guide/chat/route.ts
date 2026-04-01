@@ -16,6 +16,8 @@ import {
   CharacterType,
   PromptSettings,
 } from '@/lib/guideEngine'
+import { hasAgentIntent, AGENT_TOOLS_SCHEMA } from '@/lib/yukirin/agentTools'
+import { runAgentLoop } from '@/lib/yukirin/agentExecutor'
 
 const PLATFORM_SETTINGS_KEY = 'yukirin_prompts'
 
@@ -279,6 +281,38 @@ export async function POST(req: NextRequest) {
         send({ type: 'mood', mood: 'thinking' })
 
         let fullText = ''
+
+        // ── Agent 模式（有工具呼叫意圖 + Anthropic key）────────────────────────
+        const isAgentMessage = hasAgentIntent(message)
+        if (isAgentMessage && provider === 'anthropic') {
+          const anthropicKey = await getActiveAiKey('default')
+          const agentKey = anthropicKey?.provider === 'anthropic' ? anthropicKey : null
+          if (agentKey) {
+            send({ type: 'agent_start', message: '雪凜正在查資料...' })
+            const agentMessages = [
+              ...messages.map((m: GuideMessage) => ({ role: m.role as 'user' | 'assistant', content: m.content })),
+            ]
+            const agentResult = await runAgentLoop(agentMessages, agentKey.apiKey, agentKey.model, systemPrompt)
+            // 把步驟資訊傳給前端
+            for (const step of agentResult.steps) {
+              send({ type: 'tool_call', tool: step.toolName, durationMs: step.durationMs })
+            }
+            fullText = agentResult.finalText
+            send({ type: 'chunk', text: fullText })
+            const parsed = parseGuideResponse(fullText)
+            send({
+              type: 'complete',
+              text: parsed.text || fullText,
+              mood: parsed.mood ?? 'happy',
+              animation: parsed.animation ?? null,
+              action: parsed.action ?? null,
+              quickReplies: parsed.quickReplies ?? null,
+              agentSteps: agentResult.steps.length,
+            })
+            controller.close()
+            return
+          }
+        }
 
         if (provider === 'anthropic') {
           const anthropicKey = await getActiveAiKey('default')

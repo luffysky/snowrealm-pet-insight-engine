@@ -6,6 +6,7 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import { VRMLoaderPlugin, VRM, VRMUtils } from '@pixiv/three-vrm'
 import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader.js'
 import { retargetMixamoAnimation } from '@/lib/vrm/loadMixamoAnimation'
+import { VrmLipSync, isTtsSupported } from '@/lib/vrm/vrmLipSync'
 
 export type RikuMood = 'neutral' | 'relaxed' | 'thinking' | 'happy' | 'shy' | 'sad' | 'surprised'
 
@@ -119,6 +120,8 @@ interface RikuSceneProps {
   onLowPerformance?: () => void
   /** 外部注入的 mood 變更 */
   onLoad?: (controls: RikuControls) => void
+  /** 角色大小倍率（預設 1.0，範圍 0.5~2.0） */
+  characterSize?: number
   className?: string
 }
 
@@ -129,6 +132,12 @@ export interface RikuControls {
   getCurrentAnimation: () => string
   /** 取得目前心情 */
   getCurrentMood: () => RikuMood
+  /** 讓凜空朗讀文字並同步口型 */
+  speak: (text: string, options?: { lang?: string; rate?: number; pitch?: number; onEnd?: () => void }) => void
+  /** 中止朗讀 */
+  stopSpeaking: () => void
+  /** 是否支援 TTS */
+  isTtsSupported: boolean
 }
 
 const CAMERA_PRESETS = {
@@ -157,6 +166,7 @@ export default function RikuScene({
   quality = 'high',
   onLowPerformance,
   onLoad,
+  characterSize = 1.0,
   className = '',
 }: RikuSceneProps) {
   const mountRef = useRef<HTMLDivElement>(null)
@@ -193,6 +203,8 @@ export default function RikuScene({
   })
   const orbitPointersRef = useRef(new Map<number, { x: number; y: number }>())
 
+  const baseScaleRef      = useRef<number>(1)
+  const lipSyncRef        = useRef<VrmLipSync | null>(null)
   const mixerRef          = useRef<THREE.AnimationMixer | null>(null)
   const fbxClipsRef       = useRef<Record<string, THREE.AnimationClip>>({})
   const currentIdleRef    = useRef<THREE.AnimationAction | null>(null)
@@ -504,7 +516,8 @@ export default function RikuScene({
       if (modelHeight > 0) {
         const targetHeight = 1.65
         const scale = targetHeight / modelHeight
-        vrm.scene.scale.setScalar(scale)
+        baseScaleRef.current = scale
+        vrm.scene.scale.setScalar(scale * characterSize)
         box.setFromObject(vrm.scene)
         vrm.scene.position.y = -box.min.y
       }
@@ -565,6 +578,9 @@ export default function RikuScene({
       // 初始表情
       transitionExpression(vrm, mood)
 
+      // 初始化口型同步
+      lipSyncRef.current = new VrmLipSync(vrm)
+
       // 暴露外部控制 API
       if (onLoad) {
         onLoad({
@@ -617,6 +633,13 @@ export default function RikuScene({
           },
           getCurrentAnimation: () => currentAnimationRef.current,
           getCurrentMood: () => currentMoodRef.current,
+          speak: (text, options) => {
+            lipSyncRef.current?.speak(text, options)
+          },
+          stopSpeaking: () => {
+            lipSyncRef.current?.stop()
+          },
+          isTtsSupported: isTtsSupported(),
         })
       }
 
@@ -916,6 +939,9 @@ export default function RikuScene({
       mixerRef.current?.update(delta)
       vrm?.update(delta)
 
+      // 口型同步更新
+      lipSyncRef.current?.update(delta)
+
       // 玻璃球漂浮
       if (sphereGroup) {
         sphereGroup.children.forEach((child) => {
@@ -969,6 +995,12 @@ export default function RikuScene({
   }, [cameraMode, mood, showBackground, allowOrbit, quality, onLoad, transitionExpression,
     switchIdleByMood, playArmWave, playNod, playShakeHead, playTiltHead, playBow, playShrug,
     playThinkPose, playExcitedBounce, playSway, playDanceStep, playStretch])
+
+  // characterSize 變化時即時更新模型縮放
+  useEffect(() => {
+    if (!vrmRef.current) return
+    vrmRef.current.scene.scale.setScalar(baseScaleRef.current * characterSize)
+  }, [characterSize])
 
   return (
     <div

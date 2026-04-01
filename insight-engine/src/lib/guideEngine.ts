@@ -8,6 +8,7 @@ export type GuideIntent =
   | 'zcoin_support'
   | 'chitchat'
   | 'bug_report'
+  | 'marketing'
 
 export type GuideMood =
   | 'happy' | 'excited' | 'thinking' | 'neutral' | 'relaxed' | 'sad'
@@ -96,6 +97,7 @@ export function classifyIntent(message: string, context: GuideContext): GuideInt
   if (/bug|錯誤|壞了|當機|問題|不能用|無法|失敗|奇怪/.test(msg)) return 'bug_report'
   if (/z幣|zcoin|儲值|購買|商城|交易|退款|兌換|點數/.test(msg)) return 'zcoin_support'
   if (/結果|分析|報告|分數|意思|代表什麼|解讀/.test(msg)) return 'result_explain'
+  if (/貼文|文案|廣告|seo|行銷|電子報|競品|kol|網紅|品牌|活動企劃|社群|hashtag|轉換率|roas|點擊率|開信率|受眾|TA|市場/.test(msg)) return 'marketing'
   if (/怎麼|如何|在哪|功能|設定|哪裡|怎樣|步驟/.test(msg)) return 'feature_help'
 
   if (context.trigger === 'first_visit') return 'tour'
@@ -109,6 +111,7 @@ export function selectLLMProvider(intent: GuideIntent): 'anthropic' | 'openai' {
   if (intent === 'result_explain') return 'anthropic'
   if (intent === 'tour') return 'anthropic'
   if (intent === 'bug_report') return 'anthropic'
+  if (intent === 'marketing') return 'anthropic'  // 行銷文案需要高品質輸出
   return 'openai'
 }
 
@@ -326,6 +329,23 @@ Z幣知識：填問卷得幣、分享得更多、商城換貼圖和禮物、不�
 提醒截圖。
 mood 用 thinking，引導完用 happy。`
       break
+    case 'marketing':
+      intentPrompt = `
+【行銷助手模式啟動】
+現在你是雪凜的行銷助手人格。
+你精通：社群媒體行銷、文案撰寫、SEO、電子報、廣告策略、品牌定位、KOL 合作、活動企劃。
+
+行銷輸出規則：
+- 直接給出成品（不要說「以下是文案」，直接寫文案）
+- 社群貼文：必須附 hashtag 組合（中文 + 英文各 5 個）
+- 廣告文案：給 A/B/C 三個版本
+- SEO：output meta title（60字內）+ description（150字內）+ 5個長尾關鍵字
+- 電子報：完整信件結構（主旨行 + 開頭問候 + 主體 + CTA）
+- 策略規劃：用表格或清單輸出（這是例外，其他指令避免條列）
+
+保持雪凜的說話風格：在給出專業成品前可以先說一兩句有個性的話。
+mood 用 excited 或 happy。`
+      break
     case 'chitchat':
     default:
       intentPrompt = `
@@ -441,6 +461,15 @@ Z幣問題。
 「...哪裡壞的。做了什麼操作。截圖」
 引導清楚說明問題。
 mood 用 thinking。`
+      break
+    case 'marketing':
+      intentPrompt = `
+【行銷模式】
+你懂行銷，但不多說。
+直接給成品，不廢話。
+社群貼文附 hashtag，廣告文案給 A/B/C，SEO 給關鍵字。
+「好。看這個。」
+mood 用 neutral 或 thinking。`
       break
     case 'chitchat':
     default:

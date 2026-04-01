@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef, type ReactNode } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, Globe, Heart, MessageSquare, Loader2, X, Settings, ChevronRight, Bell, MessageCircle, LayoutDashboard, BookOpen, Image, MoreHorizontal, Pencil, Trash2, Camera, Wallet, Library } from 'lucide-react'
+import { ArrowLeft, Globe, Heart, MessageSquare, Loader2, X, Settings, ChevronRight, Bell, MessageCircle, LayoutDashboard, BookOpen, Image, MoreHorizontal, Pencil, Trash2, Camera, Wallet, Library, LogOut } from 'lucide-react'
 import { UserAlbum } from '@/components/social/UserAlbum'
 import { setFloatingChatEnabled, FLOATING_CHAT_ENABLED_KEY } from '@/components/social/FloatingChat'
 
@@ -13,12 +13,23 @@ function stripHtml(html: string): string {
 
 // ─── Profile sidebar (only shown for own profile) ───
 function ProfileSidebar({ onClose, tenantSlug, isSuperAdmin }: { onClose: () => void; tenantSlug: string | null; isSuperAdmin: boolean }) {
+  const router = useRouter()
   const [floatEnabled, setFloatEnabled] = useState(true)
+  const [loggingOut, setLoggingOut] = useState(false)
 
   useEffect(() => {
     const v = localStorage.getItem(FLOATING_CHAT_ENABLED_KEY)
     setFloatEnabled(v !== 'false')
   }, [])
+
+  const handleLogout = async () => {
+    setLoggingOut(true)
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' })
+    } finally {
+      router.push('/login')
+    }
+  }
 
   const toggleFloat = () => {
     const next = !floatEnabled
@@ -94,8 +105,20 @@ function ProfileSidebar({ onClose, tenantSlug, isSuperAdmin }: { onClose: () => 
           </SidebarSection>
 
         </div>
-        <div className="px-4 py-3 border-t border-white/8 shrink-0">
-          <p className="text-[11px] text-[#8a7ca8]/60 text-center">長按訊息可產生可拖曳懸浮球</p>
+        <div className="shrink-0 border-t border-white/8" style={{ paddingBottom: 'var(--bnav-h, 76px)' }}>
+          <p className="text-[11px] text-[#8a7ca8]/60 text-center px-4 pt-3 pb-2">長按訊息可產生可拖曳懸浮球</p>
+          <button
+            onClick={handleLogout}
+            disabled={loggingOut}
+            className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-red-50/60 transition-colors group disabled:opacity-50"
+          >
+            <span className="w-8 h-8 rounded-xl bg-red-500/10 flex items-center justify-center text-red-400 group-hover:bg-red-500/20 transition-colors shrink-0">
+              <LogOut className="w-4 h-4" />
+            </span>
+            <span className="text-sm text-red-500 font-medium">
+              {loggingOut ? '登出中...' : '登出'}
+            </span>
+          </button>
         </div>
       </div>
     </>

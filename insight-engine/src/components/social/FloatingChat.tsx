@@ -159,7 +159,7 @@ function FloatingChatWindow({ win, meId, index, onClose, onToggleMinimize, onFoc
   const [stickerPackIdx, setStickerPackIdx] = useState(0)
   const [loadingStickers, setLoadingStickers] = useState(false)
   const bottomRef = useRef<HTMLDivElement>(null)
-  const inputRef = useRef<HTMLInputElement>(null)
+  const inputRef = useRef<HTMLTextAreaElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const rightOffset = 16 + (WIN_W + 8) * index + BTN + 8
@@ -205,6 +205,7 @@ function FloatingChatWindow({ win, meId, index, onClose, onToggleMinimize, onFoc
     if (!input.trim()) return
     const content = input.trim()
     setInput('')
+    if (inputRef.current) inputRef.current.style.height = 'auto'
     await sendContent(content)
   }
 
@@ -421,14 +422,19 @@ function FloatingChatWindow({ win, meId, index, onClose, onToggleMinimize, onFoc
 
             {/* Text input + send */}
             <div className="flex items-center gap-1.5">
-              <input
+              <textarea
                 ref={inputRef}
+                rows={1}
                 value={input}
-                onChange={e => setInput(e.target.value)}
-                onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); void send() } }}
+                onChange={e => {
+                  setInput(e.target.value)
+                  e.target.style.height = 'auto'
+                  e.target.style.height = `${Math.min(e.target.scrollHeight, 80)}px`
+                }}
                 onFocus={() => setMediaPanel(null)}
-                placeholder="傳送訊息..."
-                className="flex-1 bg-white/8 border border-white/10 rounded-xl px-3 py-1.5 text-xs text-white placeholder-white/30 outline-none focus:border-sky-500/40"
+                placeholder="傳送訊息...（Shift+Enter 換行）"
+                className="flex-1 bg-white/8 border border-white/10 rounded-xl px-3 py-1.5 text-xs text-white placeholder-white/30 outline-none focus:border-sky-500/40 resize-none overflow-hidden leading-relaxed"
+                style={{ minHeight: 30, maxHeight: 80 }}
               />
               <button
                 onClick={() => void send()}

@@ -162,6 +162,28 @@ export default function YukirinWidget() {
     return () => window.removeEventListener('yukirin:open-blog-write', handleBlogWriteOpen)
   }, [])
 
+  // 新用戶註冊後自動彈出雪凜導覽
+  useEffect(() => {
+    try {
+      const isNewUser = sessionStorage.getItem('yukirin_new_user')
+      if (!isNewUser) return
+      sessionStorage.removeItem('yukirin_new_user')
+      // 延遲 1.5 秒讓頁面渲染完成後再彈出
+      const timer = setTimeout(() => {
+        setOpen(true)
+        setChatOpen(true)
+        // 再延遲 800ms 等 panel 載入完成，送出歡迎導覽訊息
+        setTimeout(() => {
+          const event = new CustomEvent('yukirin:auto-send', {
+            detail: { text: '嗨！我是雪凜，歡迎來到 SnowRealm Insight Engine！✨ 我來幫你認識這個後台，有任何問題都可以問我喔！請問要先從哪裡開始呢？' }
+          })
+          window.dispatchEvent(event)
+        }, 800)
+      }, 1500)
+      return () => clearTimeout(timer)
+    } catch { /* ignore */ }
+  }, [])
+
   const setPose = useCallback((poseName: string) => {
     setCurrentPoseState(poseName)
     localStorage.setItem('yukirin-pose', poseName)
@@ -183,6 +205,10 @@ export default function YukirinWidget() {
     return { w: 96, h: 112 }
   })
   const charSizeRef = useRef(charSize)
+
+  // ── 自由漫步模式 ──────────────────────────────────────────────────────────
+  const [presenceMode, setPresenceMode] = useState<'mini' | 'chat' | 'companion' | 'free'>('chat')
+  const [freeBubble, setFreeBubble] = useState(false)
 
   // ── 效能設定 ──────────────────────────────────────────────────────────────
   const [performanceMode, setPerformanceModeState] = useState<'high' | 'low'>(() => {
@@ -454,6 +480,10 @@ export default function YukirinWidget() {
                 onClose={() => setChatOpen(false)}
                 character={character}
                 onSwitchCharacter={switchCharacter}
+                onPresenceModeChange={(mode) => {
+                  setPresenceMode(mode)
+                  if (mode === 'free') setChatOpen(false)
+                }}
               />
 
               {/* 右邊緣把手 */}
@@ -645,6 +675,69 @@ export default function YukirinWidget() {
       {/* 360° Orbit Modal */}
       {orbitOpen && (
         <YukirinOrbitModal onClose={() => setOrbitOpen(false)} character={character} />
+      )}
+
+      {/* ── 自由漫步覆蓋層 ─────────────────────────────────────────────────── */}
+      {presenceMode === 'free' && (
+        <div
+          className="yukirin-free-char fixed z-50 select-none"
+          style={{ width: 140, height: 190, bottom: 0 }}
+        >
+          {/* 退出按鈕 */}
+          <button
+            onClick={() => { setPresenceMode('chat'); setFreeBubble(false) }}
+            className="absolute -top-2 -right-2 z-10 w-5 h-5 rounded-full bg-white/80 border border-[#b8a9e8]/40 flex items-center justify-center text-[9px] text-[#8a7ca8] hover:text-[#3d3155] shadow-sm cursor-pointer"
+            title="回到對話模式"
+          >✕</button>
+
+          {/* 氣泡 */}
+          {freeBubble && (
+            <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 w-36 bg-white/90 border border-[#b8a9e8]/40 rounded-2xl rounded-bl-sm px-3 py-2 shadow-lg text-[11px] text-[#3d3155] leading-snug whitespace-nowrap">
+              {character === 'riku' ? '...在逛逛。' : '散步中！～ 🌸'}
+            </div>
+          )}
+
+          {/* 3D 角色（可點擊） */}
+          <button
+            onClick={() => {
+              setFreeBubble(b => !b)
+              yukirinRef.current?.setMood('happy', 400)
+            }}
+            className="w-full h-full rounded-2xl overflow-hidden bg-gradient-to-b from-[#f3eeff]/60 to-[#ffeef5]/60 border border-[#b8a9e8]/20 shadow-[0_8px_32px_rgba(184,169,232,0.3)] cursor-pointer"
+            title="點我說話"
+          >
+            {character === 'riku' ? (
+              <RikuScene
+                cameraMode="upperBody"
+                mood="happy"
+                showBackground={false}
+                quality={performanceMode}
+                onLoad={handleLoad as (c: import('./RikuScene').RikuControls) => void}
+                className="w-full h-full"
+              />
+            ) : (
+              <YukirinScene
+                cameraMode="upperBody"
+                mood="happy"
+                showBackground={false}
+                quality={performanceMode}
+                onLoad={handleLoad as (c: import('./YukirinScene').YukirinControls) => void}
+                className="w-full h-full"
+              />
+            )}
+          </button>
+
+          {/* 對話按鈕 */}
+          <button
+            onClick={() => { setPresenceMode('chat'); setChatOpen(true); setOpen(true) }}
+            className="absolute -bottom-2 -left-2 z-10 w-5 h-5 rounded-full bg-white/80 border border-[#b8a9e8]/40 flex items-center justify-center text-[#8a7ca8] hover:text-[#3d3155] shadow-sm cursor-pointer"
+            title="跟我說話"
+          >
+            <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor">
+              <path d="M1 1h8a1 1 0 011 1v5a1 1 0 01-1 1H3L1 10V2a1 1 0 011-1z"/>
+            </svg>
+          </button>
+        </div>
       )}
     </div>
   )

@@ -321,6 +321,8 @@ function RegisterForm() {
       })
       const data = await res.json()
       if (res.ok) {
+        // 標記新用戶，讓雪凜自動彈出導覽
+        try { sessionStorage.setItem('yukirin_new_user', '1') } catch {}
         window.location.href = redirectTo || `/insight-admin/${data.slug || slug}`
         return
       } else {

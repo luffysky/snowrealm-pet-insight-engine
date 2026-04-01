@@ -54,6 +54,7 @@ interface YukirinChatPanelProps {
   onClose: () => void
   character?: 'yukirin' | 'riku'
   onSwitchCharacter?: (char: 'yukirin' | 'riku') => void
+  onPresenceModeChange?: (mode: 'mini' | 'chat' | 'companion' | 'free') => void
 }
 
 // ── 購買次數面板 ──────────────────────────────────────────────────────────────
@@ -171,14 +172,14 @@ async function saveMessages(msgs: ChatMessage[]) {
 }
 
 // ── 主元件 ───────────────────────────────────────────────────────────────────
-export default function YukirinChatPanel({ onClose, character = 'yukirin', onSwitchCharacter }: YukirinChatPanelProps) {
+export default function YukirinChatPanel({ onClose, character = 'yukirin', onSwitchCharacter, onPresenceModeChange }: YukirinChatPanelProps) {
   const router = useRouter()
   const pathname = usePathname()
   const yukirinRef = useRef<AnySceneControls | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const abortRef = useRef<AbortController | null>(null)
 
-  const inputRef = useRef<HTMLInputElement>(null)
+  const inputRef = useRef<HTMLTextAreaElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   // 情侶互動 session 狀態（不需要重渲染，用 ref）
@@ -208,6 +209,10 @@ export default function YukirinChatPanel({ onClose, character = 'yukirin', onSwi
   // 部落格創作模式
   const [blogWriteMode, setBlogWriteMode] = useState(false)
   const [blogWriting, setBlogWriting] = useState(false)
+
+  // 角色顯示模式
+  const [presenceMode, setPresenceMode] = useState<'mini' | 'chat' | 'companion' | 'free'>('chat')
+  const [characterSize, setCharacterSize] = useState(1.0)
   // ref 解決 useCallback stale closure 問題
   const blogWriteModeRef = useRef(false)
 
@@ -310,6 +315,7 @@ export default function YukirinChatPanel({ onClose, character = 'yukirin', onSwi
   const buildSlashState = useCallback((): UserState => ({
     userId: '', nickname: '', isAdmin: turnsInfo?.isAdmin ?? false, isOwner: turnsInfo?.isOwner ?? false,
     selectedCharacter: character ?? 'yukirin',
+    presenceMode, characterSize,
     currentPage: pathname ?? '/',
     timeOnPage: 0, scrollPosition: 0, scrollSpeed: 'idle',
     isTyping: true, lastClickTarget: '', pageVisitCount: 1,
@@ -321,7 +327,7 @@ export default function YukirinChatPanel({ onClose, character = 'yukirin', onSwi
     currentHour: new Date().getHours(),
     dayOfWeek: new Date().getDay(),
     isWeekend: [0, 6].includes(new Date().getDay()),
-  }), [pathname, messages.length, turnsInfo])
+  }), [pathname, messages.length, turnsInfo, presenceMode, characterSize])
 
   // ── 圖片選擇處理 ─────────────────────────────────────────────────────────────
   const handleImageSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -446,8 +452,13 @@ export default function YukirinChatPanel({ onClose, character = 'yukirin', onSwi
     setMessages(prev => appendMessage(prev, userMsg))
     setInput('')
     setCmdSuggestions([])
-    // 清空後立即 focus，避免手機鍵盤縮回去
-    requestAnimationFrame(() => inputRef.current?.focus())
+    // 清空後重置 textarea 高度並 focus
+    requestAnimationFrame(() => {
+      if (inputRef.current) {
+        inputRef.current.style.height = 'auto'
+        inputRef.current.focus()
+      }
+    })
 
     // ── 部落格創作模式：攔截使用者輸入，呼叫 AI write API ─────────────────
     if (blogWriteModeRef.current && !isSlashCommand(text)) {
@@ -670,6 +681,16 @@ export default function YukirinChatPanel({ onClose, character = 'yukirin', onSwi
           if (slashResult.action?.type === 'switch_character' && onSwitchCharacter) {
             onSwitchCharacter(slashResult.action.target as 'yukirin' | 'riku')
           }
+          if (slashResult.action?.type === 'set_presence_mode') {
+            const mode = slashResult.action.target as 'mini' | 'chat' | 'companion' | 'free' | 'couple_free'
+            const resolvedMode = mode === 'couple_free' ? 'free' : mode
+            setPresenceMode(resolvedMode)
+            onPresenceModeChange?.(resolvedMode)
+          }
+          if (slashResult.action?.type === 'resize_character') {
+            if (slashResult.action.target === 'bigger') setCharacterSize(prev => Math.min(2.0, prev + 0.3))
+            if (slashResult.action.target === 'smaller') setCharacterSize(prev => Math.max(0.5, prev - 0.3))
+          }
           setQuickReplies(DEFAULT_QUICK_REPLIES)
           return
         }
@@ -889,6 +910,7 @@ export default function YukirinChatPanel({ onClose, character = 'yukirin', onSwi
 
   const handleSubmit = useCallback((e: React.FormEvent) => {
     e.preventDefault()
+    if (inputRef.current) inputRef.current.style.height = 'auto'
     sendMessage(input)
   }, [input, sendMessage])
 
@@ -975,6 +997,7 @@ export default function YukirinChatPanel({ onClose, character = 'yukirin', onSwi
               mood="happy"
               showBackground={false}
               onLoad={handleLoad as (c: any) => void}
+              characterSize={characterSize}
               className="w-full h-full"
             />
           ) : (
@@ -983,6 +1006,7 @@ export default function YukirinChatPanel({ onClose, character = 'yukirin', onSwi
               mood="happy"
               showBackground={false}
               onLoad={handleLoad as (c: any) => void}
+              characterSize={characterSize}
               className="w-full h-full"
             />
           )}
@@ -1136,10 +1160,10 @@ export default function YukirinChatPanel({ onClose, character = 'yukirin', onSwi
         <div onPointerDown={e => e.stopPropagation()}>
           {/* 斜線指令自動完成下拉 */}
           {cmdSuggestions.length > 0 && (
-            <div className="mx-3 mb-1 rounded-xl border border-white/10 overflow-hidden"
-              style={{ background: 'rgba(15,9,30,0.97)' }}
+            <div className="mx-3 mb-1 rounded-xl border border-white/10 overflow-y-auto"
+              style={{ background: 'rgba(15,9,30,0.97)', maxHeight: 180 }}
             >
-              {cmdSuggestions.slice(0, 20).map(cmd => (
+              {cmdSuggestions.slice(0, 40).map(cmd => (
                 <button
                   key={cmd.command}
                   onClick={() => { setCmdSuggestions([]); sendMessage(cmd.command) }}
@@ -1224,19 +1248,31 @@ export default function YukirinChatPanel({ onClose, character = 'yukirin', onSwi
               </svg>
             </button>
 
-            <input
+            <textarea
               ref={inputRef}
               autoFocus
+              rows={1}
               value={input}
               onChange={e => {
                 const v = e.target.value
                 setInput(v)
                 setCmdSuggestions(v.startsWith('/') ? getCommandSuggestions(v, turnsInfo?.isAdmin ?? false, turnsInfo?.isOwner ?? false) : [])
+                // 自動調整高度
+                e.target.style.height = 'auto'
+                e.target.style.height = `${Math.min(e.target.scrollHeight, 96)}px`
               }}
-              placeholder={isInputDisabled && !isLoading ? '次數已用完，請購買或明天再來' : '跟雪凜說點什麼... 或輸入 /'}
+              onKeyDown={e => {
+                // Shift+Enter = 換行（預設行為）
+                // Enter alone = 送出
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault()
+                  if (input.trim() && !isInputDisabled) sendMessage(input)
+                }
+              }}
+              placeholder={isInputDisabled && !isLoading ? '次數已用完，請購買或明天再來' : '跟雪凜說點什麼... 或輸入 /（Shift+Enter 換行）'}
               disabled={isInputDisabled}
-              className="flex-1 bg-white/8 border border-white/10 rounded-full px-3 py-1.5 text-xs text-white/80 placeholder-white/25 outline-none focus:border-[#b8a9e8]/40 transition-colors disabled:opacity-50"
-              style={{ fontSize: 12 }}
+              className="flex-1 bg-white/8 border border-white/10 rounded-2xl px-3 py-1.5 text-xs text-white/80 placeholder-white/25 outline-none focus:border-[#b8a9e8]/40 transition-colors disabled:opacity-50 resize-none overflow-hidden leading-relaxed"
+              style={{ fontSize: 12, minHeight: 30, maxHeight: 96 }}
             />
             <button
               type="submit"

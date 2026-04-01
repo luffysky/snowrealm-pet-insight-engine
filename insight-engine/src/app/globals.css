@@ -2985,3 +2985,21 @@ h3:hover .heading-anchor:hover {
 .blog-font-small  .blog-content li { font-size: inherit; }
 .blog-font-large  .blog-content p,
 .blog-font-large  .blog-content li { font-size: inherit; }
+
+/* ── 雪凜自由漫步動畫 ── */
+@keyframes yukirin-stroll {
+  0%   { left: 20px;                    transform: scaleX(1); }
+  48%  { left: calc(100vw - 160px);     transform: scaleX(1); }
+  50%  { left: calc(100vw - 160px);     transform: scaleX(-1); }
+  98%  { left: 20px;                    transform: scaleX(-1); }
+  100% { left: 20px;                    transform: scaleX(1); }
+}
+@keyframes yukirin-bob {
+  0%, 100% { bottom: 0px; }
+  50%       { bottom: 5px; }
+}
+.yukirin-free-char {
+  animation: yukirin-stroll 28s ease-in-out infinite,
+             yukirin-bob    2.4s ease-in-out infinite;
+}
+
