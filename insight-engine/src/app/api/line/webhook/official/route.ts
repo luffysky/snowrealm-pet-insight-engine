@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import crypto from 'crypto'
-import { execute } from '@/lib/db'
+import { execute, queryOne } from '@/lib/db'
 import { createLineToken } from '@/lib/lineToken'
 import { getLineConfig } from '@/lib/lineConfig'
 import { getPrimarySurveySlug } from '@/lib/surveyRepo'
@@ -185,12 +185,28 @@ async function handleTextMessage(text: string, userId?: string): Promise<LineTex
 
 // ----- 雪凜 AI 對話 -----
 
-async function handleYukirinAiChat(text: string, _lineUserId: string): Promise<LineTextMessage | null> {
+/** 判斷 LINE 使用者是否為老闆（平台擁有者） */
+async function isLineUserOwner(lineUserId: string): Promise<boolean> {
+  // 方法 1：比對環境變數
+  const allowedId = process.env.SUPER_ADMIN_LINE_USER_ID || process.env.LINE_YOUR_USER_ID
+  if (allowedId && lineUserId === allowedId) return true
+  // 方法 2：查 DB admin_users
+  try {
+    const row = await queryOne<{ id: string }>(
+      `SELECT id FROM admin_users WHERE line_id = $1 AND (role = 'super_admin' OR platform_unlimited = true) LIMIT 1`,
+      [lineUserId]
+    )
+    return !!row
+  } catch { return false }
+}
+
+async function handleYukirinAiChat(text: string, lineUserId: string): Promise<LineTextMessage | null> {
   const aiKey = getPlatformKey()
   if (!aiKey) return null
 
   try {
-    const context: GuideContext = { trigger: 'manual' }
+    const isOwner = await isLineUserOwner(lineUserId)
+    const context: GuideContext = { trigger: 'manual', isOwner }
     const intent = classifyIntent(text, context)
     const systemPrompt = buildSystemPrompt(intent, context)
 
