@@ -158,3 +158,23 @@ npx tsc --noEmit → 0 errors ✅
 ### 其他操作
 
 - LINE 管理員清理：停用林葳翔（U857a...），僅保留 Monkey€D€Luffy 為唯一 active 管理員
+
+### 部落格公開頁可收合側邊欄
+
+| 類型 | 檔案 | 說明 |
+|------|------|------|
+| 新增 | `src/app/blogs/[userSlug]/BlogSidebar.tsx` | 可收合側邊欄（桌面 inline + 手機 overlay drawer） |
+| 新增 | `src/app/blogs/[userSlug]/BlogLayout.tsx` | Client wrapper 連接 sidebar + article list |
+| 新增 | `src/app/blogs/[userSlug]/series/[seriesId]/page.tsx` | 系列文章公開頁 |
+| 新增 | `src/app/api/blogs/[userSlug]/series/[seriesId]/route.ts` | 系列文章公開 API |
+| 修改 | `src/app/blogs/[userSlug]/page.tsx` | ArticleList → BlogLayout，容器 max-w-3xl → max-w-5xl |
+| 修改 | `src/app/blogs/[userSlug]/ArticleList.tsx` | 新增 externalCategoryControl / onExternalCategoryChange props |
+| 修改 | `src/app/api/blogs/[userSlug]/route.ts` | API 新增 series / otherArticles / similarArticles |
+| 修改 | `src/app/globals.css` | slideInLeft 動畫 + sidebar-nav-link 樣式 |
+
+側邊欄 5 個區塊：
+1. 文章分類（與 ArticleList 同步篩選）
+2. 系列文章（連結到 /blogs/{slug}/series/{id}）
+3. 類似文章（同 tag 其他作者文章）
+4. 其他作者近期文章
+5. 探索更多導航（所有部落格 / 首頁）
