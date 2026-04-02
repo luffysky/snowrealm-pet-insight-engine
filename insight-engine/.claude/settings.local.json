@@ -229,7 +229,10 @@
       "Bash(find \"D:/SnowRealmRebirth/snowrealm-insight-engine/insight-engine/src/app/\\(admin\\)/insight-admin\" -name \"page.tsx\")",
       "WebSearch",
       "Bash(\"D:\\\\SnowRealmRebirth\\\\snowrealm-insight-engine\\\\insight-engine\\\\src\\\\app\\\\globals.css\")",
-      "Bash(find \"D:\\\\SnowRealmRebirth\\\\snowrealm-insight-engine\\\\insight-engine\\\\src\\\\app\\\\\\(admin\\)\" -type f -name \"page.tsx\")"
+      "Bash(find \"D:\\\\SnowRealmRebirth\\\\snowrealm-insight-engine\\\\insight-engine\\\\src\\\\app\\\\\\(admin\\)\" -type f -name \"page.tsx\")",
+      "Bash(sed:*)",
+      "Bash(mkdir -p \"D:/SnowRealmRebirth/snowrealm-insight-engine/insight-engine/src/app/api/blogs/[userSlug]/series/[seriesId]\")",
+      "Bash(mkdir -p \"D:/SnowRealmRebirth/snowrealm-insight-engine/insight-engine/src/app/blogs/[userSlug]/series/[seriesId]\")"
     ]
   }
 }

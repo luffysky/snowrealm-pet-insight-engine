@@ -1,6 +1,6 @@
 # SnowRealm Insight Engine — 全任務清單（Phase 重排版）
 
-> 最後更新：2026-04-01（Ollama/Qwen AI 支援 + Slash Command 修復 + FEAT-AGENT 規格）
+> 最後更新：2026-04-02（比對程式碼，批量標記已完成項目）
 > ~~刪除線~~ = 已完成 ✅
 > 每項任務包含：新增檔案 + DB Migration + 修改檔案
 
@@ -20,6 +20,12 @@
 | VRM 修復 | Mixamo 骨骼 retarget（loadMixamoAnimation.ts）、YukirinScene + RikuScene 修正 |
 | 雪凜聊天 | YukirinWidget 顯眼聊天按鈕 + YukirinChatPanel 支援角色切換（character prop） |
 | 文件 | Pricing-Plan.md（C端月費/年費/LTD + B端定價規劃） |
+| Phase 1 平台 | URG-6 Sidebar slug、客服系統、FEAT-7a/7b/7c 總後台通知/Rich Menu/通知樣式、ADMIN-2/3/7 儀表板/用戶/AI成本、FEAT-6 問卷模板、FEAT-8 AI主動推送、租戶品牌解耦 |
+| Phase 3 視覺 | CSS-GLASS Liquid Glass、VRM-1~5 3D角色、ROLL-1~3 雪凜×凜空互動 |
+| Phase 4 商業 | ZCOIN-1~11 Z幣系統、PAY-1~4 LINE Pay、免費試用、PAY-C1 C端訂閱 |
+| Phase 9 進階 | AGENT-1 規則引擎、AGENT-2 記憶系統、AGENT-4 排程、AGENT-5 選角、AGENT-6 情侶互動 |
+| Phase 10 Agent | FEAT-AGENT-1 Function Calling、FEAT-AGENT-2 工具清單 |
+| 2026-04-01 | FEAT-POST-PWD 密碼保護、FEAT-CONVERSATION-IMG 對話圖片、BUG-BLOG-1/2、BUG-GUIDE-1 |
 
 ---
 
@@ -52,7 +58,7 @@ components/stories/StoryCanvas.tsx     — 整合 DraggableText
 
 ---
 
-### URG-6 Sidebar 連結缺 tenant slug 導致 404 🔴
+### ~~URG-6 Sidebar 連結缺 tenant slug 導致 404~~ ✅
 
 **問題根因**：`layout.tsx` 的導覽連結路徑不帶 tenantSlug，middleware rewrite 可能找不到頁面。
 
@@ -73,7 +79,7 @@ src/middleware.ts
 
 ---
 
-### 客服系統接線（supportEngine.ts 已建）
+### ~~客服系統接線（supportEngine.ts 已建）~~ ✅
 
 **DB Migration**
 ```sql
@@ -165,7 +171,7 @@ src/lib/supportEngine.ts               — 確認 startSupportTicket / appendSup
 
 ---
 
-### FEAT-7a 平台公告通知系統（Super Admin）
+### ~~FEAT-7a 平台公告通知系統（Super Admin）~~ ✅
 
 **DB Migration**
 ```sql
@@ -232,7 +238,7 @@ src/app/(super-admin)/snowrealm-insight-ctrl/layout.tsx
 
 ---
 
-### FEAT-7b 總後台 Rich Menu 管理
+### ~~FEAT-7b 總後台 Rich Menu 管理~~ ✅
 
 **新增檔案**
 ```
@@ -254,7 +260,7 @@ src/app/(super-admin)/snowrealm-insight-ctrl/layout.tsx
 
 ---
 
-### FEAT-7c 總後台通知樣式管理
+### ~~FEAT-7c 總後台通知樣式管理~~ ✅
 
 **DB Migration**
 ```sql
@@ -340,7 +346,7 @@ src/lib/tenant.ts（或 auth.ts）
 
 ---
 
-### ADMIN-2 超級後台總覽儀表板強化
+### ~~ADMIN-2 超級後台總覽儀表板強化~~ ✅
 
 **新增檔案**
 ```
@@ -364,7 +370,7 @@ src/app/(super-admin)/snowrealm-insight-ctrl/page.tsx
 
 ---
 
-### ADMIN-3 使用者管理頁面
+### ~~ADMIN-3 使用者管理頁面~~ ✅
 
 **DB** — 無（查既有 admin_users + tenant_users）
 
@@ -396,7 +402,7 @@ src/app/(super-admin)/snowrealm-insight-ctrl/layout.tsx
 
 ---
 
-### ADMIN-7 AI 成本監控面板
+### ~~ADMIN-7 AI 成本監控面板~~ ✅
 
 **DB** — 使用既有 `ai_usage_logs`（估算成本）
 
@@ -425,7 +431,7 @@ src/app/(super-admin)/snowrealm-insight-ctrl/layout.tsx
 
 ---
 
-### FEAT-6 問卷模板系統
+### ~~FEAT-6 問卷模板系統~~ ✅
 
 **DB Migration**
 ```sql
@@ -508,7 +514,7 @@ src/middleware.ts
 
 ---
 
-### FEAT-8 AI 主動推送
+### ~~FEAT-8 AI 主動推送~~ ✅
 
 **DB** — 無（查既有 ai_usage_logs / responses）
 
@@ -544,7 +550,7 @@ src/app/api/admin/rich-menu/[packId]/stickers/route.ts
 
 ---
 
-### 租戶品牌解耦（tenantBranding）
+### ~~租戶品牌解耦（tenantBranding）~~ ✅
 
 **DB Migration**
 ```sql
@@ -887,7 +893,7 @@ src/app/layout.tsx（root layout）
 
 ---
 
-### CSS-GLASS-1~3 Liquid Glass CSS
+### ~~CSS-GLASS-1~3 Liquid Glass CSS~~ ✅
 
 **新增檔案**
 ```
@@ -978,7 +984,7 @@ src/app/report/[slug]/ReportViewer.tsx
 
 ---
 
-### VRM-1~5 雪凜 3D 角色
+### ~~VRM-1~5 雪凜 3D 角色~~ ✅
 
 **安裝**
 ```bash
@@ -1163,7 +1169,7 @@ src/hooks/useVoiceInput.ts
 
 ---
 
-### ROLL-1~3 雪凜 × 凜空互動
+### ~~ROLL-1~3 雪凜 × 凜空互動~~ ✅
 
 **DB Migration**
 ```sql
@@ -1189,7 +1195,7 @@ src/components/yukirin/PartnerPeek.tsx
 
 ---
 
-### ZCOIN-1~11 Z 幣經濟系統
+### ~~ZCOIN-1~11 Z 幣經濟系統~~ ✅
 
 **DB Migration**
 ```sql
@@ -1337,7 +1343,7 @@ src/components/zcoin/ZcoinBadge.tsx
 
 ---
 
-### PAY-1~4 LINE Pay 串接
+### ~~PAY-1~4 LINE Pay 串接~~ ✅
 
 **安裝**
 ```bash
@@ -1388,7 +1394,7 @@ src/app/(public)/topup/success/page.tsx
 
 ---
 
-### 免費試用機制
+### ~~免費試用機制~~ ✅
 
 **DB Migration**
 ```sql
@@ -1488,10 +1494,10 @@ src/app/(admin)/layout.tsx
 - [x] LINE 推播 / 通知規則 / 訊息模板 / UTM 管理 / Rich Menu
 - [x] LINE 設定 / 通知樣式 / 封測名單 / Webhook / Meta/OG / AI 設定
 - [x] 主題設定 / 管理員面板 / 團隊管理 / 帳號設定 / API Key 管理
-- [ ] 客服中心（support）← Phase 1 今日
-- [ ] 問卷模板（survey-templates）← Phase 1
+- [x] 客服中心（support）~~← Phase 1 今日~~ ✅
+- [x] 問卷模板（survey-templates）~~← Phase 1~~ ✅
 - [ ] AI 嚮導設定（ai-guide）← Phase 2
-- [ ] 升級方案（upgrade）← Phase 4
+- [x] 升級方案（upgrade）~~← Phase 4~~ ✅
 
 ---
 
@@ -2060,7 +2066,7 @@ await httpx.post("https://insight.snowrealm.pet/api/internal/...", headers=heade
 
 ---
 
-### PAY-C1 C端訂閱方案後端
+### ~~PAY-C1 C端訂閱方案後端~~ ✅
 
 **DB Migration**
 ```sql
@@ -2161,7 +2167,7 @@ src/lib/subscription/subscriptionEngine.ts
 
 ---
 
-### AGENT-1 規則引擎擴充（AI-Agent-RuleEngine-Spec）
+### ~~AGENT-1 規則引擎擴充（AI-Agent-RuleEngine-Spec）~~ ✅
 
 > 現有 ruleEngine.ts 已有基礎，需按 spec 擴充至 100+ 條規則
 
@@ -2193,7 +2199,7 @@ src/lib/agent/freeMode.ts
 
 ---
 
-### AGENT-2 記憶系統（memory.md）
+### ~~AGENT-2 記憶系統（memory.md）~~ ✅
 
 > 大部分結構已在 YUKIRIN-6 的 guide_user_profiles 表涵蓋
 
@@ -2236,7 +2242,7 @@ src/lib/yukirin/memoryManager.ts
 
 ---
 
-### AGENT-4 主動代理排程（Yukirin-Agent-Upgrade-Spec）
+### ~~AGENT-4 主動代理排程（Yukirin-Agent-Upgrade-Spec）~~ ✅
 
 > DB 表 scheduled_tasks 已在 DB migration 建立
 
@@ -2273,7 +2279,7 @@ src/lib/yukirin/modules/taskModule.ts（新增或確認）
 
 ---
 
-### AGENT-5 首次選角體驗（Character-Design-Spec）
+### ~~AGENT-5 首次選角體驗（Character-Design-Spec）~~ ✅
 
 ```
 新增：src/components/character/CharacterSelect.tsx
@@ -2296,7 +2302,7 @@ src/lib/yukirin/modules/taskModule.ts（新增或確認）
 
 ---
 
-### AGENT-6 情侶互動視覺化（yukirin_act.md / ROLL-1~3）
+### ~~AGENT-6 情侶互動視覺化（yukirin_act.md / ROLL-1~3）~~ ✅
 
 > 相關 lib 已有基礎實作，補完視覺部分
 
@@ -2330,7 +2336,7 @@ src/lib/yukirin/modules/taskModule.ts（新增或確認）
 
 ---
 
-### FEAT-AGENT-1 Function Calling 核心框架
+### ~~FEAT-AGENT-1 Function Calling 核心框架~~ ✅
 
 > 目前 YukirinChatPanel 是純文字對話，沒有工具呼叫機制。
 > 需加入 Claude / OpenAI Function Calling，讓 AI 能請求執行特定工具。
@@ -2394,7 +2400,7 @@ CREATE TABLE IF NOT EXISTS agent_task_logs (
 
 ---
 
-### FEAT-AGENT-2 工具清單
+### ~~FEAT-AGENT-2 工具清單~~ ✅
 
 | 工具名 | 能力 | 技術 | 說明 |
 |--------|------|------|------|
@@ -2572,7 +2578,7 @@ src/app/api/guide/chat/route.ts
 
 ---
 
-### FEAT-POST-PWD 長短貼文 + 相簿 + 部落格密碼保護 🆕
+### ~~FEAT-POST-PWD 長短貼文 + 相簿 + 部落格密碼保護~~ ✅
 
 > 「公開給特定人看就一定要有密碼」
 
@@ -2647,7 +2653,7 @@ export function validateStrongPassword(pwd: string): { valid: boolean; message: 
 
 ---
 
-### FEAT-CONVERSATION-IMG 總後台 AI 對話記錄顯示圖片 🆕
+### ~~FEAT-CONVERSATION-IMG 總後台 AI 對話記錄顯示圖片~~ ✅
 
 **問題**：使用者傳圖片給 AI 分析，總後台對話記錄不顯示圖片。
 
