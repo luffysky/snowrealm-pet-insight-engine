@@ -10,6 +10,7 @@ interface Article {
   slug: string
   summary: string | null
   cover_image: string | null
+  category: string | null
   is_public: boolean
   view_count: number
   published_at: string
@@ -459,6 +460,9 @@ export default function BlogManagePage() {
                       <span className="truncate max-w-[140px]">/{article.slug}</span>
                       <span>👁 {article.view_count}</span>
                       <span>{new Date(article.published_at).toLocaleDateString('zh-TW')}</span>
+                      {article.category && (
+                        <span className="px-1.5 py-0.5 bg-violet-500/15 text-violet-300 rounded-md">{article.category}</span>
+                      )}
                     </div>
                   </div>
                 </div>

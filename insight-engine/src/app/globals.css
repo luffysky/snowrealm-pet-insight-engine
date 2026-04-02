@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "highlight.js/styles/github-dark.css";
 
 /* ── SnowRealm Insight 薰衣草色系設計系統 ── */
 :root {
@@ -267,6 +268,8 @@ body:not(:has(.admin-root)) {
 .blog-content code { color: #fcd34d; background: rgba(245,158,11,0.1); border-radius: 4px; padding: 0.1em 0.35em; font-size: 0.875em; }
 .blog-content pre { background: #0f172a; border: 1px solid rgba(255,255,255,0.08); border-radius: 1rem; padding: 1.25rem; overflow-x: auto; margin: 1.5rem 0; }
 .blog-content pre code { background: none; padding: 0; border-radius: 0; color: inherit; font-size: 0.875rem; }
+/* BLOG-18: Override highlight.js default background so our pre background is used */
+.blog-content pre code.hljs { background: transparent; padding: 0; }
 .blog-content img { border-radius: 1rem; margin: 2rem 0; max-width: 100%; }
 /* 手機版 heading 縮小 */
 @media (max-width: 639px) {
@@ -363,7 +366,24 @@ body:not(:has(.admin-root)) {
 }
 .blog-light .blog-content code { color: #92400e !important; background: rgba(0,0,0,0.06) !important; }
 .blog-light .blog-content pre { background: #f0ecfa !important; border-color: rgba(0,0,0,0.10) !important; }
-.blog-light .blog-content pre code { color: #2d1a4a !important; }
+.blog-light .blog-content pre code { color: #2d1a4a; }
+/* BLOG-18: highlight.js light mode overrides for syntax highlighting */
+.blog-light .blog-content pre .hljs { background: #f0ecfa !important; }
+.blog-light .blog-content pre .hljs-keyword,
+.blog-light .blog-content pre .hljs-selector-tag,
+.blog-light .blog-content pre .hljs-type { color: #8250df; }
+.blog-light .blog-content pre .hljs-string,
+.blog-light .blog-content pre .hljs-attr { color: #0a3069; }
+.blog-light .blog-content pre .hljs-number,
+.blog-light .blog-content pre .hljs-literal { color: #0550ae; }
+.blog-light .blog-content pre .hljs-comment { color: #6e7781; }
+.blog-light .blog-content pre .hljs-title,
+.blog-light .blog-content pre .hljs-function .hljs-title { color: #8250df; }
+.blog-light .blog-content pre .hljs-built_in { color: #0550ae; }
+.blog-light .blog-content pre .hljs-variable,
+.blog-light .blog-content pre .hljs-template-variable { color: #953800; }
+.blog-light .blog-content pre .hljs-name,
+.blog-light .blog-content pre .hljs-tag { color: #116329; }
 .blog-light .blog-content th,.blog-light .blog-content td { border-color: rgba(0,0,0,0.12) !important; color: #1a1020 !important; }
 .blog-light .blog-content th { background: rgba(0,0,0,0.04) !important; }
 .blog-light .blog-content hr { border-color: rgba(0,0,0,0.10) !important; }

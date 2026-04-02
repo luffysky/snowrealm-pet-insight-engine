@@ -20,9 +20,11 @@ interface BlogData {
     cover_image: string | null
     cover_image_position: string | null
     tags: string[]
+    category: string | null
     view_count: number
     published_at: string
   }[]
+  categories?: string[]
 }
 
 async function getBlogData(userSlug: string): Promise<BlogData | null> {
@@ -70,7 +72,7 @@ export default async function BlogPage({ params }: { params: Promise<{ userSlug:
     )
   }
 
-  const { blog, articles } = data
+  const { blog, articles, categories } = data
 
   return (
     <div className="blog-list-root min-h-screen bg-slate-950 text-white" style={{ paddingBottom: 'var(--bnav-h, 76px)' }}>
@@ -108,7 +110,7 @@ export default async function BlogPage({ params }: { params: Promise<{ userSlug:
 
       {/* Article list */}
       <div className="max-w-3xl mx-auto px-4 sm:px-6 py-8 sm:py-10">
-        <ArticleList articles={articles} blogSlug={blog.userSlug} />
+        <ArticleList articles={articles} blogSlug={blog.userSlug} categories={categories ?? []} />
 
         {/* Email 訂閱 */}
         <SubscribeForm userSlug={blog.userSlug} />

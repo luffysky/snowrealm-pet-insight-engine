@@ -13,6 +13,7 @@ interface Article {
   cover_image: string | null
   cover_image_position: string | null
   tags: string[]
+  category: string | null
   view_count: number
   published_at: string
 }
@@ -20,13 +21,15 @@ interface Article {
 interface ArticleListProps {
   articles: Article[]
   blogSlug: string
+  categories?: string[]
 }
 
 type LayoutMode = 'list' | 'grid'
 
-export function ArticleList({ articles, blogSlug }: ArticleListProps) {
+export function ArticleList({ articles, blogSlug, categories = [] }: ArticleListProps) {
   const storageKey = `blog-layout-${blogSlug}`
   const [layout, setLayout] = useState<LayoutMode>('list')
+  const [activeCategory, setActiveCategory] = useState<string | null>(null)
 
   useEffect(() => {
     try {
@@ -49,10 +52,42 @@ export function ArticleList({ articles, blogSlug }: ArticleListProps) {
     )
   }
 
+  const filteredArticles = activeCategory
+    ? articles.filter(a => a.category === activeCategory)
+    : articles
+
   return (
     <div>
-      {/* Layout toggle */}
-      <div className="flex justify-end mb-4 gap-1">
+      {/* Category filter + Layout toggle */}
+      <div className="flex items-center justify-between mb-4 gap-2 flex-wrap">
+        {categories.length > 0 && (
+          <div className="flex flex-wrap gap-1.5">
+            <button
+              onClick={() => setActiveCategory(null)}
+              className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+                activeCategory === null
+                  ? 'bg-white/15 text-white/80'
+                  : 'bg-white/5 text-white/30 hover:text-white/50 hover:bg-white/[0.07]'
+              }`}
+            >
+              全部
+            </button>
+            {categories.map(cat => (
+              <button
+                key={cat}
+                onClick={() => setActiveCategory(activeCategory === cat ? null : cat)}
+                className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+                  activeCategory === cat
+                    ? 'bg-white/15 text-white/80'
+                    : 'bg-white/5 text-white/30 hover:text-white/50 hover:bg-white/[0.07]'
+                }`}
+              >
+                {cat}
+              </button>
+            ))}
+          </div>
+        )}
+        <div className="flex gap-1 shrink-0 ml-auto">
         <button
           onClick={() => changeLayout('list')}
           aria-label="列表模式"
@@ -77,11 +112,12 @@ export function ArticleList({ articles, blogSlug }: ArticleListProps) {
         >
           <LayoutGrid className="w-4 h-4" />
         </button>
+        </div>
       </div>
 
       {layout === 'list' ? (
         <div className="space-y-6">
-          {articles.map(article => (
+          {filteredArticles.map(article => (
             <Link
               key={article.id}
               href={`/blogs/${blogSlug}/${article.slug}`}
@@ -112,6 +148,12 @@ export function ArticleList({ articles, blogSlug }: ArticleListProps) {
                   <span>{new Date(article.published_at).toLocaleDateString('zh-TW')}</span>
                   <span>·</span>
                   <span>👁 {article.view_count}</span>
+                  {article.category && (
+                    <>
+                      <span>·</span>
+                      <span className="px-1.5 py-0.5 bg-violet-500/10 text-violet-300/60 rounded-md">{article.category}</span>
+                    </>
+                  )}
                   {article.tags.length > 0 && (
                     <>
                       <span>·</span>
@@ -129,7 +171,7 @@ export function ArticleList({ articles, blogSlug }: ArticleListProps) {
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {articles.map(article => (
+          {filteredArticles.map(article => (
             <Link
               key={article.id}
               href={`/blogs/${blogSlug}/${article.slug}`}
@@ -163,6 +205,12 @@ export function ArticleList({ articles, blogSlug }: ArticleListProps) {
                   <span>{new Date(article.published_at).toLocaleDateString('zh-TW')}</span>
                   <span>·</span>
                   <span>👁 {article.view_count}</span>
+                  {article.category && (
+                    <>
+                      <span>·</span>
+                      <span className="px-1.5 py-0.5 bg-violet-500/10 text-violet-300/60 rounded-md">{article.category}</span>
+                    </>
+                  )}
                 </div>
                 {article.tags.length > 0 && (
                   <div className="flex flex-wrap gap-1 mt-2">

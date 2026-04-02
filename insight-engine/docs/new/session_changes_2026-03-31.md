@@ -72,9 +72,89 @@ npx tsc --noEmit → 0 errors ✅
 
 ## 推送前最終審核清單
 
-- [ ] `git diff` 確認所有改動符合預期
-- [ ] 確認 `supabase/run_all_pending.sql` 已在 Supabase 執行（support_tickets / survey_templates / platform_notifications）
-- [ ] 確認 api-keys/page.tsx 在後台側欄可正常點擊
-- [ ] 確認 orders/export CSV 格式正確（UTF-8，逗號分隔）
-- [ ] 確認 insight/page.tsx 情感分析 tab 無回覆時顯示空狀態
-- [ ] 確認 survey-templates/[id]/publish 在模板頁面已接上前端按鈕（若尚未接，後續再補）
+- [x] `git diff` 確認所有改動符合預期
+- [x] 確認 `supabase/run_all_pending.sql` 已在 Supabase 執行
+- [x] 確認 api-keys/page.tsx 在後台側欄可正常點擊
+- [x] 確認 orders/export CSV 格式正確
+- [x] 確認 insight/page.tsx 情感分析 tab 無回覆時顯示空狀態
+- [x] 確認 survey-templates/[id]/publish 在模板頁面已接上前端按鈕
+
+---
+
+## 2026-04-02 Session Changes
+
+### Bug 修復
+
+| 檔案 | 說明 |
+|------|------|
+| `src/app/api/blogs/[userSlug]/[articleSlug]/comments/route.ts` | 修復留言消失 — `parent_id::text` 把 NULL 轉成字串 "null"，頂層留言被誤歸為回覆 |
+| `src/app/api/admin/responses/[id]/route.ts` | 補上 DELETE handler 缺少的 `requireRole('admin')` 安全檢查 |
+| `src/app/globals.css` | 修復部落格 h1~h6 大小全部一樣（Tailwind Typography 未安裝，prose 類別無效）|
+
+### 部落格 BLOG-1~20 補完（6 項）
+
+#### BLOG-8 AI 封面圖生成
+
+| 類型 | 檔案 | 說明 |
+|------|------|------|
+| 新增 | `src/app/api/admin/social/blog/ai-cover/route.ts` | DALL-E 3 封面圖生成 API（4 種風格 + R2 上傳） |
+| 修改 | `src/components/social/BlogEditor.tsx` | 編輯器加「AI 生成封面」按鈕 + 風格選擇下拉 |
+
+#### BLOG-9 文章統計頁
+
+| 類型 | 檔案 | 說明 |
+|------|------|------|
+| 新增 | `src/app/api/admin/social/blog/stats/route.ts` | 文章統計 API（瀏覽/留言/反應/訂閱/分類/趨勢） |
+| 新增 | `src/app/(admin)/insight-admin/blog-stats/page.tsx` | 獨立統計頁面（Recharts 圖表 + Top 文章排行） |
+| 修改 | `src/app/(admin)/layout.tsx` | KNOWN_ADMIN_PAGES 加 'blog-stats'，Sidebar 加文章統計入口 |
+| 修改 | `src/middleware.ts` | KNOWN_ADMIN_PAGES 加 'blog-stats' |
+
+#### BLOG-13 TipTap AI 浮動選單
+
+| 類型 | 檔案 | 說明 |
+|------|------|------|
+| 新增 | `src/app/api/admin/social/blog/ai-text/route.ts` | AI 文字處理 API（改寫/精簡/展開/修正/翻譯） |
+| 新增 | `src/components/social/AiBubbleMenu.tsx` | 選取文字後顯示的 AI 操作浮動選單 |
+| 修改 | `src/components/social/BlogTipTapEditor.tsx` | 整合 AiBubbleMenu + CodeBlockLowlight 語法高亮 |
+
+#### BLOG-15 文章分類系統
+
+| 類型 | 檔案 | 說明 |
+|------|------|------|
+| 新增 | `supabase/migrations/20260402_blog_categories.sql` | user_blog_articles 加 category 欄位 + 索引 |
+| 修改 | `src/app/api/admin/social/blog/route.ts` | GET/POST 加 category 欄位 |
+| 修改 | `src/app/api/admin/social/blog/[id]/route.ts` | PATCH 加 category 欄位 |
+| 修改 | `src/app/api/blogs/[userSlug]/route.ts` | 加 ?category= 篩選 + 回傳分類列表 |
+| 修改 | `src/components/social/BlogEditor.tsx` | 編輯器加分類下拉選單 |
+| 修改 | `src/app/(admin)/insight-admin/blog/page.tsx` | 文章列表顯示分類標籤 |
+| 修改 | `src/app/blogs/[userSlug]/page.tsx` | 傳 categories 到 ArticleList |
+| 修改 | `src/app/blogs/[userSlug]/ArticleList.tsx` | 分類篩選 chip 按鈕 |
+
+#### BLOG-18 程式碼語法高亮
+
+| 類型 | 檔案 | 說明 |
+|------|------|------|
+| 安裝 | `lowlight`, `@tiptap/extension-code-block-lowlight`, `highlight.js` | 語法高亮套件 |
+| 修改 | `src/components/social/BlogTipTapEditor.tsx` | CodeBlock → CodeBlockLowlight |
+| 修改 | `src/app/globals.css` | 匯入 highlight.js github-dark 主題 + 淺色模式 override |
+| 修改 | `src/app/blogs/[userSlug]/[articleSlug]/ArticleClient.tsx` | 新增 CodeHighlighter 元件（舊文章補高亮） |
+| 修改 | `src/app/blogs/[userSlug]/[articleSlug]/page.tsx` | 引入 CodeHighlighter |
+
+#### BLOG-20 全文搜尋升級
+
+| 類型 | 檔案 | 說明 |
+|------|------|------|
+| 新增 | `supabase/migrations/20260402_blog_fulltext_search.sql` | tsvector 欄位 + GIN 索引 + 自動更新 trigger |
+| 修改 | `src/app/api/blogs/search/route.ts` | ILIKE → ts_rank full-text search |
+| 修改 | `src/app/api/blogs/route.ts` | 同上 |
+
+### 資料庫影響
+
+| Migration | 說明 |
+|-----------|------|
+| `20260402_blog_categories.sql` | `user_blog_articles` 加 `category TEXT` + 索引 |
+| `20260402_blog_fulltext_search.sql` | `user_blog_articles` 加 `search_vector tsvector` + GIN 索引 + trigger |
+
+### 其他操作
+
+- LINE 管理員清理：停用林葳翔（U857a...），僅保留 Monkey€D€Luffy 為唯一 active 管理員

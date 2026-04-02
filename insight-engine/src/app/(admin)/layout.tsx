@@ -21,7 +21,7 @@ interface UserInfo {
 }
 
 const KNOWN_ADMIN_PAGES = new Set([
-  'ab', 'account', 'ai-settings', 'api-keys', 'blog', 'broadcast', 'crosstab', 'export', 'funnel', 'insight', 'line-settings',
+  'ab', 'account', 'ai-settings', 'api-keys', 'blog', 'blog-stats', 'broadcast', 'crosstab', 'export', 'funnel', 'insight', 'line-settings',
   'my-responses', 'notification-rules', 'notification-styles', 'panel', 'profile', 'rich-menu',
   'site-settings', 'social-posts', 'social-reports', 'story-wall', 'subscription', 'support', 'survey-templates', 'surveys', 'tag-rules', 'tags', 'team', 'templates', 'tenants',
   'theme-settings', 'utm', 'utm-links', 'upgrade', 'waitlist', 'webhooks', 'responses', 'zcoin',
@@ -67,6 +67,8 @@ const NAV_GROUPS = [
     items: [
       { path: '/social-posts', label: '社群貼文管理', icon: '📋' },
       { path: '/social-reports', label: '檢舉管理', icon: '🚩' },
+      { path: '/blog', label: '我的部落格', icon: '✍️' },
+      { path: '/blog-stats', label: '文章統計', icon: '📊' },
       { path: '/profile', label: '個人頁面', icon: '👤' },
       { path: '/support', label: '客服中心', icon: '📬' },
     ],

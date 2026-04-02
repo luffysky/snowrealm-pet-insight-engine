@@ -18,7 +18,8 @@ import TextAlign from '@tiptap/extension-text-align'
 import Underline from '@tiptap/extension-underline'
 import Subscript from '@tiptap/extension-subscript'
 import Superscript from '@tiptap/extension-superscript'
-import CodeBlock from '@tiptap/extension-code-block'
+import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight'
+import { common, createLowlight } from 'lowlight'
 import HardBreak from '@tiptap/extension-hard-break'
 import HorizontalRule from '@tiptap/extension-horizontal-rule'
 import Gapcursor from '@tiptap/extension-gapcursor'
@@ -33,6 +34,7 @@ import BulletList from '@tiptap/extension-bullet-list'
 import Suggestion from '@tiptap/suggestion'
 import { Extension, Node } from '@tiptap/core'
 import { getSuggestionItems, renderItems } from './suggestion'
+import AiBubbleMenu from './AiBubbleMenu'
 import { useTipTapContent } from '@/hooks/useTipTapContent'
 import {
   Bold, Italic, Underline as UnderlineIcon, Strikethrough, Code,
@@ -500,7 +502,10 @@ export default function BlogTipTapEditor({
     TextAlign.configure({ types: ['heading', 'paragraph'] }),
     FontFamilyExt, FontSize, FontWeight,
     Underline, Subscript, Superscript,
-    CodeBlock.configure({ HTMLAttributes: { class: 'bg-slate-900 text-slate-100 p-4 rounded-xl my-4 overflow-x-auto text-sm' } }),
+    CodeBlockLowlight.configure({
+      lowlight: createLowlight(common),
+      HTMLAttributes: { class: 'bg-slate-900 text-slate-100 p-4 rounded-xl my-4 overflow-x-auto text-sm' },
+    }),
     HardBreak, HorizontalRule, Gapcursor, Dropcursor,
     CharacterCount, Typography,
     Focus.configure({ className: 'has-focus', mode: 'all' }),
@@ -675,8 +680,11 @@ export default function BlogTipTapEditor({
 
   return (
     <div className="border border-white/10 rounded-xl bg-slate-900/60 overflow-hidden">
-      {/* Draggable Float Bar — replaces BubbleMenu */}
+      {/* Draggable Float Bar — formatting toolbar */}
       {editor && <DraggableFloatBar editor={editor} setLink={setLink} />}
+
+      {/* AI Bubble Menu — appears above selected text */}
+      {editor && <AiBubbleMenu editor={editor} />}
 
       {/* Main Toolbar */}
       <div ref={toolbarRef} className="flex flex-wrap items-center gap-0.5 px-2 py-1.5 border-b border-white/8 bg-white/[0.02] overflow-x-auto">

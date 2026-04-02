@@ -22,6 +22,7 @@ interface BlogArticle {
   coverImage: string
   coverImagePosition: string
   tags: string[]
+  category: string
   isPublic: boolean
   seoTitle: string
   seoDesc: string
@@ -39,10 +40,12 @@ interface BlogSeries {
   article_count: number
 }
 
+const BLOG_CATEGORIES = ['技術', '生活', '教學', '產品', '觀點', '其他'] as const
+
 const EMPTY: BlogArticle = {
   title: '', slug: '', summary: '', content: '',
   coverImage: '', coverImagePosition: 'center center',
-  tags: [], isPublic: true, seoTitle: '', seoDesc: '',
+  tags: [], category: '', isPublic: true, seoTitle: '', seoDesc: '',
   seriesId: '', seriesOrder: '',
   password: '', hasPassword: false,
 }
@@ -86,6 +89,8 @@ export function BlogEditor({ articleId, onSaved, onCancel }: Props) {
   // AI state
   const [aiSummaryLoading, setAiSummaryLoading] = useState(false)
   const [aiSlugLoading, setAiSlugLoading] = useState(false)
+  const [aiCoverLoading, setAiCoverLoading] = useState(false)
+  const [aiCoverStyle, setAiCoverStyle] = useState<'illustration' | 'realistic' | 'abstract' | 'minimal'>('illustration')
 
   // AI writing assistant panel
   const [aiPanelOpen, setAiPanelOpen] = useState(false)
@@ -161,6 +166,7 @@ export function BlogEditor({ articleId, onSaved, onCancel }: Props) {
       .then(r => r.ok ? r.json() as Promise<{ article: {
         title: string; slug: string; summary: string | null; content: string
         cover_image: string | null; cover_image_position?: string; tags: string[]
+        category?: string | null
         is_public: boolean; seo_title: string | null; seo_desc: string | null
         series_id: string | null; series_order: number | null; has_password?: boolean
       } }> : null)
@@ -172,7 +178,7 @@ export function BlogEditor({ articleId, onSaved, onCancel }: Props) {
           title: a.title, slug: a.slug, summary: a.summary ?? '',
           content: a.content, coverImage: a.cover_image ?? '',
           coverImagePosition: a.cover_image_position ?? 'center center',
-          tags: a.tags ?? [], isPublic: a.is_public,
+          tags: a.tags ?? [], category: a.category ?? '', isPublic: a.is_public,
           seoTitle: a.seo_title ?? '', seoDesc: a.seo_desc ?? '',
           seriesId: a.series_id ?? '', seriesOrder: a.series_order?.toString() ?? '',
           password: '', hasPassword: !!a.has_password,
@@ -224,6 +230,38 @@ export function BlogEditor({ articleId, onSaved, onCancel }: Props) {
         setForm(f => ({ ...f, coverImage: url }))
       }
     } finally { setUploadingCover(false) }
+  }
+
+  const handleAiCoverGenerate = async () => {
+    if (!form.title.trim()) {
+      setError('請先填寫文章標題，才能生成封面圖片')
+      return
+    }
+    setAiCoverLoading(true)
+    setError(null)
+    try {
+      const res = await fetch('/api/admin/social/blog/ai-cover', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: form.title,
+          summary: form.summary,
+          tags: form.tags,
+          style: aiCoverStyle,
+        }),
+      })
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({})) as { error?: string }
+        setError(data.error ?? 'AI 封面生成失敗')
+        return
+      }
+      const { imageUrl } = await res.json() as { imageUrl: string }
+      setForm(f => ({ ...f, coverImage: imageUrl }))
+    } catch {
+      setError('AI 封面生成失敗，請稍後再試')
+    } finally {
+      setAiCoverLoading(false)
+    }
   }
 
   const addTag = () => {
@@ -316,6 +354,7 @@ export function BlogEditor({ articleId, onSaved, onCancel }: Props) {
           coverImage: form.coverImage || null,
           coverImagePosition: form.coverImagePosition || 'center center',
           tags: form.tags,
+          category: form.category || null,
           isPublic: form.isPublic,
           seoTitle: form.seoTitle || null,
           seoDesc: form.seoDesc || null,
@@ -712,19 +751,56 @@ export function BlogEditor({ articleId, onSaved, onCancel }: Props) {
                         ↺ 重設
                       </button>
                     )}
+                    <button
+                      type="button"
+                      disabled={aiCoverLoading || !form.title.trim()}
+                      onClick={handleAiCoverGenerate}
+                      className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-medium bg-violet-500/20 border border-violet-400/30 text-violet-300 hover:bg-violet-500/30 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                    >
+                      {aiCoverLoading
+                        ? <Loader2 className="w-3 h-3 animate-spin" />
+                        : <Sparkles className="w-3 h-3" />
+                      }
+                      {aiCoverLoading ? '生成中' : 'AI 重新生成'}
+                    </button>
                     <span className="text-[11px] text-white/25 ml-auto">{form.coverImagePosition}</span>
                   </div>
                 </div>
               ) : (
-                <label className="flex items-center gap-3 justify-center h-32 border-2 border-dashed border-white/10 rounded-2xl cursor-pointer hover:border-white/20 transition-colors">
-                  {uploadingCover
-                    ? <Loader2 className="w-5 h-5 text-white/30 animate-spin" />
-                    : <><ImageIcon className="w-5 h-5 text-white/25" /><span className="text-sm text-white/25">上傳封面圖片</span></>
-                  }
-                  <input type="file" accept="image/*" className="hidden"
-                    onChange={e => { const f = e.target.files?.[0]; if (f) handleCoverUpload(f) }}
-                  />
-                </label>
+                <div className="space-y-2">
+                  <label className="flex items-center gap-3 justify-center h-32 border-2 border-dashed border-white/10 rounded-2xl cursor-pointer hover:border-white/20 transition-colors">
+                    {uploadingCover
+                      ? <Loader2 className="w-5 h-5 text-white/30 animate-spin" />
+                      : <><ImageIcon className="w-5 h-5 text-white/25" /><span className="text-sm text-white/25">上傳封面圖片</span></>
+                    }
+                    <input type="file" accept="image/*" className="hidden"
+                      onChange={e => { const f = e.target.files?.[0]; if (f) handleCoverUpload(f) }}
+                    />
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      disabled={aiCoverLoading || !form.title.trim()}
+                      onClick={handleAiCoverGenerate}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium bg-violet-500/20 border border-violet-400/30 text-violet-300 hover:bg-violet-500/30 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                    >
+                      {aiCoverLoading
+                        ? <><Loader2 className="w-3 h-3 animate-spin" />AI 生成中...</>
+                        : <><Sparkles className="w-3 h-3" />AI 生成封面</>
+                      }
+                    </button>
+                    <select
+                      value={aiCoverStyle}
+                      onChange={e => setAiCoverStyle(e.target.value as typeof aiCoverStyle)}
+                      className="text-[11px] bg-white/5 border border-white/10 text-white/50 rounded-lg px-2 py-1 outline-none"
+                    >
+                      <option value="illustration">插畫風格</option>
+                      <option value="realistic">寫實風格</option>
+                      <option value="abstract">抽象風格</option>
+                      <option value="minimal">極簡風格</option>
+                    </select>
+                  </div>
+                </div>
               )}
             </div>
 
@@ -786,6 +862,21 @@ export function BlogEditor({ articleId, onSaved, onCancel }: Props) {
                 />
                 <button onClick={addTag} className="px-3 py-2 bg-white/8 hover:bg-white/12 text-white/50 rounded-xl text-xs transition-colors">新增</button>
               </div>
+            </div>
+
+            {/* Category */}
+            <div>
+              <label className="text-[11px] text-white/40 font-medium uppercase tracking-widest block mb-1.5">分類</label>
+              <select
+                value={form.category}
+                onChange={e => setForm(f => ({ ...f, category: e.target.value }))}
+                className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white outline-none focus:border-amber-400/30 transition-colors appearance-none"
+              >
+                <option value="">（未分類）</option>
+                {BLOG_CATEGORIES.map(cat => (
+                  <option key={cat} value={cat}>{cat}</option>
+                ))}
+              </select>
             </div>
           </div>
         )}

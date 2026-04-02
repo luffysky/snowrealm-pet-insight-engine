@@ -12,6 +12,7 @@ import {
   AuthorCard,
   RelatedArticles,
   FontSizeToggle,
+  CodeHighlighter,
   CodeCopyButtons,
   type Heading,
 } from './ArticleClient'
@@ -256,7 +257,8 @@ export default async function ArticlePage({
           <TableOfContents headings={headings} />
         )}
 
-        {/* BLOG-18: Copy buttons injected into code blocks after mount */}
+        {/* BLOG-18: Syntax highlighting + copy buttons for code blocks */}
+        <CodeHighlighter />
         <CodeCopyButtons />
 
         {/* Article content */}

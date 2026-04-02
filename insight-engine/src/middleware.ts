@@ -54,7 +54,7 @@ function withTenantHeaders(request: NextRequest, auth: TokenPayload, access: { t
 
 /** 已知的 admin 子頁面路徑（用來區分 tenant slug） */
 const KNOWN_ADMIN_PAGES = new Set([
-  'ab', 'account', 'ai-settings', 'api-keys', 'blog', 'broadcast', 'crosstab', 'export', 'funnel', 'insight', 'line-settings',
+  'ab', 'account', 'ai-settings', 'api-keys', 'blog', 'blog-stats', 'broadcast', 'crosstab', 'export', 'funnel', 'insight', 'line-settings',
   'messages', 'my-responses', 'notification-rules', 'notification-styles', 'panel', 'profile', 'rich-menu',
   'site-settings', 'social-posts', 'social-reports', 'story-wall', 'subscription', 'support', 'survey-templates', 'surveys', 'tag-rules', 'tags', 'team', 'templates', 'tenants',
   'theme-settings', 'utm', 'utm-links', 'upgrade', 'waitlist', 'webhooks', 'responses', 'zcoin',

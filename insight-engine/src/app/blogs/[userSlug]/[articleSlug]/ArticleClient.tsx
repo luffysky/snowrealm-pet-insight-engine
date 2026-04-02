@@ -697,6 +697,31 @@ export function AuthorCard({ userSlug, authorName, authorAvatar, blogSlug }: Aut
   )
 }
 
+// ─── BLOG-18: Code Syntax Highlighting ──────────────────────────────────────
+
+/** Highlights code blocks that don't already have hljs classes (older articles) */
+export function CodeHighlighter() {
+  useEffect(() => {
+    const container = document.querySelector('.blog-content')
+    if (!container) return
+
+    const codeBlocks = container.querySelectorAll<HTMLElement>('pre code')
+    if (codeBlocks.length === 0) return
+
+    // Lazy-load highlight.js only when there are code blocks to highlight
+    import('highlight.js/lib/common').then(hljs => {
+      codeBlocks.forEach(block => {
+        // Skip if already highlighted by TipTap's CodeBlockLowlight
+        if (block.querySelector('.hljs-keyword, .hljs-string, .hljs-comment, .hljs-title')) return
+        if (block.classList.contains('hljs')) return
+        hljs.default.highlightElement(block)
+      })
+    }).catch(() => { /* highlight.js failed to load, code blocks remain unstyled */ })
+  }, [])
+
+  return null
+}
+
 // ─── BLOG-18: Code Copy Buttons ──────────────────────────────────────────────
 
 /** Scans all pre>code blocks inside .blog-content and injects a copy button */

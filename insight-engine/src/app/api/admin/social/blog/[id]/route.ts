@@ -64,6 +64,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     /** 空字串 = 移除密碼；非空字串 = 設定新密碼；undefined = 不修改 */
     password?: string | null
     seoDesc?: string | null
+    category?: string | null
     seriesId?: string | null
     seriesOrder?: number | null
   }
@@ -105,11 +106,12 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
        is_public            = COALESCE($10, is_public),
        seo_title            = CASE WHEN $11::boolean THEN $12 ELSE seo_title END,
        seo_desc             = CASE WHEN $13::boolean THEN $14 ELSE seo_desc END,
-       series_id            = CASE WHEN $15::boolean THEN $16::uuid ELSE series_id END,
-       series_order         = CASE WHEN $17::boolean THEN $18 ELSE series_order END,
-       password_hash        = CASE WHEN $19::boolean THEN $20 ELSE password_hash END,
+       category             = CASE WHEN $15::boolean THEN $16 ELSE category END,
+       series_id            = CASE WHEN $17::boolean THEN $18::uuid ELSE series_id END,
+       series_order         = CASE WHEN $19::boolean THEN $20 ELSE series_order END,
+       password_hash        = CASE WHEN $21::boolean THEN $22 ELSE password_hash END,
        updated_at           = NOW()
-     WHERE id::text = $21 AND user_id::text = $22
+     WHERE id::text = $23 AND user_id::text = $24
      RETURNING *`,
     [
       body.title ?? null,
@@ -122,6 +124,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       body.isPublic ?? null,
       'seoTitle' in body, body.seoTitle ?? null,
       'seoDesc' in body, body.seoDesc ?? null,
+      'category' in body, body.category ?? null,
       'seriesId' in body, body.seriesId ?? null,
       'seriesOrder' in body, body.seriesOrder ?? null,
       newPasswordHash !== undefined, newPasswordHash ?? null,

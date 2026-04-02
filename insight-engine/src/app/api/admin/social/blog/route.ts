@@ -27,7 +27,7 @@ export async function GET(req: NextRequest) {
   if (!ctx.userId) return NextResponse.json({ error: '未登入' }, { status: 401 })
 
   const articles = await query<BlogArticleRow>(
-    `SELECT id, user_id, title, slug, summary, content, cover_image, tags,
+    `SELECT id, user_id, title, slug, summary, content, cover_image, tags, category,
             is_public, view_count, seo_title, seo_desc, published_at, created_at, updated_at
      FROM user_blog_articles
      WHERE user_id::text = $1
@@ -54,6 +54,7 @@ export async function POST(req: NextRequest) {
     isPublic?: boolean
     seoTitle?: string
     seoDesc?: string
+    category?: string | null
     seriesId?: string | null
     seriesOrder?: number | null
   }
@@ -73,8 +74,8 @@ export async function POST(req: NextRequest) {
 
   const article = await queryOne<BlogArticleRow>(
     `INSERT INTO user_blog_articles
-       (user_id, tenant_id, title, slug, summary, content, cover_image, cover_image_position, tags, is_public, seo_title, seo_desc, series_id, series_order)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+       (user_id, tenant_id, title, slug, summary, content, cover_image, cover_image_position, tags, is_public, seo_title, seo_desc, category, series_id, series_order)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
      RETURNING *`,
     [
       ctx.userId, ctx.tenantId ?? 'default',
@@ -87,6 +88,7 @@ export async function POST(req: NextRequest) {
       body.isPublic ?? true,
       body.seoTitle ?? null,
       body.seoDesc ?? null,
+      body.category ?? null,
       body.seriesId ?? null,
       body.seriesOrder ?? null,
     ]

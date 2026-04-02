@@ -9,6 +9,7 @@ interface BlogArticleRow extends Record<string, unknown> {
   cover_image: string | null
   cover_image_position: string | null
   tags: string[]
+  category: string | null
   view_count: number
   published_at: string
 }
@@ -25,10 +26,11 @@ interface BlogSettingsRow extends Record<string, unknown> {
 
 /** GET /api/blogs/[userSlug] — 取得公開部落格資訊與文章列表 */
 export async function GET(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ userSlug: string }> }
 ) {
   const { userSlug } = await params
+  const categoryFilter = req.nextUrl.searchParams.get('category') || null
 
   // 先嘗試以 blog_slug 查找，若找不到再以 user_id 查找
   let owner = await queryOne<BlogSettingsRow>(
@@ -55,13 +57,25 @@ export async function GET(
     if (owner.is_enabled === false) return NextResponse.json({ error: '部落格未啟用' }, { status: 404 })
   }
 
-  const articles = await query<BlogArticleRow>(
-    `SELECT id, title, slug, summary, cover_image, cover_image_position, tags, view_count, published_at
+  const articleParams: unknown[] = [owner.user_id as string]
+  let articleQuery = `SELECT id, title, slug, summary, cover_image, cover_image_position, tags, category, view_count, published_at
      FROM user_blog_articles
-     WHERE user_id::text = $1 AND is_public = true
-     ORDER BY published_at DESC`,
+     WHERE user_id::text = $1 AND is_public = true`
+  if (categoryFilter) {
+    articleQuery += ` AND category = $2`
+    articleParams.push(categoryFilter)
+  }
+  articleQuery += ` ORDER BY published_at DESC`
+  const articles = await query<BlogArticleRow>(articleQuery, articleParams)
+
+  // Collect distinct categories for filter UI
+  const categoriesResult = await query<{ category: string }>(
+    `SELECT DISTINCT category FROM user_blog_articles
+     WHERE user_id::text = $1 AND is_public = true AND category IS NOT NULL
+     ORDER BY category`,
     [owner.user_id as string]
   )
+  const categories = categoriesResult.map(r => r.category)
 
   return NextResponse.json({
     blog: {
@@ -72,5 +86,6 @@ export async function GET(
       authorAvatar: owner.avatar_url as string | null,
     },
     articles,
+    categories,
   })
 }

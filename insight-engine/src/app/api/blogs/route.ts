@@ -26,6 +26,11 @@ interface ArticleSearchRow extends Record<string, unknown> {
   blog_title: string | null
 }
 
+/** 將搜尋字串轉為 tsquery 格式：以空白切分後用 & 連接 */
+function buildTsQuery(input: string): string {
+  return input.trim().split(/\s+/).filter(Boolean).join(' & ')
+}
+
 /** GET /api/blogs — 取得所有啟用中的公開部落格列表
  *  可選 ?search=keyword 同時搜尋文章（標題 / 摘要 / 標籤）
  */
@@ -34,25 +39,42 @@ export async function GET(req: NextRequest) {
 
   // 若有搜尋關鍵字，跨部落格搜尋文章
   if (search) {
+    const useFullText = search.length >= 2
+    const tsQuery = useFullText ? buildTsQuery(search) : ''
+
     const articles = await query<ArticleSearchRow>(
-      `SELECT
-         a.id, a.title, a.slug, a.summary, a.cover_image, a.tags, a.view_count, a.published_at,
-         au.display_name AS author_name,
-         ubs.blog_slug,
-         ubs.blog_title
-       FROM user_blog_articles a
-       JOIN admin_users au ON au.id = a.user_id
-       JOIN user_blog_settings ubs ON ubs.user_id = a.user_id
-       WHERE a.is_public = true
-         AND ubs.is_enabled = true
-         AND (
-           a.title ILIKE '%' || $1 || '%' OR
-           a.summary ILIKE '%' || $1 || '%' OR
-           $1 = ANY(a.tags)
-         )
-       ORDER BY a.published_at DESC
-       LIMIT 50`,
-      [search]
+      useFullText
+        ? `SELECT
+             a.id, a.title, a.slug, a.summary, a.cover_image, a.tags, a.view_count, a.published_at,
+             au.display_name AS author_name,
+             ubs.blog_slug,
+             ubs.blog_title
+           FROM user_blog_articles a
+           JOIN admin_users au ON au.id = a.user_id
+           JOIN user_blog_settings ubs ON ubs.user_id = a.user_id
+           WHERE a.is_public = true
+             AND ubs.is_enabled = true
+             AND a.search_vector @@ to_tsquery('simple', $1)
+           ORDER BY ts_rank(a.search_vector, to_tsquery('simple', $1)) DESC, a.published_at DESC
+           LIMIT 50`
+        : `SELECT
+             a.id, a.title, a.slug, a.summary, a.cover_image, a.tags, a.view_count, a.published_at,
+             au.display_name AS author_name,
+             ubs.blog_slug,
+             ubs.blog_title
+           FROM user_blog_articles a
+           JOIN admin_users au ON au.id = a.user_id
+           JOIN user_blog_settings ubs ON ubs.user_id = a.user_id
+           WHERE a.is_public = true
+             AND ubs.is_enabled = true
+             AND (
+               a.title ILIKE '%' || $1 || '%' OR
+               a.summary ILIKE '%' || $1 || '%' OR
+               $1 = ANY(a.tags)
+             )
+           ORDER BY a.published_at DESC
+           LIMIT 50`,
+      [useFullText ? tsQuery : search]
     )
 
     return NextResponse.json({
