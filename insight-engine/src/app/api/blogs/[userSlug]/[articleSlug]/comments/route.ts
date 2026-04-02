@@ -50,7 +50,7 @@ export async function GET(
     const rows = await query<CommentRow>(
       `SELECT bc.id, bc.author_name, bc.author_avatar, bc.user_id::text,
               bc.content, bc.created_at, COALESCE(bc.like_count, 0) AS like_count,
-              bc.parent_id::text
+              CASE WHEN bc.parent_id IS NULL THEN NULL ELSE bc.parent_id::text END AS parent_id
        FROM blog_comments bc
        WHERE bc.article_id = $1 AND bc.is_approved = true
        ORDER BY bc.created_at ASC`,
@@ -122,7 +122,8 @@ export async function POST(
       `INSERT INTO blog_comments (article_id, author_name, author_avatar, user_id, content, parent_id)
        VALUES ($1, $2, $3, $4, $5, $6)
        RETURNING id, author_name, author_avatar, user_id::text, content, created_at,
-                 COALESCE(like_count, 0) AS like_count, parent_id::text`,
+                 COALESCE(like_count, 0) AS like_count,
+                 CASE WHEN parent_id IS NULL THEN NULL ELSE parent_id::text END AS parent_id`,
       [ctx.articleId, authorName, authorAvatar, userId, content, parentId]
     )
 

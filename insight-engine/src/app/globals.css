@@ -249,7 +249,35 @@ body:not(:has(.admin-root)) {
   min-height: 100vh;
 }
 
-/* ── 部落格文章內容排版 ── */
+/* ── 部落格文章內容排版 — Heading 層級 ── */
+.blog-content h1 { font-size: 2rem; line-height: 1.25; font-weight: 700; margin-top: 2.5rem; margin-bottom: 1rem; color: #fff; }
+.blog-content h2 { font-size: 1.5rem; line-height: 1.3; font-weight: 700; margin-top: 2rem; margin-bottom: 0.75rem; color: #fff; }
+.blog-content h3 { font-size: 1.25rem; line-height: 1.4; font-weight: 600; margin-top: 1.5rem; margin-bottom: 0.5rem; color: rgba(255,255,255,0.92); }
+.blog-content h4 { font-size: 1.125rem; line-height: 1.4; font-weight: 600; margin-top: 1.25rem; margin-bottom: 0.5rem; color: rgba(255,255,255,0.85); }
+.blog-content h5, .blog-content h6 { font-size: 1rem; line-height: 1.5; font-weight: 600; margin-top: 1rem; margin-bottom: 0.4rem; color: rgba(255,255,255,0.8); }
+.blog-content p { font-size: 1rem; line-height: 1.85; margin-top: 1.25rem; margin-bottom: 1.25rem; color: rgba(255,255,255,0.75); }
+.blog-content ul, .blog-content ol { margin-top: 1.25rem; margin-bottom: 1.25rem; padding-left: 1.5rem; }
+.blog-content li { line-height: 1.75; color: rgba(255,255,255,0.7); margin-top: 0.25rem; margin-bottom: 0.25rem; }
+.blog-content ul { list-style-type: disc; }
+.blog-content ol { list-style-type: decimal; }
+.blog-content a { color: #fbbf24; text-decoration: none; }
+.blog-content a:hover { text-decoration: underline; }
+.blog-content strong { color: rgba(255,255,255,0.9); font-weight: 600; }
+.blog-content em { color: rgba(255,255,255,0.7); }
+.blog-content code { color: #fcd34d; background: rgba(245,158,11,0.1); border-radius: 4px; padding: 0.1em 0.35em; font-size: 0.875em; }
+.blog-content pre { background: #0f172a; border: 1px solid rgba(255,255,255,0.08); border-radius: 1rem; padding: 1.25rem; overflow-x: auto; margin: 1.5rem 0; }
+.blog-content pre code { background: none; padding: 0; border-radius: 0; color: inherit; font-size: 0.875rem; }
+.blog-content img { border-radius: 1rem; margin: 2rem 0; max-width: 100%; }
+/* 手機版 heading 縮小 */
+@media (max-width: 639px) {
+  .blog-content h1 { font-size: 1.625rem; margin-top: 2rem; }
+  .blog-content h2 { font-size: 1.25rem; margin-top: 1.5rem; }
+  .blog-content h3 { font-size: 1.125rem; margin-top: 1.25rem; }
+  .blog-content p { font-size: 0.9375rem; line-height: 1.8; }
+  .blog-content pre { padding: 1rem; border-radius: 0.75rem; }
+}
+
+/* ── 部落格文章內容排版 — 其他 ── */
 .blog-content hr {
   border: none;
   border-top: 1px solid rgba(255, 255, 255, 0.12);
@@ -3070,8 +3098,9 @@ h3:hover .heading-anchor:hover {
 .blog-font-large  .blog-content p,
 .blog-font-large  .blog-content li { font-size: inherit; line-height: inherit; }
 /* 大字模式下標題也放大 */
-.blog-font-large  .blog-content h2 { font-size: 1.5rem; }
-.blog-font-large  .blog-content h3 { font-size: 1.25rem; }
+.blog-font-large  .blog-content h1 { font-size: 2.25rem; }
+.blog-font-large  .blog-content h2 { font-size: 1.75rem; }
+.blog-font-large  .blog-content h3 { font-size: 1.375rem; }
 /* 桌面版大字模式可以更大 */
 @media (min-width: 640px) {
   .blog-font-large  .blog-content { font-size: 1.3125rem; line-height: 1.9; }
