@@ -77,6 +77,56 @@ export async function GET(
   )
   const categories = categoriesResult.map(r => r.category)
 
+  // Fetch series for this blog author
+  const seriesRows = await query<{ id: string; title: string; description: string | null; cover_image: string | null; is_completed: boolean; article_count: number }>(
+    `SELECT bs.id, bs.title, bs.description, bs.cover_image, bs.is_completed,
+            COUNT(a.id)::int AS article_count
+     FROM blog_series bs
+     LEFT JOIN user_blog_articles a ON a.series_id = bs.id AND a.is_public = true
+     WHERE bs.user_id::text = $1
+     GROUP BY bs.id
+     ORDER BY bs.created_at DESC`,
+    [owner.user_id as string]
+  )
+
+  // Fetch other bloggers' recent articles (exclude current author)
+  const otherArticles = await query<{ title: string; slug: string; blog_slug: string; author_name: string; author_avatar: string | null; published_at: string }>(
+    `SELECT a.title, a.slug,
+            COALESCE(ubs.blog_slug, a.user_id::text) AS blog_slug,
+            COALESCE(au.display_name, au.username) AS author_name,
+            au.avatar_url AS author_avatar,
+            a.published_at
+     FROM user_blog_articles a
+     JOIN admin_users au ON au.id = a.user_id
+     LEFT JOIN user_blog_settings ubs ON ubs.user_id = a.user_id
+     WHERE a.user_id::text != $1 AND a.is_public = true
+     ORDER BY a.published_at DESC
+     LIMIT 5`,
+    [owner.user_id as string]
+  )
+
+  // Collect all tags from this blog's articles for "similar" recommendations
+  const allTags = articles.flatMap(a => a.tags).filter(Boolean)
+  const uniqueTags = [...new Set(allTags)].slice(0, 5)
+
+  // Fetch similar articles from other bloggers (same tags)
+  let similarArticles: { title: string; slug: string; blog_slug: string; author_name: string; tags: string[] }[] = []
+  if (uniqueTags.length > 0) {
+    similarArticles = await query<{ title: string; slug: string; blog_slug: string; author_name: string; tags: string[] }>(
+      `SELECT a.title, a.slug,
+              COALESCE(ubs.blog_slug, a.user_id::text) AS blog_slug,
+              COALESCE(au.display_name, au.username) AS author_name,
+              a.tags
+       FROM user_blog_articles a
+       JOIN admin_users au ON au.id = a.user_id
+       LEFT JOIN user_blog_settings ubs ON ubs.user_id = a.user_id
+       WHERE a.user_id::text != $1 AND a.is_public = true AND a.tags && $2::text[]
+       ORDER BY a.view_count DESC
+       LIMIT 5`,
+      [owner.user_id as string, uniqueTags]
+    )
+  }
+
   return NextResponse.json({
     blog: {
       userSlug: (owner.blog_slug as string | null) ?? (owner.user_id as string),
@@ -87,5 +137,8 @@ export async function GET(
     },
     articles,
     categories,
+    series: seriesRows,
+    otherArticles,
+    similarArticles,
   })
 }

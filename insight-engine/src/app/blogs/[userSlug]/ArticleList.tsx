@@ -22,14 +22,21 @@ interface ArticleListProps {
   articles: Article[]
   blogSlug: string
   categories?: string[]
+  /** When sidebar controls category, pass the active value here */
+  externalCategoryControl?: string | null
+  onExternalCategoryChange?: (cat: string | null) => void
 }
 
 type LayoutMode = 'list' | 'grid'
 
-export function ArticleList({ articles, blogSlug, categories = [] }: ArticleListProps) {
+export function ArticleList({ articles, blogSlug, categories = [], externalCategoryControl, onExternalCategoryChange }: ArticleListProps) {
   const storageKey = `blog-layout-${blogSlug}`
   const [layout, setLayout] = useState<LayoutMode>('list')
-  const [activeCategory, setActiveCategory] = useState<string | null>(null)
+  const [internalCategory, setInternalCategory] = useState<string | null>(null)
+
+  // Use external control if provided, otherwise internal
+  const activeCategory = externalCategoryControl !== undefined ? externalCategoryControl : internalCategory
+  const setActiveCategory = onExternalCategoryChange ?? setInternalCategory
 
   useEffect(() => {
     try {
@@ -52,9 +59,10 @@ export function ArticleList({ articles, blogSlug, categories = [] }: ArticleList
     )
   }
 
-  const filteredArticles = activeCategory
-    ? articles.filter(a => a.category === activeCategory)
-    : articles
+  // When external control is used, articles are already filtered by BlogLayout
+  const filteredArticles = externalCategoryControl !== undefined
+    ? articles
+    : (internalCategory ? articles.filter(a => a.category === internalCategory) : articles)
 
   return (
     <div>

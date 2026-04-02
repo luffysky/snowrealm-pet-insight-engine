@@ -1,7 +1,7 @@
 import { Metadata } from 'next'
 import Link from 'next/link'
 import Image from 'next/image'
-import { ArticleList } from './ArticleList'
+import { BlogLayout } from './BlogLayout'
 import { SubscribeForm } from './SubscribeForm'
 
 interface BlogData {
@@ -25,6 +25,9 @@ interface BlogData {
     published_at: string
   }[]
   categories?: string[]
+  series?: { id: string; title: string; description: string | null; cover_image: string | null; is_completed: boolean; article_count: number }[]
+  otherArticles?: { title: string; slug: string; blog_slug: string; author_name: string; author_avatar: string | null; published_at: string }[]
+  similarArticles?: { title: string; slug: string; blog_slug: string; author_name: string; tags: string[] }[]
 }
 
 async function getBlogData(userSlug: string): Promise<BlogData | null> {
@@ -72,13 +75,13 @@ export default async function BlogPage({ params }: { params: Promise<{ userSlug:
     )
   }
 
-  const { blog, articles, categories } = data
+  const { blog, articles, categories, series, otherArticles, similarArticles } = data
 
   return (
     <div className="blog-list-root min-h-screen bg-slate-950 text-white" style={{ paddingBottom: 'var(--bnav-h, 76px)' }}>
       {/* Hero / Author info */}
       <div className="border-b border-white/8">
-        <div className="max-w-3xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
           <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-5">
             {blog.authorAvatar ? (
               <Image
@@ -108,9 +111,16 @@ export default async function BlogPage({ params }: { params: Promise<{ userSlug:
         </div>
       </div>
 
-      {/* Article list */}
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 py-8 sm:py-10">
-        <ArticleList articles={articles} blogSlug={blog.userSlug} categories={categories ?? []} />
+      {/* Sidebar + Article list */}
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8 sm:py-10">
+        <BlogLayout
+          blogSlug={blog.userSlug}
+          articles={articles}
+          categories={categories ?? []}
+          series={series ?? []}
+          otherArticles={otherArticles ?? []}
+          similarArticles={similarArticles ?? []}
+        />
 
         {/* Email 訂閱 */}
         <SubscribeForm userSlug={blog.userSlug} />
