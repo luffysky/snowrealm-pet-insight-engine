@@ -48,6 +48,9 @@ const NAV_ITEMS = [
   { group: 'AI 設定', items: [
     { href: '/snowrealm-insight-ctrl/ai-settings',   label: 'AI 指令控制', icon: Bot },
   ]},
+  { group: 'YukiBoard', items: [
+    { href: '/snowrealm-insight-ctrl/yukiboard',     label: 'YukiBoard 特權', icon: Sparkles },
+  ]},
 ]
 
 const THEME_STORAGE_KEY = 'sa_theme'
