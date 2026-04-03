@@ -1,17 +1,34 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { query, queryOne, execute } from '@/lib/db'
+import { verifyToken } from '@/lib/jwt'
 
 const OPENAI_KEY = process.env.OPENAI_API_KEY || ''
 const ANTHROPIC_KEY = process.env.ANTHROPIC_API_KEY || ''
 
 interface ProxyRequest {
-  invite_code: string
+  invite_code?: string
+  auth_token?: string
   device_id: string
   provider: 'openai' | 'anthropic'
   model: string
   prompt: string
   system_prompt?: string
   max_tokens?: number
+}
+
+/** 檢查平台禮遇特權 — 有特權則無限額度 */
+async function checkPrivilege(authToken: string): Promise<{ privileged: boolean; userId: string | null }> {
+  try {
+    const payload = await verifyToken(authToken)
+    if (!payload?.sub) return { privileged: false, userId: null }
+    const user = await queryOne<{ yukiboard_privilege: boolean }>(
+      `SELECT COALESCE(yukiboard_privilege, false) AS yukiboard_privilege FROM admin_users WHERE id = $1`,
+      [payload.sub],
+    )
+    return { privileged: user?.yukiboard_privilege === true, userId: payload.sub }
+  } catch {
+    return { privileged: false, userId: null }
+  }
 }
 
 /** 驗證邀請碼，回傳 code row 或 null */
@@ -106,34 +123,59 @@ async function callAnthropic(prompt: string, systemPrompt: string, model: string
   return { text, tokensUsed: tokensUsed || Math.ceil(text.length / 4) }
 }
 
-/** POST — AI 代理轉發 */
+/** POST — AI 代理轉發（支援邀請碼 或 平台禮遇特權） */
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json() as ProxyRequest
-    const { invite_code, device_id, provider, model, prompt, system_prompt, max_tokens } = body
+    const { invite_code, auth_token, device_id, provider, model, prompt, system_prompt, max_tokens } = body
 
-    if (!invite_code || !device_id || !provider || !prompt) {
+    if (!device_id || !provider || !prompt) {
       return NextResponse.json({ error: '缺少必要參數' }, { status: 400 })
     }
-
-    // 1. 驗證邀請碼
-    const codeRow = await verifyInviteCode(invite_code)
-    if (!codeRow || !codeRow.is_active) {
-      return NextResponse.json({ error: '邀請碼無效或已停用' }, { status: 403 })
-    }
-    if (codeRow.expires_at && new Date(codeRow.expires_at) < new Date()) {
-      return NextResponse.json({ error: '邀請碼已過期' }, { status: 403 })
+    if (!invite_code && !auth_token) {
+      return NextResponse.json({ error: '需要邀請碼或登入 token' }, { status: 400 })
     }
 
-    // 2. 檢查每日額度
-    const todayUsed = await getTodayUsage(codeRow.id, device_id)
-    const remaining = codeRow.daily_token_limit - todayUsed
-    if (remaining <= 0) {
-      return NextResponse.json({ error: '今日額度已用完，明天再試', remaining: 0 }, { status: 429 })
+    let codeId: string | null = null
+    let dailyLimit = 0
+    let isPrivileged = false
+
+    // ── 路徑 A：平台禮遇特權（登入用戶 + yukiboard_privilege = true）──
+    if (auth_token) {
+      const { privileged, userId } = await checkPrivilege(auth_token)
+      if (privileged) {
+        isPrivileged = true
+        codeId = `privilege:${userId}`  // 虛擬 ID 用於記錄
+      }
     }
 
-    // 3. 轉發 AI 請求
-    const effectiveMaxTokens = Math.min(max_tokens ?? 1024, remaining, 4096)
+    // ── 路徑 B：邀請碼驗證 ──
+    if (!isPrivileged) {
+      if (!invite_code) {
+        return NextResponse.json({ error: '邀請碼無效或無特權' }, { status: 403 })
+      }
+      const codeRow = await verifyInviteCode(invite_code)
+      if (!codeRow || !codeRow.is_active) {
+        return NextResponse.json({ error: '邀請碼無效或已停用' }, { status: 403 })
+      }
+      if (codeRow.expires_at && new Date(codeRow.expires_at) < new Date()) {
+        return NextResponse.json({ error: '邀請碼已過期' }, { status: 403 })
+      }
+
+      // 檢查每日額度
+      const todayUsed = await getTodayUsage(codeRow.id, device_id)
+      const remaining = codeRow.daily_token_limit - todayUsed
+      if (remaining <= 0) {
+        return NextResponse.json({ error: '今日額度已用完，明天再試', remaining: 0 }, { status: 429 })
+      }
+
+      codeId = codeRow.id
+      dailyLimit = codeRow.daily_token_limit
+    }
+
+    // ── 轉發 AI 請求 ──
+    const tokenCap = isPrivileged ? 4096 : Math.min(dailyLimit, 4096)
+    const effectiveMaxTokens = Math.min(max_tokens ?? 1024, tokenCap)
 
     let result: { text: string; tokensUsed: number }
     if (provider === 'anthropic' && ANTHROPIC_KEY) {
@@ -144,13 +186,20 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: '伺服器未設定 AI API Key' }, { status: 503 })
     }
 
-    // 4. 記錄使用量
-    await recordUsage(codeRow.id, device_id, result.tokensUsed, provider, model)
+    // ── 記錄使用量（特權用戶也記，方便統計） ──
+    if (codeId && !codeId.startsWith('privilege:')) {
+      await recordUsage(codeId, device_id, result.tokensUsed, provider, model)
+    }
+
+    const remaining = isPrivileged
+      ? 999999
+      : dailyLimit - (await getTodayUsage(codeId!, device_id))
 
     return NextResponse.json({
       text: result.text,
       tokens_used: result.tokensUsed,
-      remaining: remaining - result.tokensUsed,
+      remaining,
+      privileged: isPrivileged,
     })
   } catch (error) {
     console.error('[YukiBoard AI Proxy] error:', error)
