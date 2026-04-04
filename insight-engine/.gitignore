@@ -45,3 +45,4 @@ docs/log.md
 next-env.d.ts
 .claude/worktrees/
 
+supabase/.temp/
