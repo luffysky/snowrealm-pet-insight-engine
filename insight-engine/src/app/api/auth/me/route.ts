@@ -46,14 +46,27 @@ export async function GET(): Promise<NextResponse> {
 
   const platformPartner = await isUserPlatformUnlimited(ctx.userId)
 
+  // 取得使用者額外欄位（avatarUrl、plan）
+  const userRow = await queryOne<{ avatar_url: string | null; display_name: string | null }>(
+    `SELECT avatar_url, display_name FROM admin_users WHERE id = $1`,
+    [ctx.userId],
+  )
+  const tenantPlan = await queryOne<{ plan: string }>(
+    `SELECT plan FROM tenants WHERE slug = $1`,
+    [ctx.tenantId],
+  )
+
   return NextResponse.json({
     userId: ctx.userId,
     userName: ctx.userName,
+    displayName: userRow?.display_name ?? ctx.userName,
     role: ctx.role,
     tenantId: ctx.tenantId,
     tenantName: tenant?.name ?? ctx.tenantId,
     adminTitle: tenant?.admin_title || tenant?.name || '管理後台',
     tenants: tenants.length > 0 ? tenants : undefined,
     platformPartner,
+    avatarUrl: userRow?.avatar_url ?? '',
+    plan: tenantPlan?.plan ?? 'free',
   })
 }

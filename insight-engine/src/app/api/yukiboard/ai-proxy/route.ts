@@ -14,6 +14,7 @@ interface ProxyRequest {
   prompt: string
   system_prompt?: string
   max_tokens?: number
+  stream?: boolean
 }
 
 /** 檢查平台禮遇特權 — 有特權則無限額度 */
@@ -123,60 +124,194 @@ async function callAnthropic(prompt: string, systemPrompt: string, model: string
   return { text, tokensUsed: tokensUsed || Math.ceil(text.length / 4) }
 }
 
-/** POST — AI 代理轉發（支援邀請碼 或 平台禮遇特權） */
+/** SSE 串流 — Anthropic */
+async function callAnthropicStream(prompt: string, systemPrompt: string, model: string, maxTokens: number): Promise<Response> {
+  return fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': ANTHROPIC_KEY,
+      'anthropic-version': '2023-06-01',
+    },
+    body: JSON.stringify({
+      model: model || 'claude-haiku-4-5-20251001',
+      max_tokens: maxTokens,
+      stream: true,
+      ...(systemPrompt ? { system: systemPrompt } : {}),
+      messages: [{ role: 'user', content: prompt }],
+    }),
+  })
+}
+
+/** SSE 串流 — OpenAI */
+async function callOpenAIStream(prompt: string, systemPrompt: string, model: string, maxTokens: number): Promise<Response> {
+  return fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${OPENAI_KEY}`,
+    },
+    body: JSON.stringify({
+      model: model || 'gpt-4o-mini',
+      stream: true,
+      messages: [
+        ...(systemPrompt ? [{ role: 'system', content: systemPrompt }] : []),
+        { role: 'user', content: prompt },
+      ],
+      max_tokens: maxTokens,
+    }),
+  })
+}
+
+/** 共用的驗證邏輯（invite_code / auth_token） */
+async function verifyAccess(body: ProxyRequest): Promise<{
+  codeId: string | null
+  dailyLimit: number
+  isPrivileged: boolean
+  error?: string
+  status?: number
+}> {
+  const { invite_code, auth_token, device_id } = body
+  let codeId: string | null = null
+  let dailyLimit = 0
+  let isPrivileged = false
+
+  if (auth_token) {
+    const { privileged, userId } = await checkPrivilege(auth_token)
+    if (privileged) {
+      isPrivileged = true
+      codeId = `privilege:${userId}`
+    }
+  }
+
+  if (!isPrivileged) {
+    if (!invite_code) return { codeId: null, dailyLimit: 0, isPrivileged: false, error: '邀請碼無效或無特權', status: 403 }
+    const codeRow = await verifyInviteCode(invite_code)
+    if (!codeRow || !codeRow.is_active) return { codeId: null, dailyLimit: 0, isPrivileged: false, error: '邀請碼無效或已停用', status: 403 }
+    if (codeRow.expires_at && new Date(codeRow.expires_at) < new Date()) return { codeId: null, dailyLimit: 0, isPrivileged: false, error: '邀請碼已過期', status: 403 }
+
+    const todayUsed = await getTodayUsage(codeRow.id, device_id)
+    const remaining = codeRow.daily_token_limit - todayUsed
+    if (remaining <= 0) return { codeId: null, dailyLimit: 0, isPrivileged: false, error: '今日額度已用完，明天再試', status: 429 }
+
+    codeId = codeRow.id
+    dailyLimit = codeRow.daily_token_limit
+  }
+
+  return { codeId, dailyLimit, isPrivileged }
+}
+
+/** POST — AI 代理轉發（支援邀請碼 或 平台禮遇特權，可選 SSE 串流） */
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json() as ProxyRequest
-    const { invite_code, auth_token, device_id, provider, model, prompt, system_prompt, max_tokens } = body
+    const { device_id, provider, model, prompt, system_prompt, max_tokens, stream = false } = body
 
     if (!device_id || !provider || !prompt) {
       return NextResponse.json({ error: '缺少必要參數' }, { status: 400 })
     }
-    if (!invite_code && !auth_token) {
+    if (!body.invite_code && !body.auth_token) {
       return NextResponse.json({ error: '需要邀請碼或登入 token' }, { status: 400 })
     }
 
-    let codeId: string | null = null
-    let dailyLimit = 0
-    let isPrivileged = false
-
-    // ── 路徑 A：平台禮遇特權（登入用戶 + yukiboard_privilege = true）──
-    if (auth_token) {
-      const { privileged, userId } = await checkPrivilege(auth_token)
-      if (privileged) {
-        isPrivileged = true
-        codeId = `privilege:${userId}`  // 虛擬 ID 用於記錄
-      }
+    const access = await verifyAccess(body)
+    if (access.error) {
+      return NextResponse.json({ error: access.error }, { status: access.status ?? 403 })
     }
+    const { codeId, dailyLimit, isPrivileged } = access
 
-    // ── 路徑 B：邀請碼驗證 ──
-    if (!isPrivileged) {
-      if (!invite_code) {
-        return NextResponse.json({ error: '邀請碼無效或無特權' }, { status: 403 })
-      }
-      const codeRow = await verifyInviteCode(invite_code)
-      if (!codeRow || !codeRow.is_active) {
-        return NextResponse.json({ error: '邀請碼無效或已停用' }, { status: 403 })
-      }
-      if (codeRow.expires_at && new Date(codeRow.expires_at) < new Date()) {
-        return NextResponse.json({ error: '邀請碼已過期' }, { status: 403 })
-      }
-
-      // 檢查每日額度
-      const todayUsed = await getTodayUsage(codeRow.id, device_id)
-      const remaining = codeRow.daily_token_limit - todayUsed
-      if (remaining <= 0) {
-        return NextResponse.json({ error: '今日額度已用完，明天再試', remaining: 0 }, { status: 429 })
-      }
-
-      codeId = codeRow.id
-      dailyLimit = codeRow.daily_token_limit
-    }
-
-    // ── 轉發 AI 請求 ──
     const tokenCap = isPrivileged ? 4096 : Math.min(dailyLimit, 4096)
     const effectiveMaxTokens = Math.min(max_tokens ?? 1024, tokenCap)
 
+    // ── SSE 串流模式 ──
+    if (stream) {
+      let aiRes: Response
+      if (provider === 'anthropic' && ANTHROPIC_KEY) {
+        aiRes = await callAnthropicStream(prompt, system_prompt ?? '', model, effectiveMaxTokens)
+      } else if (OPENAI_KEY) {
+        aiRes = await callOpenAIStream(prompt, system_prompt ?? '', model, effectiveMaxTokens)
+      } else {
+        return NextResponse.json({ error: '伺服器未設定 AI API Key' }, { status: 503 })
+      }
+      if (!aiRes.ok) {
+        const errBody = await aiRes.text()
+        return NextResponse.json({ error: `AI error ${aiRes.status}: ${errBody.slice(0, 200)}` }, { status: 502 })
+      }
+
+      const encoder = new TextEncoder()
+      const decoder = new TextDecoder()
+      const reader = aiRes.body?.getReader()
+      if (!reader) {
+        return NextResponse.json({ error: 'empty stream' }, { status: 502 })
+      }
+
+      let totalTokens = 0
+      const isAnthropic = provider === 'anthropic'
+
+      const readable = new ReadableStream({
+        async start(controller) {
+          let buffer = ''
+          try {
+            while (true) {
+              const { done, value } = await reader.read()
+              if (done) break
+              buffer += decoder.decode(value, { stream: true })
+              const lines = buffer.split('\n')
+              buffer = lines.pop() ?? ''
+
+              for (const line of lines) {
+                const trimmed = line.trim()
+                if (!trimmed.startsWith('data:')) continue
+                const data = trimmed.slice(5).trim()
+                if (data === '[DONE]') continue
+
+                try {
+                  const obj = JSON.parse(data)
+                  let text = ''
+                  if (isAnthropic) {
+                    // Anthropic SSE: content_block_delta → delta.text
+                    if (obj.type === 'content_block_delta') {
+                      text = obj.delta?.text ?? ''
+                    } else if (obj.type === 'message_delta') {
+                      totalTokens = (obj.usage?.output_tokens ?? 0)
+                    }
+                  } else {
+                    // OpenAI SSE: choices[0].delta.content
+                    text = obj.choices?.[0]?.delta?.content ?? ''
+                  }
+                  if (text) {
+                    controller.enqueue(encoder.encode(`data: ${JSON.stringify({ text })}\n\n`))
+                    totalTokens += Math.ceil(text.length / 4)
+                  }
+                } catch { /* skip unparseable lines */ }
+              }
+            }
+            // 送總 token 數
+            controller.enqueue(encoder.encode(`data: ${JSON.stringify({ tokens_used: totalTokens })}\n\n`))
+            controller.enqueue(encoder.encode('data: [DONE]\n\n'))
+
+            // 記錄使用量
+            if (codeId && !codeId.startsWith('privilege:')) {
+              await recordUsage(codeId, device_id, totalTokens, provider, model)
+            }
+          } catch (err) {
+            controller.enqueue(encoder.encode(`data: ${JSON.stringify({ error: String(err) })}\n\n`))
+          } finally {
+            controller.close()
+          }
+        },
+      })
+
+      return new Response(readable, {
+        headers: {
+          'Content-Type': 'text/event-stream',
+          'Cache-Control': 'no-cache',
+          'Connection': 'keep-alive',
+        },
+      })
+    }
+
+    // ── 非串流模式（原有邏輯）──
     let result: { text: string; tokensUsed: number }
     if (provider === 'anthropic' && ANTHROPIC_KEY) {
       result = await callAnthropic(prompt, system_prompt ?? '', model, effectiveMaxTokens)
@@ -186,7 +321,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: '伺服器未設定 AI API Key' }, { status: 503 })
     }
 
-    // ── 記錄使用量（特權用戶也記，方便統計） ──
     if (codeId && !codeId.startsWith('privilege:')) {
       await recordUsage(codeId, device_id, result.tokensUsed, provider, model)
     }
