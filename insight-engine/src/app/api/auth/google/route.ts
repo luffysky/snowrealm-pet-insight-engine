@@ -19,6 +19,10 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     return NextResponse.redirect(`${origin}/login?error=google_not_configured`)
   }
 
+  // CSRF state
+  const state = crypto.randomUUID()
+  const mobileCallback = request.nextUrl.searchParams.get('mobile_callback')
+
   const params = new URLSearchParams({
     client_id: clientId,
     redirect_uri: callbackUrl,
@@ -26,7 +30,26 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     scope: 'openid email profile',
     access_type: 'offline',
     prompt: 'select_account',
+    state,
   })
 
-  return NextResponse.redirect(`https://accounts.google.com/o/oauth2/v2/auth?${params}`)
+  const response = NextResponse.redirect(`https://accounts.google.com/o/oauth2/v2/auth?${params}`)
+
+  response.cookies.set('google_oauth_state', state, {
+    httpOnly: true,
+    sameSite: 'lax',
+    maxAge: 600,
+    path: '/',
+  })
+
+  if (mobileCallback) {
+    response.cookies.set('oauth_mobile_callback', mobileCallback, {
+      httpOnly: true,
+      sameSite: 'lax',
+      maxAge: 600,
+      path: '/',
+    })
+  }
+
+  return response
 }

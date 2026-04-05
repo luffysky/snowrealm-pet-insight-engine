@@ -27,6 +27,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   // CSRF 防護
   const state = crypto.randomUUID()
   const inviteToken = request.nextUrl.searchParams.get('invite')
+  const mobileCallback = request.nextUrl.searchParams.get('mobile_callback')
 
   const params = new URLSearchParams({
     response_type: 'code',
@@ -49,6 +50,16 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 
   if (inviteToken) {
     response.cookies.set('line_oauth_invite', inviteToken, {
+      httpOnly: true,
+      sameSite: 'lax',
+      maxAge: 600,
+      path: '/',
+    })
+  }
+
+  // Mobile app callback（YukiBoard 等 App 用）
+  if (mobileCallback) {
+    response.cookies.set('oauth_mobile_callback', mobileCallback, {
       httpOnly: true,
       sameSite: 'lax',
       maxAge: 600,

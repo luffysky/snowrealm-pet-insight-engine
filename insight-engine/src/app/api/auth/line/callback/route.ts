@@ -211,7 +211,21 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       name: user.display_name,
     })
 
-    const response = NextResponse.redirect(`${baseUrl}/insight-admin/${defaultTid}`)
+    // 檢查是否為 Mobile App 回調
+    const mobileCallback = request.cookies.get('oauth_mobile_callback')?.value
+
+    let response: NextResponse
+    if (mobileCallback) {
+      // Mobile App：redirect 到 app deep link 帶 token
+      const callbackUrl = new URL(mobileCallback)
+      callbackUrl.searchParams.set('token', jwt)
+      response = NextResponse.redirect(callbackUrl.toString())
+      response.cookies.delete('oauth_mobile_callback')
+    } else {
+      // Web：redirect 到後台
+      response = NextResponse.redirect(`${baseUrl}/insight-admin/${defaultTid}`)
+    }
+
     response.cookies.set('admin_session', jwt, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',

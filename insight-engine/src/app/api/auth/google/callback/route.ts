@@ -143,7 +143,19 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       name: user.display_name,
     })
 
-    const response = NextResponse.redirect(`${baseUrl}/insight-admin/${user.tenant_id}`)
+    // 檢查是否為 Mobile App 回調
+    const mobileCallback = request.cookies.get('oauth_mobile_callback')?.value
+
+    let response: NextResponse
+    if (mobileCallback) {
+      const callbackUrlObj = new URL(mobileCallback)
+      callbackUrlObj.searchParams.set('token', jwt)
+      response = NextResponse.redirect(callbackUrlObj.toString())
+      response.cookies.delete('oauth_mobile_callback')
+    } else {
+      response = NextResponse.redirect(`${baseUrl}/insight-admin/${user.tenant_id}`)
+    }
+
     response.cookies.set('admin_session', jwt, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
@@ -151,6 +163,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       maxAge: 60 * 60 * 24,
       path: '/',
     })
+    response.cookies.delete('google_oauth_state')
     return response
   } catch (err) {
     console.error('[Google OAuth Callback Error]', err)
