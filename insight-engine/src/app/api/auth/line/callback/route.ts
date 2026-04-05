@@ -37,9 +37,28 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       console.error('[LINE OAuth] No code in callback')
       return NextResponse.redirect(`${baseUrl}/login?error=missing_code`)
     }
-    if (!state || state !== storedState) {
-      console.error('[LINE OAuth] State mismatch:', { state, storedState: storedState ? 'exists' : 'missing' })
-      return NextResponse.redirect(`${baseUrl}/login?error=invalid_state`)
+
+    // 嘗試解碼 state（Mobile app 把 mobile_callback 編碼在 state 裡）
+    let mobileCallbackFromState: string | null = null
+    let stateValid = false
+    if (state) {
+      try {
+        const decoded = JSON.parse(Buffer.from(state, 'base64url').toString())
+        if (decoded.nonce && decoded.mobile_callback) {
+          // Mobile flow：state 自帶 mobile_callback，不需 cookie 驗證
+          mobileCallbackFromState = decoded.mobile_callback
+          stateValid = true
+        }
+      } catch {
+        // 非 JSON — 普通 UUID state，用 cookie 驗證
+      }
+    }
+    if (!stateValid) {
+      if (!state || state !== storedState) {
+        console.error('[LINE OAuth] State mismatch:', { state, storedState: storedState ? 'exists' : 'missing' })
+        return NextResponse.redirect(`${baseUrl}/login?error=invalid_state`)
+      }
+      stateValid = true
     }
 
     const channelId = process.env.LINE_LOGIN_CHANNEL_ID
@@ -211,8 +230,9 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       name: user.display_name,
     })
 
-    // 檢查是否為 Mobile App 回調
-    const mobileCallback = request.cookies.get('oauth_mobile_callback')?.value
+    // 檢查是否為 Mobile App 回調（優先用 state 裡的，fallback cookie）
+    const mobileCallback = mobileCallbackFromState
+      || request.cookies.get('oauth_mobile_callback')?.value
 
     let response: NextResponse
     if (mobileCallback) {

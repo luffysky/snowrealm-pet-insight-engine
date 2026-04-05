@@ -19,9 +19,12 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     return NextResponse.redirect(`${origin}/login?error=google_not_configured`)
   }
 
-  // CSRF state
-  const state = crypto.randomUUID()
+  // CSRF state — Mobile app 把 callback 編碼進 state（cookie 在跨 app 不通）
+  const nonce = crypto.randomUUID()
   const mobileCallback = request.nextUrl.searchParams.get('mobile_callback')
+  const state = mobileCallback
+    ? Buffer.from(JSON.stringify({ nonce, mobile_callback: mobileCallback })).toString('base64url')
+    : nonce
 
   const params = new URLSearchParams({
     client_id: clientId,
@@ -35,15 +38,9 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 
   const response = NextResponse.redirect(`https://accounts.google.com/o/oauth2/v2/auth?${params}`)
 
-  response.cookies.set('google_oauth_state', state, {
-    httpOnly: true,
-    sameSite: 'lax',
-    maxAge: 600,
-    path: '/',
-  })
-
-  if (mobileCallback) {
-    response.cookies.set('oauth_mobile_callback', mobileCallback, {
+  // Web flow 才需要 cookie 驗證 state
+  if (!mobileCallback) {
+    response.cookies.set('google_oauth_state', state, {
       httpOnly: true,
       sameSite: 'lax',
       maxAge: 600,

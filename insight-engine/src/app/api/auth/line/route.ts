@@ -25,9 +25,14 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   }
 
   // CSRF 防護
-  const state = crypto.randomUUID()
+  const nonce = crypto.randomUUID()
   const inviteToken = request.nextUrl.searchParams.get('invite')
   const mobileCallback = request.nextUrl.searchParams.get('mobile_callback')
+
+  // Mobile app：把 mobile_callback 編碼進 state（cookie 在跨 app 瀏覽器不通）
+  const state = mobileCallback
+    ? Buffer.from(JSON.stringify({ nonce, mobile_callback: mobileCallback })).toString('base64url')
+    : nonce
 
   const params = new URLSearchParams({
     response_type: 'code',
@@ -37,33 +42,22 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     scope: 'profile openid email',
   })
 
-  // 存 state 到 cookie（callback 時比對）
-  const response = NextResponse.redirect(
-    `https://access.line.me/oauth2/v2.1/authorize?${params}`
-  )
+  const lineUrl = `https://access.line.me/oauth2/v2.1/authorize?${params}`
+
+  // Mobile app：回傳 JSON（app 自己用 Intent 打開 LINE URL）
+  if (mobileCallback) {
+    return NextResponse.json({ url: lineUrl, state })
+  }
+
+  // Web：302 redirect
+  const response = NextResponse.redirect(lineUrl)
   response.cookies.set('line_oauth_state', state, {
-    httpOnly: true,
-    sameSite: 'lax',
-    maxAge: 600, // 10 分鐘
-    path: '/',
+    httpOnly: true, sameSite: 'lax', maxAge: 600, path: '/',
   })
 
   if (inviteToken) {
     response.cookies.set('line_oauth_invite', inviteToken, {
-      httpOnly: true,
-      sameSite: 'lax',
-      maxAge: 600,
-      path: '/',
-    })
-  }
-
-  // Mobile app callback（YukiBoard 等 App 用）
-  if (mobileCallback) {
-    response.cookies.set('oauth_mobile_callback', mobileCallback, {
-      httpOnly: true,
-      sameSite: 'lax',
-      maxAge: 600,
-      path: '/',
+      httpOnly: true, sameSite: 'lax', maxAge: 600, path: '/',
     })
   }
 
