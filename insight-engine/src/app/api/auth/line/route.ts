@@ -44,12 +44,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 
   const lineUrl = `https://access.line.me/oauth2/v2.1/authorize?${params}`
 
-  // Mobile app：回傳 JSON（app 自己用 Intent 打開 LINE URL）
-  if (mobileCallback) {
-    return NextResponse.json({ url: lineUrl, state })
-  }
-
-  // Web：302 redirect
+  // 一律 302 redirect（mobile_callback 已編碼在 state 裡，callback 時取回）
   const response = NextResponse.redirect(lineUrl)
   response.cookies.set('line_oauth_state', state, {
     httpOnly: true, sameSite: 'lax', maxAge: 600, path: '/',

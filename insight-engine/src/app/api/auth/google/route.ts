@@ -38,15 +38,12 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 
   const response = NextResponse.redirect(`https://accounts.google.com/o/oauth2/v2/auth?${params}`)
 
-  // Web flow 才需要 cookie 驗證 state
-  if (!mobileCallback) {
-    response.cookies.set('google_oauth_state', state, {
-      httpOnly: true,
-      sameSite: 'lax',
-      maxAge: 600,
-      path: '/',
-    })
-  }
+  response.cookies.set('google_oauth_state', state, {
+    httpOnly: true,
+    sameSite: 'lax',
+    maxAge: 600,
+    path: '/',
+  })
 
   return response
 }
