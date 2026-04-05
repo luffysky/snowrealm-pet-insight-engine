@@ -22,7 +22,8 @@ export async function GET(
   const auth = await verifySuperAdmin(request)
   if (!auth) return NextResponse.json({ error: '未授權' }, { status: 401 })
 
-  const { conversationId } = await params
+  const { conversationId: rawId } = await params
+  const conversationId = decodeURIComponent(rawId)
 
   try {
     // conversationId is the user_key from guide_chat_messages
