@@ -93,6 +93,17 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     if (!tokenRes.ok) {
       const errBody = await tokenRes.text()
       console.error('[LINE OAuth] Token exchange failed:', errBody, { callbackUrl, channelId })
+      // 如果已有有效 session（第一次 exchange 成功但瀏覽器 double-fetch），直接放行
+      const existingSession = request.cookies.get('admin_session')?.value
+      if (existingSession) {
+        const { verifyToken } = await import('@/lib/jwt')
+        const payload = await verifyToken(existingSession)
+        if (payload) {
+          const defaultTid = payload.tenants?.[0]?.tid || payload.tid || 'default'
+          console.log('[LINE OAuth] Double-fetch detected, using existing session for', defaultTid)
+          return NextResponse.redirect(`${baseUrl}/insight-admin/${defaultTid}`)
+        }
+      }
       return NextResponse.redirect(`${baseUrl}/login?error=token_exchange`)
     }
 

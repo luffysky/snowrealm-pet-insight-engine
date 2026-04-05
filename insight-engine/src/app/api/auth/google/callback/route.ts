@@ -60,6 +60,17 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 
     if (!tokenRes.ok) {
       console.error('[Google OAuth] Token exchange failed:', await tokenRes.text())
+      // 如果已有有效 session（瀏覽器 double-fetch），直接放行
+      const existingSession = request.cookies.get('admin_session')?.value
+      if (existingSession) {
+        const { verifyToken } = await import('@/lib/jwt')
+        const payload = await verifyToken(existingSession)
+        if (payload) {
+          const tid = payload.tenants?.[0]?.tid || payload.tid || 'default'
+          console.log('[Google OAuth] Double-fetch detected, using existing session for', tid)
+          return NextResponse.redirect(`${baseUrl}/insight-admin/${tid}`)
+        }
+      }
       return NextResponse.redirect(`${baseUrl}/login?error=token_exchange`)
     }
 
