@@ -76,13 +76,19 @@ function LoginForm() {
     setLoading(true)
     const inviteToken = searchParams.get('invite')
     try {
+      const mobileCallback = searchParams.get('mobile_callback')
       const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password, invite: inviteToken || undefined }),
+        body: JSON.stringify({ username, password, invite: inviteToken || undefined, mobile_callback: mobileCallback || undefined }),
       })
       const data = await res.json()
       if (res.ok) {
+        // Mobile app callback：帶 token 回去
+        if (mobileCallback && data.token) {
+          window.location.href = `${mobileCallback}?token=${encodeURIComponent(data.token)}`
+          return
+        }
         const slug = data.slug
         const redirect = searchParams.get('redirect') || (slug ? `/insight-admin/${slug}` : '/insight-admin')
         window.location.href = redirect
@@ -96,7 +102,14 @@ function LoginForm() {
     }
   }
 
-  const inviteParam = searchParams.get('invite') ? `?invite=${searchParams.get('invite')}` : ''
+  const mobileCallbackParam = searchParams.get('mobile_callback')
+  const buildOAuthParams = () => {
+    const params = new URLSearchParams()
+    if (searchParams.get('invite')) params.set('invite', searchParams.get('invite')!)
+    if (mobileCallbackParam) params.set('mobile_callback', mobileCallbackParam)
+    return params.toString() ? `?${params}` : ''
+  }
+  const inviteParam = buildOAuthParams()
 
   return (
     <div
@@ -218,6 +231,7 @@ function LoginForm() {
           <p className="mt-6 text-center text-xs text-[#b5a8d0]">
             還沒有帳號？
             <Link href={`/register${inviteParam}`} className="ml-1 text-[#b8a9e8] hover:text-[#6b5fa8] transition-colors">免費註冊</Link>
+            {mobileCallbackParam && <span className="block mt-2 text-[10px] text-[#b5a8d0]/60">YukiBoard App 登入</span>}
           </p>
 
           <div className="mt-4 flex justify-center gap-3 text-xs text-[#b5a8d0]">

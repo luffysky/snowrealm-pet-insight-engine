@@ -98,11 +98,14 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   // 每日登入 Z幣任務（非阻塞）
   completeTask(user.id, 'daily_login', defaultTid).catch(() => {})
 
-  // 以用戶擁有的第一個（或最近一個）tenant 作為預設跳轉的 slug
+  // Mobile callback：多回傳 token 讓 app 端存
+  const mobileCallback = body.mobile_callback as string | undefined
+
   const response = NextResponse.json({
     success: true,
     slug: defaultTid,
     user: { id: user.id, role: tenants[0]?.role || user.role, tenantId: defaultTid, tenants },
+    ...(mobileCallback ? { token } : {}),
   })
   response.cookies.set('admin_session', token, {
     httpOnly: true,

@@ -218,7 +218,12 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       name: displayName,
     })
 
-    const response = NextResponse.json({ success: true, slug: finalTenantId })
+    const mobileCallback = (body?.mobile_callback as string)?.trim()
+    const response = NextResponse.json({
+      success: true,
+      slug: finalTenantId,
+      ...(mobileCallback ? { token: jwt } : {}),
+    })
     response.cookies.set('admin_session', jwt, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
