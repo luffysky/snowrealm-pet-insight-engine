@@ -32,6 +32,7 @@ function formatSize(bytes: number | null) {
 }
 
 function isImage(fileType: string) { return fileType.startsWith('image/') }
+function isVideo(fileType: string) { return fileType.startsWith('video/') }
 
 export default function FilesPage() {
   const [files, setFiles] = useState<FileMeta[]>([])
@@ -41,7 +42,7 @@ export default function FilesPage() {
   const [type, setType] = useState<FileType>('all')
   const [status, setStatus] = useState<FileStatus>('all')
   const [deleting, setDeleting] = useState<string | null>(null)
-  const [preview, setPreview] = useState<string | null>(null)
+  const [preview, setPreview] = useState<{ url: string; type: 'image' | 'video' } | null>(null)
 
   const load = useCallback(() => {
     setLoading(true)
@@ -91,12 +92,16 @@ export default function FilesPage() {
         </div>
       </div>
 
-      {/* 圖片預覽 Modal */}
+      {/* 預覽 Modal */}
       {preview && (
         <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center" onClick={() => setPreview(null)}>
-          <div className="max-w-3xl max-h-[80vh] relative">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={preview} alt="預覽" className="max-w-full max-h-[80vh] object-contain rounded-xl" />
+          <div className="max-w-3xl max-h-[80vh] relative" onClick={e => e.stopPropagation()}>
+            {preview.type === 'image' ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={preview.url} alt="預覽" className="max-w-full max-h-[80vh] object-contain rounded-xl" />
+            ) : (
+              <video src={preview.url} controls autoPlay className="max-w-full max-h-[80vh] rounded-xl" />
+            )}
             <button onClick={() => setPreview(null)} className="absolute top-2 right-2 text-white bg-black/50 rounded-full w-8 h-8 flex items-center justify-center">✕</button>
           </div>
         </div>
@@ -125,15 +130,25 @@ export default function FilesPage() {
                   <tr key={f.id} className="border-b border-slate-800/50 last:border-0 hover:bg-slate-800/30">
                     <td className="px-4 py-2.5">
                       {isImage(f.file_type) ? (
-                        <button onClick={() => setPreview(f.file_path)}
-                          className="w-10 h-10 bg-slate-700 rounded-lg overflow-hidden flex items-center justify-center hover:opacity-80 transition-opacity">
+                        <button onClick={() => setPreview({ url: f.file_path, type: 'image' })}
+                          className="w-24 h-24 bg-slate-700 rounded-lg overflow-hidden flex items-center justify-center hover:opacity-80 transition-opacity">
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img src={f.file_path} alt="" className="w-full h-full object-cover" onError={e => { (e.target as HTMLImageElement).style.display = 'none' }} />
                         </button>
-                      ) : (
-                        <div className="w-10 h-10 bg-slate-700 rounded-lg flex items-center justify-center text-xl">
-                          {f.file_type.startsWith('video/') ? '🎬' : '📄'}
+                      ) : isVideo(f.file_type) ? (
+                        <div className="relative group cursor-pointer" onClick={() => setPreview({ url: f.file_path, type: 'video' })}>
+                          <video
+                            src={f.file_path}
+                            muted
+                            preload="metadata"
+                            className="w-40 h-24 rounded-lg bg-black object-contain"
+                          />
+                          <div className="absolute inset-0 flex items-center justify-center bg-black/30 rounded-lg group-hover:bg-black/50 transition-colors">
+                            <span className="text-white text-2xl">▶</span>
+                          </div>
                         </div>
+                      ) : (
+                        <div className="w-10 h-10 bg-slate-700 rounded-lg flex items-center justify-center text-xl">📄</div>
                       )}
                     </td>
                     <td className="px-4 py-2.5 text-white/60 text-xs font-mono max-w-[160px] truncate">{f.file_path.split('/').pop()}</td>

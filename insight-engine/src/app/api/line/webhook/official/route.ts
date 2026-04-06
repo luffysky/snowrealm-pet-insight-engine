@@ -76,6 +76,38 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       await replyMessage(replyToken, reply, CHANNEL_ACCESS_TOKEN)
     }
 
+    // LINE 貼圖：存成 [STICKER] 記錄（LINE 貼圖用 sticker URL）
+    if (event.type === 'message' && event.message?.type === 'sticker') {
+      const stickerId = event.message.stickerId as string
+      const packageId = event.message.packageId as string
+      const userId = event.source?.userId as string | undefined
+      if (userId) {
+        const stickerUrl = `https://stickershop.line-scdn.net/stickershop/v1/sticker/${stickerId}/iPhone/sticker.png`
+        try {
+          await execute(
+            `INSERT INTO line_message_log (line_user_id, message_type, content) VALUES ($1, 'sticker', $2)`,
+            [userId, `[img:${stickerUrl}]`]
+          )
+        } catch { /* table may not exist */ }
+      }
+    }
+
+    // LINE 圖片：下載並存成 [img] 記錄
+    if (event.type === 'message' && event.message?.type === 'image') {
+      const messageId = event.message.id as string
+      const userId = event.source?.userId as string | undefined
+      if (userId && CHANNEL_ACCESS_TOKEN) {
+        try {
+          // LINE Content API 取圖片 URL（需要 channel access token）
+          const imgUrl = `https://api-data.line.me/v2/bot/message/${messageId}/content`
+          await execute(
+            `INSERT INTO line_message_log (line_user_id, message_type, content) VALUES ($1, 'image', $2)`,
+            [userId, `[img:${imgUrl}]`]
+          )
+        } catch { /* table may not exist */ }
+      }
+    }
+
     if (event.type === 'follow') {
       const userId = event.source?.userId as string | undefined
       const replyToken = event.replyToken as string

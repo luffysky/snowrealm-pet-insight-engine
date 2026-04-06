@@ -51,8 +51,17 @@ export default function ConversationsPage() {
     setLoadingMsgs(true)
     try {
       const res = await fetch(`/api/super-admin/conversation-messages?id=${encodeURIComponent(id)}`)
+      if (!res.ok) {
+        console.error('[conversations] messages fetch failed:', res.status, await res.text())
+        setMessages([])
+        return
+      }
       const d = await res.json() as { data?: Message[]; messages?: Message[] }
+      console.log('[conversations] messages response:', JSON.stringify(d).slice(0, 500))
       setMessages(d.data ?? d.messages ?? [])
+    } catch (err) {
+      console.error('[conversations] messages fetch error:', err)
+      setMessages([])
     } finally {
       setLoadingMsgs(false)
     }

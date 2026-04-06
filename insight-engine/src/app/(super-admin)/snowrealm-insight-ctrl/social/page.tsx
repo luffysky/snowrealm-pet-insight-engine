@@ -131,6 +131,15 @@ function renderDmContent(content: string) {
     </a>
   )
 
+  // sticker — format: [STICKER]:url
+  if (content.startsWith('[STICKER]:')) {
+    const stickerUrl = content.slice('[STICKER]:'.length).trim()
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img src={stickerUrl} alt="貼圖" className="w-28 h-28 object-contain" draggable={false} />
+    )
+  }
+
   // gif
   const gifMatch = content.match(/^\[gif:(https?:\/\/[^\]]+)\]$/)
   if (gifMatch) return (

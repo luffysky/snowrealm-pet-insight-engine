@@ -9,6 +9,8 @@ import {
 } from 'lucide-react'
 import { BgPicker, ChatBgLayer, type BgId, CHAT_BACKGROUNDS } from '@/components/admin/chat-bg'
 import FriendQrCard from '@/components/admin/FriendQrCard'
+import dynamic from 'next/dynamic'
+const GifPicker = dynamic(() => import('@/components/social/GifPicker'), { ssr: false })
 
 interface Conversation {
   userId: string
@@ -133,6 +135,7 @@ export default function MessagesPage() {
   const [audioUploading, setAudioUploading] = useState(false)
 
   const [showStickerPicker, setShowStickerPicker] = useState(false)
+  const [showGifPicker, setShowGifPicker] = useState(false)
   const [stickerPacks, setStickerPacks] = useState<StickerPack[]>([])
   const [stickerPackIdx, setStickerPackIdx] = useState(0)
   const [loadingStickers, setLoadingStickers] = useState(false)
@@ -521,6 +524,37 @@ export default function MessagesPage() {
         setConversations(prev => prev.map(c =>
           c.userId === selected.userId
             ? { ...c, lastMessagePreview: '🎭 貼圖', lastMessageAt: data.message.createdAt }
+            : c
+        ))
+      }
+    } catch { /* ignore */ }
+  }
+
+  const sendGif = async (gifUrl: string) => {
+    if (!selected) return
+    setShowGifPicker(false)
+    const content = `[gif:${gifUrl}]`
+    try {
+      const res = await fetch('/api/admin/social/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ toUserId: selected.userId, content }),
+      })
+      if (res.ok) {
+        const data = await res.json() as { message: { id: string; createdAt: string } }
+        setMessages(prev => [...prev, {
+          id: data.message.id,
+          content,
+          createdAt: data.message.createdAt,
+          isMine: true,
+          fromName: null,
+          fromAvatar: null,
+          recalledAt: null,
+          isSaved: false,
+        }])
+        setConversations(prev => prev.map(c =>
+          c.userId === selected.userId
+            ? { ...c, lastMessagePreview: '🎞 GIF', lastMessageAt: data.message.createdAt }
             : c
         ))
       }
@@ -1106,6 +1140,13 @@ export default function MessagesPage() {
                 </div>
               )}
 
+              {/* ── GIF picker ── */}
+              {showGifPicker && (
+                <div className="border-t border-white/8 shrink-0 bg-white/55 backdrop-blur-sm max-h-72">
+                  <GifPicker onSelect={(url) => void sendGif(url)} onClose={() => setShowGifPicker(false)} />
+                </div>
+              )}
+
               {/* ── Input bar ── */}
               <div className="px-3 py-3 border-t border-white/8 shrink-0 bg-white/[0.02]">
                 {/* Recording indicator */}
@@ -1129,12 +1170,23 @@ export default function MessagesPage() {
                     <button
                       onClick={() => {
                         setShowStickerPicker(v => !v)
+                        setShowGifPicker(false)
                         if (!showStickerPicker) void loadStickerPacks()
                       }}
                       className={`p-1.5 rounded-xl transition-colors ${showStickerPicker ? 'text-amber-400 bg-amber-500/15' : 'text-[#6b5fa8] hover:text-amber-700 hover:bg-[#b8a9e8]/10'}`}
                       title="貼圖"
                     >
                       <Smile className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => {
+                        setShowGifPicker(v => !v)
+                        setShowStickerPicker(false)
+                      }}
+                      className={`p-1.5 rounded-xl transition-colors text-xs font-bold ${showGifPicker ? 'text-purple-400 bg-purple-500/15' : 'text-[#6b5fa8] hover:text-purple-700 hover:bg-[#b8a9e8]/10'}`}
+                      title="GIF"
+                    >
+                      GIF
                     </button>
                     {/* Audio file upload */}
                     <input
