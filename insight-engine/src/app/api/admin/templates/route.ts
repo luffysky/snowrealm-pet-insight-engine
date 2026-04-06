@@ -17,11 +17,20 @@ interface TemplateRow {
 
 // GET /api/admin/templates
 export async function GET(): Promise<NextResponse> {
-  const { tenantId } = await getTenantContext()
-  const rows = await query<TemplateRow>(
-    `SELECT * FROM message_templates WHERE tenant_id = $1 ORDER BY created_at DESC`, [tenantId]
-  )
-  return NextResponse.json(rows)
+  try {
+    const { tenantId } = await getTenantContext()
+    const rows = await query<TemplateRow>(
+      `SELECT * FROM message_templates WHERE tenant_id = $1 ORDER BY created_at DESC`, [tenantId]
+    )
+    return NextResponse.json(rows)
+  } catch (err) {
+    if ((err as { code?: string })?.code === '42P01') {
+      // table doesn't exist yet
+      return NextResponse.json([])
+    }
+    console.error('[templates GET]', err)
+    return NextResponse.json({ error: '查詢失敗' }, { status: 500 })
+  }
 }
 
 // POST /api/admin/templates

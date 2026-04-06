@@ -36,10 +36,25 @@ export default function TemplatesPage() {
     category: 'general',
   })
 
+  const [error, setError] = useState<string | null>(null)
+
   const fetchTemplates = useCallback(async () => {
     setLoading(true)
-    const res = await fetch('/api/admin/templates')
-    if (res.ok) setTemplates(await res.json())
+    setError(null)
+    try {
+      const res = await fetch('/api/admin/templates')
+      if (res.ok) {
+        const data = await res.json()
+        setTemplates(Array.isArray(data) ? data : [])
+      } else {
+        const body = await res.text()
+        console.error('[templates] fetch failed:', res.status, body)
+        setError(`載入失敗 (${res.status})`)
+      }
+    } catch (err) {
+      console.error('[templates] fetch error:', err)
+      setError('網路錯誤，請重試')
+    }
     setLoading(false)
   }, [])
 
@@ -208,6 +223,11 @@ export default function TemplatesPage() {
       {/* 模板列表 */}
       {loading ? (
         <p className="text-[#8a7ca8]">載入中…</p>
+      ) : error ? (
+        <div className="text-center py-8">
+          <p className="text-red-500 mb-2">{error}</p>
+          <button onClick={fetchTemplates} className="px-4 py-2 bg-[#b8a9e8]/20 text-[#6b5fa8] rounded text-sm hover:bg-[#b8a9e8]/30">重試</button>
+        </div>
       ) : filtered.length === 0 ? (
         <p className="text-[#8a7ca8]">尚無模板</p>
       ) : (
