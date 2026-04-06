@@ -10,7 +10,7 @@ import {
 import { BgPicker, ChatBgLayer, type BgId, CHAT_BACKGROUNDS } from '@/components/admin/chat-bg'
 import FriendQrCard from '@/components/admin/FriendQrCard'
 import dynamic from 'next/dynamic'
-const GifPicker = dynamic(() => import('@/components/social/GifPicker'), { ssr: false })
+const GifPicker = dynamic(() => import('@/components/social/GifPicker').then(m => m.GifPicker), { ssr: false })
 
 interface Conversation {
   userId: string
