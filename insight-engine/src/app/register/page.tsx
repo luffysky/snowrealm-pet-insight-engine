@@ -324,7 +324,10 @@ function RegisterForm() {
       if (res.ok) {
         // Mobile app callback
         if (mobileCallback && data.token) {
-          window.location.href = `${mobileCallback}?token=${encodeURIComponent(data.token)}`
+          const callbackWithToken = `${mobileCallback}?token=${encodeURIComponent(data.token)}`
+          const intentUri = `intent://${callbackWithToken.replace(/^[a-z]+:\/\//, '')}#Intent;scheme=${mobileCallback.split('://')[0]};end`
+          window.location.href = intentUri
+          setTimeout(() => { window.location.href = callbackWithToken }, 1000)
           return
         }
         // 標記新用戶，讓雪凜自動彈出導覽

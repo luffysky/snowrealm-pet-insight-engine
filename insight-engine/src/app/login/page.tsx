@@ -86,7 +86,12 @@ function LoginForm() {
       if (res.ok) {
         // Mobile app callback：帶 token 回去
         if (mobileCallback && data.token) {
-          window.location.href = `${mobileCallback}?token=${encodeURIComponent(data.token)}`
+          const callbackWithToken = `${mobileCallback}?token=${encodeURIComponent(data.token)}`
+          // Android: 先嘗試 intent:// URI（更可靠），fallback 到直接 scheme
+          const intentUri = `intent://${callbackWithToken.replace(/^[a-z]+:\/\//, '')}#Intent;scheme=${mobileCallback.split('://')[0]};end`
+          window.location.href = intentUri
+          // Fallback: 如果 intent URI 不生效，1秒後用直接 scheme
+          setTimeout(() => { window.location.href = callbackWithToken }, 1000)
           return
         }
         const slug = data.slug

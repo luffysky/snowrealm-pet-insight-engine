@@ -57,9 +57,9 @@ export default function ZcoinAdminPage() {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
           { label: '錢包數', value: stats.totalWallets, color: 'text-cyan-300' },
-          { label: '總餘額', value: stats.totalBalance, color: 'text-amber-300' },
-          { label: '總賺取', value: stats.totalEarned, color: 'text-emerald-300' },
-          { label: '總花費', value: stats.totalSpent, color: 'text-rose-300' },
+          { label: '總餘額', value: stats.totalBalance, color: 'text-amber-600' },
+          { label: '總賺取', value: stats.totalEarned, color: 'text-emerald-600' },
+          { label: '總花費', value: stats.totalSpent, color: 'text-rose-500' },
         ].map(({ label, value, color }) => (
           <div key={label} className="bg-white/5 border border-white/10 rounded-xl p-4 text-center">
             <p className={`text-2xl font-bold ${color}`}>{value.toLocaleString()}</p>
@@ -69,8 +69,8 @@ export default function ZcoinAdminPage() {
       </div>
 
       {/* 說明 */}
-      <div className="bg-amber-500/5 border border-amber-400/15 rounded-xl p-4 text-sm text-amber-200/60 space-y-1">
-        <p className="font-medium text-amber-200/80">Z幣規則</p>
+      <div className="bg-[#f5f0ff] border border-[#b8a9e8]/30 rounded-xl p-4 text-sm text-[#5a4e7a] space-y-1">
+        <p className="font-medium text-[#3d3155]">Z幣規則</p>
         <p>取得：完成問卷 +1 · 分享 +5 · 邀請 +10 · 連續登入 +2 · 里程碑 +50</p>
         <p>花費：解鎖模板 -10 · AI 使用 -20 · 裝飾 -5~-15 · 特殊主題 -30</p>
       </div>
@@ -99,9 +99,9 @@ export default function ZcoinAdminPage() {
                       <p className="text-[#3d3155]">{w.username ?? w.line_user_id ?? '匿名'}</p>
                       <p className="text-xs text-[#8a7ca8] font-mono">{w.id.slice(0, 8)}</p>
                     </td>
-                    <td className="py-2.5 pr-4 text-right text-amber-300 font-medium">{w.balance}</td>
-                    <td className="py-2.5 pr-4 text-right text-emerald-400">{w.total_earned}</td>
-                    <td className="py-2.5 pr-4 text-right text-rose-400">{w.total_spent}</td>
+                    <td className="py-2.5 pr-4 text-right text-amber-600 font-medium">{w.balance}</td>
+                    <td className="py-2.5 pr-4 text-right text-emerald-600">{w.total_earned}</td>
+                    <td className="py-2.5 pr-4 text-right text-rose-500">{w.total_spent}</td>
                     <td className="py-2.5 text-[#6b5fa8] text-xs">{formatDate(w.created_at)}</td>
                   </tr>
                 ))}
