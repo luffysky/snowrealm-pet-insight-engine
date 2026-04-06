@@ -42,13 +42,14 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
          COUNT(*)::int AS message_count,
          0 AS total_tokens,
          MAX(gcm.created_at) AS created_at,
-         up.nickname,
-         up.display_name,
+         gum.nickname,
+         au.display_name,
          (SELECT content FROM guide_chat_messages WHERE user_key = gcm.user_key AND role = 'user' ORDER BY created_at DESC LIMIT 1) AS last_user_message,
          (SELECT content FROM guide_chat_messages WHERE user_key = gcm.user_key AND role = 'assistant' ORDER BY created_at DESC LIMIT 1) AS last_assistant_message
        FROM guide_chat_messages gcm
-       LEFT JOIN user_profiles up ON up.user_id::text = REPLACE(gcm.user_key, 'user:', '')
-       GROUP BY gcm.user_key, up.nickname, up.display_name
+       LEFT JOIN admin_users au ON au.id::text = REPLACE(gcm.user_key, 'user:', '')
+       LEFT JOIN guide_user_memory gum ON gum.user_key = gcm.user_key
+       GROUP BY gcm.user_key, gum.nickname, au.display_name
        ORDER BY MAX(gcm.created_at) DESC
        LIMIT 20 OFFSET $1`,
       [offset]
