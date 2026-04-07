@@ -1,9 +1,49 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { query, queryOne, execute } from '@/lib/db'
 import { verifyToken } from '@/lib/jwt'
+import { decryptApiKey } from '@/lib/aiCrypto'
 
-const OPENAI_KEY = process.env.OPENAI_API_KEY || ''
-const ANTHROPIC_KEY = process.env.ANTHROPIC_API_KEY || ''
+const ENV_OPENAI_KEY = process.env.OPENAI_API_KEY || ''
+const ENV_ANTHROPIC_KEY = process.env.ANTHROPIC_API_KEY || ''
+
+/** 取得 API Key — 優先從總後台 platform_ai_models 讀取（加密），env 為 fallback */
+async function getApiKey(provider: string): Promise<string> {
+  try {
+    const row = await queryOne<{
+      encrypted_api_key: string | null
+      encryption_iv: string | null
+      encryption_tag: string | null
+    }>(
+      `SELECT encrypted_api_key, encryption_iv, encryption_tag
+       FROM platform_ai_models
+       WHERE provider = $1 AND is_active = true
+         AND encrypted_api_key IS NOT NULL AND encrypted_api_key != ''
+       ORDER BY updated_at DESC LIMIT 1`,
+      [provider]
+    )
+    if (row?.encrypted_api_key && row?.encryption_iv && row?.encryption_tag) {
+      return decryptApiKey({
+        encrypted: row.encrypted_api_key,
+        iv: row.encryption_iv,
+        tag: row.encryption_tag,
+      })
+    }
+  } catch { /* DB not ready or table doesn't exist yet — fall through */ }
+
+  // Fallback to env
+  if (provider === 'anthropic') return ENV_ANTHROPIC_KEY
+  return ENV_OPENAI_KEY
+}
+
+// Cached keys (refresh every 5 min)
+let cachedKeys: Record<string, { key: string; ts: number }> = {}
+async function getCachedApiKey(provider: string): Promise<string> {
+  const cached = cachedKeys[provider]
+  if (cached && Date.now() - cached.ts < 5 * 60 * 1000) return cached.key
+  const key = await getApiKey(provider)
+  cachedKeys[provider] = { key, ts: Date.now() }
+  return key
+}
 
 interface ProxyRequest {
   invite_code?: string
@@ -72,12 +112,12 @@ async function recordUsage(codeId: string, deviceId: string, tokensUsed: number,
 }
 
 /** 呼叫 OpenAI */
-async function callOpenAI(prompt: string, systemPrompt: string, model: string, maxTokens: number): Promise<{ text: string; tokensUsed: number }> {
+async function callOpenAI(prompt: string, systemPrompt: string, model: string, maxTokens: number, apiKey: string): Promise<{ text: string; tokensUsed: number }> {
   const res = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${OPENAI_KEY}`,
+      'Authorization': `Bearer ${apiKey}`,
     },
     body: JSON.stringify({
       model: model || 'gpt-4o-mini',
@@ -99,12 +139,12 @@ async function callOpenAI(prompt: string, systemPrompt: string, model: string, m
 }
 
 /** 呼叫 Anthropic */
-async function callAnthropic(prompt: string, systemPrompt: string, model: string, maxTokens: number): Promise<{ text: string; tokensUsed: number }> {
+async function callAnthropic(prompt: string, systemPrompt: string, model: string, maxTokens: number, apiKey: string): Promise<{ text: string; tokensUsed: number }> {
   const res = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'x-api-key': ANTHROPIC_KEY,
+      'x-api-key': apiKey,
       'anthropic-version': '2023-06-01',
     },
     body: JSON.stringify({
@@ -125,12 +165,12 @@ async function callAnthropic(prompt: string, systemPrompt: string, model: string
 }
 
 /** SSE 串流 — Anthropic */
-async function callAnthropicStream(prompt: string, systemPrompt: string, model: string, maxTokens: number): Promise<Response> {
+async function callAnthropicStream(prompt: string, systemPrompt: string, model: string, maxTokens: number, apiKey: string): Promise<Response> {
   return fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'x-api-key': ANTHROPIC_KEY,
+      'x-api-key': apiKey,
       'anthropic-version': '2023-06-01',
     },
     body: JSON.stringify({
@@ -144,12 +184,12 @@ async function callAnthropicStream(prompt: string, systemPrompt: string, model: 
 }
 
 /** SSE 串流 — OpenAI */
-async function callOpenAIStream(prompt: string, systemPrompt: string, model: string, maxTokens: number): Promise<Response> {
+async function callOpenAIStream(prompt: string, systemPrompt: string, model: string, maxTokens: number, apiKey: string): Promise<Response> {
   return fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${OPENAI_KEY}`,
+      'Authorization': `Bearer ${apiKey}`,
     },
     body: JSON.stringify({
       model: model || 'gpt-4o-mini',
@@ -223,15 +263,19 @@ export async function POST(request: NextRequest) {
     const tokenCap = isPrivileged ? 4096 : Math.min(dailyLimit, 4096)
     const effectiveMaxTokens = Math.min(max_tokens ?? 1024, tokenCap)
 
+    // 動態取得 API Key（總後台 DB → env fallback）
+    const activeKey = await getCachedApiKey(provider)
+    if (!activeKey) {
+      return NextResponse.json({ error: '伺服器未設定 AI API Key（請至總後台 AI 模型管理設定）' }, { status: 503 })
+    }
+
     // ── SSE 串流模式 ──
     if (stream) {
       let aiRes: Response
-      if (provider === 'anthropic' && ANTHROPIC_KEY) {
-        aiRes = await callAnthropicStream(prompt, system_prompt ?? '', model, effectiveMaxTokens)
-      } else if (OPENAI_KEY) {
-        aiRes = await callOpenAIStream(prompt, system_prompt ?? '', model, effectiveMaxTokens)
+      if (provider === 'anthropic') {
+        aiRes = await callAnthropicStream(prompt, system_prompt ?? '', model, effectiveMaxTokens, activeKey)
       } else {
-        return NextResponse.json({ error: '伺服器未設定 AI API Key' }, { status: 503 })
+        aiRes = await callOpenAIStream(prompt, system_prompt ?? '', model, effectiveMaxTokens, activeKey)
       }
       if (!aiRes.ok) {
         const errBody = await aiRes.text()
@@ -311,14 +355,12 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    // ── 非串流模式（原有邏輯）──
+    // ── 非串流模式 ──
     let result: { text: string; tokensUsed: number }
-    if (provider === 'anthropic' && ANTHROPIC_KEY) {
-      result = await callAnthropic(prompt, system_prompt ?? '', model, effectiveMaxTokens)
-    } else if (OPENAI_KEY) {
-      result = await callOpenAI(prompt, system_prompt ?? '', model, effectiveMaxTokens)
+    if (provider === 'anthropic') {
+      result = await callAnthropic(prompt, system_prompt ?? '', model, effectiveMaxTokens, activeKey)
     } else {
-      return NextResponse.json({ error: '伺服器未設定 AI API Key' }, { status: 503 })
+      result = await callOpenAI(prompt, system_prompt ?? '', model, effectiveMaxTokens, activeKey)
     }
 
     if (codeId && !codeId.startsWith('privilege:')) {
