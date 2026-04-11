@@ -4,7 +4,8 @@ import { queryOne } from '@/lib/db'
 
 /** 產生 preview token：base64url(sha256(articleId + JWT_SECRET)) 前 12 字元 */
 async function generatePreviewToken(articleId: string): Promise<string> {
-  const secret = process.env.JWT_SECRET ?? process.env.ADMIN_SECRET ?? 'preview-secret'
+  const secret = process.env.JWT_SECRET ?? process.env.ADMIN_SECRET
+  if (!secret) throw new Error('Missing JWT_SECRET or ADMIN_SECRET')
   const data = new TextEncoder().encode(articleId + secret)
   const hashBuffer = await crypto.subtle.digest('SHA-256', data)
   const hashBytes = new Uint8Array(hashBuffer)

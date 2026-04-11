@@ -2,8 +2,8 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 
 export const metadata: Metadata = {
-  title: '隱私權政策 — SnowRealm Insight Engine',
-  description: 'SnowRealm Insight Engine 隱私權政策，說明我們如何收集、使用及保護您的個人資訊。',
+  title: '隱私權政策 Privacy Policy — SnowRealm Insight Engine',
+  description: 'SnowRealm Insight Engine 隱私權政策 (GDPR/CCPA/PDPA compliant)，說明我們如何收集、使用及保護您的個人資訊。',
 }
 
 export default function PrivacyPage() {
@@ -13,7 +13,7 @@ export default function PrivacyPage() {
         <Link href="/" className="text-cyan-400 hover:underline text-sm">← 返回首頁</Link>
 
         <h1 className="text-3xl font-bold text-white mt-6 mb-2">隱私權政策</h1>
-        <p className="text-sm text-white/40 mb-10">最後更新日期：2026 年 3 月 22 日</p>
+        <p className="text-sm text-white/40 mb-10">最後更新日期 / Last Updated: 2026-04-11</p>
 
         <div className="space-y-8 text-sm leading-relaxed lg-light-sharp lg-xl p-6 rounded-2xl">
           <section>
@@ -88,18 +88,39 @@ export default function PrivacyPage() {
           </section>
 
           <section>
-            <h2 className="text-lg font-semibold text-white mb-3">6. 使用者權利</h2>
-            <p className="mb-3">根據《個人資料保護法》，您享有以下權利：</p>
+            <h2 className="text-lg font-semibold text-white mb-3">6. 使用者權利 / Your Rights</h2>
+            <p className="mb-3">根據台灣《個人資料保護法》、歐盟 GDPR、美國加州 CCPA，您享有以下權利：</p>
             <ul className="list-disc list-inside space-y-1 text-white/60">
-              <li>查詢或請求閱覽您的個人資料</li>
-              <li>請求製作個人資料副本</li>
-              <li>請求補充或更正您的個人資料</li>
-              <li>請求停止蒐集、處理或利用您的個人資料</li>
-              <li>請求刪除您的個人資料</li>
+              <li><strong>查詢權 (Right of Access)</strong>：查詢或請求閱覽您的個人資料</li>
+              <li><strong>更正權 (Right to Rectification)</strong>：請求補充或更正您的個人資料</li>
+              <li><strong>刪除權 (Right to Erasure)</strong>：請求刪除您的個人資料</li>
+              <li><strong>可攜權 (Right to Data Portability)</strong>：請求製作個人資料副本並匯出</li>
+              <li><strong>限制處理權 (Right to Restrict Processing)</strong>：請求停止蒐集、處理或利用您的個人資料</li>
+              <li><strong>反對權 (Right to Object)</strong>：反對基於合法利益的資料處理</li>
+              <li><strong>撤回同意 (Right to Withdraw Consent)</strong>：隨時撤回先前給予的同意</li>
+              <li><strong>不被歧視權 (CCPA)</strong>：行使隱私權利不會受到差別待遇</li>
             </ul>
             <p className="mt-3">
               如需行使上述權利，請透過電子郵件聯繫我們：
               <a href="mailto:service@snowrealm.pet" className="text-cyan-400 hover:underline">service@snowrealm.pet</a>
+              ，我們將在 30 日內回覆。
+            </p>
+            <p className="mt-2 text-xs text-white/40">
+              EU residents: If you believe your data protection rights have been violated, you have the right to lodge a complaint with a supervisory authority (GDPR Art. 77).
+            </p>
+          </section>
+
+          <section>
+            <h2 className="text-lg font-semibold text-white mb-3">6.5 國際資料傳輸 / International Data Transfers</h2>
+            <p>
+              我們的伺服器可能位於台灣或其他地區。若您位於歐盟/歐洲經濟區，您的資料可能會傳輸至台灣處理。我們會確保資料傳輸符合 GDPR 第五章規定，採用適當的保障措施（包括標準合約條款 SCCs）。
+            </p>
+          </section>
+
+          <section>
+            <h2 className="text-lg font-semibold text-white mb-3">6.6 AI 資料處理聲明</h2>
+            <p>
+              當管理員啟用 AI 功能時，部分資料可能傳送至第三方 AI 服務（如 OpenAI）處理。我們不會將 AI 處理結果用於訓練模型。您可以在帳號設定中選擇是否啟用 AI 功能。AI 自動化決策不會對使用者產生法律效力或類似重大影響（GDPR Art. 22 合規）。
             </p>
           </section>
 

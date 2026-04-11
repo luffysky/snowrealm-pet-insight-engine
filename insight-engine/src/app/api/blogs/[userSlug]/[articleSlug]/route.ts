@@ -5,7 +5,8 @@ import { verifyPassword } from '@/lib/auth'
 
 /** 驗證 preview token：與 preview-token route 保持一致的雜湊邏輯 */
 async function verifyPreviewToken(articleId: string, token: string): Promise<boolean> {
-  const secret = process.env.JWT_SECRET ?? process.env.ADMIN_SECRET ?? 'preview-secret'
+  const secret = process.env.JWT_SECRET ?? process.env.ADMIN_SECRET
+  if (!secret) return false
   const data = new TextEncoder().encode(articleId + secret)
   const hashBuffer = await crypto.subtle.digest('SHA-256', data)
   const hashBytes = new Uint8Array(hashBuffer)
