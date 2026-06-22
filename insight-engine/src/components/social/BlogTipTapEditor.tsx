@@ -43,7 +43,7 @@ import {
   Highlighter, AlignLeft, AlignCenter, AlignRight, AlignJustify,
   Subscript as SubscriptIcon, Superscript as SuperscriptIcon,
   FileCode, Minus, Type, CheckSquare, Indent, Outdent,
-  Video, Search, X, Plus, Trash2, Columns, Rows, Merge, Split,
+  Video, Music, Search, X, Plus, Trash2, Columns, Rows, Merge, Split,
   ChevronDown, Loader2, GripVertical,
 } from 'lucide-react'
 
@@ -242,6 +242,28 @@ const VideoExtension = Node.create({
   addCommands() {
     return {
       setVideo: (options: { src: string }) => ({ commands }: any) =>
+        commands.insertContent({ type: this.name, attrs: options }),
+    } as any
+  },
+})
+
+// 音訊節點：可上傳 MP3/WAV/M4A、文章內直接播放
+const AudioExtension = Node.create({
+  name: 'audio',
+  addOptions() { return { HTMLAttributes: {} } },
+  group() { return 'block' },
+  addAttributes() {
+    return { src: { default: null }, controls: { default: true } }
+  },
+  parseHTML() {
+    return [{ tag: 'audio[src]' }]
+  },
+  renderHTML({ HTMLAttributes }: { HTMLAttributes: Record<string, any> }) {
+    return ['audio', { controls: 'true', preload: 'metadata', ...this.options.HTMLAttributes, ...HTMLAttributes }]
+  },
+  addCommands() {
+    return {
+      setAudio: (options: { src: string }) => ({ commands }: any) =>
         commands.insertContent({ type: this.name, attrs: options }),
     } as any
   },
@@ -513,7 +535,7 @@ export default function BlogTipTapEditor({
     TaskItem.configure({ nested: true }),
     ListItem,
     LineHeight.configure({ types: ['heading', 'paragraph'] }),
-    LetterSpacing, IndentExtension, VideoExtension, CustomBulletList,
+    LetterSpacing, IndentExtension, VideoExtension, AudioExtension, CustomBulletList,
     BubbleMenuExtension.configure({ element: null }),
     SlashCommands.configure({ suggestion: { items: getSuggestionItems, render: renderItems } }),
   ]
@@ -580,6 +602,18 @@ export default function BlogTipTapEditor({
       if (res.ok) {
         const { url } = await res.json() as { url: string }
         ;(editor.chain().focus() as any).setVideo({ src: url }).run()
+      }
+    } catch (e) { console.error('Upload failed', e) }
+  }
+
+  const uploadAudio = async (file: File) => {
+    if (file.size > 30 * 1024 * 1024) { alert('音訊不能超過 30 MB'); return }
+    const fd = new FormData(); fd.append('file', file); fd.append('type', 'audio')
+    try {
+      const res = await fetch(uploadEndpoint, { method: 'POST', body: fd })
+      if (res.ok) {
+        const { url } = await res.json() as { url: string }
+        ;(editor.chain().focus() as any).setAudio({ src: url }).run()
       }
     } catch (e) { console.error('Upload failed', e) }
   }
@@ -875,6 +909,12 @@ export default function BlogTipTapEditor({
             <Video className="w-3.5 h-3.5" /> 上傳影片
             <input type="file" accept="video/mp4,video/webm" className="hidden"
               onChange={e => { const f = e.target.files?.[0]; if (f) { uploadVideo(f); setOpenDropdown(null) } }}
+            />
+          </label>
+          <label className="flex items-center gap-2 w-full px-3 py-2 text-xs text-white/70 hover:bg-white/8 hover:text-white cursor-pointer transition-colors">
+            <Music className="w-3.5 h-3.5" /> 上傳音樂
+            <input type="file" accept="audio/mpeg,audio/wav,audio/ogg,audio/mp4,audio/x-m4a,audio/aac" className="hidden"
+              onChange={e => { const f = e.target.files?.[0]; if (f) { uploadAudio(f); setOpenDropdown(null) } }}
             />
           </label>
           <DItem onClick={addYouTube}>
