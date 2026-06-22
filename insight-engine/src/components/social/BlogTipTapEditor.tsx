@@ -43,7 +43,7 @@ import {
   Highlighter, AlignLeft, AlignCenter, AlignRight, AlignJustify,
   Subscript as SubscriptIcon, Superscript as SuperscriptIcon,
   FileCode, Minus, Type, CheckSquare, Indent, Outdent,
-  Video, Music, Search, X, Plus, Trash2, Columns, Rows, Merge, Split,
+  Video, Music, Paperclip, Search, X, Plus, Trash2, Columns, Rows, Merge, Split,
   ChevronDown, Loader2, GripVertical,
 } from 'lucide-react'
 
@@ -618,6 +618,20 @@ export default function BlogTipTapEditor({
     } catch (e) { console.error('Upload failed', e) }
   }
 
+  // 任意檔案附件（PDF/Word/Excel/PPT/TXT/MD/ZIP…）→ 插入下載連結
+  const uploadFile = async (file: File) => {
+    if (file.size > 50 * 1024 * 1024) { alert('附件不能超過 50 MB'); return }
+    const fd = new FormData(); fd.append('file', file); fd.append('type', 'file')
+    try {
+      const res = await fetch(uploadEndpoint, { method: 'POST', body: fd })
+      if (res.ok) {
+        const { url } = await res.json() as { url: string }
+        const kb = file.size < 1048576 ? `${Math.max(1, Math.round(file.size / 1024))} KB` : `${(file.size / 1048576).toFixed(1)} MB`
+        editor.chain().focus().insertContent(`<p><a href="${url}" target="_blank" rel="noopener noreferrer">📎 ${file.name}（${kb}）</a></p>`).run()
+      } else { alert('上傳失敗') }
+    } catch (e) { console.error('Upload failed', e) }
+  }
+
   const addYouTube = () => {
     const url = window.prompt('YouTube URL')
     if (!url) return
@@ -907,14 +921,20 @@ export default function BlogTipTapEditor({
           </label>
           <label className="flex items-center gap-2 w-full px-3 py-2 text-xs text-white/70 hover:bg-white/8 hover:text-white cursor-pointer transition-colors">
             <Video className="w-3.5 h-3.5" /> 上傳影片
-            <input type="file" accept="video/mp4,video/webm" className="hidden"
+            <input type="file" accept="video/*" className="hidden"
               onChange={e => { const f = e.target.files?.[0]; if (f) { uploadVideo(f); setOpenDropdown(null) } }}
             />
           </label>
           <label className="flex items-center gap-2 w-full px-3 py-2 text-xs text-white/70 hover:bg-white/8 hover:text-white cursor-pointer transition-colors">
             <Music className="w-3.5 h-3.5" /> 上傳音樂
-            <input type="file" accept="audio/mpeg,audio/wav,audio/ogg,audio/mp4,audio/x-m4a,audio/aac" className="hidden"
+            <input type="file" accept="audio/*" className="hidden"
               onChange={e => { const f = e.target.files?.[0]; if (f) { uploadAudio(f); setOpenDropdown(null) } }}
+            />
+          </label>
+          <label className="flex items-center gap-2 w-full px-3 py-2 text-xs text-white/70 hover:bg-white/8 hover:text-white cursor-pointer transition-colors">
+            <Paperclip className="w-3.5 h-3.5" /> 上傳附件
+            <input type="file" className="hidden"
+              onChange={e => { const f = e.target.files?.[0]; if (f) { uploadFile(f); setOpenDropdown(null) } }}
             />
           </label>
           <DItem onClick={addYouTube}>

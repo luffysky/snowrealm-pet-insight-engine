@@ -74,10 +74,12 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       mediaType = extMap[ext ?? ''] ?? ''
     }
 
+    // 仍判斷不出來 → 用 MIME 大類前綴分類；再不行一律當「附件」(file) → 支援所有格式
     if (!mediaType) {
-      return NextResponse.json({
-        error: `不支援的格式。支援：圖片(${SUPPORTED_FORMATS.image})、影片(${SUPPORTED_FORMATS.video})、音訊(${SUPPORTED_FORMATS.audio})、檔案(${SUPPORTED_FORMATS.file})`
-      }, { status: 400 })
+      if (normalizedMime.startsWith('image/')) mediaType = 'img'
+      else if (normalizedMime.startsWith('video/')) mediaType = 'video'
+      else if (normalizedMime.startsWith('audio/')) mediaType = 'audio'
+      else mediaType = 'file'
     }
 
     // Determine correct content-type for R2 (browser sometimes sends empty MIME)
