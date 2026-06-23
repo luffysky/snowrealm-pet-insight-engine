@@ -589,25 +589,18 @@ export default function BlogTipTapEditor({
   }
 
   const uploadVideo = async (file: File) => {
-    const video = document.createElement('video')
-    video.preload = 'metadata'
-    await new Promise<void>(resolve => {
-      video.onloadedmetadata = () => { window.URL.revokeObjectURL(video.src); resolve() }
-      video.src = URL.createObjectURL(file)
-    })
-    if (video.duration > 120) { alert('影片長度不能超過 120 秒'); return }
+    // 不限影片長度 / 大小
     const fd = new FormData(); fd.append('file', file); fd.append('type', 'video')
     try {
       const res = await fetch(uploadEndpoint, { method: 'POST', body: fd })
       if (res.ok) {
         const { url } = await res.json() as { url: string }
         ;(editor.chain().focus() as any).setVideo({ src: url }).run()
-      }
+      } else { alert('上傳失敗') }
     } catch (e) { console.error('Upload failed', e) }
   }
 
   const uploadAudio = async (file: File) => {
-    if (file.size > 30 * 1024 * 1024) { alert('音訊不能超過 30 MB'); return }
     const fd = new FormData(); fd.append('file', file); fd.append('type', 'audio')
     try {
       const res = await fetch(uploadEndpoint, { method: 'POST', body: fd })
@@ -620,7 +613,6 @@ export default function BlogTipTapEditor({
 
   // 任意檔案附件（PDF/Word/Excel/PPT/TXT/MD/ZIP…）→ 插入下載連結
   const uploadFile = async (file: File) => {
-    if (file.size > 50 * 1024 * 1024) { alert('附件不能超過 50 MB'); return }
     const fd = new FormData(); fd.append('file', file); fd.append('type', 'file')
     try {
       const res = await fetch(uploadEndpoint, { method: 'POST', body: fd })
@@ -630,6 +622,15 @@ export default function BlogTipTapEditor({
         editor.chain().focus().insertContent(`<p><a href="${url}" target="_blank" rel="noopener noreferrer">📎 ${file.name}（${kb}）</a></p>`).run()
       } else { alert('上傳失敗') }
     } catch (e) { console.error('Upload failed', e) }
+  }
+
+  // 拖放 / 貼上任意檔案 → 依類型上傳（圖/影/音內嵌、其他插下載連結）
+  const dispatchUpload = (f: File) => {
+    const t = f.type || ''
+    if (t.startsWith('image/')) uploadImage(f)
+    else if (t.startsWith('video/')) uploadVideo(f)
+    else if (t.startsWith('audio/')) uploadAudio(f)
+    else uploadFile(f)
   }
 
   const addYouTube = () => {
@@ -1018,11 +1019,16 @@ export default function BlogTipTapEditor({
         </div>
       )}
 
-      {/* Editor Content */}
-      <EditorContent
-        editor={editor}
-        className="tiptap-blog-editor"
-      />
+      {/* Editor Content（支援拖放 / 貼上任意檔案上傳）*/}
+      <div
+        onDrop={e => { const f = e.dataTransfer?.files?.[0]; if (f) { e.preventDefault(); dispatchUpload(f) } }}
+        onPaste={e => { const f = e.clipboardData?.files?.[0]; if (f) { e.preventDefault(); dispatchUpload(f) } }}
+      >
+        <EditorContent
+          editor={editor}
+          className="tiptap-blog-editor"
+        />
+      </div>
 
       {/* Editor styles */}
       <style jsx global>{`

@@ -1,6 +1,6 @@
 // SnowRealm Insight Engine — Service Worker
 // 版本號 - 改這裡可強制所有用戶更新快取
-const CACHE_VERSION = 'v1'
+const CACHE_VERSION = 'v2'
 const CACHE_NAME = `insight-engine-${CACHE_VERSION}`
 
 // 預快取的核心靜態資源
@@ -46,22 +46,11 @@ self.addEventListener('fetch', (event) => {
   // API routes — 完全不快取，直接走網路
   if (url.pathname.startsWith('/api/')) return
 
-  // 頁面導航（HTML）— Network First，失敗才用快取
+  // 頁面導航（HTML）— Network ONLY（不快取 HTML！）
+  // 原本會 cache HTML，但部署後新 HTML 參照新 hash 的 JS chunk；舊快取 HTML 參照到「已不存在的 chunk」
+  // → 整站每頁在瀏覽器卡死（curl 不跑 JS 所以照樣快）。改成永遠走網路、絕不回傳快取 HTML。
   if (request.mode === 'navigate') {
-    event.respondWith(
-      fetch(request)
-        .then((response) => {
-          if (response.ok) {
-            const clone = response.clone()
-            caches.open(CACHE_NAME).then((cache) => cache.put(request, clone))
-          }
-          return response
-        })
-        .catch(() =>
-          caches.match(request)
-            .then((cached) => cached || caches.match('/'))
-        )
-    )
+    event.respondWith(fetch(request))
     return
   }
 

@@ -36,7 +36,7 @@ const ALLOWED_TYPES: Record<string, string> = {
   'text/plain': 'file',
 }
 
-const MAX_SIZE = 50 * 1024 * 1024 // 50 MB
+const MAX_SIZE = 500 * 1024 * 1024 // 500 MB（影片/檔案放寬；再大需改 presigned 直傳避免 server OOM）
 
 // Supported formats for display in UI
 export const SUPPORTED_FORMATS = {
@@ -54,7 +54,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     const formData = await request.formData()
     const file = formData.get('file') as File | null
     if (!file) return NextResponse.json({ error: '請選擇檔案' }, { status: 400 })
-    if (file.size > MAX_SIZE) return NextResponse.json({ error: '檔案最大 50MB' }, { status: 400 })
+    if (file.size > MAX_SIZE) return NextResponse.json({ error: '檔案最大 500MB' }, { status: 400 })
 
     // Try to detect by MIME type first, then by extension
     // Normalize MIME: strip codec params (e.g. "audio/webm;codecs=opus" → "audio/webm")
@@ -101,6 +101,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ url, mediaType, filename: file.name })
   } catch (err) {
     console.error('[DM upload]', err)
-    return NextResponse.json({ error: '上傳失敗，請確認檔案格式和大小（上限 50MB）' }, { status: 500 })
+    return NextResponse.json({ error: '上傳失敗，請確認檔案格式和大小（上限 500MB）' }, { status: 500 })
   }
 }
