@@ -32,14 +32,14 @@
 | 框架 | Next.js（App Router + SSR） | 16.1.7 |
 | 前端 | React + TypeScript | 19.2.3 / TS 5 |
 | 樣式 | Tailwind CSS | 4 |
-| 資料庫 | PostgreSQL（via Supabase） | pg 8.20 |
+| 資料庫 | PostgreSQL（Supabase Cloud，pg 直連 pooler） | pg 8.20 |
 | 3D | Three.js + @react-three/fiber + drei | 0.183 |
 | 圖表 | Recharts | 3.8 |
 | 圖片 | Sharp | 0.34 |
 | LINE | @line/liff | 2.27 |
 | 儲存 | AWS S3 / Cloudflare R2 | |
 | 簡訊 | AWS SNS | |
-| 部署 | Zeabur（zbpack.json） | |
+| 部署 | Vercel（Root Directory: insight-engine，push main 自動上線） | 2026-11-09 從 Zeabur 遷移 |
 | CDN | Cloudflare（Bot Fight Mode 開啟） | |
 | 認證 | 自建 JWT（jose）+ Cookie session | |
 
@@ -428,7 +428,7 @@ npm run dev          # 開發伺服器
 npm run build        # 生產建置
 npm run lint         # ESLint
 npm run db:push      # 推送 DB schema
-npm run deploy       # 部署到 Zeabur
+git push origin main   # 部署到 Vercel
 ```
 
 ---
@@ -3113,7 +3113,7 @@ CREATE TABLE IF NOT EXISTS template_ratings (
 - 新增 API route 如果需要認證，確保路徑在 `/api/admin/` 下
 - LINE webhook 需要驗證 signature（HMAC-SHA256）
 - 前端一律用繁體中文
-- 部署用 `npm run deploy`，Zeabur 會自動讀取 zbpack.json
+- 部署：push `main` 由 Vercel 自動上線。大檔上傳走 `postUpload()` 直傳 R2（Vercel 請求上限 4.5 MB），背景工作用 `after()`，`/api/cron/*` 需帶 `Authorization: Bearer $CRON_SECRET`
 
 ---
 
