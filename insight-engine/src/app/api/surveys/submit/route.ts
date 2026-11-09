@@ -1,3 +1,4 @@
+import { after } from 'next/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { v4 as uuidv4 } from 'uuid'
 import { query, queryOne, execute } from '@/lib/db'
@@ -203,7 +204,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     }).catch(() => {})
     // 每日任務：完成問卷（僅登入用戶）
     if (userId) {
-      completeTask(userId, 'complete_survey').catch(() => {})
+      after(() => completeTask(userId, 'complete_survey').catch(() => {}))
     }
 
     return NextResponse.json({ success: true, responseId })

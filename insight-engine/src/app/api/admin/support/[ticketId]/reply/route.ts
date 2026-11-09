@@ -1,3 +1,4 @@
+import { after } from 'next/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { queryOne, execute } from '@/lib/db'
 import { requireRole } from '@/lib/tenant'
@@ -70,7 +71,7 @@ export async function POST(
     )
 
     // 非阻塞：透過 LINE Official push 給顧客
-    void sendAdminReplyToCustomer(ticketId, content)
+    after(() => sendAdminReplyToCustomer(ticketId, content))
 
     return NextResponse.json(message, { status: 201 })
   } catch (error) {

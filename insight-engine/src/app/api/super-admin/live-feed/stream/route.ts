@@ -4,6 +4,7 @@ import { headers } from 'next/headers'
 import { verifyToken } from '@/lib/jwt'
 
 export const dynamic = 'force-dynamic'
+export const maxDuration = 300 // 連線到時會斷，瀏覽器 EventSource 會自動重連
 
 export async function GET(request: NextRequest): Promise<Response> {
   // SSE cannot use middleware-injected headers reliably; fall back to cookie auth

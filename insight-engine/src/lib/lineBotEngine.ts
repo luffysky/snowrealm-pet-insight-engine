@@ -3,6 +3,7 @@
  * 狀態機：idle → in_progress → completed/abandoned
  */
 
+import { after } from 'next/server'
 import { v4 as uuidv4 } from 'uuid'
 import { query, queryOne, execute } from '@/lib/db'
 import { getPrimarySurveySlug } from '@/lib/surveyRepo'
@@ -151,7 +152,7 @@ async function finalizeSession(session: LineSurveySession, totalSteps: number): 
   )
 
   // 非阻塞：Rich Menu 切換（填完問卷後切換到「查結果」選單）
-  switchUserRichMenu(session.lineUserId, session.tenantId).catch(() => {})
+  after(() => switchUserRichMenu(session.lineUserId, session.tenantId).catch(() => {}))
 
   // 非阻塞：打標籤
   const answerRows = await query<{ question_key: string; value: string | string[] }>(

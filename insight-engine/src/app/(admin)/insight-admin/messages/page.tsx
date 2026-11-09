@@ -1,5 +1,6 @@
 'use client'
 
+import { postUpload } from '@/lib/upload-client'
 import { useState, useEffect, useRef, useCallback } from 'react'
 import {
   Send, Loader2, ArrowLeft, MessageCircle, Search, MoreHorizontal,
@@ -273,7 +274,7 @@ export default function MessagesPage() {
   const handleBgUpload = async (file: File) => {
     const form = new FormData()
     form.append('file', file)
-    const res = await fetch('/api/admin/upload', { method: 'POST', body: form })
+    const res = await postUpload('/api/admin/upload', form)
     if (!res.ok) throw new Error('上傳失敗')
     const data = await res.json() as { url: string }
     setChatBgId('custom')
@@ -397,7 +398,7 @@ export default function MessagesPage() {
     try {
       const fd = new FormData()
       fd.append('file', blob, 'voice.webm')
-      const res = await fetch('/api/upload/audio', { method: 'POST', body: fd })
+      const res = await postUpload('/api/upload/audio', fd)
       const data = await res.json() as { url?: string; error?: string }
       if (!data.url) throw new Error(data.error ?? '上傳失敗')
 

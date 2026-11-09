@@ -8,6 +8,7 @@ export function setFloatingChatEnabled(enabled: boolean) {
   window.dispatchEvent(new CustomEvent('floating-chat-toggle', { detail: { enabled } }))
 }
 
+import { postUpload } from '@/lib/upload-client'
 import { useEffect, useState, useRef, useCallback } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { MessageCircle, X, Send, ChevronRight, Minus, Smile, Paperclip, Loader2, Mic, MicOff } from 'lucide-react'
@@ -248,7 +249,7 @@ function FloatingChatWindow({ win, meId, index, onClose, onToggleMinimize, onFoc
     try {
       const fd = new FormData()
       fd.append('file', file)
-      const res = await fetch('/api/admin/social/messages/upload', { method: 'POST', body: fd })
+      const res = await postUpload('/api/admin/social/messages/upload', fd)
       if (!res.ok) return
       const { url, mediaType, filename } = await res.json() as { url: string; mediaType: string; filename: string }
       let content = ''

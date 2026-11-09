@@ -1,5 +1,6 @@
 'use client'
 
+import { postUpload } from '@/lib/upload-client'
 import { useState, useEffect, useRef, useCallback } from 'react'
 import dynamic from 'next/dynamic'
 import { ArrowLeft, Save, Eye, EyeOff, ImageIcon, Loader2, X, Tag, Check, Move, Sparkles, Globe, Bot, Send, ChevronDown, ChevronUp } from 'lucide-react'
@@ -224,7 +225,7 @@ export function BlogEditor({ articleId, onSaved, onCancel }: Props) {
     setUploadingCover(true)
     const fd = new FormData(); fd.append('file', file)
     try {
-      const res = await fetch('/api/admin/social/messages/upload', { method: 'POST', body: fd })
+      const res = await postUpload('/api/admin/social/messages/upload', fd)
       if (res.ok) {
         const { url } = await res.json() as { url: string }
         setForm(f => ({ ...f, coverImage: url }))

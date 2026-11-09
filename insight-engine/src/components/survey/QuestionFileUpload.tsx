@@ -1,4 +1,5 @@
 'use client'
+import { postUpload } from '@/lib/upload-client'
 import { useState } from 'react'
 import { useTheme } from './ThemeContext'
 import { questionTitleClass } from '@/lib/themes'
@@ -34,7 +35,7 @@ export function QuestionFileUpload({ content, value, onChange, isRequired, accep
     try {
       const formData = new FormData()
       formData.append('file', file)
-      const res = await fetch('/api/admin/upload', { method: 'POST', body: formData })
+      const res = await postUpload('/api/admin/upload', formData)
       const data = await res.json()
       if (data.url) {
         onChange(data.url)

@@ -1,5 +1,6 @@
 'use client'
 
+import { postUpload } from '@/lib/upload-client'
 import { useEffect, useState, useCallback, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
@@ -175,7 +176,7 @@ function ProfilePage() {
       const fd = new FormData()
       fd.append('file', file)
       fd.append('folder', 'avatars')
-      const res = await fetch('/api/admin/upload', { method: 'POST', body: fd })
+      const res = await postUpload('/api/admin/upload', fd)
       const data = await res.json() as { url?: string }
       if (data.url) {
         await fetch('/api/admin/profile', {
@@ -200,7 +201,7 @@ function ProfilePage() {
       const fd = new FormData()
       fd.append('file', file)
       fd.append('folder', 'banners')
-      const res = await fetch('/api/admin/upload', { method: 'POST', body: fd })
+      const res = await postUpload('/api/admin/upload', fd)
       const data = await res.json() as { url?: string }
       if (data.url) {
         await fetch('/api/admin/profile', {

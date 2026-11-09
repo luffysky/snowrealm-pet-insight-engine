@@ -1,3 +1,4 @@
+import { after } from 'next/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { query, queryOne } from '@/lib/db'
 import { requireRole } from '@/lib/tenant'
@@ -127,7 +128,7 @@ export async function POST(
       return NextResponse.json({ error: 'AI 未回傳有效建議' }, { status: 502 })
     }
 
-    void logAiUsage({
+    after(() => logAiUsage({
       tenantId,
       action: 'sentiment' as Parameters<typeof logAiUsage>[0]['action'],
       keySource: aiKey.keySource,
@@ -136,7 +137,7 @@ export async function POST(
       promptTokens,
       completionTokens,
       isFree: aiKey.keySource === 'platform_key',
-    })
+    }))
 
     return NextResponse.json({ suggestion })
   } catch (err) {

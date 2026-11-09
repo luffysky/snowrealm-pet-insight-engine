@@ -1,5 +1,6 @@
 'use client'
 
+import { postUpload } from '@/lib/upload-client'
 import { useState, useEffect, useRef } from 'react'
 
 interface SiteSettings {
@@ -93,7 +94,7 @@ export default function SiteSettingsPage() {
       form.append('file', file)
       form.append('folder', target === 'og' ? 'og' : 'favicon')
 
-      const res = await fetch('/api/admin/upload', { method: 'POST', body: form })
+      const res = await postUpload('/api/admin/upload', form)
       const data = await res.json()
 
       if (res.ok && data.url) {

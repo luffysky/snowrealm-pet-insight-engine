@@ -1,3 +1,4 @@
+import { after } from 'next/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { query, queryOne } from '@/lib/db'
 import { pushToUser } from '@/lib/lineNotify'
@@ -128,7 +129,7 @@ export async function POST(
     )
 
     // Notify blog author via LINE (non-blocking)
-    notifyAuthorNewComment(ctx.userId, authorName, content, articleSlug).catch(() => {})
+    after(() => notifyAuthorNewComment(ctx.userId, authorName, content, articleSlug).catch(() => {}))
 
     return NextResponse.json({ comment: row })
   } catch {

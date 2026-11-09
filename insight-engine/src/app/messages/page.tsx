@@ -1,5 +1,6 @@
 'use client'
 
+import { postUpload } from '@/lib/upload-client'
 import { useEffect, useState, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { ArrowLeft, MessageCircle, Send, Loader2, X, Paperclip, Smile, ImageIcon, Music, File as FileIcon, Gift, Pencil, Plus, Palette, Play, Pause, Volume2, Mic, Settings, BellOff, Bell, Eye, EyeOff, Check } from 'lucide-react'
@@ -857,7 +858,7 @@ export default function MessagesPage() {
     const fd = new FormData()
     fd.append('file', file)
     try {
-      const res = await fetch('/api/admin/social/messages/upload', { method: 'POST', body: fd })
+      const res = await postUpload('/api/admin/social/messages/upload', fd)
       if (!res.ok) {
         const errData = await res.json().catch(() => ({})) as { error?: string }
         setUploadError(errData.error ?? `上傳失敗（${res.status}）`)

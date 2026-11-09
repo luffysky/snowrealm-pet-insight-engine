@@ -3,6 +3,7 @@
  * 處理 LINE 訊息轉客服工單、管理員回覆推播
  */
 
+import { after } from 'next/server'
 import { query, queryOne, execute } from '@/lib/db'
 import { getLineConfig } from '@/lib/lineConfig'
 import { pushLineMessage } from '@/lib/line'
@@ -103,12 +104,12 @@ export async function startSupportTicket(
   )
 
   // 非阻塞：通知管理員
-  void pushLineMessage([
+  after(() => pushLineMessage([
     {
       type: 'text',
       text: `📬 新客服工單\n\n用戶：${displayName}\n訊息：${subject}\n\n請至後台查看並回覆`,
     },
-  ])
+  ]))
 
   return [
     {

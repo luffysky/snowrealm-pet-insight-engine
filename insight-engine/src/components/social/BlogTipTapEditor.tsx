@@ -1,5 +1,6 @@
 'use client'
 
+import { postUpload } from '@/lib/upload-client'
 import { useState, useCallback, useEffect, useRef } from 'react'
 import { EditorContent } from '@tiptap/react'
 import BubbleMenuExtension, { BubbleMenuPlugin } from '@tiptap/extension-bubble-menu'
@@ -580,7 +581,7 @@ export default function BlogTipTapEditor({
   const uploadImage = async (file: File) => {
     const fd = new FormData(); fd.append('file', file)
     try {
-      const res = await fetch(uploadEndpoint, { method: 'POST', body: fd })
+      const res = await postUpload(uploadEndpoint, fd)
       if (res.ok) {
         const { url } = await res.json() as { url: string }
         editor.chain().focus().setImage({ src: url }).run()
@@ -592,7 +593,7 @@ export default function BlogTipTapEditor({
     // 不限影片長度 / 大小
     const fd = new FormData(); fd.append('file', file); fd.append('type', 'video')
     try {
-      const res = await fetch(uploadEndpoint, { method: 'POST', body: fd })
+      const res = await postUpload(uploadEndpoint, fd)
       if (res.ok) {
         const { url } = await res.json() as { url: string }
         ;(editor.chain().focus() as any).setVideo({ src: url }).run()
@@ -603,7 +604,7 @@ export default function BlogTipTapEditor({
   const uploadAudio = async (file: File) => {
     const fd = new FormData(); fd.append('file', file); fd.append('type', 'audio')
     try {
-      const res = await fetch(uploadEndpoint, { method: 'POST', body: fd })
+      const res = await postUpload(uploadEndpoint, fd)
       if (res.ok) {
         const { url } = await res.json() as { url: string }
         ;(editor.chain().focus() as any).setAudio({ src: url }).run()
@@ -615,7 +616,7 @@ export default function BlogTipTapEditor({
   const uploadFile = async (file: File) => {
     const fd = new FormData(); fd.append('file', file); fd.append('type', 'file')
     try {
-      const res = await fetch(uploadEndpoint, { method: 'POST', body: fd })
+      const res = await postUpload(uploadEndpoint, fd)
       if (res.ok) {
         const { url } = await res.json() as { url: string }
         const kb = file.size < 1048576 ? `${Math.max(1, Math.round(file.size / 1024))} KB` : `${(file.size / 1048576).toFixed(1)} MB`

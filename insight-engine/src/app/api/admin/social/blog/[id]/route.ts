@@ -1,3 +1,4 @@
+import { after } from 'next/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { getTenantContext } from '@/lib/tenant'
 import { queryOne, execute, query } from '@/lib/db'
@@ -135,7 +136,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
   // 剛從私人 → 公開：非同步通知訂閱者
   if (body.isPublic === true && !wasPublic) {
-    notifySubscribers(article, ctx.userId).catch(e => console.error('[blog notify]', e))
+    after(() => notifySubscribers(article, ctx.userId).catch(e => console.error('[blog notify]', e)))
   }
 
   const { password_hash: ph, ...patchSafe } = article as typeof article & { password_hash?: unknown }

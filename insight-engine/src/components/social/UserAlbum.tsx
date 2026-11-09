@@ -1,5 +1,6 @@
 'use client'
 
+import { postUpload } from '@/lib/upload-client'
 import { useState, useRef, useCallback, useEffect } from 'react'
 import {
   Plus, Trash2, Globe, Lock, X, Loader2, ChevronLeft, ChevronRight,
@@ -293,7 +294,7 @@ function AlbumDetail({
       try {
         const fd = new FormData()
         fd.append('file', file)
-        const upRes = await fetch('/api/upload/media', { method: 'POST', body: fd })
+        const upRes = await postUpload('/api/upload/media', fd)
         const upData = await upRes.json() as { url?: string }
         if (!upData.url) continue
 

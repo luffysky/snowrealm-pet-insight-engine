@@ -1,3 +1,4 @@
+import { after } from 'next/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { query, queryOne } from '@/lib/db'
 import { verifyPassword } from '@/lib/auth'
@@ -96,7 +97,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   })
 
   // 每日登入 Z幣任務（非阻塞）
-  completeTask(user.id, 'daily_login', defaultTid).catch(() => {})
+  after(() => completeTask(user.id, 'daily_login', defaultTid).catch(() => {}))
 
   // Mobile callback：多回傳 token 讓 app 端存
   const mobileCallback = body.mobile_callback as string | undefined

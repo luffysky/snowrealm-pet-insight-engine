@@ -4,6 +4,8 @@ import { query } from '@/lib/db'
 import { decryptApiKey } from '@/lib/aiCrypto'
 import { getIsTyping } from '@/lib/dmEventStore'
 
+export const maxDuration = 300 // 連線到時會斷，瀏覽器 EventSource 會自動重連
+
 interface MsgRow extends Record<string, unknown> {
   id: string
   from_user_id: string

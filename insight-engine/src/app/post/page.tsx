@@ -1,5 +1,6 @@
 'use client'
 
+import { postUpload } from '@/lib/upload-client'
 import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
@@ -30,7 +31,7 @@ export default function QuickPostPage() {
       const urls = await Promise.all(toUpload.map(async f => {
         const fd = new FormData()
         fd.append('file', f)
-        const res = await fetch('/api/upload/media', { method: 'POST', body: fd })
+        const res = await postUpload('/api/upload/media', fd)
         const data = await res.json() as { url?: string; error?: string }
         if (!data.url) throw new Error(data.error ?? '上傳失敗')
         return data.url

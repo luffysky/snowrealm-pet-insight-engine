@@ -1,4 +1,5 @@
 import { Pool } from 'pg'
+import { attachDatabasePool } from '@vercel/functions'
 
 let _pool: Pool | null = null
 
@@ -9,13 +10,20 @@ export function getPool(): Pool {
     if (!connectionString) {
       throw new Error('Missing DATABASE_URL environment variable')
     }
+    // sslmode 留在連線字串會蓋掉下面的 ssl 設定，所以先拿掉
+    const url = new URL(connectionString)
+    const useSsl = url.searchParams.get('sslmode') === 'require'
+    url.searchParams.delete('sslmode')
+    const onVercel = !!process.env.VERCEL
     _pool = new Pool({
-      connectionString,
-      ssl: connectionString.includes('sslmode=require') ? { rejectUnauthorized: false } : false,
-      max: 20,
-      idleTimeoutMillis: 30000,
-      connectionTimeoutMillis: 5000,
+      connectionString: url.toString(),
+      ssl: useSsl ? { rejectUnauthorized: false } : false,
+      // serverless 每個實例各一個 pool，連線數要壓低並快速釋放
+      max: onVercel ? 5 : 20,
+      idleTimeoutMillis: onVercel ? 5000 : 30000,
+      connectionTimeoutMillis: onVercel ? 10000 : 5000,
     })
+    if (onVercel) attachDatabasePool(_pool)
   }
   return _pool
 }

@@ -1,8 +1,9 @@
 export const runtime = 'nodejs'
+export const maxDuration = 300
 
 import { NextRequest, NextResponse } from 'next/server'
 import { verifyToken } from '@/lib/jwt'
-import { uploadToR2 } from '@/lib/r2'
+import { uploadToR2, downloadFromR2, deleteR2Key } from '@/lib/r2'
 import { writeFile, unlink, readFile, mkdir } from 'fs/promises'
 import { join } from 'path'
 import { tmpdir } from 'os'
@@ -75,21 +76,38 @@ export async function POST(request: NextRequest) {
   const outputPath = join(tempDir, 'output.mp4')
   const thumbPath = join(tempDir, 'thumb.jpg')
 
-  try {
-    const formData = await request.formData()
-    const file = formData.get('file') as File | null
-    if (!file) return NextResponse.json({ error: '請選擇影片' }, { status: 400 })
+  // 大影片由瀏覽器先直傳 R2（tmp-video/），這裡只收 key
+  let tempKey: string | null = null
 
-    const mimeType = file.type || 'video/mp4'
+  try {
+    let file: File | null = null
+    let mimeType = 'video/mp4'
+    if (request.headers.get('content-type')?.includes('application/json')) {
+      const body = await request.json().catch(() => null)
+      if (typeof body?.key !== 'string' || !/^tmp-video\/[\w.-]+$/.test(body.key)) {
+        return NextResponse.json({ error: '請選擇影片' }, { status: 400 })
+      }
+      tempKey = body.key
+      mimeType = String(body.contentType || mimeType)
+    } else {
+      const formData = await request.formData()
+      file = formData.get('file') as File | null
+      if (!file) return NextResponse.json({ error: '請選擇影片' }, { status: 400 })
+      mimeType = file.type || mimeType
+    }
+
     if (!ALLOWED_TYPES.some(t => mimeType.includes(t))) {
       return NextResponse.json({ error: '只支援 MP4、MOV、WebM、AVI 格式' }, { status: 400 })
     }
-    if (file.size > MAX_INPUT_SIZE) {
+    if (file && file.size > MAX_INPUT_SIZE) {
       return NextResponse.json({ error: '影片大小不能超過 200MB' }, { status: 400 })
     }
 
     await mkdir(tempDir, { recursive: true })
-    const buffer = Buffer.from(await file.arrayBuffer())
+    const buffer = tempKey ? await downloadFromR2(tempKey) : Buffer.from(await file!.arrayBuffer())
+    if (buffer.length > MAX_INPUT_SIZE) {
+      return NextResponse.json({ error: '影片大小不能超過 200MB' }, { status: 400 })
+    }
     await writeFile(inputPath, buffer)
 
     const duration = await getDuration(inputPath)
@@ -118,8 +136,7 @@ export async function POST(request: NextRequest) {
     console.error('[Video Upload Error]', err)
     return NextResponse.json({ error: '影片處理失敗，請稍後再試' }, { status: 500 })
   } finally {
-    for (const p of [inputPath, outputPath, thumbPath]) {
-      unlink(p).catch(() => {})
-    }
+    await Promise.all([inputPath, outputPath, thumbPath].map(p => unlink(p).catch(() => {})))
+    if (tempKey) await deleteR2Key(tempKey).catch(() => {})
   }
 }

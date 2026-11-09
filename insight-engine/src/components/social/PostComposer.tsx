@@ -1,5 +1,6 @@
 'use client'
 
+import { postUpload } from '@/lib/upload-client'
 import { useState, useRef } from 'react'
 import { Image as ImageIcon, Film, Send, X, Loader2, Tag, Globe, Lock } from 'lucide-react'
 import { GifPicker } from './GifPicker'
@@ -46,7 +47,7 @@ export function PostComposer({ authorName = '你', authorAvatar, onPosted, defau
   const uploadImage = async (file: File): Promise<string> => {
     const fd = new FormData()
     fd.append('file', file)
-    const res = await fetch('/api/upload/media', { method: 'POST', body: fd })
+    const res = await postUpload('/api/upload/media', fd)
     const data = await res.json() as { url?: string; error?: string }
     if (!data.url) throw new Error(data.error ?? '上傳失敗')
     return data.url
@@ -59,7 +60,7 @@ export function PostComposer({ authorName = '你', authorAvatar, onPosted, defau
     try {
       const fd = new FormData()
       fd.append('file', file)
-      const res = await fetch('/api/upload/video', { method: 'POST', body: fd })
+      const res = await postUpload('/api/upload/video', fd)
       const data = await res.json() as { videoUrl?: string; thumbnailUrl?: string; error?: string }
       if (!data.videoUrl) throw new Error(data.error ?? '影片上傳失敗')
       setVideo({ videoUrl: data.videoUrl, thumbnailUrl: data.thumbnailUrl ?? '' })

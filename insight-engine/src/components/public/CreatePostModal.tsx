@@ -1,5 +1,6 @@
 'use client'
 
+import { postUpload } from '@/lib/upload-client'
 import { useState, useRef } from 'react'
 import { X, Image, Video, Tag, Send, Loader2, AlertCircle } from 'lucide-react'
 import type { SocialPost } from '@/lib/socialEngine'
@@ -51,7 +52,7 @@ export function CreatePostModal({ onClose, onCreated }: Props) {
       for (const file of Array.from(files)) {
         const fd = new FormData()
         fd.append('file', file)
-        const res = await fetch('/api/upload/media', { method: 'POST', body: fd })
+        const res = await postUpload('/api/upload/media', fd)
         const data = await res.json() as { url?: string; error?: string }
         if (!res.ok || !data.url) throw new Error(data.error ?? '上傳失敗')
         results.push({ url: data.url, preview: URL.createObjectURL(file) })
@@ -91,7 +92,7 @@ export function CreatePostModal({ onClose, onCreated }: Props) {
     try {
       const fd = new FormData()
       fd.append('file', file)
-      const res = await fetch('/api/upload/video', { method: 'POST', body: fd })
+      const res = await postUpload('/api/upload/video', fd)
       const data = await res.json() as { videoUrl?: string; thumbnailUrl?: string; duration?: number; error?: string }
       if (!res.ok || !data.videoUrl) throw new Error(data.error ?? '影片上傳失敗')
       setVideo({

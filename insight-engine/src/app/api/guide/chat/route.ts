@@ -94,6 +94,7 @@ async function getPlatformQuickStats() {
 }
 
 export const runtime = 'nodejs'
+export const maxDuration = 300
 
 export const FREE_DAILY_LIMIT = 20
 

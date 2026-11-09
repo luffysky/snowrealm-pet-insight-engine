@@ -63,6 +63,15 @@ const KNOWN_ADMIN_PAGES = new Set([
 export async function middleware(request: NextRequest): Promise<NextResponse> {
   const { pathname } = request.nextUrl
 
+  // 排程路由一律要 CRON_SECRET；沒設就拒絕，避免任何人都能觸發推播或 AI 任務
+  if (pathname.startsWith('/api/cron')) {
+    const secret = process.env.CRON_SECRET
+    if (!secret || request.headers.get('authorization') !== `Bearer ${secret}`) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+    return NextResponse.next()
+  }
+
   // Login / Register / Auth API — 永遠放行
   if (pathname === '/login' || pathname === '/register' || pathname === '/super-login' || pathname.startsWith('/api/auth')) {
     return NextResponse.next()
@@ -209,6 +218,7 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
 
 export const config = {
   matcher: [
+    '/api/cron/:path*',
     '/insight-admin/:path*',
     '/insight-admin',
     '/api/admin/:path*',

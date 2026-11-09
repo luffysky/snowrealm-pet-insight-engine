@@ -1,5 +1,6 @@
 'use client'
 
+import { postUpload } from '@/lib/upload-client'
 import { useEffect, useState, useCallback } from 'react'
 import { EmojiPicker } from '@/components/admin/EmojiPicker'
 import { AiGeneratePanel } from '@/components/admin/AiGeneratePanel'
@@ -379,7 +380,7 @@ function SurveyEditor({
       const fd = new FormData()
       fd.append('file', file)
       fd.append('folder', 'survey-cover')
-      const up = await fetch('/api/admin/upload', { method: 'POST', body: fd })
+      const up = await postUpload('/api/admin/upload', fd)
       const data = (await up.json()) as { url?: string; error?: string }
       if (!up.ok || !data.url) {
         alert(data.error || '上傳失敗')
@@ -402,7 +403,7 @@ function SurveyEditor({
       const fd = new FormData()
       fd.append('file', file)
       fd.append('folder', 'survey-og')
-      const up = await fetch('/api/admin/upload', { method: 'POST', body: fd })
+      const up = await postUpload('/api/admin/upload', fd)
       const data = (await up.json()) as { url?: string; error?: string }
       if (!up.ok || !data.url) {
         alert(data.error || '上傳失敗')
